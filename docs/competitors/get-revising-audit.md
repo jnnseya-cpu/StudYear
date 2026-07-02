@@ -800,6 +800,16 @@ Support/contact management · Content quality control · **AI Tutor governance**
 | **AI Exam Technique Agent** | teaches **command words, structure, timing, mark maximisation** |
 | **AI Motivation Agent** | detects burnout, procrastination, low confidence → adjusts workload |
 
+### B. Parent OS
+
+| Component | Role |
+|---|---|
+| **Parent Command Centre** | live view of child progress, weak subjects, completed study hours, predicted-grade movement, risk level |
+| **Weekly AI Parent Briefing** | plain-English summary: *"what improved, what is weak, what to do next"* |
+| **Parent Intervention Agent** | recommends actions **without overwhelming the child** |
+| **Home Learning Planner** | family-friendly schedule around school, rest, sports, tutoring, exams |
+| **Safeguarding / Wellbeing Alerts** | flags unhealthy study patterns, burnout, **repeated failure loops** |
+
 *(Further sections follow as extracted.)*
 
 > **Cross-portfolio note:** the three-tier token-optimization ladder above is the same

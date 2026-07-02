@@ -1,5 +1,10 @@
 # Studyear — The Educational Operating System (Edu-OS)
 
+> **⚖️ Governing rule — the [Preservation & Enhancement Mandate](docs/REQUIREMENTS-MANDATE.md):**
+> everything in this corpus **must be implemented**; nothing may be removed; changes may
+> only improve and enhance — from the very start to the very end. The mandate doc carries
+> the full requirements-traceability index and conflict-resolution protocol.
+
 Studyear is a **multi-tenant educational ecosystem** that unifies formal institutional
 learning (schools & teachers) with supplemental private learning (tutors), and closes
 the loop with the foundational support network (students & parents) — all under an
