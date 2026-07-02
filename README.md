@@ -36,8 +36,19 @@ docs/architecture/
 ├── 09-data-model.md            Core entities and relationships
 ├── 10-permissions-rbac.md      Roles, scopes, and the permission model
 ├── 11-revision-resources.md    Module: the "create a revision resource" study toolset
-└── 12-reference-data.md        Controlled vocabularies (Education Level, …)
+├── 12-reference-data.md        Controlled vocabularies (Level, Subject, Board, Topic, Resource Type)
+├── 13-platform-decomposition.md  PART 1: technical module decomposition (concrete stack)
+├── 14-ai-agent-blueprint.md    PART 2: next-gen AI-agent & ML tier (named agents, model router)
+└── 15-implementation-blueprint.md  PART 3: layered runtime, MariaDB partitioning, async AI engine
 ```
+
+### PART 4 — The AI Infrastructure Operating System (`docs/ai-os/`)
+
+The enterprise transformation: preserving everything above, it re-frames Studyear as a
+production-grade, multi-tenant **AI-OS**. See [`docs/ai-os/README.md`](docs/ai-os/README.md)
+for the full developer-ready document set (AI Command Centres, enterprise multi-agent
+ecosystem, cybersecurity, data intelligence, BitriPay gateway, connectors, ERD, API specs,
+monetisation, security/compliance, and the build roadmap).
 
 ## How to read this
 
