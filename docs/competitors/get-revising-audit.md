@@ -900,7 +900,34 @@ the 25 enhanced agents (`../ai-os/04 §3A`) — identical agents unify with all 
 capabilities; the net-new entries here (Mind Map, Exam Technique, Curriculum Mapping,
 Resource Quality as standalone builds) join the build queue.)*
 
-*(Further sections follow as extracted.)*
+## 6. Powerful positioning
+
+> Get Revising is a **revision-resource platform**. The upgraded version becomes an **AI
+> Academic Operating System.**
+>
+> The difference:
+> **Get Revising helps students revise.**
+> **The OS diagnoses, plans, teaches, tests, marks, predicts, intervenes and reports.**
+>
+> **That is the winning product direction.**
+
+---
+
+**End of fourth-pass extraction. End of Get Revising audit.**
+
+### Consolidated verdict across all four passes
+
+Four independent analyst passes converge on the same conclusions:
+1. Get Revising's assets are **distribution** (1M+ students, 425k resources, school
+   networks) and a proven **create/share/plan** loop — the very loop whose taxonomy seeded
+   StudYear's reference vocabularies.
+2. Its liabilities are structural: **static planning, unverified UGC, no knowledge
+   tracing/marking/prediction, thin parent, absent tutor** — each one a StudYear strength.
+3. Every reimagining pass lands on the same target: the **closed-loop, agent-driven,
+   ACU-metered Academic OS** — which is StudYear's existing blueprint
+   (`../product/deep-platform-extraction-report.md` Part B, `../ai-os/`).
+4. The **diagnose → plan → teach → test → mark → predict → intervene → report** verb chain
+   above is the sharpest one-line articulation of the whole portfolio's product direction.
 
 > **Cross-portfolio note:** the three-tier token-optimization ladder above is the same
 > pattern as StudYear's Model Router policy (`../architecture/14 §0.1`) and the

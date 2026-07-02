@@ -46,7 +46,8 @@ Every content stream received, and where it is implemented in the corpus:
 | 15 | Get Revising audit, pass 1 (actors → agentic map → local-stack migration) | `competitors/get-revising-audit.md` main body |
 | 16 | Get Revising pass 2 (deep roles, weaknesses, Revision AI-OS, Africa play) | same file, Appendix 1 |
 | 17 | Get Revising pass 3 (architectural teardown, Learning OS, MariaDB schema, token tiers) | same file, Appendix 2 |
-| 18 | Get Revising pass 4 (feature extraction + Academic Success OS rosters) | same file, Appendix 3 *(in progress — streaming)* |
+| 18 | Get Revising pass 4 (feature extraction + Academic Success OS rosters: Student/Parent/Teacher/School/Tutor/Admin OS layers, ML signals, the canonical 18-agent build list, winning positioning) | same file, Appendix 3 — **complete** |
+| 19 | Preservation & Enhancement Mandate directive ("implement everything, remove nothing, enhance only, start to end") | this document + root README banner |
 
 **Audit rule:** every future stream gets a row here before its commit is pushed.
 
