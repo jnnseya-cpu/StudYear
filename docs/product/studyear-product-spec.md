@@ -649,6 +649,81 @@ extracted — likely the bridge to local-authority/diaspora funding) all exist i
 console. The unit economics on display (85 ACUs ≈ £0.85 revenue-equivalent vs £0.05 AI
 spend ≈ **94% margin**) already sit inside the 66–100% band.
 
+### 4a.1 User Management screen (as-is structural extraction)
+
+> *Extracted from the live console's real-time user list. **Raw user rows (names/emails)
+> are deliberately NOT persisted here** — personal data stays out of this repo per the
+> platform's own GDPR posture; only the system structure and anonymised findings are
+> recorded.*
+
+**Production role enum (observed):** `STUDENT` · `PARENT` · `PRIVATE_TUTOR` ·
+`SCHOOL_ADMIN` · `SCHOOL_TUTOR` (the school-teacher role) · `ADMIN`.
+
+**Production subscription labels (observed):** Child Free · Student Premium · Student
+Premium+ · Student Max · Parent Pro+ · Parent Elite · **School staff** · Admin — matching
+the commercial model's tiers (Student Access not observed in the sample but specced).
+
+**Per-row admin actions:** Edit · **Adjust ACUs** · **View as User** · Delete — and for
+STUDENT rows additionally **Link Parent** and **Link School** (guardianship and school
+membership are admin-linkable edges, confirming the identity-graph design in
+`../architecture/01`/`09`).
+
+**Data-quality findings (actionable engineering backlog):**
+
+| Finding | Evidence pattern | Fix mapped to |
+|---|---|---|
+| **Duplicate accounts** | same email appearing up to 4× with different role/case | identity merge tooling (`../architecture/02 §2.2`), unique-email constraint |
+| **Inconsistent role casing** | `STUDENT` vs `student`, `ADMIN` vs `admin`, `tutor` vs `PRIVATE_TUTOR` | canonical role enum (`@studyear/shared` ROLES) + migration |
+| **Test data in production** | `*@local.test` accounts, "test" display names mixed with real users | environment separation (`infra/deployment.md §3`), seeded fixtures in staging only |
+| **Empty identity row** | one row with no display name and no email | write-time validation + cleanup job |
+| **Missing display names** | many `N/A` display names | onboarding profile completion prompt |
+| **Legacy domain artefact** | an admin account on a `revisionrocket.com` address | **prior product name "Revision Rocket"** — historical note; consolidate admin identities |
+
+### 4a.2 Tutor Applications screen (as-is structural extraction)
+
+> *Same PII policy: structure only, no personal rows persisted.*
+
+**Workflow (confirmed in production):** review → **approve or reject** private-tutor
+registrations; **tutors cannot access their dashboard until approved.** Status counters:
+Total / Pending / Approved / Rejected; list sorted **pending-first.**
+
+**Application fields:** tutor identity · **Subjects** · **Hourly rate** (observed £32/hr
+across rows — likely a default) · **Fee paid** (the £10 onboarding fee from
+[`commercial-model.md §9`](commercial-model.md)) · Status · Actions (Reject / Approve).
+
+**Findings (engineering backlog):**
+
+| Finding | Evidence | Fix mapped to |
+|---|---|---|
+| **Subjects are free text** | entries like "Full Stack Developer / physics" alongside "GCSE Math" | bind the subject field to the taxonomy (`../architecture/12 §2`) with level+board scoping |
+| **Onboarding fee not enforced** | rows **Approved while Fee paid = Unpaid** | gate approval (or dashboard unlock) on fee settlement per commercial model §9 — or explicitly waive for early supply-side seeding, as an admin decision |
+| **Uniform default rate** | £32/hr on all rows | tutor-set pricing at application (venture brief §4 SY-A13/A15) |
+| **No vetting evidence fields yet** | no DBS/ID columns visible | verification + DBS-evidence capture before transacting (venture brief §10.2) |
+
+### 4a.3 Blog console (as-is — the AI blog is live)
+
+**Confirmed in production:** an **"AI generator"** button (the founding directive #19 /
+SY-A22 foundation already exists) · draft → **publish to the public blog** → **Unpublish /
+Delete / Edit / View live** lifecycle · **view tracking**: one increment per successful
+public page load ("Clicks").
+
+**Published posts observed (public content, safe to record):**
+
+| Title | Clicks |
+|---|---|
+| Unlocking Every Child's Potential: How StudYear Creates Equal Chances | 7 |
+| StudYear: The AI Academic Command Center Unifying Education for a Smarter Future | 9 |
+| Unlock Your Child's Full Potential: StudYear's AI-Powered Personalized Learning | 7 |
+| Navigating University Routes: How StudYear Empowers Students & Parents | 11 |
+| **The Cold War: A World Divided and the Legacy It Left Behind** | 13 |
+| The Power of Testing: Why Experimentation Drives Growth & Success | 5 |
+
+**Notes:** slugs are SEO-friendly; the mix is brand-marketing + **curriculum content** (The
+Cold War — a Topic from the `12 §4` taxonomy — is the top performer at 13 clicks),
+validating the SY-A22/SY-A24 strategy that **topic-level educational content outdraws brand
+content** (`marketing-engine.md`). Backlog: read-time/uniques (clicks ≠ readers), CTA
+conversion tracking per post, and the SERP-gap feed from SY-A24.
+
 **Site footer (as-is page map):** StudYear — *"an AI-powered academic command centre,
 unifying student data, learning, teaching, and communication in one intelligent
 platform."* · **Platform:** How It Works · Create · Find Resources · **Company:** About
