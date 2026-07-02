@@ -23,6 +23,28 @@ between them. This document is the map; the per-persona files (`02`–`06`) are 
                           all converge on the LEARNER
 ```
 
+## 1b. Provisioning topology (who the kernel spawns)
+
+The relationship graph above shows *interactions*; this tree shows the **provisioning
+hierarchy** — how the Admin kernel spawns tenants and how members attach beneath them:
+
+```
+                    [ GLOBAL / TENANT ADMIN ]   ← the core OS kernel
+                    /          |          \
+                   /           |           \
+            [SCHOOLS]      [STUDENTS]   [PRIVATE TUTORS]
+                |              |  \
+           [TEACHERS]         |   \
+                              |    [PARENTS]
+```
+
+- **Admin → Schools / Students / Private Tutors:** the three provisioned member-types.
+- **Schools → Teachers:** teachers exist *within* a school tenant.
+- **Students → Parents:** the guardianship edge attaches a parent to a student's household.
+
+Independent tutors and households sit in the shared **platform tenant**; schools/districts
+are their own tenants (`02 §2.1`, `08 §1`).
+
 ## 2. Persona definitions
 
 ### 2.1 Global / Tenant Admin
