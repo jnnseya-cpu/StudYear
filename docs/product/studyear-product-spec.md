@@ -147,7 +147,61 @@ Framed as an **intervention operator**, not just a grader — the AI teaching as
 real-product seed of **Pedagogue.ai** (`14 §3`): differentiated explanations + intervention
 plans + class-level topic recovery.
 
-*(Final role — Tutor — is appended here as extracted, in the same real-feature style.)*
+### 4.6 Private Tutor — professional command centre
+
+| Area | Responsibilities |
+|---|---|
+| **Profile & listing** | create tutor profile + marketplace listing |
+| **Showcase** | subjects, levels, availability, pricing, experience, ratings |
+| **Enquiries** | receive student/parent enquiries |
+| **Session pipeline** | leads → bookings → active students → completed sessions |
+| **Diagnostic access** | view student diagnostic **where permission is granted** |
+| **AI teaching tools** | lesson plans, quizzes, explanations, homework, topic-recovery plans |
+| **Track progress** | student progress across sessions |
+| **Resource sharing** | share resources with students |
+| **Business** | manage earnings, reviews, booking history, performance |
+
+Note the **permissioned diagnostic access** — a tutor sees a student's diagnostic only with
+consent, the real-product basis for Matchmaker.ai's privacy-controlled "deficit handoff"
+(`14 §6.2`).
+
+## 5b. The 20 key platform modules
+
+The product decomposes into these modules (build/refine targets); each maps to engines
+(`§2`), roles (`§4`), and the architecture docs:
+
+| # | Module | # | Module |
+|---|---|---|---|
+| 1 | User & Role Management | 11 | Teacher Workspace |
+| 2 | Student Academic Profile | 12 | Tutor Marketplace |
+| 3 | Diagnostic Engine | 13 | ACU Wallet & Billing |
+| 4 | AI Tutor | 14 | Stripe Checkout |
+| 5 | Study Planner | 15 | Notifications & Alerts |
+| 6 | Assignment Review | 16 | Reports & Exports |
+| 7 | Resource Generator | 17 | Content Library |
+| 8 | Progress Dashboard | 18 | Audit Logs |
+| 9 | Parent Command Centre | 19 | GDPR / Data Management |
+| 10 | School Command Centre | 20 | Admin Control Panel |
+
+> **Loop wording:** StudYear states the operating logic as **Assess → Plan → Execute →
+> Improve** (a.k.a. Assess→Plan→Learn→Improve): it ingests academic data + confidence
+> signals, builds prioritised study schedules and interventions, then **updates mastery
+> metrics from every interaction so plans adapt in real time.**
+
+## 6. Positioning
+
+> **"The AI academic operating system that turns student data into personalised learning
+> action, connects parents and schools around live progress, and gives tutors and teachers
+> the tools to intervene before failure happens."**
+
+StudYear is publicly positioned as a **UK AI-powered Education OS** unifying diagnostics, AI
+tutoring, study planning, assignment review, progress tracking, parent dashboards, school
+command centres, and tutor-marketplace workflows.
+
+---
+
+*Note: the section numbering (`§5b`, `§6`) reflects incremental extraction; the prior
+"How this grounds the rest of the docs" guidance still applies below.*
 
 ## 5. How this grounds the rest of the docs
 
