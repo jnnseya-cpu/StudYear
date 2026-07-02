@@ -207,6 +207,40 @@ targets.
 
 ---
 
-## Part B — AI-agent / machine-learning upgrade architecture
+## Part B — The upgrade: StudYear 2.0 as a multi-agent AI-OS
 
-*(Sections follow as extracted.)*
+> **Design thesis:** convert StudYear from an **AI-tool vending machine** (user requests →
+> AI responds → ACU debited) into a **proactive agentic operating system** where a mesh of
+> persistent, role-scoped AI agents **observes, predicts, plans, intervenes, and reports** —
+> with ML models as the shared intelligence substrate and **ACUs metering agent labour.**
+
+### B1. Target architecture
+
+```
+┌────────────────────────── EXPERIENCE PLANE ──────────────────────────┐
+│  Student App · Parent App · Teacher Workspace · School Command       │
+│  Centre · Tutor Command Centre · Platform Admin Console              │
+├────────────────────────── AGENT MESH (LangGraph-style) ──────────────┤
+│  ORCHESTRATOR (per-tenant supervisor, policy + budget aware)         │
+│  Role agents (B2) · Function agents (B3) · Guardian/Safety agent     │
+├────────────────────────── ML MODEL LAYER ────────────────────────────┤
+│  Knowledge-Tracing · Grade-Forecast · Risk EWS · Recommender ·       │
+│  Forgetting-Curve Scheduler · Matching · ACU-ROI Optimiser ·         │
+│  Content Quality Ranker · Anomaly/Fraud                              │
+├────────────────────────── DATA & EVENT SPINE ────────────────────────┤
+│  Learning Record Store (xAPI events) · Mastery Graph (topic-level    │
+│  knowledge graph per exam board spec) · Feature Store · ACU Ledger   │
+├────────────────────────── PLATFORM SERVICES ─────────────────────────┤
+│  Model Router (Google/OpenAI/others, cost-latency-quality routing)   │
+│  RAG over syllabus + past papers + mark schemes · Stripe/Connect ·   │
+│  RBAC + Zero-Trust · GDPR/AADC compliance engine · Observability     │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+Five planes: **Experience** (the six role surfaces) → **Agent Mesh** (orchestrator + role/
+function agents + guardian) → **ML Model Layer** (the shared intelligence substrate) →
+**Data & Event Spine** (xAPI learning records, the per-exam-board mastery graph, feature
+store, ACU ledger) → **Platform Services** (model routing, RAG over syllabus/past-papers/
+mark-schemes, payments, zero-trust, compliance, observability).
+
+*(Sections B2+ follow as extracted.)*
