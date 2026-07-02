@@ -11,9 +11,11 @@
 
 ## 1. Core purpose
 
-StudYear is an **AI-powered Education Operating System** that connects diagnostics, AI
-tutoring, study planning, assignment review, live progress, parents, schools, teachers, and
-tutors in **one academic command centre.** It is built around a closed loop:
+StudYear positions itself as **"The UK's AI-Powered Education OS"** — an Education
+Operating System that connects diagnostics, AI tutoring, study planning, assignment review,
+live progress, parents, schools, teachers, and tutors in **one academic command centre.**
+The product philosophy is explicitly **anti-fragmentation**: *"a closed-loop system — not a
+loose collection of apps"* — assess, plan, execute, and measure in **one continuous flow**:
 
 ```
         ┌──────────────────────────────────────────────┐
@@ -29,10 +31,10 @@ It is **not just a learning app** — it is an **academic intelligence OS.**
 
 | # | Engine | What it does |
 |---|---|---|
-| 1 | **Diagnostic Engine** | Finds student baseline: current grades, confidence level, weak topics, strengths, and **risk profile**. |
-| 2 | **AI Study Roadmap** | Creates personalised **week-by-week** study plans from weak areas, exam timelines, and grade targets. |
-| 3 | **AI Learning Tools** | AI tutor, interactive lessons, quizzes, flashcards, topic summaries, essay feedback, diagrams, charts, past-paper support, revision resources. |
-| 4 | **Progress Intelligence** | Tracks quizzes, lessons, **mastery**, adherence, **predicted grades**, risk alerts, and improvement over time. |
+| 1 | **Diagnostic Engine** (Assess) | Analyses subjects, current grades, and confidence levels to identify strengths/weaknesses and generate a **personal diagnostic report** — baseline, weak topics, risk profile. |
+| 2 | **AI Study Roadmap** (Plan) | Creates personalised **week-by-week** study plans **prioritising the highest-grade-impact topics** — telling students not just *what* to revise but *how*. |
+| 3 | **AI Learning Tools** (Learn) | Students execute with interactive lessons, flashcards, quizzes, **instant essay feedback**, and a **24/7 AI Tutor** — plus topic summaries, diagrams, charts, past-paper support, revision resources. **Each action consumes ACU balance.** |
+| 4 | **Progress Intelligence** (Improve) | Dashboard updates **in real time with every quiz and lesson** — tracking mastery and adherence, **constantly refining predicted grades and adapting the plan**; risk alerts. |
 | 5 | **ACU Wallet System** | AI features consume prepaid **AI Credit Units (ACUs)**. When ACUs hit zero, **AI features stop** until the wallet is topped up. |
 
 The five engines *are* the Assess→Plan→Learn→Improve loop: Diagnostic = Assess, Roadmap =
@@ -41,16 +43,48 @@ the AI compute that powers all four.
 
 ## 3. ACU Wallet economics (the monetisation backbone)
 
-- **Prepaid credits:** AI features draw down ACUs; **cost is per action** (per tool / per
-  generation), set by the platform.
+The service runs on a **strictly prepaid** AI Credit Unit model:
+
+- **Positive balance required** to use AI features — **no overdraft or credit facility.**
+- **Per-action debits:** each AI feature has an associated ACU cost, **debited on use.**
+- **Packs:** ACUs are purchased in packs; **all purchases are final and non-refundable.**
+- **Top-up UX:** the wallet is topped up from a **Checkout page**; the balance is **always
+  visible in the top navigation bar.**
 - **Hard stop at zero:** when the balance reaches zero, AI features are disabled until
   top-up — a clean, usage-based gate (no silent overage).
 - **Where it plugs in:** every AI Learning Tool (`§2.3`) and AI-driven engine action checks
-  and decrements the wallet; balances, top-ups, deductions, refunds, and usage logs are
-  admin-managed (`§4`).
+  and decrements the wallet; balances, top-ups, deductions, refunds policy, and usage logs
+  are admin-managed (`§4`) — goodwill *re-credits* remain an audited admin action even
+  though customer purchases themselves are non-refundable.
 - **Shared pools:** schools can operate a **shared ACU pool** across their cohort (`§4`).
 - This is the concrete instance of the "AI credit / ACU system" the AI-OS monetisation model
   (PART 4) builds on.
+
+## 3b. Disclosed stack, legal posture & live telemetry (as-is)
+
+| Concern | Disclosed state |
+|---|---|
+| **Payments** | Stripe |
+| **Cloud hosting** | **Firebase** |
+| **AI service providers** | **Google and OpenAI**, under data-processing agreements that **prohibit training on user content** |
+| **Governing law** | England and Wales |
+| **Privacy posture** | GDPR-conscious, AI-native workflows, live progress sync |
+
+> **As-is vs. target architecture:** the MariaDB/Hostinger multi-tenant decomposition in
+> `docs/architecture/13`/`15` and the three-provider Model Router (adding Anthropic Claude)
+> in `docs/architecture/14` are the **target blueprint**, not the disclosed current state.
+> Today's disclosed platform is Firebase-hosted with Google + OpenAI as AI providers. Any
+> migration plan must treat this section as the starting point.
+
+**Live homepage telemetry** (live totals refreshed every few minutes — social proof via
+real data, and a signal the platform is **early-stage in adoption**):
+
+| Metric | Value |
+|---|---|
+| Student accounts | 38 |
+| Partner organisations | 3 |
+| Resources shared | 155 |
+| Profiles created | 67 |
 
 ## 4. Roles — real feature extraction
 
