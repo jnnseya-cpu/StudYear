@@ -821,6 +821,17 @@ Support/contact management · Content quality control · **AI Tutor governance**
 | **Curriculum Mapping Agent** | maps resources to GCSE/A-Level/IB/KS3 curriculum, exam board, topic, **assessment objectives** |
 | **Class Revision Campaign Builder** | creates **4-week, 8-week or 12-week revision programmes** |
 
+### D. School OS
+
+| Component | Role |
+|---|---|
+| **School Academic Intelligence Dashboard** | whole-school view by year group, subject, class, teacher, topic, exam readiness |
+| **Head of Department Dashboard** | subject-level performance, weak topics, resource usage, intervention tracking |
+| **SLT Dashboard** | progress trends, predicted-grade movement, **attendance–study correlation**, intervention impact |
+| **AI School Improvement Agent** | finds systemic weaknesses: *"Year 11 Physics electricity is 38% below target"* |
+| **Resource Quality Engine** | ranks resources by usefulness, exam alignment, **success rate**, teacher approval |
+| **Safeguarding & Compliance Layer** | age controls, data protection, moderation, abuse detection, audit logs |
+
 *(Further sections follow as extracted.)*
 
 > **Cross-portfolio note:** the three-tier token-optimization ladder above is the same
