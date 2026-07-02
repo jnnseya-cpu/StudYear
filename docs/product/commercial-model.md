@@ -16,22 +16,20 @@
 
 **Keep: £1 = 100 ACUs.**
 
-Internal profitability rule: **maximum real variable cost per 100 ACUs ≤ £0.50.**
+Internal profitability rule — **the 66% minimum-margin mandate governs (resolved
+directive):** **maximum real variable cost per 100 ACUs ≤ £0.34.**
 
 | Per 100 ACUs | Value |
 |---|---|
 | Revenue | £1.00 |
-| Total variable cost | ≤ £0.50 |
-| Gross profit | ≥ £0.50 |
+| Total variable cost | **≤ £0.34** |
+| Gross profit | **≥ £0.66 (≥ 66% margin)** |
 
-That is the correct meaning of **100% markup / profit on cost.**
-
-> **⚠ Margin-rule reconciliation:** the earlier directive mandated a **66% minimum margin**
-> (cost ≤ 34% of price — traceability row 24). This reset's core rule allows cost up to 50%
-> of ACU revenue (= 50% margin floor). As the newer, explicitly *final* commercial reset,
-> **the ≤ £0.50/100-ACU rule is operative**; the 66% figure remains on record as the
-> stretch target. Engineering should treat ≤ 50p as the hard ceiling and ≤ 34p as the
-> optimisation goal.
+> **✅ Margin rule (resolved):** margin must be a **minimum of 66%** on every paid product —
+> the earlier ≤ £0.50 (50%-margin) draft ceiling is superseded; **≤ £0.34 per 100 ACUs is
+> the hard ceiling.** The only exemption remains **defined free accounts** (Child Free,
+> free teacher tooling). Variable cost includes provider inference, Stripe fees
+> (1.5% + 20p modelling), and hosting allocation.
 
 ## 2. Student plans — monthly only
 
@@ -154,10 +152,10 @@ parent wallet.**
 
 ## 11. Margin-protection logic
 
-**Developer rule:**
+**Developer rule (66% minimum margin — resolved directive):**
 
 ```
-if estimated_provider_cost + stripe_cost + hosting_allocation > 50% of plan revenue:
+if estimated_provider_cost + stripe_cost + hosting_allocation > 34% of plan revenue:
     reduce ACUs
     or throttle expensive tools
     or require top-up
