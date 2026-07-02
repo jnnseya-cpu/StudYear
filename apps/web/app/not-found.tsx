@@ -19,7 +19,7 @@ export default function NotFound() {
       }}
     >
       <div>
-        <p style={{ letterSpacing: '.3em', fontSize: 12, color: '#D4AF37', fontFamily: 'system-ui, sans-serif' }}>
+        <p style={{ letterSpacing: '.3em', fontSize: 12, color: '#3D8FD1', fontFamily: 'system-ui, sans-serif' }}>
           STUDYEAR OS
         </p>
         <h1 style={{ fontWeight: 500, fontSize: 40, margin: '10px 0' }}>This page hasn’t shipped yet.</h1>
@@ -27,10 +27,10 @@ export default function NotFound() {
           The OS is live though — pick a door:
         </p>
         <p style={{ display: 'flex', gap: 14, justifyContent: 'center', fontFamily: 'system-ui, sans-serif', fontSize: 14 }}>
-          <a style={{ color: '#F2DCA0' }} href={`${BASE}/`}>Home</a>
-          <a style={{ color: '#F2DCA0' }} href={`${BASE}/app/`}>Open the OS</a>
-          <a style={{ color: '#F2DCA0' }} href={`${BASE}/study/`}>Study workspace</a>
-          <a style={{ color: '#F2DCA0' }} href={`${BASE}/dashboards/`}>Analytics</a>
+          <a style={{ color: '#A9CFF2' }} href={`${BASE}/`}>Home</a>
+          <a style={{ color: '#A9CFF2' }} href={`${BASE}/app/`}>Open the OS</a>
+          <a style={{ color: '#A9CFF2' }} href={`${BASE}/study/`}>Study workspace</a>
+          <a style={{ color: '#A9CFF2' }} href={`${BASE}/dashboards/`}>Analytics</a>
         </p>
       </div>
     </main>

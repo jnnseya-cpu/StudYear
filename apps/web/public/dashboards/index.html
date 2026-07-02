@@ -7,18 +7,18 @@
 <style>
   :root{
     --navy-950:#060B18; --navy-900:#0B1220; --navy-800:#101B33;
-    --gold-300:#F2DCA0; --gold-400:#E3C567; --gold-500:#D4AF37;
+    --gold-300:#A9CFF2; --gold-400:#5FA8E0; --gold-500:#3D8FD1;
     --ink:#EDF1F8; --ink-2:#AAB6CC; --ink-3:#6B7A96;
     /* validated categorical slots (dark, surface #0B1220 — all checks pass) */
     --s1:#3987e5; --s2:#199e70; --s3:#c98500;
     --good:#5CBB7B; --warn:#c98500; --crit:#e66767;
-    --line:rgba(212,175,55,.14);
+    --line:rgba(77,157,224,.14);
     --serif:Georgia,"Times New Roman",serif;
     --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   }
   *{margin:0;padding:0;box-sizing:border-box}
   body{background:
-    radial-gradient(1100px 600px at 80% -10%, rgba(212,175,55,.10), transparent 60%),
+    radial-gradient(1100px 600px at 80% -10%, rgba(77,157,224,.10), transparent 60%),
     radial-gradient(900px 700px at -10% 30%, rgba(22,37,74,.85), transparent 65%),
     var(--navy-950);
     color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
@@ -56,7 +56,7 @@
   .dlabel{fill:#EDF1F8;font-size:11px;font-weight:600}
   .hover-rect{fill:transparent;cursor:crosshair}
 
-  #tip{position:fixed;z-index:99;pointer-events:none;background:#101B33;border:1px solid rgba(212,175,55,.4);
+  #tip{position:fixed;z-index:99;pointer-events:none;background:#101B33;border:1px solid rgba(77,157,224,.4);
     border-radius:8px;padding:8px 12px;font-size:12px;color:var(--ink);box-shadow:0 10px 30px rgba(0,0,0,.5);
     opacity:0;transition:opacity .12s;max-width:240px}
   #tip b{color:var(--gold-300)}
@@ -70,9 +70,9 @@
 
 <header class="page">
   <div class="k"><a href="../" style="color:inherit;text-decoration:none">⌂ StudYear</a> · Command Centre Analytics · <a href="../app/" style="color:inherit;text-decoration:none">Open the OS →</a></div>
-  <h1>One truth, six lenses.</h1>
+  <h1>One truth, five lenses.</h1>
   <p>High-spec dashboard graphs for every user category — student, parent, teacher, school &amp; trust,
-     private tutor, and platform admin — all reading the same live mastery record. Hover any mark.</p>
+     and private tutor — all reading the same live mastery record. Hover any mark.</p>
 </header>
 
 <!-- ============================== STUDENT ============================== -->
@@ -155,22 +155,7 @@
   </div>
 </section>
 
-<!-- ============================== ADMIN ============================== -->
-<section id="admin">
-  <div class="sec-head"><span class="who">06 · Platform Admin</span><h2>The whole OS at a glance.</h2><span class="tag">Live production telemetry</span></div>
-  <div class="tiles">
-    <div class="tile"><div class="v">67</div><div class="k">Total users</div><div class="d up">25 new in 30d</div></div>
-    <div class="tile"><div class="v">37</div><div class="k">Returning (30d)</div><div class="d">55% of base</div></div>
-    <div class="tile"><div class="v">85 <small>ACUs</small></div><div class="k">Consumed (30d)</div><div class="d">≈ £0.85 value</div></div>
-    <div class="tile"><div class="v">94%</div><div class="k">Observed AI margin</div><div class="d up">band floor 66% ✓</div></div>
-  </div>
-  <div class="grid">
-    <div class="card c7"><h3>New users — since launch (Sept 2025)</h3><div class="sub">monthly sign-ups · production analytics</div><div id="ch-adm-users"></div></div>
-    <div class="card c5"><h3>Per-action margin vs the 66% floor</h3><div class="sub">ACU value minus provider cost per metered feature</div><div id="ch-adm-margin"></div></div>
-    <div class="card c6"><h3>ACUs consumed by feature (30d)</h3><div class="sub">debit ledger volume</div><div id="ch-adm-acu"></div></div>
-    <div class="card c6"><h3>AI request latency — success profile</h3><div class="sub">deep generation runs 3–31s · fast-fails unbilled</div><div id="ch-adm-lat"></div></div>
-  </div>
-</section>
+
 
 </div>
 
@@ -183,7 +168,7 @@ function hideTip(){tip.style.opacity=0}
 const NS='http://www.w3.org/2000/svg';
 function el(t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e}
 function mount(id,w,h){const s=el('svg',{viewBox:`0 0 ${w} ${h}`});document.getElementById(id).appendChild(s);return s}
-const GOLD='#E3C567',S1='#3987e5',S2='#199e70',S3='#c98500';
+const GOLD='#5FA8E0',S1='#3987e5',S2='#199e70',S3='#c98500';
 
 /* line chart: series=[{name,color,values}], labels[] */
 function lineChart(id,labels,series,opts={}){
@@ -196,7 +181,7 @@ function lineChart(id,labels,series,opts={}){
   labels.forEach((L,i)=>{if(i%Math.ceil(labels.length/6)===0||i===labels.length-1){
     const t=el('text',{x:X(i),y:h-8,'text-anchor':'middle',class:'tick'});t.textContent=L;s.appendChild(t)}});
   if(opts.target){const y=Y(opts.target);
-    s.appendChild(el('line',{x1:p.l,x2:w-p.r,y1:y,y2:y,stroke:'rgba(212,175,55,.5)','stroke-dasharray':'5 6','stroke-width':1}));
+    s.appendChild(el('line',{x1:p.l,x2:w-p.r,y1:y,y2:y,stroke:'rgba(77,157,224,.5)','stroke-dasharray':'5 6','stroke-width':1}));
     const t=el('text',{x:w-p.r+6,y:y+4,class:'tick',fill:GOLD});t.textContent=opts.targetLabel||('target '+opts.target);s.appendChild(t)}
   series.forEach(sr=>{
     if(sr.band){const up=sr.values.map((v,i)=>`${X(i)},${Y(v+sr.band)}`).join(' ');
@@ -236,7 +221,7 @@ function barChart(id,labels,values,opts={}){
     bar.addEventListener('mouseleave',hideTip);
   });
   if(opts.target){const y=Y(opts.target);
-    s.appendChild(el('line',{x1:p.l,x2:w-p.r,y1:y,y2:y,stroke:'rgba(212,175,55,.55)','stroke-dasharray':'5 6'}));
+    s.appendChild(el('line',{x1:p.l,x2:w-p.r,y1:y,y2:y,stroke:'rgba(77,157,224,.55)','stroke-dasharray':'5 6'}));
     const t=el('text',{x:w-p.r-4,y:y-6,'text-anchor':'end',class:'tick',fill:GOLD});t.textContent=opts.targetLabel;s.appendChild(t)}
 }
 
@@ -257,7 +242,7 @@ function groupBars(id,labels,a,b,opts={}){
 }
 
 /* heatmap: sequential single-hue gold ramp (monotonic lightness on dark) */
-const RAMP=['#241E0B','#3A3010','#514315','#68561B','#7F6920','#967C25','#AD8F2B','#C4A339','#D9B95C','#EDD28A'];
+const RAMP=['#0E1E33','#13294B','#18355B','#1E4270','#245086','#2B5F9C','#3370B3','#4283C6','#63A0D8','#8FBFE9'];
 function heat(id,rows,cols,data,opts={}){
   const w=560, cell=Math.min((w-120)/cols.length, 26), h=rows.length*(cell+3)+46, s=mount(id,w,h);
   rows.forEach((r,ri)=>{
@@ -334,17 +319,7 @@ barChart('ch-tut-earn',['Feb','Mar','Apr','May','Jun','Jul'],[640,780,890,1050,1
   {color:S2,unit:'',tipName:'£ net',dlabels:true,h:200,max:1500});
 funnel('ch-tut-pipe',['Matched leads','Enquiries answered','Intro sessions','Booked packages','Repeat clients'],[34,28,19,14,11]);
 
-// ADMIN — real production telemetry
-// monthly sign-ups sum to the 67 production total; final point = the real "25 new in 30d"
-lineChart('ch-adm-users',['Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul'],
-  [{name:'sign-ups',color:GOLD,values:[1,1,2,3,3,4,5,6,8,9,25]}],{min:0,max:28});
-barChart('ch-adm-margin',['Explain','Quiz','Lesson','Course','Review'],[95,96,94,93,94],
-  {color:S2,unit:'%',tipName:'margin',dlabels:true,h:210,target:66,targetLabel:'66% floor'});
-barChart('ch-adm-acu',['Course gen','Lessons','Quiz gen','Explain','Review'],[60,25,50,15,0],
-  {color:S1,tipName:'ACUs',dlabels:true,h:190,
-   tips:['2 × 30','1 × 25','5 × 10','3 × 5','none yet — premium gate']});
-barChart('ch-adm-lat',['<5s','5–10s','10–15s','15–20s','20–31s'],[6,18,18,9,5],
-  {color:S3,tipName:'requests',dlabels:true,h:190});
+
 </script>
 </body>
 </html>

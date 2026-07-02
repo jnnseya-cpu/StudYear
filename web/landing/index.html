@@ -12,9 +12,9 @@
   /* ============ NSEYA X-EXECUTE · Navy/Gold cinematic system ============ */
   :root{
     --navy-950:#060B18; --navy-900:#0B1220; --navy-800:#101B33; --navy-700:#16254A;
-    --gold-300:#F2DCA0; --gold-400:#E3C567; --gold-500:#D4AF37; --gold-600:#A98624;
+    --gold-300:#A9CFF2; --gold-400:#5FA8E0; --gold-500:#3D8FD1; --gold-600:#2B6CB0;
     --ink:#EDF1F8; --ink-2:#AAB6CC; --ink-3:#6B7A96;
-    --good:#5CBB7B; --line:rgba(212,175,55,.16); --glass:rgba(16,27,51,.55);
+    --good:#5CBB7B; --line:rgba(77,157,224,.16); --glass:rgba(16,27,51,.55);
     --serif:"Fraunces","Playfair Display",Georgia,"Times New Roman",serif;
     --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   }
@@ -27,7 +27,7 @@
 
   /* ---------- cinematic backdrop ---------- */
   .stage{position:fixed;inset:0;z-index:-2;background:
-    radial-gradient(1200px 700px at 75% -10%, rgba(212,175,55,.14), transparent 60%),
+    radial-gradient(1200px 700px at 75% -10%, rgba(77,157,224,.14), transparent 60%),
     radial-gradient(900px 600px at -10% 40%, rgba(22,37,74,.9), transparent 65%),
     radial-gradient(1000px 800px at 50% 120%, rgba(16,27,51,.9), transparent 60%),
     var(--navy-950)}
@@ -42,26 +42,33 @@
   /* ---------- nav ---------- */
   nav{position:fixed;top:0;left:0;right:0;z-index:50;backdrop-filter:blur(14px);
       background:linear-gradient(to bottom, rgba(6,11,24,.85), rgba(6,11,24,.35));
-      border-bottom:1px solid rgba(212,175,55,.08)}
+      border-bottom:1px solid rgba(77,157,224,.08)}
   .nav-in{display:flex;align-items:center;justify-content:space-between;height:72px}
-  .logo{font-family:var(--serif);font-size:24px;letter-spacing:.02em;color:var(--ink);text-decoration:none}
+  .logo{font-family:var(--serif);font-size:24px;letter-spacing:.02em;color:var(--ink);text-decoration:none;
+    display:inline-flex;align-items:center;gap:11px}
+  .logo .mark{height:36px;width:36px;filter:drop-shadow(0 0 14px rgba(79,166,224,.45))}
   .logo b{color:var(--gold-400);font-weight:600}
   .nav-links{display:flex;gap:30px;align-items:center}
   .nav-links a{color:var(--ink-2);text-decoration:none;font-size:14px;letter-spacing:.04em;transition:color .25s}
   .nav-links a:hover{color:var(--gold-300)}
-  .nav-links a.btn-gold,.nav-links a.btn-gold:hover{color:var(--navy-950);font-weight:700}
+  .nav-links a.btn-gold,.nav-links a.btn-gold:hover{color:#fff;font-weight:700}
   .acu-pill{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border:1px solid var(--line);
-    border-radius:999px;font-size:13px;color:var(--gold-300);background:rgba(212,175,55,.06)}
+    border-radius:999px;font-size:13px;color:var(--gold-300);background:rgba(77,157,224,.06)}
   .acu-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--good);box-shadow:0 0 10px var(--good)}
 
   /* ---------- buttons ---------- */
   .btn{display:inline-flex;align-items:center;gap:10px;padding:15px 30px;border-radius:10px;
-       font-size:15px;font-weight:600;letter-spacing:.03em;text-decoration:none;transition:all .3s;cursor:pointer}
+       font-size:15px;font-weight:600;letter-spacing:.03em;text-decoration:none;transition:all .3s;cursor:pointer;
+       position:relative;overflow:hidden}
   .btn-gold{background:linear-gradient(135deg,var(--gold-400),var(--gold-500) 60%,var(--gold-600));
-    color:var(--navy-950);box-shadow:0 8px 30px rgba(212,175,55,.28)}
-  .btn-gold:hover{transform:translateY(-2px);box-shadow:0 14px 44px rgba(212,175,55,.42)}
-  .btn-ghost{border:1px solid rgba(212,175,55,.35);color:var(--gold-300);background:rgba(212,175,55,.04)}
-  .btn-ghost:hover{background:rgba(212,175,55,.1);border-color:var(--gold-400)}
+    color:#fff;box-shadow:0 8px 30px rgba(77,157,224,.28)}
+  .btn-gold::after{content:"";position:absolute;top:0;left:-80%;width:50%;height:100%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);
+    transform:skewX(-20deg);transition:left .6s ease}
+  .btn-gold:hover::after{left:130%}
+  .btn-gold:hover{transform:translateY(-2px);box-shadow:0 14px 44px rgba(77,157,224,.42)}
+  .btn-ghost{border:1px solid rgba(77,157,224,.35);color:var(--gold-300);background:rgba(77,157,224,.04)}
+  .btn-ghost:hover{background:rgba(77,157,224,.1);border-color:var(--gold-400)}
 
   /* ---------- hero ---------- */
   header{position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;
@@ -72,8 +79,14 @@
   .kicker::after{background:linear-gradient(90deg,var(--gold-500),transparent)}
   h1{font-family:var(--serif);font-weight:500;font-size:clamp(44px,6.4vw,84px);line-height:1.06;
      letter-spacing:-.015em;max-width:19ch}
-  h1 em{font-style:italic;background:linear-gradient(120deg,var(--gold-300),var(--gold-500));
-     -webkit-background-clip:text;background-clip:text;color:transparent}
+  h1 em{font-style:italic;background:linear-gradient(120deg,var(--gold-300),var(--gold-500),var(--gold-300));
+     background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+     animation:shimmer 6s ease-in-out infinite}
+  @keyframes shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+  .hero-mark{position:absolute;top:50%;right:-6%;transform:translateY(-52%);width:min(46vw,620px);
+    opacity:.09;pointer-events:none;filter:drop-shadow(0 0 80px rgba(79,166,224,.5));
+    animation:float 9s ease-in-out infinite}
+  @keyframes float{0%,100%{transform:translateY(-52%)}50%{transform:translateY(-49%)}}
   .lede{margin-top:28px;font-size:clamp(17px,1.6vw,21px);color:var(--ink-2);max-width:62ch;font-weight:300}
   .lede b{color:var(--ink);font-weight:500}
   .hero-cta{margin-top:44px;display:flex;gap:18px;flex-wrap:wrap;align-items:center}
@@ -97,14 +110,14 @@
   .sec-kicker{font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold-500);margin-bottom:18px}
   h2{font-family:var(--serif);font-weight:500;font-size:clamp(32px,4vw,52px);line-height:1.12;letter-spacing:-.01em;max-width:24ch}
   .sub{margin-top:18px;color:var(--ink-2);max-width:66ch;font-weight:300;font-size:17px}
-  .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(212,175,55,.25),transparent)}
+  .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(77,157,224,.25),transparent)}
 
   /* the loop */
   .loop-grid{margin-top:64px;display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
   .loop-card{position:relative;border:1px solid var(--line);border-radius:16px;padding:34px 28px;
     background:linear-gradient(180deg,rgba(16,27,51,.65),rgba(11,18,32,.85));
     transition:transform .35s,border-color .35s}
-  .loop-card:hover{transform:translateY(-6px);border-color:rgba(212,175,55,.4)}
+  .loop-card:hover{transform:translateY(-6px);border-color:rgba(77,157,224,.4)}
   .loop-card .step{font-family:var(--serif);font-size:15px;color:var(--gold-500);letter-spacing:.28em}
   .loop-card h3{font-family:var(--serif);font-size:26px;font-weight:500;margin:14px 0 12px}
   .loop-card p{font-size:14.5px;color:var(--ink-2);font-weight:300}
@@ -112,22 +125,24 @@
     font-size:18px;z-index:2}
   .loop-card:last-child .arrow{display:none}
 
-  /* dashboard glimpse */
-  .dash{margin-top:70px;border:1px solid rgba(212,175,55,.22);border-radius:20px;overflow:hidden;
+  /* dashboard glimpse — cinematic tilt + parallax */
+  .dash-stage{margin-top:70px;perspective:1400px}
+  .dash{border:1px solid rgba(77,157,224,.22);border-radius:20px;overflow:hidden;
     background:linear-gradient(180deg,rgba(16,27,51,.9),rgba(6,11,24,.95));
-    box-shadow:0 40px 120px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.02) inset}
-  .dash-bar{display:flex;align-items:center;gap:10px;padding:16px 22px;border-bottom:1px solid rgba(212,175,55,.1)}
+    box-shadow:0 40px 120px rgba(0,0,0,.55), 0 0 90px rgba(61,143,209,.12), 0 0 0 1px rgba(255,255,255,.02) inset;
+    transform:rotateX(3deg);transition:transform .25s ease-out;will-change:transform}
+  .dash-bar{display:flex;align-items:center;gap:10px;padding:16px 22px;border-bottom:1px solid rgba(77,157,224,.1)}
   .dash-bar .d{width:11px;height:11px;border-radius:50%;background:#26314e}
   .dash-bar .title{margin-left:10px;font-size:13px;color:var(--ink-3);letter-spacing:.06em}
   .dash-bar .acu{margin-left:auto;font-size:12.5px;color:var(--gold-300);border:1px solid var(--line);
-    padding:5px 12px;border-radius:999px;background:rgba(212,175,55,.05)}
-  .dash-body{display:grid;grid-template-columns:1.35fr 1fr;gap:1px;background:rgba(212,175,55,.08)}
+    padding:5px 12px;border-radius:999px;background:rgba(77,157,224,.05)}
+  .dash-body{display:grid;grid-template-columns:1.35fr 1fr;gap:1px;background:rgba(77,157,224,.08)}
   .panel{background:rgba(11,18,32,.96);padding:26px 28px}
   .panel h4{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px}
   .panel .big{font-family:var(--serif);font-size:34px;color:var(--ink)}
   .panel .big span{color:var(--good);font-size:15px;font-family:var(--sans);margin-left:10px}
   .tiles{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
-  .tile{border:1px solid rgba(212,175,55,.12);border-radius:12px;padding:14px 16px;background:rgba(16,27,51,.5)}
+  .tile{border:1px solid rgba(77,157,224,.12);border-radius:12px;padding:14px 16px;background:rgba(16,27,51,.5)}
   .tile .v{font-family:var(--serif);font-size:24px;color:var(--gold-300)}
   .tile .k{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-top:4px}
   .hm{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin-top:16px}
@@ -138,25 +153,25 @@
   .aud-grid{margin-top:64px;display:grid;grid-template-columns:1fr 1fr;gap:26px}
   .aud{border:1px solid var(--line);border-radius:18px;padding:40px 38px;position:relative;overflow:hidden;
     background:linear-gradient(165deg,rgba(16,27,51,.7),rgba(11,18,32,.9));transition:border-color .35s,transform .35s}
-  .aud:hover{border-color:rgba(212,175,55,.45);transform:translateY(-4px)}
+  .aud:hover{border-color:rgba(77,157,224,.45);transform:translateY(-4px)}
   .aud .glyph{font-family:var(--serif);font-size:52px;color:var(--gold-500);opacity:.28;position:absolute;top:20px;right:28px}
   .aud .who{font-size:12px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-400)}
   .aud h3{font-family:var(--serif);font-size:30px;font-weight:500;margin:14px 0 12px;line-height:1.2}
   .aud p{color:var(--ink-2);font-size:15px;font-weight:300}
   .aud ul{margin-top:18px;list-style:none}
-  .aud li{padding:9px 0;font-size:14.5px;color:var(--ink-2);border-top:1px solid rgba(212,175,55,.08);
+  .aud li{padding:9px 0;font-size:14.5px;color:var(--ink-2);border-top:1px solid rgba(77,157,224,.08);
     display:flex;gap:12px;align-items:baseline}
   .aud li::before{content:"◆";color:var(--gold-500);font-size:9px;flex:none}
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
-  .chip{font-size:12px;padding:6px 13px;border-radius:999px;border:1px solid rgba(212,175,55,.25);
-    color:var(--gold-300);background:rgba(212,175,55,.05);letter-spacing:.04em}
+  .chip{font-size:12px;padding:6px 13px;border-radius:999px;border:1px solid rgba(77,157,224,.25);
+    color:var(--gold-300);background:rgba(77,157,224,.05);letter-spacing:.04em}
 
   /* pricing */
   .price-grid{margin-top:64px;display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
   .price{border:1px solid var(--line);border-radius:16px;padding:30px 22px;text-align:center;
     background:rgba(11,18,32,.75);transition:transform .3s,border-color .3s;position:relative}
-  .price:hover{transform:translateY(-6px);border-color:rgba(212,175,55,.5)}
-  .price.hot{border-color:var(--gold-500);background:linear-gradient(180deg,rgba(212,175,55,.1),rgba(11,18,32,.9))}
+  .price:hover{transform:translateY(-6px);border-color:rgba(77,157,224,.5)}
+  .price.hot{border-color:var(--gold-500);background:linear-gradient(180deg,rgba(77,157,224,.1),rgba(11,18,32,.9))}
   .price.hot::before{content:"MOST POPULAR";position:absolute;top:-11px;left:50%;transform:translateX(-50%);
     font-size:9.5px;letter-spacing:.22em;background:var(--gold-500);color:var(--navy-950);
     padding:4px 12px;border-radius:999px;font-weight:700}
@@ -180,8 +195,27 @@
   .finale .lede{margin:26px auto 0}
   .finale .hero-cta{justify-content:center}
 
-  footer{border-top:1px solid rgba(212,175,55,.1);padding:44px 0;font-size:13px;color:var(--ink-3)}
+  footer{border-top:1px solid rgba(77,157,224,.1);padding:44px 0;font-size:13px;color:var(--ink-3)}
   .foot{display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap}
+
+  /* subject marquee */
+  .marquee{overflow:hidden;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    background:rgba(11,18,32,.55);padding:17px 0;position:relative}
+  .marquee::before,.marquee::after{content:"";position:absolute;top:0;bottom:0;width:120px;z-index:2;pointer-events:none}
+  .marquee::before{left:0;background:linear-gradient(90deg,var(--navy-950),transparent)}
+  .marquee::after{right:0;background:linear-gradient(-90deg,var(--navy-950),transparent)}
+  .mq{display:flex;gap:38px;white-space:nowrap;width:max-content;animation:mq 36s linear infinite;
+    font-size:12.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink-3)}
+  .mq i{color:var(--gold-500);font-style:normal;font-size:9px;align-self:center}
+  @keyframes mq{to{transform:translateX(-50%)}}
+
+  /* cursor glow */
+  #cglow{position:fixed;width:520px;height:520px;border-radius:50%;pointer-events:none;z-index:0;
+    background:radial-gradient(circle,rgba(61,143,209,.10),transparent 65%);
+    transform:translate(-50%,-50%);transition:opacity .4s;mix-blend-mode:screen}
+
+  .finale-mark{width:96px;height:96px;margin:0 auto 26px;display:block;
+    filter:drop-shadow(0 0 34px rgba(79,166,224,.55))}
 
   /* reveal animation */
   .rv{opacity:0;transform:translateY(28px);transition:opacity .9s cubic-bezier(.2,.65,.25,1),transform .9s cubic-bezier(.2,.65,.25,1)}
@@ -196,13 +230,14 @@
   }
 </style>
 </head>
-<body data-palette="#E3C567,#5CBB7B">
+<body data-palette="#5FA8E0,#5CBB7B">
 <div class="stage"></div>
 <div class="grain"></div>
+<div id="cglow"></div>
 
 <nav>
   <div class="wrap nav-in">
-    <a class="logo" href="#">Stud<b>Year</b></a>
+    <a class="logo" href="#"><img class="mark" src="logo.svg" alt="StudYear">Stud<b>Year</b></a>
     <div class="nav-links">
       <a href="#loop">How it works</a>
       <a href="#students">Students</a>
@@ -217,8 +252,10 @@
 
 <!-- ================= HERO ================= -->
 <header>
-  <div class="beam" style="width:640px;height:640px;top:-160px;right:-120px;background:rgba(212,175,55,.16)"></div>
+  <div class="beam" style="width:640px;height:640px;top:-160px;right:-120px;background:rgba(77,157,224,.16)"></div>
   <div class="beam" style="width:520px;height:520px;bottom:-180px;left:-140px;background:rgba(22,37,74,.9);animation-delay:-8s"></div>
+  <div class="beam" style="width:460px;height:460px;top:30%;left:55%;background:rgba(46,107,196,.22);animation-delay:-4s"></div>
+  <img class="hero-mark" src="logo.svg" alt="" aria-hidden="true">
   <div class="wrap">
     <div class="kicker">The UK's AI-Powered Education OS</div>
     <h1>The command centre that turns academic chaos into <em>measurable progress.</em></h1>
@@ -241,7 +278,10 @@
   </div>
 </header>
 
-<div class="divider"></div>
+<div class="marquee" aria-hidden="true"><div class="mq">
+  <span>GCSE</span><i>◆</i><span>A-Level</span><i>◆</i><span>IB</span><i>◆</i><span>BTEC</span><i>◆</i><span>11+ &amp; SATs</span><i>◆</i><span>University</span><i>◆</i><span>AQA</span><i>◆</i><span>Edexcel</span><i>◆</i><span>OCR</span><i>◆</i><span>WJEC</span><i>◆</i><span>Mathematics</span><i>◆</i><span>Sciences</span><i>◆</i><span>English</span><i>◆</i><span>Languages</span><i>◆</i><span>Humanities</span><i>◆</i>
+  <span>GCSE</span><i>◆</i><span>A-Level</span><i>◆</i><span>IB</span><i>◆</i><span>BTEC</span><i>◆</i><span>11+ &amp; SATs</span><i>◆</i><span>University</span><i>◆</i><span>AQA</span><i>◆</i><span>Edexcel</span><i>◆</i><span>OCR</span><i>◆</i><span>WJEC</span><i>◆</i><span>Mathematics</span><i>◆</i><span>Sciences</span><i>◆</i><span>English</span><i>◆</i><span>Languages</span><i>◆</i><span>Humanities</span><i>◆</i>
+</div></div>
 
 <!-- ================= THE LOOP ================= -->
 <section id="loop">
@@ -265,7 +305,7 @@
     </div>
 
     <!-- ============ DASHBOARD GLIMPSE ============ -->
-    <div class="dash rv">
+    <div class="dash-stage rv"><div class="dash" id="dash3d">
       <div class="dash-bar">
         <span class="d"></span><span class="d"></span><span class="d"></span>
         <span class="title">studyear.com — Academic Command Centre</span>
@@ -276,17 +316,17 @@
           <h4>Predicted grade — Chemistry (AQA · GCSE)</h4>
           <div class="big" id="pg">Grade 7 <span>▲ on track for 8</span></div>
           <svg viewBox="0 0 560 170" width="100%" height="170" role="img" aria-label="Predicted grade trajectory rising from grade 5 to grade 7, tracking toward target grade 8">
-            <line x1="0" y1="30" x2="560" y2="30" stroke="rgba(212,175,55,.35)" stroke-width="1" stroke-dasharray="5 6"/>
+            <line x1="0" y1="30" x2="560" y2="30" stroke="rgba(77,157,224,.35)" stroke-width="1" stroke-dasharray="5 6"/>
             <text x="556" y="22" fill="#8fa0be" font-size="11" text-anchor="end" font-family="sans-serif">Target · Grade 8</text>
             <line x1="0" y1="140" x2="560" y2="140" stroke="rgba(170,182,204,.12)" stroke-width="1"/>
             <path d="M0,128 C60,124 90,118 140,110 S240,96 300,82 S440,54 560,44"
-                  fill="none" stroke="#E3C567" stroke-width="2" stroke-linecap="round"/>
+                  fill="none" stroke="#5FA8E0" stroke-width="2" stroke-linecap="round"/>
             <path d="M0,128 C60,124 90,118 140,110 S240,96 300,82 S440,54 560,44 L560,170 L0,170 Z"
                   fill="url(#fade)" opacity=".5"/>
             <defs><linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#E3C567" stop-opacity=".28"/>
-              <stop offset="100%" stop-color="#E3C567" stop-opacity="0"/></linearGradient></defs>
-            <circle cx="560" cy="44" r="5" fill="#E3C567" stroke="#0B1220" stroke-width="2"/>
+              <stop offset="0%" stop-color="#5FA8E0" stop-opacity=".28"/>
+              <stop offset="100%" stop-color="#5FA8E0" stop-opacity="0"/></linearGradient></defs>
+            <circle cx="560" cy="44" r="5" fill="#5FA8E0" stroke="#0B1220" stroke-width="2"/>
             <text x="12" y="122" fill="#8fa0be" font-size="11" font-family="sans-serif">Sep · Grade 5</text>
             <text x="470" y="70" fill="#EDF1F8" font-size="12" font-family="sans-serif">Today · Grade 7</text>
           </svg>
@@ -309,7 +349,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </div></div>
   </div>
 </section>
 
@@ -429,8 +469,9 @@
 
 <!-- ================= FINALE ================= -->
 <section class="finale">
-  <div class="beam" style="width:700px;height:700px;top:40%;left:50%;transform:translate(-50%,-50%);background:rgba(212,175,55,.1)"></div>
+  <div class="beam" style="width:700px;height:700px;top:40%;left:50%;transform:translate(-50%,-50%);background:rgba(77,157,224,.1)"></div>
   <div class="wrap">
+    <img class="finale-mark rv" src="logo.svg" alt="">
     <div class="sec-kicker rv">Turn data into better grades</div>
     <h2 class="rv">Your child's next grade is already visible.<br><em style="font-style:italic;color:var(--gold-300)">Come and see it.</em></h2>
     <p class="lede rv" style="max-width:52ch">The free diagnostic takes minutes. The plan builds itself.
@@ -446,7 +487,7 @@
   <div class="wrap">
     <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;padding-bottom:38px">
       <div>
-        <a class="logo" style="font-size:20px" href="#">Stud<b>Year</b></a>
+        <a class="logo" style="font-size:20px" href="#"><img class="mark" style="height:30px;width:30px" src="logo.svg" alt="">Stud<b>Year</b></a>
         <p style="margin-top:14px;max-width:34ch;font-weight:300;color:var(--ink-3)">StudYear is an AI-powered
           academic command centre, unifying student data, learning, teaching, and communication in one
           intelligent platform.</p>
@@ -471,7 +512,7 @@
         <a href="/cookies" style="display:block;color:var(--ink-2);text-decoration:none;padding:5px 0;font-size:13.5px">Cookies</a>
       </div>
     </div>
-    <div class="foot" style="border-top:1px solid rgba(212,175,55,.08);padding-top:26px">
+    <div class="foot" style="border-top:1px solid rgba(77,157,224,.08);padding-top:26px">
       <span>© StudYear — The AI Academic Operating System</span>
       <span>England &amp; Wales · UK GDPR · Assess → Plan → Learn → Improve</span>
     </div>
@@ -492,11 +533,27 @@
   document.querySelectorAll('[data-count]').forEach(el=>cio.observe(el));
 
   // mastery heatmap — sequential single-hue gold ramp (dark surface), weak→mastered
-  const ramp=["#2A2410","#4A3D14","#6B591C","#8C7524","#A98624","#C29A2E","#D4AF37","#E3C567","#EFD98F","#F7EAB8"];
+  const ramp=["#0F2036","#14304F","#1A4069","#215183","#2B6CB0","#3175B7","#3D8FD1","#5FA8E0","#8CC0EA","#BBD9F4"];
   const hm=document.getElementById('heat');
   const vals=[7,4,9,6,8,3,9,7,5,8, 6,9,4,8,7,9,5,8,6,9, 8,5,9,7,4,8,9,6,8,7];
   vals.forEach(v=>{const c=document.createElement('div');c.style.background=ramp[v];
     c.title=`Mastery ${v*10}%`;hm.appendChild(c)});
+
+  // cursor glow follows the pointer (lerped)
+  const glow=document.getElementById('cglow');
+  let gx=innerWidth/2,gy=innerHeight/3,tx=gx,ty=gy;
+  addEventListener('pointermove',e=>{tx=e.clientX;ty=e.clientY});
+  (function gl(){gx+=(tx-gx)*.08;gy+=(ty-gy)*.08;
+    glow.style.left=gx+'px';glow.style.top=gy+'px';requestAnimationFrame(gl)})();
+
+  // 3D parallax tilt on the dashboard glimpse
+  const d3=document.getElementById('dash3d'),ds=d3.parentElement;
+  ds.addEventListener('pointermove',e=>{
+    const r=ds.getBoundingClientRect();
+    const px=(e.clientX-r.left)/r.width-.5, py=(e.clientY-r.top)/r.height-.5;
+    d3.style.transform=`rotateX(${3-py*5}deg) rotateY(${px*6}deg)`;
+  });
+  ds.addEventListener('pointerleave',()=>{d3.style.transform='rotateX(3deg)'});
 </script>
 </body>
 </html>
