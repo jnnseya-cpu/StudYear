@@ -34,7 +34,8 @@ docs/architecture/
 ├── 07-system-matrix.md         Cross-persona interaction & business-logic matrix
 ├── 08-technical-architecture.md  Multi-tenancy, services, data flows, integrations
 ├── 09-data-model.md            Core entities and relationships
-└── 10-permissions-rbac.md      Roles, scopes, and the permission model
+├── 10-permissions-rbac.md      Roles, scopes, and the permission model
+└── 11-revision-resources.md    Module: the "create a revision resource" study toolset
 ```
 
 ## How to read this

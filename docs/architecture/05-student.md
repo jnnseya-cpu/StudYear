@@ -38,7 +38,9 @@ Native tools that turn passive material into active recall:
 *Architecture:* uploads land in Files; an async generation job (LLM-backed) produces study
 artifacts linked to the source and to curriculum topics. Because artifacts are
 topic-tagged, quiz results **write back into Learning Records mastery** — the sandbox is
-not a silo, it feeds the closed loop.
+not a silo, it feeds the closed loop. The full maker-and-tester toolset (Study Planner,
+Flashcards, Revision Cards/Notes, Quizzes, Mindmaps, Crosswords, Quizsearches, Shared
+Resources) is specified in [11 — Revision Resources](11-revision-resources.md).
 
 ### 2.3 Digital Assignment Portfolio
 A secure repository where students **upload digital coursework, execute coding
