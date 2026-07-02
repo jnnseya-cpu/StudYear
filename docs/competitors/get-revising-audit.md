@@ -360,4 +360,12 @@ students**; its core promise is **organised, self-directed revision.**
 | **Examiner Agent** | **the killer feature Get Revising cannot do**: marks written answers (incl. essays and 6-markers) against the **real mark scheme**, returns **AO-by-AO breakdown**, model improvements, and predicted marks — **this alone justifies premium pricing** |
 | **Motivation Agent** | streaks, workload pacing, **burnout detection from behavioural signals**, wellbeing-aware nudges |
 
+**Teacher agents**
+
+| Agent | Specification |
+|---|---|
+| **Cockpit Agent** | class-level **heatmap of mastery per specification point**; *"your Year 11 set is collectively weak on electrolysis"* with **one-click intervention assignment** |
+| **Assignment Agent** | sets **differentiated homework automatically**: each student gets the version matched to their gap profile; **auto-marked, results flow back to the heatmap** |
+| **Reporting Agent** | drafts parent reports, predicted-grade commentary, and intervention lists **from live data** |
+
 *(Further persona agents follow as extracted.)*
