@@ -810,6 +810,17 @@ Support/contact management · Content quality control · **AI Tutor governance**
 | **Home Learning Planner** | family-friendly schedule around school, rest, sports, tutoring, exams |
 | **Safeguarding / Wellbeing Alerts** | flags unhealthy study patterns, burnout, **repeated failure loops** |
 
+### C. Teacher OS
+
+| Component | Role |
+|---|---|
+| **Class Dashboard** | topic mastery, homework completion, **student risk heatmap**, predicted grade gaps |
+| **AI Lesson Resource Generator** | quizzes, flashcards, worksheets, mindmaps, **exit tickets**, revision packs |
+| **AI Marking Assistant** | marks low-stakes quizzes and written answers **with teacher review** |
+| **AI Intervention Agent** | suggests **which students need support and what intervention to give** |
+| **Curriculum Mapping Agent** | maps resources to GCSE/A-Level/IB/KS3 curriculum, exam board, topic, **assessment objectives** |
+| **Class Revision Campaign Builder** | creates **4-week, 8-week or 12-week revision programmes** |
+
 *(Further sections follow as extracted.)*
 
 > **Cross-portfolio note:** the three-tier token-optimization ladder above is the same
