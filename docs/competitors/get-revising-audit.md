@@ -276,4 +276,61 @@ students**; its core promise is **organised, self-directed revision.**
 - Discussion threads, peer messaging for constructive feedback on resources, and a report
   mechanism for inappropriate behaviour
 
+### 2. Teacher role
+
+- Uses the Study Planner to make students build timetables, with **deadline reminders that
+  help teachers ensure homework is handed in on time** — i.e., **teachers set work, planner
+  enforces it**
+- Uses the library as in-class supplementary material and for teaching learning styles
+- A free pack of **50 student activities** for exam preparation, plus the **Get Revising
+  Book**, KS3/KS4/post-16 **Learning Kits**, and **EPQ teacher/student resources** —
+  photocopiable and **licensed for school networks/VLEs**
+- Teachers **create and rate resources, which drives search ranking**
+
+### 3. School role
+
+- **Whole-school deployment** (the site showcases a whole-school exam-prep rollout case study)
+- Free **Connect Publications resource libraries** placed on school networks and VLEs, **in
+  exchange for promoting the platform to students** — a **distribution-led B2B2C model**
+- **Exam-date alignment with school calendars** (mock/trial exam integration, per school
+  onboarding guides)
+
+### 4. Parent role
+
+- **Thin.** The main offering is a **home-schooling weekly timetable**: deadline tracking,
+  teacher-set-work visibility, study built around family life, work broken into manageable
+  chunks. There is **no genuine parent dashboard, progress reporting, or communication
+  channel.** **This is a structural gap.** *(Contrast: StudYear's parent command centre is a
+  first-class marketed persona — see `../product/studyear-product-spec.md §4.3`.)*
+
+### 5. Private tutor role
+
+- **Not a first-class persona at all.** Tutors piggyback on teacher features. **No tutor
+  marketplace, no client management, no lesson-linked assignments.** **Second structural
+  gap.** *(Contrast: StudYear's tutor marketplace + session pipeline + earnings is one of
+  its four marketed command centres — `../product/studyear-product-spec.md §4.6`.)*
+
+### 6. Admin / platform operations (inferred from visible mechanics)
+
+- Content **taxonomy management** (subject × level × exam board tagging) · rating/ranking
+  systems · community **moderation and abuse reporting** · UGC quality control ·
+  user/account management · resource **licensing** (Connect Publications) ·
+  notification/reminder infrastructure · **freemium/premium gating**
+
+### The honest weaknesses (StudYear's opening)
+
+- **Static one-shot planner** — doesn't replan when a student falls behind
+- **UGC of wildly variable quality with no verification**
+- **Cloze testing as the only "smart" assessment**
+- **No knowledge tracing or adaptive difficulty**
+- **No marking of written answers against mark schemes**
+- **No predictive analytics**
+- **Near-zero parent/tutor value**
+- **No monetisable marketplace layer**
+
+> **Verdict: it's a content warehouse with a calendar.** Every weakness above is a
+> StudYear strength (closed-loop replanning, Examiner marking, knowledge tracing, predictive
+> grades, parent/tutor command centres, marketplace) — this list is effectively StudYear's
+> competitive sales sheet against the largest incumbent library in UK revision.
+
 *(Further sections follow as extracted.)*
