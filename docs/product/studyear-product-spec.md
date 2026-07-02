@@ -54,8 +54,13 @@ the AI compute that powers all four.
 
 ## 4. Roles — real feature extraction
 
-> Authenticated dashboards are private; the following is a senior product extraction from
-> public positioning, terms, and privacy policy. Treat as high-fidelity, not verbatim UI.
+> **Sourcing:** every publicly reachable surface of studyear.com was reviewed — homepage,
+> How It Works, About, Terms, Privacy. In-app surfaces (`/create`, `/search`, dashboards)
+> are client-rendered behind authentication and show only a loading state to an
+> unauthenticated crawl. What follows is therefore (a) features **directly evidenced** on
+> the public site (flagged "publicly confirmed"), plus (b) a **functional reconstruction**
+> of per-role surfaces that the public evidence implies. Treat as high-fidelity, not
+> verbatim UI.
 
 ### 4.1 Platform Admin — controls the whole OS
 
@@ -127,6 +132,26 @@ interactive lessons, and recovery plans are publicly confirmed.)*
 The "AI parent briefing" is the real-product seed of the **Concierge.ai** agent (`14 §5`);
 risk alerts are Progress Intelligence (`§2.4`) surfaced to the guardian.
 
+**Publicly-confirmed Parent Dashboard feature inventory** (full list — live progress, risk
+alerts, intervention insights, and the parent dashboard are publicly confirmed):
+
+| Group | Features |
+|---|---|
+| **Linking & family** | link child account · family dashboard · multi-child management · parent notes |
+| **Visibility** | child progress · weak subjects · study time · plan adherence · completed tasks · missed study sessions · predicted grades |
+| **Alerts & insight** | risk alerts · AI recommendations · weekly AI briefing · academic confidence tracker · **burnout risk indicator** |
+| **Intervention** | parent intervention mode |
+| **Economics** | approve ACU top-ups · buy Premium/Pro plans |
+
+**Enhanced AI agents (parent layer — specialise Concierge.ai):**
+
+| Agent | Role |
+|---|---|
+| **Parent Advisor Agent** | tells parents what to do **without micromanaging** |
+| **Early Warning Agent** | alerts parents when a child is slipping **before grades collapse** |
+| **Family Support Agent** | recommends home routines, revision windows, and emotional-support actions |
+| **ACU Control Agent** | advises when to top up ACUs and **which tools give best value** |
+
 ### 4.4 School — institutional command centre
 
 | Area | Responsibilities |
@@ -146,6 +171,26 @@ the school, consumption with students/teachers. Cohort intelligence + at-risk de
 Progress Intelligence (`§2.4`) aggregated to the institution — the seed of **Principia.ai**
 and **Sentinel.ai** institutional analytics (`14 §1–2`).
 
+**Publicly-confirmed School Command Centre feature inventory** (cohort health maps, staff
+deployment, at-risk intelligence, and shared ACU pools are publicly confirmed):
+
+| Group | Features |
+|---|---|
+| **Setup & structure** | school admin dashboard · create school profile · invite teachers · invite students · create classes · create year groups · create cohorts · assign subjects · assign teachers |
+| **Intelligence** | monitor cohort performance · at-risk student detection · **cohort health map** · school-wide analytics · department dashboards · attendance/engagement insights |
+| **Intervention** | intervention tracking · **safeguarding-style academic alerts** · staff/teacher workload dashboard · parent communication support |
+| **Economics & reporting** | shared ACU pool · school subscription billing · export reports |
+
+**Enhanced AI agents (school layer — specialise Principia.ai):**
+
+| Agent | Role |
+|---|---|
+| **School Improvement Agent** | identifies underperforming cohorts, recommends interventions |
+| **Cohort Risk Agent** | flags students likely to miss target grades |
+| **Staff Deployment Agent** | recommends where teachers/tutors should focus |
+| **Executive Report Agent** | produces weekly headteacher/governor reports |
+| **Funding Impact Agent** | progress evidence for premium/intervention/catch-up programmes |
+
 ### 4.5 School Teacher — the learning-intervention operator
 
 | Area | Responsibilities |
@@ -164,6 +209,25 @@ Framed as an **intervention operator**, not just a grader — the AI teaching as
 real-product seed of **Pedagogue.ai** (`14 §3`): differentiated explanations + intervention
 plans + class-level topic recovery.
 
+**Teacher Workspace feature inventory** (the site references teaching/supporting roles and
+school command intelligence):
+
+| Group | Features |
+|---|---|
+| **Caseload & insight** | teacher dashboard · assigned classes · assigned students · subject performance view · **topic weakness map** · view predicted grades · view mastery by topic · monitor study adherence |
+| **Create & assign** | create assignments · generate quizzes · generate flashcards · generate lesson plans · generate intervention plans · create resources · share resources |
+| **Review & respond** | review assignments · track homework completion · send feedback · flag students for support |
+| **Reporting** | export class reports |
+
+**Enhanced AI agents (teacher layer — specialise Pedagogue.ai):**
+
+| Agent | Role |
+|---|---|
+| **Lesson Planning Agent** | creates differentiated lessons by student ability |
+| **Marking Assistant Agent** | supports feedback, rubric marking, improvement advice |
+| **Intervention Agent** | creates targeted support plans for weak students |
+| **Classroom Insight Agent** | tells the teacher which topics need reteaching |
+
 ### 4.6 Private Tutor — professional command centre
 
 | Area | Responsibilities |
@@ -181,6 +245,54 @@ plans + class-level topic recovery.
 Note the **permissioned diagnostic access** — a tutor sees a student's diagnostic only with
 consent, the real-product basis for Matchmaker.ai's privacy-controlled "deficit handoff"
 (`14 §6.2`).
+
+**Publicly-confirmed Tutor Command Centre feature inventory** (marketplace listings, session
+pipeline, AI teaching tools, and earnings are publicly confirmed):
+
+| Group | Features |
+|---|---|
+| **Storefront** | tutor profile · marketplace listing · subjects offered · pricing · availability · reviews/testimonials |
+| **Pipeline** | session booking · student pipeline · parent enquiries · tutor dashboard |
+| **Teaching** | AI teaching tools · lesson preparation · resource generation · session notes · progress tracking |
+| **Business** | earnings dashboard · payment history · ACU usage |
+| **Trust** | tutor verification · document upload · **safeguarding/compliance checks** |
+
+**Enhanced AI agents (tutor layer — specialise Matchmaker.ai):**
+
+| Agent | Role |
+|---|---|
+| **Tutor Growth Agent** | improves listing, pricing, and conversion |
+| **Session Prep Agent** | generates lesson plans before each session |
+| **Student Progress Agent** | tracks each student, recommends next tutoring focus |
+| **Revenue Agent (tutor)** | monitors earnings, bookings, cancellations, growth opportunities |
+
+## 5a. Machine Learning Layer — the proprietary learning-intelligence engine
+
+StudYear's defensible core: **every quiz, assignment, tutor session, weak topic, missed
+study session, parent action, and teacher intervention becomes intelligence.** The named
+model portfolio:
+
+| # | Model | Predicts / learns | Primary consumers |
+|---|---|---|---|
+| 1 | **Grade prediction** | predicted grade per subject vs target | student, parent, teacher, school |
+| 2 | **Topic mastery** | mastery state per (student, topic) | all engines; the core signal |
+| 3 | **Drop-off / churn risk** | account disengagement & cancellation risk | admin, Revenue Agent, Sentinel.ai |
+| 4 | **Study adherence prediction** | will the student follow this week's plan | Study Roadmap, Mentor.ai, parents |
+| 5 | **Burnout risk** | over-study / fatigue trajectory | Motivation Agent, Family Support, parents |
+| 6 | **Student confidence** | confidence level per subject/topic | diagnostics, briefings, teachers |
+| 7 | **Best-time-to-study** | optimal personal study windows | planner, Family Support Agent |
+| 8 | **Question difficulty** | calibrated item difficulty | quiz generation, adaptive testing |
+| 9 | **Tutor matching** | student↔tutor fit & expected lift | Matchmaker.ai, marketplace |
+| 10 | **Intervention effectiveness** | which interventions work for whom | teachers, School Improvement Agent |
+| 11 | **ACU consumption prediction** | wallet burn & depletion timing | ACU Control Agent, admin, Revenue |
+| 12 | **School cohort risk** | cohort-level target-miss probability | Cohort Risk Agent, school leaders |
+| 13 | **Parent engagement** | guardian responsiveness & channel fit | Concierge.ai, Early Warning Agent |
+
+*Architecture:* these models live in the AI compute layer (`docs/architecture/15`), trained
+on the event stream and feature store of the data-intelligence layer
+(`docs/ai-os/07-data-intelligence-layer.md`), and are consumed by the enhanced agents
+(`docs/ai-os/04-multi-agent-ecosystem.md §3A`). The flywheel: more interactions → better
+models → better interventions → better outcomes → more usage.
 
 ## 5b. The 20 key platform modules
 
@@ -204,6 +316,50 @@ The product decomposes into these modules (build/refine targets); each maps to e
 > Improve** (a.k.a. Assess→Plan→Learn→Improve): it ingests academic data + confidence
 > signals, builds prioritised study schedules and interventions, then **updates mastery
 > metrics from every interaction so plans adapt in real time.**
+
+## 5c. AI Agent OS Architecture — the specialist agent roster
+
+StudYear should be built around **specialist agents**:
+
+| Agent | Domain | Maps to |
+|---|---|---|
+| **Student Tutor Agent** | 24/7 AI tutoring | Mentor.ai / AI Tutor module |
+| **Diagnostic Agent** | baseline & gap detection | Diagnostic Engine (`§2.1`) |
+| **Study Planner Agent** | weekly roadmaps | AI Study Roadmap (`§2.2`) |
+| **Assignment Review Agent** | feedback + grade prediction | Assignment Coach (§3A.8) |
+| **Grade Prediction Agent** | predicted grades | ML model #1 (`§5a`) |
+| **Parent Advisor Agent** | guardian guidance | §3A.9 |
+| **Teacher Assistant Agent** | educator copilot | Pedagogue.ai family (§3A.18–21) |
+| **School Intelligence Agent** | cohort/institutional analytics | Principia.ai family (§3A.13–17) |
+| **Tutor Marketplace Agent** | matching & tutor growth | Matchmaker.ai family (§3A.22–25) |
+| **Resource Generator Agent** | AI learning-resource creation | Resource Generator module |
+| **Safeguarding/Compliance Agent** | GDPR, child data, consent | §3A.3 |
+| **ACU Billing Agent** | wallet metering & billing | ACU Wallet (`§3`) |
+| **Retention Agent** | churn prevention | Revenue/churn models |
+| **Admin Control Agent** | platform governance | Admin Intelligence (§3A.1) |
+
+**Every agent MUST have (governance invariants):**
+
+1. **Clear permissions** — scoped grants, no ambient authority
+2. **Audit trail** — every action logged, immutable
+3. **Cost tracking** — ACU/compute metering per action
+4. **Human approval where needed** — HITL gates on consequential actions
+5. **Explainable recommendations** — every suggestion carries its "why"
+6. **Data access limits by role** — reads bounded by the requester's role scope
+
+*(These six invariants are enforced by the orchestration contract in
+`docs/ai-os/04-multi-agent-ecosystem.md §4` and the AI Governance Agent in
+`docs/ai-os/05-self-managing-platform.md`.)*
+
+## 5d. Strategic upgrade — the strongest version
+
+> **A full AI Academic Operating System where students improve, parents understand,
+> teachers intervene earlier, schools manage performance, tutors grow revenue, and admins
+> control the entire education intelligence layer.**
+
+Punchy positioning:
+
+> **"StudYear — the command centre that turns academic chaos into measurable progress."**
 
 ## 6. Positioning
 

@@ -488,12 +488,254 @@ the generic agent's contract and add StudYear-specific signals, actions and esca
 | **APIs used** | `svc:learning-tools`, `svc:grading-model`, `svc:progress-intelligence`, `svc:acu-ledger`, `router` |
 | **Business value** | Faster, rubric-aligned feedback lifts grades, reduces teacher marking load, differentiates the learning experience |
 
+### 3A.9 Parent Advisor Agent — *specialisation of Concierge.ai; ACU-metered*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Tell parents what to do **without micromanaging** — concrete, low-friction guidance. |
+| **Inputs** | Child progress/mastery, plan adherence, risk alerts, weekly-briefing context, prior advice outcomes |
+| **Outputs** | Actionable advice ("what to ask, what to do this week"), intervention-mode suggestions, do/don't framing |
+| **Permissions** | `child:read(progress, risk)` via guardianship scope only; `recommend:action`; advisory-only |
+| **Triggers** | Weekly briefing cycle, new risk alert, parent request, intervention-mode toggle |
+| **Workflow** | Read child state → rank 1–3 highest-leverage parent actions → phrase non-micromanaging guidance (ACU-priced) → deliver via Concierge.ai → track follow-through |
+| **Escalation** | Persistent risk despite intervention → **Early Warning (§3A.10)** + school/teacher loop; wellbeing signal → Compliance Agent (§3A.3) |
+| **APIs used** | `svc:progress-intelligence`, `svc:messaging`, `svc:acu-ledger`, `router` |
+| **Business value** | Converts parent anxiety into productive action; deepens family engagement and plan renewal |
+
+### 3A.10 Early Warning Agent — *specialisation of Concierge.ai; ACU-metered*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Alert parents when a child is slipping **before grades collapse**. |
+| **Inputs** | Adherence trends, mastery decay, missed sessions, confidence drops, predicted-grade movement |
+| **Outputs** | Early-warning alerts with cause + trajectory, "what changed" deltas, suggested first response |
+| **Permissions** | `child:read(telemetry)` guardianship-scoped; `alert:emit`; frequency-capped to avoid alarm fatigue |
+| **Triggers** | Leading-indicator thresholds (adherence slide, streak break patterns, confidence dip) — deliberately ahead of grade events |
+| **Workflow** | Monitor leading indicators → detect slip pattern → verify against noise (no false-alarm spam) → alert parent with cause + next step → hand to Parent Advisor (§3A.9) |
+| **Escalation** | Multi-signal decline → school Cohort Risk Agent (§3A.14) + teacher; acute pattern → safeguarding path (§3A.3) |
+| **APIs used** | `svc:progress-intelligence`, `svc:alerting`, `router` |
+| **Business value** | The "intervene before failure" promise made real — the platform's core positioning, delivered to the guardian |
+
+### 3A.11 Family Support Agent — *specialisation of Concierge.ai; ACU-metered*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Recommend **home routines, revision windows, and emotional-support actions**. |
+| **Inputs** | Child's study patterns/chronotype, family calendar constraints, burnout-risk indicator, confidence tracker |
+| **Outputs** | Home routine suggestions, optimal revision windows, emotional-support actions, environment tips |
+| **Permissions** | `child:read(patterns)` guardianship-scoped; `recommend:action`; advisory-only, never contacts the child directly |
+| **Triggers** | Weekly cycle, burnout-risk change, exam-period start, parent request |
+| **Workflow** | Analyze when the child actually studies best → fit revision windows to family constraints → pair with emotional-support guidance (ACU-priced) → deliver via Concierge.ai |
+| **Escalation** | Burnout indicator sustained → Motivation Agent (§3A.7) + Early Warning (§3A.10); wellbeing concern → §3A.3 |
+| **APIs used** | `svc:progress-intelligence`, `svc:scheduling`, `router` |
+| **Business value** | Extends the OS into the home; differentiator no gradebook-viewer competitor offers |
+
+### 3A.12 ACU Control Agent — *specialisation of Concierge.ai; wallet-advisory*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Advise **when to top up ACUs and which tools give best value** for this child. |
+| **Inputs** | Wallet balance + burn rate, per-tool ACU cost & outcome lift (mastery gained per ACU), upcoming plan demands (exam countdown) |
+| **Outputs** | Top-up timing advice, best-value tool recommendations, projected depletion warnings, pack-size suggestions |
+| **Permissions** | `wallet:read` (family scope), `recommend:action`; **never auto-purchases** — parent approves all spend |
+| **Triggers** | Low-balance threshold, burn-rate spike, exam-period approach, pack promotion relevance |
+| **Workflow** | Project depletion vs upcoming plan → rank tools by outcome-per-ACU for this child → recommend timing + pack (advice is free/cheap; purchases via Stripe/BitriPay) → learn from outcomes |
+| **Escalation** | Suspected ACU waste/abuse patterns → Revenue Agent (§3A.2); affordability signals → suggest school-pool or plan alternatives, never pressure |
+| **APIs used** | `svc:acu-ledger`, `svc:monetisation`, `svc:progress-intelligence`, `router` |
+| **Business value** | Trustworthy spend guidance raises top-up conversion AND parent trust — value-honest monetisation |
+
+### 3A.13 School Improvement Agent — *specialisation of Principia.ai*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Identify **underperforming cohorts** and recommend interventions. |
+| **Inputs** | Cohort health map, mastery distributions by class/year/subject, intervention history & outcomes |
+| **Outputs** | Underperformance diagnoses (cohort × subject × topic), ranked intervention recommendations, expected-impact estimates |
+| **Permissions** | `tenant:read(cohort-analytics)` school-scoped, aggregate-first; `recommend:action` |
+| **Triggers** | Term checkpoints, cohort-metric threshold breach, leadership request |
+| **Workflow** | Scan cohort health map → isolate underperformance drivers (topic, teaching gap, engagement) → match to intervention playbook with evidence → deliver to School Command Centre |
+| **Escalation** | Cross-cohort systemic issue → Executive Report Agent (§3A.16); individual students → Cohort Risk Agent (§3A.14) |
+| **APIs used** | `svc:cohort-analytics`, `svc:intervention-tracking`, `router` |
+| **Business value** | Turns the school dashboard from reporting into an improvement engine; drives school-plan renewal |
+
+### 3A.14 Cohort Risk Agent — *specialisation of Principia.ai*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Flag **students likely to miss target grades**. |
+| **Inputs** | Per-student predicted vs target grades, adherence/engagement, mastery trajectories, attendance-like activity |
+| **Outputs** | At-risk student lists (ranked by gap × trajectory), risk drivers per student, suggested owner (teacher/tutor) |
+| **Permissions** | `tenant:read(student-risk)` school-scoped; safeguarding-gated detail access; `alert:emit` |
+| **Triggers** | Weekly risk sweep, predicted-grade drop events, pre-report/pre-exam checkpoints |
+| **Workflow** | Compare predicted vs target per student → rank by miss-probability and recoverability → attach drivers → route to Staff Deployment (§3A.15) + teacher workspaces + (consented) parent alerts |
+| **Escalation** | Safeguarding-style academic alert → designated safeguarding lead workflow (§3A.3); cluster risk → School Improvement (§3A.13) |
+| **APIs used** | `svc:progress-intelligence`, `svc:cohort-analytics`, `svc:alerting`, `router` |
+| **Business value** | Institutional early-warning — catches slipping students **before reports or exams**, the school's core buy-reason |
+
+### 3A.15 Staff Deployment Agent — *specialisation of Principia.ai*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Recommend **where teachers/tutors should focus**. |
+| **Inputs** | At-risk lists (§3A.14), teacher workload dashboard, tutor availability, intervention capacity, timetable constraints |
+| **Outputs** | Deployment recommendations (who → which students/topics → when), workload-balance warnings, tutor-referral suggestions |
+| **Permissions** | `tenant:read(workload, risk)` school-scoped; `recommend:action` — deployment decisions stay human |
+| **Triggers** | New risk-sweep output, workload imbalance detected, staff absence, intervention cycle planning |
+| **Workflow** | Match intervention demand (risk × topic) to supply (staff skill × capacity) → optimize assignment within workload caps → propose to leadership → track intervention outcomes |
+| **Escalation** | Demand exceeds staff capacity → recommend vetted marketplace tutors (Matchmaker.ai); chronic overload → Executive Report (§3A.16) |
+| **APIs used** | `svc:cohort-analytics`, `svc:scheduling`, `svc:marketplace`, `router` |
+| **Business value** | Highest-leverage use of scarce teaching time; connects school demand to marketplace supply |
+
+### 3A.16 Executive Report Agent — *specialisation of Principia.ai*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Produce **weekly headteacher/governor reports** automatically. |
+| **Inputs** | School-wide analytics, department dashboards, intervention tracking, risk deltas, ACU-pool utilisation |
+| **Outputs** | Governor/headteacher-ready weekly report (narrative + evidence tables + trends), export-ready formats |
+| **Permissions** | `tenant:read(all-analytics)` school-scoped, aggregate-only in governor outputs; `report:generate` |
+| **Triggers** | Weekly cycle, term/board meeting calendar, on-demand leadership request |
+| **Workflow** | Aggregate week's deltas → select material changes (not noise) → draft narrative grounded in real records → attach evidence → deliver via Reports & Exports (module 16) |
+| **Escalation** | Findings needing action → routed to School Improvement (§3A.13); compliance-relevant items → Compliance Agent (§3A.3) |
+| **APIs used** | `svc:cohort-analytics`, `svc:reporting`, `router` |
+| **Business value** | Hours of leadership reporting automated weekly; makes the platform visible at governor level (retention anchor) |
+
+### 3A.17 Funding Impact Agent — *specialisation of Principia.ai*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Show **progress evidence for premium, intervention, or catch-up programmes** (e.g. Pupil Premium). |
+| **Inputs** | Programme cohort definitions, intervention tracking, before/after mastery + predicted-grade movement, spend records |
+| **Outputs** | Funding-impact evidence packs (cohort progress vs baseline, per-programme), audit-ready documentation |
+| **Permissions** | `tenant:read(programme-cohorts)` school-scoped; aggregate/anonymised outputs for external submission |
+| **Triggers** | Funding-reporting deadlines, programme end, auditor/leadership request |
+| **Workflow** | Define programme cohort baseline → track intervention exposure → measure mastery/grade movement vs comparison → compile evidence pack with methodology notes → export |
+| **Escalation** | Programme showing no impact → School Improvement (§3A.13) for redesign; data gaps → flag to admin |
+| **APIs used** | `svc:cohort-analytics`, `svc:intervention-tracking`, `svc:reporting`, `router` |
+| **Business value** | Turns funding compliance from burden into proof-of-value; a procurement-winning feature for UK schools |
+
+### 3A.18 Lesson Planning Agent — *specialisation of Pedagogue.ai; ACU-metered*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Create **differentiated lessons by student ability** for a teacher's actual class. |
+| **Inputs** | Class mastery distribution, topic weakness map, curriculum objectives, prior lesson outcomes |
+| **Outputs** | Tiered lesson plans (remedial / core / enrichment), attached resources, pacing suggestions |
+| **Permissions** | `class:read(mastery)` roster-scoped; `content:draft` — plans are drafts, teacher publishes |
+| **Triggers** | Teacher request, new topic in scheme of work, post-assessment mastery shift |
+| **Workflow** | Read class distribution → cluster by ability on the topic → generate tiered plan (ACU-priced from teacher/school pool) → attach generated resources → teacher review & publish |
+| **Escalation** | Whole-class gap detected → Classroom Insight Agent (§3A.21); persistent low tier → Intervention Agent (§3A.20) |
+| **APIs used** | `svc:learning-tools`, `svc:cohort-analytics`, `svc:acu-ledger`, `router` |
+| **Business value** | Hours of differentiation work per week automated; the core Pedagogue.ai promise operationalised |
+
+### 3A.19 Marking Assistant Agent — *specialisation of Pedagogue.ai; ACU-metered*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Support **feedback, rubric marking, and improvement advice**; teacher keeps final approval. |
+| **Inputs** | Submissions (incl. multimodal/handwritten), rubric/mark scheme, class context, prior feedback style |
+| **Outputs** | Rubric-aligned mark suggestions + confidence, drafted personalised feedback, improvement steps |
+| **Permissions** | `submission:read` roster-scoped; `grade:suggest` — **never posts a final grade**; human-approval gate mandatory |
+| **Triggers** | New submissions in the marking queue, teacher batch-marking session |
+| **Workflow** | Parse submission vs rubric → suggest mark + evidence-linked comments → queue for teacher approval → on approval, grade posts and mastery updates |
+| **Escalation** | Integrity/plagiarism signal → Fraud Detection Agent + teacher; systematic misconception → Classroom Insight (§3A.21) |
+| **APIs used** | `svc:grading-model`, `svc:learning-tools`, `router` |
+| **Business value** | Cuts marking load dramatically while keeping consistency and teacher authority |
+
+### 3A.20 Intervention Agent — *specialisation of Pedagogue.ai; ACU-metered*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Create **targeted support plans for weak students**. |
+| **Inputs** | Flagged students (teacher or Cohort Risk §3A.14), per-topic mastery gaps, intervention-effectiveness history |
+| **Outputs** | Individual support plans (topics, tasks, cadence, checkpoints), progress-tracking hooks |
+| **Permissions** | `student:read(mastery)` roster-scoped; `plan:draft`; consent-aware when parents are looped in |
+| **Triggers** | Teacher flags a student, risk-sweep referral, failed checkpoint on an existing plan |
+| **Workflow** | Diagnose gap roots (via knowledge graph) → select intervention pattern with best evidence for this profile → draft plan with checkpoints → teacher approves → track & adapt |
+| **Escalation** | No progress after N checkpoints → recommend tutor referral (Staff Deployment §3A.15 / Matchmaker.ai); wellbeing signal → §3A.3 |
+| **APIs used** | `svc:progress-intelligence`, `svc:intervention-tracking`, `svc:acu-ledger`, `router` |
+| **Business value** | Standardises effective intervention; feeds the intervention-effectiveness model flywheel |
+
+### 3A.21 Classroom Insight Agent — *specialisation of Pedagogue.ai*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Tell the teacher **which topics need reteaching**. |
+| **Inputs** | Class-level mastery by topic, quiz/assignment error patterns, question-difficulty calibration |
+| **Outputs** | Reteach recommendations (topic, evidence, affected students), misconception summaries |
+| **Permissions** | `class:read(analytics)` roster-scoped; advisory-only |
+| **Triggers** | Post-assessment analysis, weekly class sweep, teacher query |
+| **Workflow** | Separate "hard question" from "class-wide gap" (difficulty-calibrated) → identify misconception patterns → rank reteach priorities → deliver to teacher dashboard |
+| **Escalation** | Gap spans multiple classes → School Improvement (§3A.13); single-student outliers → Intervention (§3A.20) |
+| **APIs used** | `svc:cohort-analytics`, `svc:assessment`, `router` |
+| **Business value** | Reteaching aimed at real gaps, not guesses — measurable class-level mastery lift |
+
+### 3A.22 Tutor Growth Agent — *specialisation of Matchmaker.ai; ACU-metered*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Improve a tutor's **listing, pricing, and conversion**. |
+| **Inputs** | Listing content & views→enquiry→booking funnel, marketplace comparables, review sentiment, demand by (Level, Subject, Topic) |
+| **Outputs** | Listing improvement suggestions, pricing recommendations vs market, conversion diagnostics |
+| **Permissions** | `tutor:read(own listing, own funnel)`, aggregate market reads only; `recommend:action` |
+| **Triggers** | Funnel underperformance, market demand shift, tutor request, new-tutor onboarding |
+| **Workflow** | Benchmark listing vs high-converting peers (aggregate) → diagnose funnel stage losses → recommend copy/pricing/availability changes → measure post-change lift |
+| **Escalation** | Suspected review manipulation → Fraud Detection Agent + Sentinel.ai; systematic under-demand → suggest subject/level expansion |
+| **APIs used** | `svc:marketplace`, `svc:monetisation`, `router` |
+| **Business value** | Higher tutor earnings → tutor retention → deeper marketplace supply (take-rate compounding) |
+
+### 3A.23 Session Prep Agent — *specialisation of Matchmaker.ai; ACU-metered*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Generate **lesson plans before each session**, grounded in the booked student's actual gaps. |
+| **Inputs** | Booking context, permissioned student diagnostic/mastery (deficit handoff), prior session notes, tutor's resource vault |
+| **Outputs** | Pre-session lesson plan, suggested resources, "what changed since last session" brief |
+| **Permissions** | `student:read(shared-context)` **only for booked, consented students**; `content:draft` |
+| **Triggers** | T-24h before each booked session; post-booking (first-session prep) |
+| **Workflow** | Pull permissioned gap summary → review last session's notes/outcomes → draft targeted plan from tutor's vault + generated material (ACU-priced) → tutor adjusts |
+| **Escalation** | Consent absent → prep from tutor-visible data only, flag to tutor; gap outside tutor's specialism → suggest referral |
+| **APIs used** | `svc:booking`, `svc:progress-intelligence` (scoped), `svc:learning-tools`, `svc:acu-ledger`, `router` |
+| **Business value** | Every session starts targeted (day-one blueprint, every time); visibly better outcomes → reviews → bookings |
+
+### 3A.24 Student Progress Agent (tutor-side) — *specialisation of Matchmaker.ai*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Track **each tutored student** and recommend the **next tutoring focus**. |
+| **Inputs** | Per-student session history, mastery movement on covered topics, package milestones, parent goals |
+| **Outputs** | Per-student progress narratives, next-focus recommendations, milestone-completion evidence |
+| **Permissions** | `student:read(shared-context)` booked+consented scope; `report:generate` for parent-facing summaries |
+| **Triggers** | Post-session, package checkpoint, pre-renewal review |
+| **Workflow** | Measure mastery delta on tutored topics → compare vs package milestones → recommend next focus → draft parent-facing progress summary for tutor approval |
+| **Escalation** | Stalled progress → suggest approach change or Session Prep re-target; milestone dispute → escrow/dispute workflow |
+| **APIs used** | `svc:progress-intelligence` (scoped), `svc:booking`, `svc:reporting`, `router` |
+| **Business value** | Evidence-backed renewals and milestone releases; the mastery write-back loop made visible to the payer |
+
+### 3A.25 Revenue Agent (tutor-side) — *specialisation of Matchmaker.ai*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Monitor a tutor's **earnings, bookings, cancellations, and growth opportunities**. |
+| **Inputs** | Earnings/payout history, booking pipeline & cancellation patterns, utilisation vs availability, seasonal demand |
+| **Outputs** | Earnings analytics, cancellation-pattern warnings, utilisation recommendations, growth opportunities (group sessions, packages, new levels) |
+| **Permissions** | `tutor:read(own earnings, own pipeline)`; `recommend:action`; never touches money movement |
+| **Triggers** | Weekly business review, cancellation spike, utilisation drop, seasonal demand windows (exam season) |
+| **Workflow** | Analyse pipeline & earnings trends → detect leaks (cancellations, unfilled slots) → recommend fixes + growth plays → track adoption & lift |
+| **Escalation** | Payment anomalies → platform Payment Agent (§3.11); persistent cancellation abuse by clients → trust & safety |
+| **APIs used** | `svc:monetisation`, `svc:booking`, `svc:payouts`, `router` |
+| **Business value** | Treats tutors as businesses, not gig workers — the retention moat for marketplace supply |
+
 > **Relationship to generics.** The three admin agents (§3A.1–§3A.3) do not replace
 > §3.2/§3.4/§3.15 — they are the StudYear-tuned deployments the platform actually runs, with the
 > ACU-wallet, minor-data and Control-Centre specifics wired in. The generic specs remain the
-> reusable contract. The five student-layer agents (§3A.4–§3A.8) are specialisations of
-> **Mentor.ai** (`docs/architecture/14-ai-agent-blueprint.md`), all ACU-metered and
-> parental-consent-gated for minors.
+> reusable contract. The specialisation map: **Mentor.ai** → §3A.4–§3A.8 (student),
+> **Concierge.ai** → §3A.9–§3A.12 (parent), **Principia.ai** → §3A.13–§3A.17 (school),
+> **Pedagogue.ai** → §3A.18–§3A.21 (teacher), **Matchmaker.ai** → §3A.22–§3A.25 (tutor)
+> (`docs/architecture/14-ai-agent-blueprint.md`) — all ACU-metered where they consume AI
+> actions and consent/safeguarding-gated wherever minor data is involved. The underlying
+> predictive signals come from the 13-model ML layer
+> (`docs/product/studyear-product-spec.md §5a`).
 
 ---
 
