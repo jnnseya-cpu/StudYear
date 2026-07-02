@@ -749,6 +749,38 @@ questions, and **identify recurring weak topics**.
 - Receive a **free pack of 50 student activities**
 - **Access all platform features free**
 
+### Parent features
+
+Positioned around **home learning** and helping children revise — the parent/home-schooling
+page describes children using **smart testing tools, creating and solving crosswords and
+mindmaps, making quizzes and checking their own learning.** *(No parent dashboard — the
+parent page markets the child's tools, consistent with the second-pass "thin parent role"
+finding.)*
+
+### School features
+
+Teacher accounts · Shared classroom resources · Student performance dashboards · Study
+planning · Exam preparation packs · Past paper bank · Resource library · Support for
+**homework, catching up and exam revision**.
+
+### Private tutor features
+
+**The site does not expose a separate private-tutor role in the main registration flow** —
+visible registration roles are **Student, Parent, Teacher** only. *(Even stronger than the
+second-pass finding: not just un-marketed, structurally absent from signup.)*
+
+> **For the StudYear OS:** private tutor should be a **dedicated role** because it creates
+> strong monetisation and accountability — which StudYear already has as one of its four
+> marketed command centres.
+
+### Admin / platform-owner features (inferred)
+
+Not publicly visible, but clearly required: User management · Role management · Resource
+moderation · Content taxonomy management · Subject/level/exam-board mapping · Past-paper
+management · Ratings/recommendation control · Dashboard analytics · **Advertising /
+sponsorship management** *(revenue-model signal)* · Privacy, safety and compliance ·
+Support/contact management · Content quality control · **AI Tutor governance**.
+
 *(Further sections follow as extracted.)*
 
 > **Cross-portfolio note:** the three-tier token-optimization ladder above is the same
