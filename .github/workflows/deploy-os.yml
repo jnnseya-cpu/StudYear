@@ -1,0 +1,51 @@
+name: Deploy StudYear OS
+
+on:
+  push:
+    branches: [claude/studyear-ecosystem-architecture-f4lu5m, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install workspaces
+        run: npm install
+      - name: Typecheck shared contracts + web
+        run: npm run typecheck --workspace apps/web
+      - name: Build static OS (GitHub Pages target)
+        run: STATIC_EXPORT=1 PAGES_BASE_PATH=/StudYear npm run build --workspace apps/web
+      - name: Landing page at the root + Pages plumbing
+        run: |
+          cp apps/web/public/landing.html apps/web/out/index.html
+          touch apps/web/out/.nojekyll
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

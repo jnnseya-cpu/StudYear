@@ -10,3 +10,8 @@ dist/
 firebase-debug.log
 *.log
 .DS_Store
+node_modules/
+apps/web/out/
+apps/web/.next/
+*.tsbuildinfo
+next-env.d.ts

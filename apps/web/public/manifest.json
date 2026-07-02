@@ -1,0 +1,13 @@
+{
+  "name": "StudYear — The AI Academic Operating System",
+  "short_name": "StudYear",
+  "description": "Diagnostics, AI tutoring, adaptive study plans, assignment review and live progress for students, parents, schools and tutors.",
+  "start_url": "./app/",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#060B18",
+  "theme_color": "#060B18",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
