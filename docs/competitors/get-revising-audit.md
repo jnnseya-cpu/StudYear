@@ -781,6 +781,25 @@ management · Ratings/recommendation control · Dashboard analytics · **Adverti
 sponsorship management** *(revenue-model signal)* · Privacy, safety and compliance ·
 Support/contact management · Content quality control · **AI Tutor governance**.
 
+## 3. The upgraded AI Agent OS version
+
+> Build this as a **full Academic Success Operating System**, not just a revision website.
+
+### A. Student OS
+
+| Agent | Role |
+|---|---|
+| **AI Diagnostic Agent** | detects weak topics, confidence gaps, exam readiness, study behaviour, predicted-grade risk |
+| **AI Study Planner Agent** | live revision plan from exams, school timetable, homework, weak areas, **energy level**, deadline urgency |
+| **AI Tutor Agent** | step-by-step, **Socratic style, no direct cheating** |
+| **AI Past Paper Agent** | marks answers, explains examiner expectations, compares against mark schemes, **highlights missing marks** |
+| **AI Flashcard Agent** | auto-generates flashcards from notes, textbooks, videos, uploaded PDFs |
+| **AI Quiz Agent** | **adaptive quizzes** — harder or easier depending on performance |
+| **AI Mind Map Agent** | any topic → mind maps, timelines, cause/effect grids, comparison tables |
+| **AI Memory Agent** | spaced repetition + **confidence scoring** to decide when to revise again |
+| **AI Exam Technique Agent** | teaches **command words, structure, timing, mark maximisation** |
+| **AI Motivation Agent** | detects burnout, procrastination, low confidence → adjusts workload |
+
 *(Further sections follow as extracted.)*
 
 > **Cross-portfolio note:** the three-tier token-optimization ladder above is the same
