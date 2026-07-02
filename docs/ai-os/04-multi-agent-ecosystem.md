@@ -370,6 +370,60 @@ lists internal services (`svc:*`), the **Model Router** (`router`), and external
 
 ---
 
+## 3A. StudYear-enhanced agents (first-class core catalogue entries)
+
+Three catalogue members are **specialised extensions** of the generic agents above, tuned to
+StudYear's ACU economics, minor-data reality, and the Admin Super Control Centre. They inherit
+the generic agent's contract and add StudYear-specific signals, actions and escalations.
+
+### 3A.1 Admin Intelligence Agent — *extends Admin Control (§3.15); complements Sentinel.ai*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Surface what matters to the operator: unusual usage, failed payments, inactive accounts, fraud risk, and high-value growth opportunities — into the **Admin Super Control Centre**. |
+| **Inputs** | Cross-tenant event backbone, ACU burn/anomaly signals, Stripe/BitriPay failure webhooks, login/activity recency, fraud & risk scores, expansion signals |
+| **Outputs** | Prioritized "what needs attention" feed, anomaly alerts (usage/payment/inactivity), fraud-risk flags, ranked growth opportunities, drill-down cards |
+| **Permissions** | `analytics:cross-tenant(read, admin-signed)`, `alert:emit`, `insight:rank` — **read-only intelligence**; any action goes via Admin Control Agent with MFA |
+| **Triggers** | Continuous stream + scheduled sweeps; ACU-anomaly, payment-failure, inactivity-threshold, fraud-score spike, expansion-signal events |
+| **Workflow** | Ingest signals → detect anomalies (usage/payment/inactivity) → correlate with fraud/risk & growth models → score + rank → publish to Control Centre → suggest next action (deferred to human/Admin Control) |
+| **Escalation** | Fraud risk → **Fraud Detection Agent**; failed payments → **Payment Agent** dunning; churn-shaped inactivity → **Revenue Agent**; platform anomaly → **Sentinel.ai** / System Health (`05`) |
+| **APIs used** | `svc:warehouse`, `svc:metrics`, `svc:fraud-model`, Stripe/BitriPay, `svc:acu-ledger`, `router` |
+| **Business value** | Operator sees the 5 things that matter each morning, not 500 dashboards; faster intervention on revenue leaks, fraud and growth |
+
+### 3A.2 Revenue Agent (ACU-economics build) — *extends Revenue (§3.4) + Pricing (§3.5)*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Own ACU-wallet economics end-to-end: track ACU consumption, subscription conversion and churn risk, and recommend **Dynamic Pricing** actions. |
+| **Inputs** | Per-action ACU consumption, wallet balances & burn-rate, trial→paid conversion funnel, subscription tier, churn signals, provider cost via Model Router, elasticity data |
+| **Outputs** | ACU top-up nudges (pre hard-stop-at-zero), conversion plays, churn-risk scores, **dynamic pricing recommendations** (to Dynamic Pricing engine), NRR forecast inputs |
+| **Permissions** | `acu:read`, `offer:create`, `nudge:send`, `pricing:recommend` — **live price changes require CFO Agent + human sign-off**; cannot alter wallet balances |
+| **Triggers** | ACU pool nearing zero / hard-stop risk, trial expiry, renewal window, usage-tier crossing, provider cost change, churn-signal event |
+| **Workflow** | Meter ACU burn per tenant/pool → predict depletion & churn → if depletion imminent, nudge top-up (avoid hard stop) → for conversion, trigger play → feed elasticity + cost to Dynamic Pricing → recommend price/pack (HITL) → attribute outcome |
+| **Escalation** | Confirmed churn risk → **Retention Agent**; margin/elasticity edge → **Pricing Agent** + CFO; billing dispute → **Payment Agent** |
+| **APIs used** | `svc:acu-ledger`, `svc:billing`, `svc:pricing` (Dynamic Pricing engine), `svc:messaging`, Stripe/BitriPay, `router` |
+| **Business value** | ACU replenishment before hard-stop-at-zero protects UX and revenue; conversion ↑, churn ↓, price captures willingness-to-pay while margin holds |
+
+### 3A.3 Compliance Agent (minor-safeguarding build) — *extends Compliance (§3.2) + GDPR/KYC (§2.8)*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Enforce child-data and safeguarding obligations: GDPR requests, minor-data handling, consent flows, and school safeguarding duties — **students are often minors; consent flows through parent/guardian**. |
+| **Inputs** | DSAR queue, age/eligibility signals, parental-consent ledger (guardianship link), data-residency map, safeguarding policy, school DPA terms, disclosure/incident reports |
+| **Outputs** | Allow/deny gate decisions on minor-data actions, DSAR fulfilment, consent-state enforcement, safeguarding escalations, audit artifacts, residency enforcement |
+| **Permissions** | `policy:evaluate`, `workflow:halt`, `consent:enforce`, `data:erase(approved)` — **cannot approve** high-risk regulated/safeguarding actions; those route to human DPO/DSL |
+| **Triggers** | Any action on minor data, `dsar.opened`, consent grant/withdraw (parent), age-gate crossing, safeguarding-signal event, retention sweep |
+| **Workflow** | Intercept action → resolve subject age & guardianship → verify parental consent state → evaluate policy-as-code → allow / redact / **hard-stop** → on safeguarding signal, escalate immediately → log decision + reason code |
+| **Escalation** | Safeguarding concern → human **Designated Safeguarding Lead** + DPO (immediate); AML/payment → **AML Agent** → MLRO; minor-data egress attempt → block + CTO Agent |
+| **APIs used** | `svc:policy-engine`, `svc:consent` (guardianship graph), `svc:audit`, age/identity verification providers, `router` |
+| **Business value** | Trust with schools & parents (safeguarding is non-negotiable), regulatory exposure ↓ on minor data, consent auditable by construction |
+
+> **Relationship to generics.** These three do not replace §3.2/§3.4/§3.15 — they are the
+> StudYear-tuned deployments the platform actually runs, with the ACU-wallet, minor-data and
+> Control-Centre specifics wired in. The generic specs remain the reusable contract.
+
+---
+
 ## 4. Orchestration model
 
 ### 4.1 Supervisor / router (Chief of Staff)

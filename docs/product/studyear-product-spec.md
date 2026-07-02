@@ -95,6 +95,22 @@ payment processing via **Stripe**, and technical/security data.
 The student *is* the Assess→Plan→Learn→Improve loop in first person: diagnostic → roadmap →
 AI tutor + resource creation → progress tracking, all metered by ACUs.
 
+**Publicly-confirmed Student Command Centre feature inventory** (full list):
+
+| Group | Features |
+|---|---|
+| **Profile & academics** | student profile · academic level · subjects · exam board · target grades · current grades |
+| **Assess** | weak-topic detection · AI diagnostic test · confidence score · mistake tracking · mastery score |
+| **Plan** | study planner · recovery plan · revision timetable · study streaks |
+| **Learn (AI tools)** | AI tutor · interactive lessons · flashcards · quizzes · past papers · AI-generated notes · topic summaries · formula sheets · mind maps · essay plans · practice questions |
+| **Assignment & feedback** | assignment review · predicted grade · instant feedback |
+| **Improve / track** | progress dashboard · visual graphs/charts · saved resources |
+| **Economics** | ACU wallet · premium tools |
+
+*(Source: StudYear public site — AI tutor, personalised plans, quizzes, flashcards, instant
+feedback, diagnostics, assignment review, grade prediction, visual charts, past papers,
+interactive lessons, and recovery plans are publicly confirmed.)*
+
 ### 4.3 Parent — support without micromanaging
 
 | Area | Responsibilities |
