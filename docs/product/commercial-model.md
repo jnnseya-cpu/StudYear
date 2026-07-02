@@ -170,6 +170,11 @@ if estimated_provider_cost + stripe_cost + hosting_allocation > 34% of plan reve
     or require top-up
 ```
 
+> **Threshold note:** a later draft phrased this trigger as "> 66% of plan revenue" — that
+> figure names the **margin target**, not the cost trigger. Enforcing **margin ≥ 66%**
+> requires acting when **cost exceeds 34% of revenue** (cost + margin = 100%). The 34%
+> trigger above is therefore the faithful implementation of the 66%–100% margin band (§1).
+
 **Hard controls:**
 - No negative ACU balance · no unlimited AI
 - **Assignment Review always metered** · video analysis always metered · visual generation
