@@ -525,6 +525,40 @@ set by the GTM playbook's willingness-to-pay research. *(All paid engines govern
 > powers the parent upsell; parent demand seeds the tutor marketplace. Each engine lowers
 > the CAC of the next.**
 
+## 12. Go-To-Market Strategy
+
+### 12.1 Phase one — UK beachhead
+
+- **Wedge:** the **Examiner Agent** as the publicly demonstrable capability no incumbent
+  offers — **free essay-marking campaigns timed to mock seasons** (November–December,
+  February–March).
+- **Distribution:** replicate and beat the incumbent teacher-channel model — free teacher
+  tooling in exchange for classroom adoption, **but with a real teacher product (Cockpit)
+  rather than photocopiable packs.**
+- **Birmingham & Black Country anchor:** leverage existing community-education
+  relationships for the first whole-school pilots and youth-programme alignment with the
+  **UK Youth Guarantee** policy agenda.
+- **Proof assets:** **mock-to-final grade-delta case studies** per pilot school;
+  inspection-ready progress evidence packs for headteachers.
+
+### 12.2 Phase two — Trust and parent expansion
+
+- **Multi-academy-trust sales motion** with Cohort Analytics and Early-Warning as the
+  executive wedge; per-seat commitments with enterprise ACU quotas.
+- **Parent Insight launch** into the installed student base; **referral loops from Family
+  Digest sharing.**
+- **Tutor marketplace opens** in subjects with proven demand density (maths, sciences,
+  English).
+
+### 12.3 Phase three — Francophone corridor
+
+- **Kinshasa launch aligned to Exétat preparation cycles**; French-first surfaces;
+  curriculum corpus for DRC state programmes ingested **through the same RAG pipeline.**
+- **Diaspora-funded accounts as the primary monetisation:** UK/EU relatives fund premium
+  access via BitriPay; **pricing localised to corridor purchasing power.**
+- **Private-school and church-network partnerships** for institutional distribution;
+  **TradeNerve and Scan & Go field infrastructure reused** for on-the-ground presence.
+
 ---
 
 *(Further sections follow as extracted.)*
