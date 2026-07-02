@@ -832,6 +832,27 @@ Support/contact management · Content quality control · **AI Tutor governance**
 | **Resource Quality Engine** | ranks resources by usefulness, exam alignment, **success rate**, teacher approval |
 | **Safeguarding & Compliance Layer** | age controls, data protection, moderation, abuse detection, audit logs |
 
+### E. Private Tutor OS
+
+| Component | Role |
+|---|---|
+| **Tutor Marketplace Profile** | subjects, levels, exam boards, pricing, availability, reviews |
+| **Tutor Student Dashboard** | each student's weak topics, assignments, progress, next lesson plan |
+| **AI Lesson Prep Agent** | prepares lesson materials **automatically from student weaknesses** |
+| **Tutor Report Generator** | **parent-ready** progress reports |
+| **Tutor Matching Agent** | matches students to tutors on subject, exam board, **learning style, budget, availability** |
+
+### F. Admin OS
+
+| Component | Role |
+|---|---|
+| **Super Admin Console** | manage users, roles, schools, tutors, parents, students, permissions |
+| **Content Moderation Agent** | detects poor-quality resources, unsafe content, plagiarism, **exam malpractice** |
+| **AI Governance Console** | monitor AI answers, **hallucination risks**, safeguarding triggers, model performance |
+| **Taxonomy Manager** | subjects, topics, exam boards, levels, assessment objectives |
+| **Commercial Dashboard** | subscriptions, **ACUs**, usage, conversion, school contracts, tutor commissions |
+| **Trust & Safety Dashboard** | reports, blocked content, **under-13 controls**, GDPR requests, audit logs |
+
 *(Further sections follow as extracted.)*
 
 > **Cross-portfolio note:** the three-tier token-optimization ladder above is the same
