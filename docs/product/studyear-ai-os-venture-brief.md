@@ -559,6 +559,33 @@ set by the GTM playbook's willingness-to-pay research. *(All paid engines govern
 - **Private-school and church-network partnerships** for institutional distribution;
   **TradeNerve and Scan & Go field infrastructure reused** for on-the-ground presence.
 
+## 13. Delivery Roadmap
+
+Sequential delivery scopes (phase durations to be confirmed in the engineering plan):
+
+| # | Scope |
+|---|---|
+| **1 — Foundation** | monorepo scaffold; identity/consent; learner-state service; Kafka backbone; **curriculum corpus for three boards**; **KTE v1**; Planner + Content Forge + basic testing |
+| **2 — Premium wedge** | **Examiner Agent GA for two subjects**; Tutor Agent beta; **ACU metering + BitriPay subscriptions**; Student Premium launch |
+| **3 — School motion** | Cockpit, Assignment, Reporting agents; **SSO + MIS integration**; safeguarding regime full-scope; **first whole-school pilots** |
+| **4 — Multi-persona** | Parent Insight; Early-Warning; Integrity Agent; **marketplace alpha with vetted tutors** |
+| **5 — Corridor** | **French surfaces; DRC curriculum corpus; diaspora funding flows; Kinshasa pilot schools** |
+
+*(Aligns with GTM phases (§12): scopes 1–2 power the UK beachhead, 3–4 the trust/parent
+expansion, 5 the francophone corridor. Union with the earlier five-phase roadmaps —
+`deep-platform-extraction-report.md` B7 and `../ai-os/15` — per the
+[mandate](../REQUIREMENTS-MANDATE.md).)*
+
+## 14. KPI Framework
+
+| Domain | North-star & guardrail metrics |
+|---|---|
+| **Learning efficacy** | **mastery gain per study hour** · predicted-vs-actual grade calibration error · retention half-life improvement |
+| **Engagement** | weekly active learners · plan adherence rate · sessions ended by completion vs abandonment |
+| **Commercial** | free→premium conversion · parent attach rate · school seat renewals · marketplace GMV and take-rate revenue · **ACU gross margin** (governed by the 66% mandate, §8) |
+| **Trust & safety** | safeguarding response SLA adherence · verified-content share of top search results · integrity false-positive rate |
+| **Platform** | agent action success rate · p95 agent latency · **ACU cost-to-price ratio** · incident-free days |
+
 ---
 
 *(Further sections follow as extracted.)*
