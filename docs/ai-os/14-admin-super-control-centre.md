@@ -140,9 +140,17 @@
 *(Numeric values are governed in `13-monetisation.md`; the admin edits them here through a versioned, effective-dated price list.)*
 
 **Admin actions**
+
+> **Universal grant & plan authority:** the Platform Admin can grant **free ACUs to any
+> user in any category** (student, parent, teacher, school, tutor, organisation) and can
+> **change any user's subscription model** (upgrade, downgrade, switch plan family, comp a
+> plan). Both are first-class, audited actions — a grant is a ledgered goodwill entry, a
+> plan change is an entitlement event (see §5 "force plan change") — never a silent DB edit.
+
 | Action | Guardrails | Ledgered? |
 |---|---|---|
-| Manual top-up / grant goodwill credit | reason + cap + dual-control above threshold | yes (double-entry) |
+| Manual top-up / grant goodwill credit — **any user, any category** | reason + cap + dual-control above threshold | yes (double-entry) |
+| Change / comp a user's subscription model | entitlement event; effective-dated; dual-control for revenue-negative bulk changes | plan-change event |
 | Deduct / claw back (abuse correction) | reason + dual-control | yes |
 | Refund ACU to money or re-credit | ties to §7 | yes |
 | Edit per-action cost (new version) | effective-dated, cannot backdate applied usage | price-list version event |

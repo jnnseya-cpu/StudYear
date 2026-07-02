@@ -63,7 +63,8 @@ the AI compute that powers all four.
 |---|---|
 | **Manage users** | students, parents, schools, teachers, tutors, staff, partner organisations |
 | **Roles & permissions** | decide what each role can see, edit, approve, create, purchase, assign, export, delete |
-| **Manage ACUs** | top-ups, balances, deductions, refunds policy, usage logs, fraud checks, pricing, **feature cost per action** |
+| **Manage ACUs** | top-ups, balances, deductions, refunds policy, usage logs, fraud checks, pricing, **feature cost per action**; **grant free ACUs to any user in any category** |
+| **Manage subscriptions (per user)** | **change any user's subscription model** — upgrade, downgrade, switch, or comp a plan (audited) |
 | **Manage AI tools** | enable/disable tools, set ACU cost, monitor usage, review errors, **control prompts, safety rules, output quality** |
 | **Content library** | shared resources, uploaded files, generated resources, public/private visibility, **moderation** |
 | **Manage schools** | approve school accounts, create school admin, assign teachers, manage **shared ACU pool**, cohort analytics |

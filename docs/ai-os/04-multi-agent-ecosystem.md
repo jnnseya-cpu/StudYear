@@ -418,9 +418,82 @@ the generic agent's contract and add StudYear-specific signals, actions and esca
 | **APIs used** | `svc:policy-engine`, `svc:consent` (guardianship graph), `svc:audit`, age/identity verification providers, `router` |
 | **Business value** | Trust with schools & parents (safeguarding is non-negotiable), regulatory exposure ↓ on minor data, consent auditable by construction |
 
-> **Relationship to generics.** These three do not replace §3.2/§3.4/§3.15 — they are the
-> StudYear-tuned deployments the platform actually runs, with the ACU-wallet, minor-data and
-> Control-Centre specifics wired in. The generic specs remain the reusable contract.
+### 3A.4 Student Success Agent — *specialisation of Mentor.ai; ACU-metered*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Watch each student's progress daily and recommend exactly what to study next, keeping the Assess→Plan→Learn→Improve loop moving. |
+| **Inputs** | Daily mastery/progress telemetry, AI Study Roadmap state, Diagnostic results, engagement recency, upcoming deadlines/exams, ACU balance |
+| **Outputs** | "Study next" recommendation, updated daily plan, progress nudges, roadmap re-sequencing suggestions to Mentor.ai |
+| **Permissions** | `student:read(progress, roadmap)`, `recommend:action`, `nudge:send` — student-scoped; no grade changes; parental-consent-gated for minors |
+| **Triggers** | Daily scheduled sweep, session completion, mastery-change event, plan-drift detection |
+| **Workflow** | Ingest progress → compare to roadmap targets → detect drift/next-best-topic → generate ranked "study next" (ACU-priced per action) → deliver via Mentor.ai → track follow-through |
+| **Escalation** | Persistent inactivity → **Motivation Agent** + Concierge.ai (parent); systemic weakness → **Weakness Detection Agent**; exam near + off-track → **Exam Readiness Agent** |
+| **APIs used** | `svc:progress-intelligence`, `svc:roadmap`, `svc:acu-ledger`, `svc:messaging`, `router` |
+| **Business value** | Daily "what next" removes decision friction, sustains the learning loop, drives engagement & mastery gains |
+
+### 3A.5 Weakness Detection Agent — *specialisation of Mentor.ai; ACU-metered*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Identify repeated mistakes and knowledge gaps, then create targeted recovery tasks. |
+| **Inputs** | Per-question attempt history, error patterns, topic mastery vectors, misconception signals, Diagnostic + practice results |
+| **Outputs** | Ranked weakness list with root-cause tags, generated recovery/remediation tasks, mastery-gap alerts to roadmap |
+| **Permissions** | `student:read(attempts, mastery)`, `task:create(recovery)`, `recommend:action` — student-scoped; consent-gated for minors |
+| **Triggers** | Repeated-error threshold, low mastery on a topic, post-assessment analysis, Student Success handoff |
+| **Workflow** | Cluster errors → classify misconception/root cause → prioritize by impact × exam-relevance → generate recovery tasks (ACU-priced) → inject into roadmap → verify improvement on retry |
+| **Escalation** | Fundamental prerequisite gap → Pedagogue.ai (teacher); stalled recovery → **Exam Readiness** / **Assignment Coach**; motivation collapse → **Motivation Agent** |
+| **APIs used** | `svc:learning-tools`, `svc:progress-intelligence`, `svc:roadmap`, `svc:acu-ledger`, `router` |
+| **Business value** | Turns mistakes into targeted practice, closes gaps before they compound, raises pass rates |
+
+### 3A.6 Exam Readiness Agent — *specialisation of Mentor.ai; ACU-metered*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Predict exam risk ahead of time and build a **7 / 14 / 30-day rescue plan** to close the gap. |
+| **Inputs** | Exam date/spec, current vs required mastery, weakness list, historical pace, available study time, ACU budget |
+| **Outputs** | Exam-risk score + confidence, tiered **7/14/30-day rescue plan**, daily targets, readiness trajectory |
+| **Permissions** | `student:read(mastery, schedule)`, `plan:create`, `recommend:action`, `nudge:send` — student-scoped; consent-gated for minors |
+| **Triggers** | Exam within window, readiness-risk threshold crossed, weakness-list update, teacher/parent request |
+| **Workflow** | Forecast readiness vs exam target → compute risk → select horizon (7/14/30d by time remaining) → generate prioritized rescue plan (ACU-priced) → schedule daily targets → re-forecast + adapt daily |
+| **Escalation** | High risk + short runway → alert Concierge.ai (parent) + Pedagogue.ai (teacher); ACU depletion risk → **Revenue Agent** top-up nudge; motivation risk → **Motivation Agent** |
+| **APIs used** | `svc:forecasting`, `svc:progress-intelligence`, `svc:roadmap`, `svc:acu-ledger`, `router` |
+| **Business value** | Early warning + a concrete rescue plan converts at-risk students to passes; a headline retention/outcome driver |
+
+### 3A.7 Motivation Agent — *specialisation of Mentor.ai; ACU-metered*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Sustain momentum: encouragement, streak reminders, and early **burnout warnings**. |
+| **Inputs** | Engagement/streak data, session cadence & duration, sentiment/effort signals, milestone events, over-study/fatigue indicators |
+| **Outputs** | Encouragement messages, streak reminders, milestone celebrations, **burnout warnings** (to student + parent), pacing suggestions |
+| **Permissions** | `student:read(engagement)`, `nudge:send`, `alert:emit` — student-scoped; parental-consent + safeguarding-gated for minors; frequency-capped |
+| **Triggers** | Streak-at-risk, milestone reached, inactivity gap, over-study/fatigue pattern, low-effort trend |
+| **Workflow** | Detect momentum/fatigue signal → choose tone/message (bandit-optimized, ACU-priced) → deliver via Mentor.ai (frequency-capped) → on burnout signal, warn + suggest rest + notify parent → measure lift |
+| **Escalation** | Sustained disengagement → **Student Success** + Concierge.ai; wellbeing/safeguarding signal → **Compliance Agent (§3A.3)** + human DSL; churn-shaped drop → Retention Agent |
+| **APIs used** | `svc:engagement`, `svc:messaging`, `svc:acu-ledger`, `router` |
+| **Business value** | Higher retention & daily active use, prevents burnout-driven churn, protects wellbeing (trust with parents) |
+
+### 3A.8 Assignment Coach Agent — *specialisation of Mentor.ai; ACU-metered*
+
+| Field | Spec |
+|---|---|
+| **Purpose** | Review submitted work, predict the likely grade, and give concrete improvement steps before final submission. |
+| **Inputs** | Draft/submitted work, assignment rubric/spec, subject mastery context, prior feedback, exam-board criteria |
+| **Outputs** | Predicted grade + confidence, rubric-mapped feedback, prioritized improvement steps, revised-draft guidance |
+| **Permissions** | `student:read(work, rubric)`, `feedback:create`, `recommend:action` — student-scoped; **advisory only, never submits or self-grades officially**; consent-gated for minors |
+| **Triggers** | Draft submitted for review, assignment deadline approaching, student request, teacher-enabled coaching |
+| **Workflow** | Parse work vs rubric → predict grade (calibrated) → map gaps to rubric criteria → generate ranked improvement steps (ACU-priced) → deliver via Mentor.ai → re-score on revision |
+| **Escalation** | Academic-integrity/plagiarism signal → Pedagogue.ai (teacher) + **Fraud Detection Agent**; predicted fail → **Exam Readiness** + parent alert |
+| **APIs used** | `svc:learning-tools`, `svc:grading-model`, `svc:progress-intelligence`, `svc:acu-ledger`, `router` |
+| **Business value** | Faster, rubric-aligned feedback lifts grades, reduces teacher marking load, differentiates the learning experience |
+
+> **Relationship to generics.** The three admin agents (§3A.1–§3A.3) do not replace
+> §3.2/§3.4/§3.15 — they are the StudYear-tuned deployments the platform actually runs, with the
+> ACU-wallet, minor-data and Control-Centre specifics wired in. The generic specs remain the
+> reusable contract. The five student-layer agents (§3A.4–§3A.8) are specialisations of
+> **Mentor.ai** (`docs/architecture/14-ai-agent-blueprint.md`), all ACU-metered and
+> parental-consent-gated for minors.
 
 ---
 
