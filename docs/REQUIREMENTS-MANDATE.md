@@ -57,6 +57,8 @@ Every content stream received, and where it is implemented in the corpus:
 | 26 | **Founding project description** (genesis document): objectives, 19 build directives, Get Revising inspiration, freemium ratios (80/20 students, 50/50 teachers), vetted-teacher access, GA/Crashlytics/ML, AI-SEO blog — with evolution-mapping to the later corpus | `product/founding-project-description.md` |
 | 27 | **Commercial Reset — Final Recommendation** (operative pricing): £1=100 ACUs, student+parent plans, top-ups, 19-activity ACU tariff, free-plan rules, referral 5% + influencer 20%-first-payment, tutor £10 + 15%, school tiers + bundles, margin-protection pseudocode + expiry controls, public headline offer | `product/commercial-model.md` |
 | 28 | **Margin rule resolution:** minimum **66% margin governs everywhere** — cost ceiling ≤ £0.34 per 100 ACUs; developer rule threshold 34% of plan revenue; free accounts sole exemption | `product/commercial-model.md §1/§11`, `product/studyear-ai-os-venture-brief.md §8` |
+| 29 | **Cinematic landing page** (students all levels, parents, schools, local authorities) + screenshots delivered | `web/landing/index.html` |
+| 30 | **Growth Partner Programme** (complete): 250-ACU verified referrals, four-tier ladder to Strategic Education Partner, 1% lifetime-on-net influencer commission with £10k/mo + £20k/customer caps, per-account-type anti-abuse, payment timing, 20-signal anti-fraud, clawback, margin-protection exclusions, naming + public line | `product/growth-partner-programme.md` |
 
 **Audit rule:** every future stream gets a row here before its commit is pushed.
 

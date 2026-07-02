@@ -255,4 +255,14 @@ unless StudYear approves manually.**
 
 ## 12. Programme naming
 
-*(Name options follow as extracted.)*
+**Best name: StudYear Growth Partner Programme** *(adopted — this document's title).*
+
+Other strong options:
+- StudYear Learning Ambassador Programme
+- StudYear Education Partner Network
+- StudYear Smart Referral Engine
+- StudYear Academic Growth Programme
+
+**Best public line:**
+
+> **"Refer learning. Earn rewards. Help students rise."**
