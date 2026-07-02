@@ -63,6 +63,13 @@ The academic subject a class, offering, resource, objective, or tutor specialism
 Together with **Level** (§1) it forms the primary **discovery/matching key** — a parent
 searching "GCSE Mathematics" filters offerings on `(level=GCSE, subject=Mathematics)`.
 
+> **Subject is level-scoped.** There is not one flat subject list: the valid set depends on
+> the Level. The table below is the **school / further-education set** (Primary–A-level:
+> GCSE, IGCSE, A-level, etc.). **University** has its own, much larger subject taxonomy
+> (§2.4). Store subjects against their level-scope; don't merge the two lists.
+
+### 2.0 School / further-education subjects (Primary–A-level)
+
 | Value | | Value | |
 |---|---|---|---|
 | Accounting | | ICT | |
@@ -108,6 +115,52 @@ Plus the special values: **All**, **Fun**, **Other**.
 | `LearningObjective` | `subject` scope | objectives are subject-bounded |
 | `User` profile (tutor) | `specialisms[]` | tutor's subject specialisms |
 | `StudyPlan` (`11`) | per-subject blocks | planner organises revision by subject |
+
+### 2.4 University subjects (List of UK University Subjects 2026/2027)
+
+Scoped to `level = University`. Far broader than the school set, and includes vocational and
+professional fields. Plus the same special values **All / Other** (and **Fun** where
+enrichment applies).
+
+| | | | |
+|---|---|---|---|
+| Accounting and Finance | Data Science | Land and Property Management | Politics |
+| Adult Nursing | Dentistry | Law | Postgraduate Certificate in Education (PGCE) |
+| Aeronautical and Manufacturing Engineering | Drama Dance and Cinematics | Linguistics | Project Management |
+| Agriculture and Forestry | Economics | Marketing | Psychology |
+| Anatomy and Physiology | Education | Materials Technology | Public Health |
+| Anthropology | Electrical and Electronic Engineering | Mathematics | Real Estate |
+| Archaeology | English | Mechanical Engineering | Robotics |
+| Architecture | Fashion | Medical Technology | Social Policy |
+| Art and Design | Film Making | Medicine | Social Work |
+| Biological Sciences | Food Science | Music | Sociology |
+| Biomedical Science (Biomedicine) | Forensic Science | Neuroscience | Sports Science |
+| Building | General Engineering | Nursing | TESOL |
+| Business and Management Studies | Geography and Environmental Sciences | Occupational Therapy | Veterinary Medicine |
+| Chemical Engineering | Geology | Pharmacology and Pharmacy | Youth Work |
+| Chemistry | Health and Social Care | Philosophy | |
+| Civil Engineering | History | Physics and Astronomy | |
+| Classics and Ancient History | History of Art Architecture and Design | Physiotherapy | |
+| Communication and Media Studies | Hospitality Leisure Recreation and Tourism | | |
+| Complementary Medicine | Information Technology | | |
+| Computer Science | | | |
+| Counselling | | | |
+| Creative Writing | | | |
+| Criminology | | | |
+
+#### 2.4.1 Subject pathways / sub-disciplines
+Some university subjects fan out into **pathways** — related but distinct programmes that a
+learner or tutor may specialise in. Example (Construction & the Built Environment):
+
+| Parent area | Pathways |
+|---|---|
+| Construction Management | Architectural Technology · Building Surveying · Civil Engineering · Construction Management · Quantity Surveying · Real Estate |
+
+*Modelling:* a pathway is a subject that may reference a broader `parent_subject`. Note some
+pathways (Civil Engineering, Real Estate) are **also top-level subjects** in their own right —
+the graph is a DAG, not a strict tree, so store the relationship as an optional parent link
+rather than forcing a single hierarchy. Resolve roll-ups in Admin config (same posture as the
+umbrella/component note in §2.2).
 
 ## 3. Exam Board
 
