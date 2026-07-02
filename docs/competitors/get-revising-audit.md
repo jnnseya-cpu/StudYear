@@ -419,3 +419,205 @@ market payments require where card penetration is low.)*
 ---
 
 **End of second-pass extraction.**
+
+---
+
+# Appendix 2 — Third-pass architectural teardown
+
+> *Framing:* Get Revising's core brilliance relies on **Crowdsourced Value Creation (UGC)**
+> combined with **Algorithmic Utility (the Smart Study Planner)**. However, its
+> architectural model **predates the agentic era**, creating friction points where users
+> must **manually create, tag, filter, and schedule** resources.
+
+## PART 1 — Core system blueprint & feature extraction
+
+Get Revising operates as a **multi-sided educational network** with **6 distinct personas**,
+each possessing unique database privileges, dashboards, and transaction flows.
+
+### 1. Student (Primary Value Consumer & Co-Creator)
+
+The entire system revolves around **optimizing the student's cognitive retrieval and time
+allocation.**
+
+| Feature | Mechanics |
+|---|---|
+| **Smart Revision Timetable Creator** | *Inputs:* exam boards (AQA, Edexcel, OCR, WJEC, IB), target grades, exam dates, personal availability constraints (sports, family, sleep), **current stress/confidence levels**. *Output:* dynamic calendar fragmenting subjects into concrete revision blocks up to test date, leveraging **basic spacing algorithms** |
+| **Peer-to-Peer Resource Bank** | *Actions:* upload, download, filter, bookmark, rate. *Formats:* mind maps, flashcards, structured notes, essays, practice quizzes, crosswords, PowerPoint decks |
+| **Interactive Study & Self-Testing Suites** | flashcard flip engine, interactive matching games, word searches **auto-generated from text inputs or peer datasets** |
+| **Past Papers & AI Tutor Hub** *(recent)* | historical papers by tier (Higher/Foundation) and board; **guided step-by-step resolution interfaces** to prevent drop-off at roadblocks |
+
+### 2. School Teacher (Structural Facilitator)
+
+| Feature | Mechanics |
+|---|---|
+| **Content Curation & Resource Kits** | create verified content sets; push to class cohorts |
+| **Resource Moderation & Governance** | informal **"Teacher Approved" quality stamps** elevating specific UGC above student noise |
+| **Analytics Dashboard (basic)** | study logs, resource engagement, planner compliance → identify disengaged/at-risk pupils |
+
+### 3. School Administrator (Institutional B2B Buyer)
+
+| Feature | Mechanics |
+|---|---|
+| **Cohort & License Management** | bulk CSV provisioning; **SSO integrations (Wonde, RM Unify, Google Workspace for Education)** |
+| **Curriculum Alignment Profiles** | **lock the institutional portal to specific specifications** (e.g., AQA GCSE Science, Edexcel Maths) to eliminate student confusion |
+| **Macro Progress Analytics** | school-wide metrics, cross-departmental adoption logs, predictive exam-readiness dashboards |
+
+### 4. Private Tutor (High-Yield Personalizer)
+
+| Feature | Mechanics |
+|---|---|
+| **Bespoke Assignment Engine** | targeted revision paths, specialized decks, hyper-specific past-paper segments per tutee |
+| **Asynchronous Performance Auditing** | tutee study habits, past-paper error rates, planner adherence **between weekly live sessions** |
+| **Lead Generation & Profiles** | expert-created resources as an **organic marketing funnel** for parent inquiries |
+
+### 5. Parent (Financial Supporter & Safeguarder)
+
+| Feature | Mechanics |
+|---|---|
+| **Observational Dashboard** | high-level engagement (revision hours, past papers done, planner compliance) **without intruding on the student's workflow** |
+| **Milestone & Alert System** | automated **SMS/email** alerts on missed crucial deadlines or completed major benchmarks |
+| **Billing & Subscription Control** | manage access tiers, unlock premium, **fund direct tutor-marketplace interactions** |
+
+### 6. Platform Administrator / Content Moderator (System Operator)
+
+| Feature | Mechanics |
+|---|---|
+| **UGC Quality Assurance Loop** | review flagged material for **copyright violations (scanned textbook pages)** or factual inaccuracy |
+| **Taxonomy & Metadata Engine** | global academic hierarchy: **Subjects → Levels → Exam Boards → Modules → Micro-topics** |
+| **System Analytics & Engagement Funnels** | bounce rates, active usage, **search failure rates**, payment-gateway health |
+
+## PART 2 — Transforming Get Revising into an agentic "Learning OS"
+
+The current framework requires **significant manual effort**: the user actively plans their
+calendar, sorts through thousands of poorly formatted notes, and **self-diagnoses their weak
+spots.** Restructuring as an **Agent-Driven Educational Operating System** transitions the
+experience from **manual execution to automated orchestration.**
+
+### 1. Core infrastructure: system architecture upgrade
+
+Instead of a standard web application on a relational database: an **Orchestration Agent
+Layer** interacting with specialized sub-agents, a unified **Vector Knowledge Graph**, and a
+secure local database layout (a highly efficient **MariaDB** instance optimized for
+**transactional multi-tenancy**).
+
+```
+[User Interface: Next.js Responsive Canvas]
+                 │
+                 ▼
+     [Orchestration Engine Agent]
+                 │
+    ┌────────────┼────────────┬────────────┐
+    ▼            ▼            ▼            ▼
+[Memory]    [Scheduler]   [Grading]   [Synthesizer]
+ Agent        Agent        Agent         Agent
+    │            │            │            │
+    └────────────┼────────────┴────────────┘
+                 ▼
+          [Data Access Layer]
+      (MariaDB & Vector Graph)
+```
+
+- **Orchestration Engine Agent:** synthesizes intent from all 6 personas, coordinating
+  **multi-agent loops** to execute complex workflows.
+- **Vectorized Curriculum Knowledge Graph:** maps the entire UK curriculum (AQA, Edexcel,
+  OCR, WJEC, IB) **down to the specific learning objectives in the exam specs**; every
+  crowdsourced resource, past-paper question, and user flashcard is **vectorized and mapped
+  to these nodes.**
+
+### 2. Advanced multi-agent capabilities across personas
+
+#### 🚀 Student: the Cognitive Co-Pilot
+
+**A. Hyper-Adaptive Neural Scheduler** *(Scheduler Agent)*
+
+| | |
+|---|---|
+| Old way | student manually builds a timetable and updates it when plans change |
+| Agentic upgrade | background worker continuously syncs via APIs with **personal calendars, device usage patterns, and performance metrics** |
+| How it works | score 40% on an organic-chemistry past-paper segment Tuesday afternoon → the agent **automatically shifts Wednesday's study windows**, trims lower-priority review, and inserts an **active-recall session targeting molecular structures** — dynamically keeping the student on track for target grades |
+
+**B. Spaced repetition via voice-based "Blurt" auditing** *(Memory Agent)*
+
+| | |
+|---|---|
+| Old way | flipping static flashcards or rewriting physical notes |
+| Agentic upgrade | high-accuracy voice-to-text powering an **automated verbal active-recall loop** |
+| How it works | agent prompts *"Tell me everything you know about the causes of the 1929 Wall Street Crash"* → student talks freely for two minutes → real-time transcription → analysis **against the official exam-spec mark scheme** → precise marks awarded, missed key terminology highlighted, **next review interval scheduled from performance** |
+
+**C. Real-time UGC enhancement & synthesis** *(Synthesizer Agent)*
+
+| | |
+|---|---|
+| Old way | sifting through thousands of poorly formatted, handwritten, low-quality notes |
+| Agentic upgrade | raw uploads run through an **automated processing pipeline** |
+| How it works | sloppy notes → clean markdown; spelling fixed; key terms extracted → **matching flashcard deck + MCQ quiz auto-built**; factual errors or syllabus departures **flagged before publishing** |
+
+#### 👩‍🏫 School Teacher: the Automated Co-Teacher
+
+**A. Predictive diagnostic reporting**
+
+| | |
+|---|---|
+| Old way | static bar charts of minutes spent on the app |
+| Agentic upgrade | analytics pipeline scans historical performance to **catch learning gaps before they impact exam results** |
+| How it works | actionable insights straight to the dashboard: *"Class 11B has a 68% probability of underperforming on the upcoming Trigonometry module. 14 students are struggling with identical cosine rules during independent study. Click here to push a targeted 10-minute review session directly to their dashboards."* |
+
+**B. Automated assignment generation**
+
+| | |
+|---|---|
+| Old way | hours searching past papers to piece together a customized end-of-topic test |
+| Agentic upgrade | prompt: *"Generate a 30-mark quiz on Section 3.2 of the AQA Physics spec, mixed with past errors made by my specific cohort this month"* → agent assembles the assessment, **completes it with an exact mark scheme**, and prepares a digital distribution template |
+
+#### 🏫 School Administrator: the Operational Intelligence Layer
+
+**A. Institutional curriculum synchronization**
+
+| | |
+|---|---|
+| Old way | manually configuring exam boards for every department at the start of the year |
+| Agentic upgrade | agent **ingests the school's internal curriculum maps/planning documents via file upload** → auto-configures subjects, tiers, and exam boards for every cohort — eliminating setup friction |
+
+**B. Cross-cohort resource optimization**
+
+| | |
+|---|---|
+| Old way | no visibility into whether one department's resources could benefit others |
+| Agentic upgrade | agent as **internal content auditor**: an exceptionally high-performing history revision guide gets flagged to the administrator with a recommendation to **promote it as a standard template across related cohorts** |
+
+#### 🎓 Private Tutor: the Multi-Client Scaling Engine
+
+**A. The Asynchronous Co-Pilot**
+
+| | |
+|---|---|
+| Old way | the tutor spends the **first 15 minutes of an expensive live hour** figuring out what the student struggled with |
+| Agentic upgrade | a comprehensive **prep report 30 minutes before the session** |
+| How it works | *"During independent study this week, James completed 3 past paper questions on quadratic equations but failed twice at the final rearrangement step. Focus today's session on step 3 of the quadratic formula."* |
+
+**B. White-labeled resource generation**
+
+| | |
+|---|---|
+| Old way | hours designing customized worksheets and branding to stand out |
+| Agentic upgrade | feed raw notes → **complete, beautifully formatted revision packages styled to the tutor's personal brand guidelines** — professional look, hours saved |
+
+#### 👪 Parent: frictionless, supportive monitoring
+
+**A. Natural-language progress inquiries**
+
+| | |
+|---|---|
+| Old way | navigating confusing dashboards or nagging the child |
+| Agentic upgrade | a dedicated **conversational parent portal** |
+| How it works | parent asks *"Is Sarah ready for her mock Chemistry exam next Tuesday?"* → agent analyzes study data → *"Sarah has completed 92% of her planned study sessions and scored 74% on her recent practice papers. She's doing great with organic chemistry but could use a quick review of atomic structures over the weekend."* |
+
+**B. Non-intrusive encouragement prompts**
+
+| | |
+|---|---|
+| Old way | finding out a child is behind **only after a failed mock** |
+| Agentic upgrade | monitors study patterns, surfaces **positive, actionable suggestions** |
+| How it works | instead of generic alerts: *"Sarah just finished a challenging 3-hour study stretch on a difficult topic. Now would be a perfect time to offer a quick break or her favorite snack to help keep her spirits up."* |
+
+*(Further PART 2 sections follow as extracted.)*
