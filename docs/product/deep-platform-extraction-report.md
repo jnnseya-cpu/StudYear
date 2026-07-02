@@ -160,9 +160,50 @@ targets.
 | ◆ | Platform telemetry | the live public counters are fed from an internal metrics service |
 | ◆ | GDPR operations | access, rectification, deletion requests; **retention schedules for AI logs and transactions** |
 
+### A3. The ACU economy (confirmed mechanics)
+
+| Rule | Detail |
+|---|---|
+| **Model** | strictly prepaid; **zero balance = AI features hard-disabled**; no overdraft/credit |
+| **Metering** | every AI action has a defined ACU cost, **debited at initiation** |
+| **Purchase** | credit packs via Checkout (Stripe); balance surfaced in top navigation |
+| **Refunds** | all pack purchases **final and non-refundable, including on termination** |
+| **Institutional** | shared ACU pools for schools |
+| **Governance** | consumption **monitored and audited per account** for billing integrity and fraud prevention |
+| **Rationale** | *"No surprise bills, ever"* — usage transparency as a trust feature |
+
+> **Product insight:** ACU is simultaneously the **monetisation engine**, the **rate
+> limiter**, the **cost-of-inference hedge**, and the **behavioural telemetry stream**.
+> Every ACU debit is a **labelled event of learning intent** — the single richest ML
+> training signal the platform owns.
+
+### A4. Confirmed data model (from Privacy Policy)
+
+| Category | Contents |
+|---|---|
+| **Account & Profile** | name, email, role, study level, subjects |
+| **AI Inputs** | exam questions, written answers, summarisation topics, tutor queries |
+| **Usage & Transactional** | feature interactions, AI request logs, ACU transactions |
+| **Payment** | tokenised via Stripe only |
+| **Technical** | IP, browser, device |
+| **Guarantees** | no data sale · AI providers **contractually barred from training on user content** · encryption + access controls · retention tied to account life + legal audit windows |
+
+### A5. Gap analysis (what the current platform does NOT yet do)
+
+| # | Gap |
+|---|---|
+| 1 | **AI acts on request, not on its own initiative** — the loop is closed but **human-cranked** |
+| 2 | Grade prediction exists but **no causal intervention modelling** (what action moves the grade most per ACU spent) |
+| 3 | **Teacher plane is thin** relative to the leadership plane |
+| 4 | No **spaced-repetition / forgetting-curve** science surfaced |
+| 5 | No **multimodal ingestion** advertised (handwritten work, voice, whiteboard photos) |
+| 6 | Marketplace has **no visible AI matching layer** (tutor↔student pairing appears manual/search-driven) |
+| 7 | **Single-student intelligence**; no confirmed cross-cohort/national benchmarking ML |
+| 8 | **Wellbeing/burnout signals absent** — risk is defined academically only |
+
 ---
 
-*(Further Part A sections follow as extracted.)*
+*(Further Part A sections follow as extracted; Part B follows.)*
 
 ---
 
