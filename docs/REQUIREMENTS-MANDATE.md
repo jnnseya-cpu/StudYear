@@ -59,6 +59,8 @@ Every content stream received, and where it is implemented in the corpus:
 | 28 | **Margin rule resolution:** minimum **66% margin governs everywhere** — cost ceiling ≤ £0.34 per 100 ACUs; developer rule threshold 34% of plan revenue; free accounts sole exemption | `product/commercial-model.md §1/§11`, `product/studyear-ai-os-venture-brief.md §8` |
 | 29 | **Cinematic landing page** (students all levels, parents, schools, local authorities) + screenshots delivered | `web/landing/index.html` |
 | 30 | **Growth Partner Programme** (complete): 250-ACU verified referrals, four-tier ladder to Strategic Education Partner, 1% lifetime-on-net influencer commission with £10k/mo + £20k/customer caps, per-account-type anti-abuse, payment timing, 20-signal anti-fraud, clawback, margin-protection exclusions, naming + public line | `product/growth-partner-programme.md` |
+| 31 | **Margin band finalized: 66%–100% on everything** (66% hard floor, optimise toward 100%; free accounts exempt) | `product/commercial-model.md §1` |
+| 32 | **Admin discount-code engine**: fully configurable codes (time window, redemption count, per-user limits, benefit types incl. bonus ACUs, audiences, min spend) — users get exactly what was set; guarded by margin band, commission exclusion, bonus-ACU expiry, anti-abuse, audit | `product/commercial-model.md §12b` |
 
 **Audit rule:** every future stream gets a row here before its commit is pushed.
 

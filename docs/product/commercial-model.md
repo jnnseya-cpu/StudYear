@@ -170,6 +170,45 @@ if estimated_provider_cost + stripe_cost + hosting_allocation > 34% of plan reve
 - Free ACUs expire · **bonus ACUs expire after 60 days** · **referral ACUs expire after 90
   days**
 
+## 12b. Discount-Code Engine (admin-created)
+
+> **Directive:** Admin can create discount codes with **time, number of users, validity and
+> everything else needed** — users redeem them and **get exactly what was set.**
+
+### Code configuration (everything settable by Admin)
+
+| Parameter | Options |
+|---|---|
+| **Code** | custom string or auto-generated; unique |
+| **Benefit type** | % off · fixed £ off · **bonus ACUs** · free period of a plan · plan upgrade |
+| **Benefit value** | as set (e.g. 20% off first month; +200 ACUs; 1 month Premium free) |
+| **Validity window** | start + end date/time — expires automatically |
+| **Total redemption limit** | max number of users who can redeem (e.g. first 500) |
+| **Per-user limit** | typically 1; admin-settable |
+| **Eligible products** | specific plans, ACU packs, school tiers — or all |
+| **Eligible audiences** | student / parent / tutor / school; new-users-only or everyone |
+| **Minimum spend** | optional qualifying threshold |
+| **Stackability** | **off by default** — one code per checkout |
+| **Status** | draft → active → paused → exhausted/expired (auto) |
+
+### Redemption behaviour
+
+- User enters the code at checkout (or via a promo link) → validation checks **window,
+  remaining redemptions, per-user limit, audience, product eligibility, min spend** → on
+  pass, **the user gets exactly what was set** — applied transparently on the invoice/wallet.
+- Every redemption is a ledgered event (who, when, code, benefit granted) feeding the
+  admin's code dashboard: redemptions used/remaining, conversion, revenue impact.
+
+### Guardrails (composition with existing rules)
+
+| Rule | Effect |
+|---|---|
+| **Margin band (§1)** | a code that would push a product's effective margin **below the 66% floor** is flagged and blocked at creation unless Admin overrides with a logged reason — discounts live inside the 66–100% band like everything else |
+| **Commission exclusion** | promo discounts are **deducted from net eligible revenue** — no referral/influencer commission is paid on the discounted portion ([growth programme §9](growth-partner-programme.md)) |
+| **Bonus-ACU expiry** | ACUs granted by codes follow **bonus-ACU expiry (60 days)** (§11) |
+| **Anti-abuse** | coupon abuse is an anti-fraud signal (growth programme §7); per-user limits enforced by account + payment-instrument + device checks |
+| **Audit** | code creation/edits/overrides are dual-controlled where revenue-negative at scale and always audit-logged (Admin console — `../ai-os/14`) |
+
 ## 12. Best final offer (public pricing headline)
 
 | Offer | |
