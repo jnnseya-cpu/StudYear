@@ -110,8 +110,44 @@ AI tutor + resource creation → progress tracking, all metered by ACUs.
 The "AI parent briefing" is the real-product seed of the **Concierge.ai** agent (`14 §5`);
 risk alerts are Progress Intelligence (`§2.4`) surfaced to the guardian.
 
-*(Further roles — School, Teacher, Tutor — are appended here as extracted, in the same
-real-feature style.)*
+### 4.4 School — institutional command centre
+
+| Area | Responsibilities |
+|---|---|
+| **Account & verification** | create school account, verify organisation |
+| **Manage structure** | students, teachers, classes, year groups, subjects, cohorts |
+| **Shared ACU pool** | school buys ACUs and **allocates usage** across students/teachers (`§3`) |
+| **Cohort intelligence** | weak topics across classes, year groups, and subjects |
+| **At-risk detection** | identify students falling behind **before reports or exams** |
+| **Staff deployment** | show leaders where teacher/tutor intervention is needed |
+| **School dashboard** | learning activity (attendance-like), study adherence, mastery improvement, predicted-grade risk |
+| **Resource sharing** | teachers/school create or **approve** learning resources |
+| **Reports** | export performance summaries for leadership, parents, intervention meetings |
+
+The shared ACU pool is the institutional twist on `§3`: procurement and allocation sit with
+the school, consumption with students/teachers. Cohort intelligence + at-risk detection are
+Progress Intelligence (`§2.4`) aggregated to the institution — the seed of **Principia.ai**
+and **Sentinel.ai** institutional analytics (`14 §1–2`).
+
+### 4.5 School Teacher — the learning-intervention operator
+
+| Area | Responsibilities |
+|---|---|
+| **View caseload** | assigned students / classes |
+| **See diagnostics** | diagnostic results and weak topics per student (`§2.1`) |
+| **Create AI resources** | quizzes, flashcards, topic summaries, explanations, revision packs |
+| **Assign tasks** | set tasks to students |
+| **Track** | completion and mastery |
+| **Review submissions** | grade/feedback on student work |
+| **AI teaching assistant** | generate differentiated explanations, intervention plans, class-level topic recovery |
+| **Monitor class risk** | who's behind, who needs attention, who improved |
+| **Feedback** | send to students / parents / school leadership |
+
+Framed as an **intervention operator**, not just a grader — the AI teaching assistant is the
+real-product seed of **Pedagogue.ai** (`14 §3`): differentiated explanations + intervention
+plans + class-level topic recovery.
+
+*(Final role — Tutor — is appended here as extracted, in the same real-feature style.)*
 
 ## 5. How this grounds the rest of the docs
 
