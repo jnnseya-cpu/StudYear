@@ -26,6 +26,12 @@ never a dead artifact, it feeds the closed loop (`00 §5`).
 
 ## 2. The resource types
 
+> The **create-flows** below name how a resource is made; the full persisted
+> `Resource.type` enum (including structured-thinking templates like SWOT / Compare-and-
+> contrast / Timeline and media formats like Audio / Video / Presentation) is canonicalised
+> in [12 §5 — Resource Type](12-reference-data.md). Every resource also carries the
+> `(Level, Subject, Exam Board, Topic)` specification tuple from [12 §§1–4](12-reference-data.md).
+
 | Tool | What it is | Testable? | Shareable? | Primary generator |
 |---|---|:--:|:--:|---|
 | **Study Planner** | a revision timetable built from subjects + free-time + deadline/exam date | – | ✓ | scheduling optimizer |
