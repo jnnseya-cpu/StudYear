@@ -853,6 +853,33 @@ Support/contact management · Content quality control · **AI Tutor governance**
 | **Commercial Dashboard** | subscriptions, **ACUs**, usage, conversion, school contracts, tutor commissions |
 | **Trust & Safety Dashboard** | reports, blocked content, **under-13 controls**, GDPR requests, audit logs |
 
+## 4. Machine learning layer
+
+**Signals collected:**
+
+| | | |
+|---|---|---|
+| Quiz scores | Missed planner tasks | Parent engagement |
+| Past paper attempts | Topic repetition | Tutor feedback |
+| Flashcard confidence | Resource ratings | Exam-board alignment |
+| Time spent studying | Teacher recommendations | Written-answer marking data |
+
+**ML then powers:**
+
+| | |
+|---|---|
+| Predicted grade engine | Drop-off risk |
+| Weak-topic detection | Exam readiness score |
+| Study plan optimisation | Confidence score |
+| Resource recommendation | Knowledge retention score |
+| Tutor matching | Best-time-to-study recommendation |
+| Burnout prediction | |
+
+*(Mirrors and extends the 13-model StudYear ML layer —
+`../product/studyear-product-spec.md §5a`; per the
+[mandate](../REQUIREMENTS-MANDATE.md), implementations satisfy the **union**: exam
+readiness and knowledge-retention scores here add to the StudYear portfolio.)*
+
 *(Further sections follow as extracted.)*
 
 > **Cross-portfolio note:** the three-tier token-optimization ladder above is the same
