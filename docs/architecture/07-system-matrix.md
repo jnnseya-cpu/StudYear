@@ -52,6 +52,30 @@ Commerce ──payout──▶ Tutor        Admin ◀── engagement/revenue/o
 Every arrow is a real kernel-service call; no persona touches another persona's store
 directly.
 
+## 2b. The cross-pollination thesis (PM summary)
+
+What makes Studyear valuable is **data exchange across otherwise-siloed user types**.
+Instead of leaving schools and private tutors in separate systems, the platform makes them
+one integrated network. The canonical value chain:
+
+```
+[School Teacher updates Gradebook]
+        │  triggers alert
+        ▼
+[Parent notified of learning gap]
+        │  one-click booking
+        ▼
+[Private Tutor hired via Marketplace]
+        │  syncs workspace / mastery
+        ▼
+[Student receives targeted assistance]
+```
+
+This interconnectedness is the business case: it **maximizes retention, raises the lifetime
+value of each account, and turns the platform from a simple utility into an indispensable
+ecosystem** — no single-persona product can reproduce the chain, because each arrow crosses
+a persona boundary that only a shared kernel can bridge.
+
 ## 3. Cross-persona business-logic touchpoints
 
 | Trigger (by) | Rule / policy applied | Effect (to whom) |
