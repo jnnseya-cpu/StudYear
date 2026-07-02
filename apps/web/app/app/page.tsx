@@ -1,216 +1,59 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import {
-  ACU_PER_POUND,
-  ACU_TARIFF,
-  AgentId,
-  FREE_TIER,
-  PARENT_PLANS,
-  ROLES,
-  SCHOOL_PLANS,
-  STUDENT_PLANS,
-  type MeteredActivity,
-  type Plan,
-  type Role,
-} from '@studyear/shared';
+import { useEffect } from 'react';
+import { PERSONAS } from './personas';
 
 /**
- * /app — the StudYear OS shell.
- * One console, six lenses: every persona from the shared ROLES contract gets a
- * purpose-built surface (modules, wallet, analytics deep-links) reading the same
- * shared kernel of tariffs, plans and agent registry.
+ * /app — account chooser. Every user category has its own console route
+ * (/app/student/, /app/parent/, …) and its own dashboard
+ * (/dashboards/student/, …); this page is the front door between them.
  */
 
-type Module = {
-  agent: AgentId;
-  label: string;
-  desc: string;
-  tariff?: MeteredActivity;
-};
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 
-const PERSONAS: Record<
-  Role,
-  { label: string; strap: string; hash: string; dashboard: string; modules: Module[]; plans?: Plan[] }
-> = {
-  student: {
-    label: 'Student',
-    strap: 'Study smarter, not harder.',
-    hash: 'student',
-    dashboard: 'student',
-    plans: STUDENT_PLANS,
-    modules: [
-      { agent: AgentId.Planner, label: 'Study Planner', desc: 'A personalised plan in under 5 minutes — weak topics weighted heaviest.', tariff: 'study_planner' },
-      { agent: AgentId.Tutor, label: 'AI Tutor', desc: 'Homework & exam help, 24/7. Teaches the method, never just the answer.', tariff: 'homework_help' },
-      { agent: AgentId.Examiner, label: 'Academic Diagnostic', desc: 'Find exactly what you know, forget and need next.', tariff: 'academic_diagnostic' },
-      { agent: AgentId.ContentForge, label: 'Resource Maker', desc: 'Flashcards, quizzes, notes, mindmaps — generated or your own.', tariff: 'flashcards' },
-      { agent: AgentId.Examiner, label: 'Predicted Grade', desc: 'Live grade trajectory with confidence band vs your target.', tariff: 'predicted_grade' },
-      { agent: AgentId.Motivation, label: 'Streaks & Points', desc: 'Momentum you can see — streaks, points, mastery per subject.' },
-    ],
-  },
-  parent: {
-    label: 'Parent',
-    strap: 'Clarity without micromanaging.',
-    hash: 'parent',
-    dashboard: 'parent',
-    plans: PARENT_PLANS,
-    modules: [
-      { agent: AgentId.FamilyDigest, label: 'Family Digest', desc: 'Weekly plain-English summary of every child’s momentum.' },
-      { agent: AgentId.EarlyWarning, label: 'Risk Alerts', desc: 'Alerts fire before grades collapse — not after.' },
-      { agent: AgentId.Escalation, label: 'Book Support', desc: 'One tap from an alert to a vetted tutor session.', tariff: 'tutor_session_short' },
-      { agent: AgentId.Reporting, label: 'Progress Reports', desc: 'The same mastery record their teachers see.', tariff: 'diagnostic_results' },
-    ],
-  },
-  teacher: {
-    label: 'Teacher',
-    strap: 'Intervene weeks before mocks.',
-    hash: 'teacher',
-    dashboard: 'teacher',
-    modules: [
-      { agent: AgentId.ClassCockpit, label: 'Class Cockpit', desc: 'Mastery heatmap: students × spec topics, flagged at-risk.' },
-      { agent: AgentId.Assignment, label: 'Assignment Review', desc: 'AI pre-marks against the mark scheme; you approve.', tariff: 'assignment_review' },
-      { agent: AgentId.ContentForge, label: 'Lesson Content', desc: 'Interactive lessons and quizzes aligned to your board.', tariff: 'interactive_lesson' },
-      { agent: AgentId.Reporting, label: 'Parent Reporting', desc: 'Evidence-backed reports generated, not typed.' },
-    ],
-  },
-  school_admin: {
-    label: 'School',
-    strap: 'Whole-cohort intelligence.',
-    hash: 'school',
-    dashboard: 'school',
-    plans: SCHOOL_PLANS,
-    modules: [
-      { agent: AgentId.CohortAnalytics, label: 'Cohort Health Map', desc: 'Predicted vs target by department, year and class.' },
-      { agent: AgentId.EarlyWarning, label: 'Early-Warning Board', desc: 'Every at-risk student, ranked by intervention urgency.' },
-      { agent: AgentId.Taxonomy, label: 'Curriculum Coverage', desc: 'Spec coverage and pace across every teaching group.' },
-      { agent: AgentId.FraudBillingOps, label: 'Shared ACU Pool', desc: 'One pool, per-department allocations, zero surprise bills.' },
-    ],
-  },
-  tutor: {
-    label: 'Tutor',
-    strap: 'Teach more, admin less.',
-    hash: 'tutor',
-    dashboard: 'tutor',
-    modules: [
-      { agent: AgentId.MarketplaceMatch, label: 'Get Booked', desc: 'Publish availability & offerings; matched to demand.' },
-      { agent: AgentId.SessionPrep, label: 'Session Prep', desc: 'Arrive knowing exactly what the student got wrong last week.', tariff: 'paper_analysis' },
-      { agent: AgentId.TutorWorkspace, label: 'Tutor Workspace', desc: 'Notes, consent-scoped mastery views, session history.' },
-      { agent: AgentId.Reporting, label: 'Earnings', desc: 'Pipeline, payouts and repeat-booking analytics.' },
-    ],
-  },
-  platform_admin: {
-    label: 'Admin',
-    strap: 'Run the platform, end to end.',
-    hash: 'admin',
-    dashboard: '',
-    modules: [
-      { agent: AgentId.FraudBillingOps, label: 'Billing Ops', desc: 'Wallets, invoices, refunds and payment operations.' },
-      { agent: AgentId.Moderation, label: 'Moderation', desc: 'Content and marketplace safety queues.' },
-      { agent: AgentId.ContentVerification, label: 'Content Verification', desc: 'Board-alignment checks on generated material.' },
-      { agent: AgentId.Integrity, label: 'Integrity', desc: 'Academic-integrity signals across submissions.' },
-    ],
-  },
-};
-
-const poundsFor = (acus: number) => `£${(acus / ACU_PER_POUND).toFixed(2)}`;
-// deterministic thousands separator — toLocaleString() differs between build-time
-// Node and the browser, which breaks hydration
-const fmt = (n: number) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-const price = (pence: number) => (pence === 0 ? 'Free' : `£${(pence / 100).toFixed(pence % 100 ? 2 : 0)}/mo`);
-
-export default function OSShell() {
-  const [role, setRole] = useState<Role>('student');
-
+export default function AccountChooser() {
+  // legacy deep links: /app#school → /app/school/
   useEffect(() => {
-    const fromHash = () => {
-      const h = window.location.hash.replace('#', '');
-      const match = ROLES.find((r) => PERSONAS[r].hash === h);
-      if (match) setRole(match);
-    };
-    fromHash();
-    window.addEventListener('hashchange', fromHash);
-    return () => window.removeEventListener('hashchange', fromHash);
+    const h = window.location.hash.replace('#', '');
+    if (PERSONAS.some((p) => p.slug === h)) window.location.replace(`${BASE}/app/${h}/`);
   }, []);
 
-  const p = PERSONAS[role];
-  const walletAcus = 512; // demo balance — production reads the ledger via backend/functions
-  const deepSessions = useMemo(() => Math.floor(walletAcus / ACU_TARIFF.tutor_session_deep), [walletAcus]);
-
   return (
-    <main className="os">
-      {/* raw injection: <style>{text}</style> gets entity-escaped by SSR but parsed
-          raw by the browser, which guarantees a hydration mismatch */}
+    <main className="pick-os">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
-
       <header className="bar">
-        <a className="logo" href="../">
+        <a className="logo" href={`${BASE}/`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="mark" src="../logo.svg" alt="" width={34} height={34} />
+          <img className="mark" src={`${BASE}/logo.svg`} alt="" width={34} height={34} />
           Stud<b>Year</b> <span className="os-tag">OS</span>
         </a>
-        <nav className="switch" aria-label="Choose your role">
-          {ROLES.map((r) => (
-            <button key={r} className={r === role ? 'on' : ''} onClick={() => { setRole(r); window.location.hash = PERSONAS[r].hash; }}>
-              {PERSONAS[r].label}
-            </button>
-          ))}
-        </nav>
-        <div className="wallet" title={`£1 = ${ACU_PER_POUND} ACUs · hard stop at zero — no surprise bills`}>
-          <span className="dot" /> {walletAcus} ACUs <small>≈ {deepSessions} deep sessions</small>
-        </div>
       </header>
 
       <section className="hero">
-        <p className="kicker">{p.label} console</p>
-        <h1>{p.strap}</h1>
+        <p className="kicker">Choose your account</p>
+        <h1>One OS. A console for every seat at the table.</h1>
         <p className="lede">
-          Every surface below reads the same live mastery record. Prepaid ACU wallet — {ACU_PER_POUND} ACUs to the pound,
-          a hard stop at zero, and the free tier ships {FREE_TIER.acusPerQuarter} ACUs a quarter.
+          Each user category gets its own account, its own console and its own dashboard —
+          all reading the same live mastery record.
         </p>
-        <div className="cta">
-          <a className="btn gold" href={p.dashboard ? `../dashboards/#${p.dashboard}` : '../dashboards/'}>Open {p.label.toLowerCase()} analytics →</a>
-          {role === 'student' && <a className="btn ghost" href="../study/">Open study workspace</a>}
-        </div>
       </section>
 
-      <section className="modules">
-        {p.modules.map((m) => (
-          <article key={m.agent + m.label} className="mod">
-            <div className="agent">{m.agent}</div>
-            <h3>{m.label}</h3>
-            <p>{m.desc}</p>
-            <div className="foot">
-              {m.tariff ? (
-                <span className="tariff">{ACU_TARIFF[m.tariff]} ACUs · {poundsFor(ACU_TARIFF[m.tariff])}</span>
-              ) : (
-                <span className="tariff free">included</span>
-              )}
-              <span className="go">launch →</span>
-            </div>
-          </article>
+      <section className="cards">
+        {PERSONAS.map((p) => (
+          <a key={p.slug} className="pcard" href={`${BASE}/app/${p.slug}/`}>
+            <span className="avatar">{p.label[0]}</span>
+            <span className="who">{p.label}</span>
+            <h2>{p.strap}</h2>
+            <span className="acct">{p.account.name} · {p.account.detail}</span>
+            <span className="go">Enter {p.label.toLowerCase()} console →</span>
+          </a>
         ))}
       </section>
 
-      {p.plans && (
-        <section className="plans">
-          <h2>{p.label} plans</h2>
-          <div className="plan-row">
-            {p.plans.map((pl) => (
-              <article key={pl.id} className="plan">
-                <h4>{pl.label}</h4>
-                <div className="pv">{price(pl.monthlyPence)}</div>
-                <div className="pa">{fmt(pl.acus)} ACUs{pl.monthlyPence === 0 ? ' / quarter' : ' / month'}</div>
-                {pl.positioning && <p>{pl.positioning}</p>}
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
-
       <footer className="os-foot">
-        <a href="../">Home</a>
-        <a href="../study/">Study workspace</a>
-        <a href="../dashboards/">Analytics</a>
+        <a href={`${BASE}/`}>Home</a>
+        <a href={`${BASE}/study/`}>Study workspace</a>
+        <a href={`${BASE}/dashboards/`}>Dashboards</a>
         <span>© StudYear — the AI Academic Operating System</span>
       </footer>
     </main>
@@ -218,55 +61,35 @@ export default function OSShell() {
 }
 
 const CSS = `
-  .os{min-height:100vh;max-width:1240px;margin:0 auto;padding:0 32px 60px;
+  .pick-os{min-height:100vh;max-width:1240px;margin:0 auto;padding:0 32px 60px;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-  .os a{text-decoration:none;color:inherit}
-  .bar{display:flex;align-items:center;gap:18px;padding:20px 0;border-bottom:1px solid rgba(77,157,224,.14);flex-wrap:wrap}
+  .pick-os a{text-decoration:none;color:inherit}
+  .bar{display:flex;align-items:center;gap:18px;padding:20px 0;border-bottom:1px solid rgba(77,157,224,.14)}
   .logo{font-family:Georgia,serif;font-size:22px;color:#EDF1F8;display:inline-flex;align-items:center;gap:10px}
   .logo .mark{filter:drop-shadow(0 0 12px rgba(79,166,224,.45))}
   .logo b{color:#4FA6E0;font-weight:600}
-  .os-tag{font-size:10px;letter-spacing:.2em;border:1px solid rgba(77,157,224,.5);border-radius:4px;padding:2px 6px;color:#5FA8E0;vertical-align:middle}
-  .switch{display:flex;gap:4px;flex-wrap:wrap;margin:0 auto}
-  .switch button{appearance:none;background:none;border:1px solid transparent;border-radius:8px;color:#AAB6CC;
-    font:600 13px inherit;padding:8px 14px;cursor:pointer}
-  .switch button:hover{color:#EDF1F8}
-  .switch button.on{color:#A9CFF2;border-color:rgba(77,157,224,.5);background:rgba(77,157,224,.1)}
-  .wallet{border:1px solid rgba(77,157,224,.4);border-radius:20px;padding:7px 16px;font-size:13px;color:#A9CFF2;display:flex;align-items:center;gap:8px}
-  .wallet small{color:#6B7A96}
-  .dot{width:8px;height:8px;border-radius:50%;background:#5CBB7B;display:inline-block}
-  .hero{padding:54px 0 34px}
+  .os-tag{font-size:10px;letter-spacing:.2em;border:1px solid rgba(79,166,224,.5);border-radius:4px;padding:2px 6px;color:#5FA8E0;vertical-align:middle}
+  .hero{padding:56px 0 20px}
   .kicker{font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:#3D8FD1;margin-bottom:12px}
-  .hero h1{font-family:Georgia,serif;font-weight:500;font-size:42px;letter-spacing:-.01em;margin:0}
-  .lede{color:#AAB6CC;max-width:68ch;margin-top:12px;font-weight:300}
-  .cta{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap}
-  .btn{border-radius:9px;padding:11px 20px;font-size:14px;font-weight:600;display:inline-block}
-  .btn.gold{background:#3D8FD1;color:#060B18}
-  .btn.gold:hover{background:#5FA8E0}
-  .btn.ghost{border:1px solid rgba(170,182,204,.35);color:#EDF1F8}
-  .modules{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:10px}
-  .mod{border:1px solid rgba(77,157,224,.14);border-radius:14px;padding:18px 20px;
-    background:linear-gradient(180deg,rgba(16,27,51,.62),rgba(11,18,32,.9));transition:border-color .12s}
-  .mod:hover{border-color:#3D8FD1}
-  .agent{font-size:10px;letter-spacing:.18em;color:#6B7A96;margin-bottom:8px}
-  .mod h3{font-family:Georgia,serif;font-weight:500;font-size:18px;margin:0 0 6px}
-  .mod p{font-size:13.5px;color:#AAB6CC;margin:0;min-height:40px}
-  .foot{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
-  .tariff{font-size:12px;color:#A9CFF2}
-  .tariff.free{color:#5CBB7B}
-  .go{font-size:12px;color:#6B7A96}
-  .mod:hover .go{color:#5FA8E0}
-  .plans{margin-top:44px}
-  .plans h2{font-family:Georgia,serif;font-weight:500;font-size:24px;border-bottom:1px solid rgba(77,157,224,.14);padding-bottom:12px}
-  .plan-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:16px}
-  .plan{border:1px solid rgba(77,157,224,.14);border-radius:12px;padding:16px;background:rgba(16,27,51,.5)}
-  .plan h4{margin:0;font-size:13px;letter-spacing:.04em}
-  .pv{font-family:Georgia,serif;font-size:26px;color:#A9CFF2;margin-top:6px}
-  .pa{font-size:12px;color:#6B7A96}
-  .plan p{font-size:12.5px;color:#AAB6CC;margin:8px 0 0}
+  .hero h1{font-family:Georgia,serif;font-weight:500;font-size:40px;letter-spacing:-.01em;margin:0;max-width:24ch}
+  .lede{color:#AAB6CC;max-width:64ch;margin-top:12px;font-weight:300}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:34px}
+  .pcard{display:flex;flex-direction:column;gap:8px;border:1px solid rgba(77,157,224,.14);border-radius:16px;
+    padding:26px 26px 22px;background:linear-gradient(180deg,rgba(16,27,51,.62),rgba(11,18,32,.9));
+    transition:border-color .15s,transform .15s;position:relative}
+  .pcard:hover{border-color:#3D8FD1;transform:translateY(-4px)}
+  .avatar{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;
+    background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff;font-weight:700;font-size:17px;margin-bottom:6px}
+  .who{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#5FA8E0}
+  .pcard h2{font-family:Georgia,serif;font-weight:500;font-size:21px;color:#EDF1F8;margin:2px 0 4px;line-height:1.3}
+  .acct{font-size:12px;color:#6B7A96}
+  .go{font-size:12.5px;color:#6B7A96;margin-top:12px}
+  .pcard:hover .go{color:#A9CFF2}
   .os-foot{display:flex;gap:22px;margin-top:56px;padding-top:18px;border-top:1px solid rgba(77,157,224,.14);
     font-size:12.5px;color:#6B7A96;flex-wrap:wrap}
   .os-foot a{color:#AAB6CC}
   .os-foot a:hover{color:#A9CFF2}
   .os-foot span{margin-left:auto}
-  @media(max-width:900px){.modules{grid-template-columns:1fr}.hero h1{font-size:32px}.switch{order:3;width:100%}}
+  @media(max-width:960px){.cards{grid-template-columns:1fr 1fr}}
+  @media(max-width:640px){.cards{grid-template-columns:1fr}.hero h1{font-size:31px}}
 `;
