@@ -151,6 +151,20 @@ real data, and a signal the platform is **early-stage in adoption**):
 **Data collected (privacy basis):** profile data, AI inputs, usage data, ACU transactions,
 payment processing via **Stripe**, and technical/security data.
 
+**Admin console reconstruction (from legal & billing text).** Nothing about the internal
+admin console is publicly exposed — correctly so — but the Terms/Privacy text implies it
+must contain:
+
+| Implied capability | Evidence trail |
+|---|---|
+| User/role management & moderation, with power to **suspend or terminate accounts immediately** for Terms breaches | Terms enforcement clause |
+| **ACU economy administration** — pricing/feature-cost configuration panel | right to change ACU pack pricing and per-feature ACU costs **at any time** |
+| **Audit-log & fraud-review tooling** | usage/transaction logging for billing, fraud prevention, service improvement |
+| **Metrics service** feeding the live homepage counters | live totals refreshed every few minutes |
+| **Shared-library moderation** | contributed-resources licence terms |
+| **Data-rights operations** | account deletion requests, subject to retention policies |
+| **Org-account provisioning** | the partner-organisation tier ("3 partner organisations") |
+
 > **Payments note:** the **live** payment processor is **Stripe**. **BitriPay** (requested in
 > the AI-OS master prompt) is a *planned additional* gateway documented in
 > [`docs/ai-os/`](../ai-os/README.md) — it augments, not replaces, Stripe.
@@ -187,6 +201,23 @@ AI tutor + resource creation → progress tracking, all metered by ACUs.
 feedback, diagnostics, assignment review, grade prediction, visual charts, past papers,
 interactive lessons, and recovery plans are publicly confirmed.)*
 
+**Student journey & action surface** — tagline: *"Study smarter, not harder."* Directly
+evidenced: AI tutor, personalised plans, quizzes, flashcards, and instant feedback **in one
+workspace built around the student's grades.** The journey below is consistent with public
+evidence; items not marked ✦ are design inference (reconstruction):
+
+| Stage | Surface & actions | Evidence notes |
+|---|---|---|
+| **Onboarding** | role selection at signup → profile capture; registration collects **name, email, selected role, study level, subjects** ✦; entry CTA is a **free personalised AI diagnostic report** ✦ | registration fields + CTA public |
+| **Diagnostic** | baseline assessment ingesting academic data + confidence signals → **diagnostic report** → weak-topic map | engine confirmed (`§2.1`) |
+| **Planner** | adaptive weekly schedule, exam-timeline-aligned, automated re-prioritisation; **Recovery Plans** imply a distinct remediation flow triggered when a student falls behind or a risk threshold trips ✦ | Recovery Plans on capability strip |
+| **Learning studio** (`/create`) | generate interactive lessons/courses, flashcard decks, quizzes; **Privacy Policy confirms inputs** include exam questions, written answers for feedback, topics for summarisation, and AI-tutor queries ✦ — so **summarisation is a confirmed tool** alongside the marketed ones | Privacy Policy |
+| **Assignment/essay review** | upload work → structured feedback + predicted grade + **generated educational visuals** ✦ | flagship module |
+| **Past papers** | practice bank, presumably AI-marked against mark schemes | strip-confirmed; marking flow inferred |
+| **Progress dashboard** | live mastery metrics, predicted grades, charts; **every learning interaction writes back to the mastery model** ✦ | Improve phase |
+| **Wallet actions** | view ACU balance (persistent in nav ✦) · top up via **Stripe checkout** ✦ · review consumption history — Privacy Policy confirms **ACU transactions are logged and consumption is monitored and audited for billing and wallet integrity** ✦ | Privacy Policy + Terms |
+| **Resource actions** | search the shared library · contribute resources · consume peer/tutor-shared materials ✦ | `/search` + Terms library licence (`§2b.1`) |
+
 ### 4.3 Parent — support without micromanaging
 
 | Area | Responsibilities |
@@ -212,6 +243,19 @@ alerts, intervention insights, and the parent dashboard are publicly confirmed):
 | **Alerts & insight** | risk alerts · AI recommendations · weekly AI briefing · academic confidence tracker · **burnout risk indicator** |
 | **Intervention** | parent intervention mode |
 | **Economics** | approve ACU top-ups · buy Premium/Pro plans |
+
+**Parent journey & action surface** — tagline: *"Clarity without micromanaging."* Directly
+evidenced: live progress, risk alerts, and intervention insights so parents support their
+child with confidence — the promise that parents **see momentum and risk early, not just a
+report-card surprise.** Reconstructed surface (design inference consistent with evidence):
+
+| Surface | Actions |
+|---|---|
+| **Child-account linking** | link one or more children |
+| **Parent Dashboard** (read-oriented) | mirrors the child's mastery / plan / predicted grades |
+| **Risk-alert notifications** | falling mastery · missed plan items · approaching exams |
+| **Intervention suggestions** | recommend a recovery plan, or a **marketplace tutor** |
+| **Wallet funding** *(plausible, not publicly stated)* | fund the child's ACU balance — a natural **payer–beneficiary split** in the ACU model |
 
 **Enhanced AI agents (parent layer — specialise Concierge.ai):**
 
@@ -251,6 +295,21 @@ deployment, at-risk intelligence, and shared ACU pools are publicly confirmed):
 | **Intervention** | intervention tracking · **safeguarding-style academic alerts** · staff/teacher workload dashboard · parent communication support |
 | **Economics & reporting** | shared ACU pool · school subscription billing · export reports |
 
+**School journey & action surface** — tagline: *"Executive academic operations."* Directly
+evidenced: cohort health maps, staff deployment, at-risk intelligence, and shared ACU pools —
+sold on the promise that leaders get **cohort visibility without waiting for end-of-term
+reports** to spot who needs help. The homepage's **"3 partner organisations" metric confirms
+an organisational account construct exists in production.** Reconstructed command centre:
+
+| Surface | Actions |
+|---|---|
+| **Institution onboarding** | org account provisioning, seat/roster management |
+| **Cohort dashboards** | by year group / subject / class, with **heat-mapped mastery** |
+| **At-risk flagging** | flag students with **drill-down to individual diagnostics** |
+| **Staff deployment views** | match teacher capacity to at-risk clusters |
+| **Shared ACU pool** | org-level wallet with **allocation, quotas, and consumption auditing** across students/staff |
+| **Reporting** | exportable reporting for SLT / governors |
+
 **Enhanced AI agents (school layer — specialise Principia.ai):**
 
 | Agent | Role |
@@ -278,6 +337,16 @@ deployment, at-risk intelligence, and shared ACU pools are publicly confirmed):
 Framed as an **intervention operator**, not just a grader — the AI teaching assistant is the
 real-product seed of **Pedagogue.ai** (`14 §3`): differentiated explanations + intervention
 plans + class-level topic recovery.
+
+> **⚠ Positioning finding:** the public site markets **four** roles (students, parents,
+> schools, tutors) — **the teacher is not a separately marketed persona.** This implies
+> teachers operate as **staff seats inside the School Command Centre** rather than owning a
+> standalone product surface. Reconstructed teacher surface: class-level progress views
+> scoped by RBAC · assignment of AI-generated lessons/quizzes to classes · **review of AI
+> assignment feedback before release** · flagging/actioning at-risk students surfaced by the
+> school's intelligence layer · drawing on the **shared ACU pool** for AI teaching tools.
+> **If teachers are intended as a first-class persona, this is currently a positioning gap
+> on the marketing site.**
 
 **Teacher Workspace feature inventory** (the site references teaching/supporting roles and
 school command intelligence):
@@ -326,6 +395,19 @@ pipeline, AI teaching tools, and earnings are publicly confirmed):
 | **Teaching** | AI teaching tools · lesson preparation · resource generation · session notes · progress tracking |
 | **Business** | earnings dashboard · payment history · ACU usage |
 | **Trust** | tutor verification · document upload · **safeguarding/compliance checks** |
+
+**Tutor journey & action surface** — tagline: *"Professional command centre."* Directly
+evidenced: marketplace listings, session pipeline, AI teaching tools, and earnings — **built
+for independent educators.** Reconstructed surface:
+
+| Surface | Actions |
+|---|---|
+| **Marketplace profile/listing** | public listing: subjects, levels, rates; discovery by students/parents |
+| **Session pipeline** | enquiry → booking → session → follow-up — a **lightweight CRM** |
+| **AI teaching tools** | lesson/quiz/flashcard generation **reused from the student studio**, applied to tutees |
+| **Tutee progress** | visibility across sessions |
+| **Earnings & payouts** | earnings dashboard; **Stripe Connect would be the natural rail** (only Stripe generally is confirmed) |
+| **Resource publishing** | publish into the shared library **as a lead-generation channel** |
 
 **Enhanced AI agents (tutor layer — specialise Matchmaker.ai):**
 
