@@ -697,6 +697,60 @@ filtering process** keeps API costs manageable:
 
 **End of third-pass teardown.**
 
+---
+
+# Appendix 3 — Fourth-pass extraction + upgraded AI Agent OS blueprint
+
+## 1. What Get Revising is built to do
+
+A study/revision platform for **students, teachers, parents and schools**, focused on
+revision planning, study resources, exam preparation, past papers, quizzes, flashcards,
+mind maps, shared notes and **AI-supported exam practice**. Scale claims: **425,500+
+resources** (teacher page) and **1M+ revision notes, quizzes and planners shared weekly**
+(newer AI-tutor registration page). *(Cited: Get Revising)*
+
+## 2. Core existing platform features extracted
+
+### Student features
+
+**Study planner / revision timetable** — builds a personalised timetable, supports
+reminders, focuses on difficult subjects, customisable/printable.
+
+**Create and use:** Flashcards · Revision cards · Revision notes · Quizzes · Mindmaps ·
+Crosswords · Quizsearches · **Organise-your-thinking tools** (timelines, grids, cause/effect
+tables, character analysis, compare/contrast, SWOT and more).
+
+**Search by:** Subject · Level · Topic · Resource type · Date · Exam board / level tags ·
+Ratings / recommendations · **Teacher-recommended resources**.
+
+> **Provenance note:** this Create-suite and search-facet taxonomy is the source of the
+> controlled vocabularies recorded earlier in this repo
+> (`../architecture/12-reference-data.md` — Level, Subject, Exam Board, Topic, Resource
+> Type) and the revision-resources module (`../architecture/11`). Those vocabularies are
+> Get Revising's information architecture, adopted as the baseline for StudYear's
+> level-scoped taxonomy work.
+
+**Access:** GCSE resources · A Level & IB · University resources · Past papers · **Mark
+schemes** · Class notes · Shared videos, slideshows, podcasts and documents.
+
+**AI Tutor** *(newer)* — work through past papers with step-by-step support, understand
+**examiner expectations**, get feedback on **marks/methods/mistakes**, ask follow-up
+questions, and **identify recurring weak topics**.
+
+### Teacher features
+
+- Create and share learning resources
+- Access **425,500+ student-made resources**
+- Use a **student performance dashboard**
+- Help students build study planners
+- Use resources in class or at home
+- Support different learning styles: visual learning, mind maps, game-based quizzes
+- Help students catch up with notes and smart testing tools
+- Receive a **free pack of 50 student activities**
+- **Access all platform features free**
+
+*(Further sections follow as extracted.)*
+
 > **Cross-portfolio note:** the three-tier token-optimization ladder above is the same
 > pattern as StudYear's Model Router policy (`../architecture/14 §0.1`) and the
 > local-vs-frontier hybrid flagged in Part 3 of the first pass — all three analyses converge
