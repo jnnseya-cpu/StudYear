@@ -120,4 +120,86 @@ gaming · referral swapping between parents · refund abuse.
 tutors referring themselves through student profiles · **commission laundering through
 controlled accounts.**
 
-*(Further customer types follow as extracted.)*
+### School accounts
+
+| Track | Reward |
+|---|---|
+| Standard referrers | **250 ACUs once the school makes first qualifying payment** |
+| Influencers | **1% of net eligible school revenue** |
+
+**School commission is only paid after:**
+- school identity is **verified**
+- invoice is **paid**
+- **no cancellation** within the cooling/review period
+- school remains **active for at least 30 days**
+
+**Strategic Accounts:** for large school contracts, StudYear reserves the right to classify
+the deal as a **Strategic Account** — which may require **manual approval before commission
+is confirmed.**
+
+## 6. Payment timing
+
+**Commission should not be paid instantly.**
+
+| Track | Release timing |
+|---|---|
+| **Standard referral ACUs** | released **14 days** after the qualifying paid transaction |
+| **Influencer cash commission** | paid **monthly**, after a **30-day fraud and refund review window** |
+
+**Example:** revenue generated in January → reviewed in February → **paid end of February
+or early March.**
+
+> This protects against refund abuse.
+
+## 7. Anti-fraud rules
+
+StudYear blocks or reviews rewards on any of:
+
+| | | |
+|---|---|---|
+| same-device referral | fake student accounts | self-referrals |
+| same-IP cluster abuse | fake tutor accounts | referral-code farming |
+| same payment card | bots / mass sign-ups | paid-to-sign-up schemes |
+| same bank account | incentivised fake purchases | misleading advertising |
+| same-household abuse | repeated refunds | false income claims |
+| same school-domain abuse | chargebacks | brand misuse |
+| coupon abuse | abnormally high conversion from suspicious traffic | |
+
+> **StudYear must reserve the right to: delay, reduce, reject, suspend or claw back any
+> reward.**
+
+*(Enforced by the Fraud & Billing Ops Agent — SY-A20 — over the referral/attribution event
+stream.)*
+
+## 8. Clawback rule
+
+If a referred customer: **refunds · charges back · cancels suspiciously · is found
+fraudulent · breaches terms · was created artificially** —
+
+then StudYear can reclaim:
+
+- ACUs
+- unpaid commissions
+- **previously paid commission**
+- **influencer status**
+
+> **This is non-negotiable.**
+
+## 9. Margin-protection rules
+
+**Commission is never paid on:**
+
+| | | |
+|---|---|---|
+| free ACUs | refunds | discounts |
+| bonus ACUs | chargebacks | manual goodwill credits |
+| trial usage | VAT / taxes | enterprise implementation fees *(unless approved)* |
+| internal credits | payment-processing fees | custom school onboarding fees *(unless approved)* |
+| promotional credits | | |
+
+> **StudYear only pays from real retained revenue.**
+
+*(These rules compose with the [66% minimum-margin mandate](commercial-model.md §1): partner
+economics are computed on net eligible revenue after the margin floor is protected.)*
+
+*(Further programme sections follow as extracted.)*
