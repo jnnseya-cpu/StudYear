@@ -724,6 +724,29 @@ validating the SY-A22/SY-A24 strategy that **topic-level educational content out
 content** (`marketing-engine.md`). Backlog: read-time/uniques (clicks ≠ readers), CTA
 conversion tracking per post, and the SERP-gap feed from SY-A24.
 
+### 4a.4 Content Management (as-is — resource ingestion pipeline)
+
+**Confirmed in production:** manage subjects, topics, and **curate external video
+resources** via an **ingestion pipeline** — add → review → approve before content goes
+live (the SY-A17 verification-before-ranking pattern, already present as a human workflow).
+
+**Add New Resource form fields:**
+
+| Field | Observed detail |
+|---|---|
+| Resource Type | dropdown — **Videos** observed (the `12 §5` media family) |
+| Title / URL | external link curation (YouTube first) |
+| **Subject** | dropdown starting at **Accounting** — bound to the Subject taxonomy (`../architecture/12 §2`), unlike the free-text tutor subjects (§4a.2 finding) |
+| **Level** | dropdown starting at **"Reception (Primary School)"** — production levels are **finer-grained than the marketing enum**: year-level granularity within Primary (Reception, presumably Y1–Y6…) |
+| Topic | topic binding (`12 §4`) |
+| **License Type** | "Standard YouTube" observed — licensing captured at ingestion |
+| Attribution | free text, "if required" |
+
+**Notes:** the licence + attribution fields show content-rights hygiene is built in from the
+start (cf. exam-board licensing risk, venture brief §15). The **Reception** value extends
+the Level vocabulary (`12 §1`) with sub-Primary granularity — recorded as an enhancement to
+that enum. Pipeline currently empty — curation is early.
+
 **Site footer (as-is page map):** StudYear — *"an AI-powered academic command centre,
 unifying student data, learning, teaching, and communication in one intelligent
 platform."* · **Platform:** How It Works · Create · Find Resources · **Company:** About
