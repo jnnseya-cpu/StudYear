@@ -36,6 +36,26 @@ Around this substrate sit **six role-scoped surfaces**: Student, Teacher, School
 Parent, Private Tutor and Platform Admin — **the last three being personas the incumbent
 generation never seriously monetised.**
 
+## The commercial thesis
+
+- **A five-sided revenue architecture:** student premium subscriptions · parent insight
+  subscriptions · per-seat school and multi-academy-trust licences · a private-tutor
+  marketplace with take-rate economics · and **ACU-metered AI consumption** that keeps unit
+  economics healthy as inference usage scales.
+- **BitriPay as the native payment rail** — unlocking the **UK/EU–DRC diaspora corridor**
+  and positioning StudYear for a **francophone-Africa expansion** (Exétat, TENAFEP,
+  BEPC/WAEC corridors) **where no adaptive-revision incumbent exists.**
+- **Portfolio leverage:** the agent runtime, ACU billing engine, RBAC/Zero-Trust fabric and
+  BitriPay integration are **shared NSEYA X-EXECUTE assets**, compressing build cost and
+  time-to-market.
+
+## Positioning statement
+
+> **Where the last generation gave students a library and a calendar, StudYear AI-OS gives
+> every student a personal examiner, tutor and strategist — and gives every teacher,
+> parent, school and tutor a live window into exactly what each child knows, forgets and
+> needs next.**
+
 ---
 
 *(Further sections follow as extracted.)*
