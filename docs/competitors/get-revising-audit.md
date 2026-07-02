@@ -220,3 +220,21 @@ era of closed-loop agentic systems. It slots naturally next to StudYear as a por
 teardown: the Part 2 reimagining above is what an incumbent *would have to build* to match
 the StudYear 2.0 blueprint (`../product/deep-platform-extraction-report.md` Part B) —
 which is precisely StudYear's window.
+
+---
+
+# Appendix — Second-pass deep extraction
+
+*(A fuller analyst pass over the same platform; identification basis: UK revision &
+exam-prep, GCSE/AS-A2/IB/KS3–post-16 coverage, planning + content + community pillars,
+1M+ students claim.)*
+
+## Part 1 — Full platform extraction (as it exists today)
+
+### What the platform fundamentally is
+
+A **UK-focused revision and exam-preparation platform** (GCSE, AS/A2, IB, KS3–post-16)
+built on **three pillars: planning, content, and community.** It claims **over 1 million
+students**; its core promise is **organised, self-directed revision.**
+
+*(Sections follow as extracted.)*
