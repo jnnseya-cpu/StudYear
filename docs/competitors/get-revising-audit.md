@@ -387,4 +387,35 @@ students**; its core promise is **organised, self-directed revision.**
 | **Tutor workspace** | client roster · shared mastery view of each tutee (**with parental consent**) · **session-prep agent** generating lesson plans from the student's **live gap profile** · homework assignment between sessions |
 | **Tutor marketplace** | AI matching (**subject × board × gap profile × availability**) — **take-rate revenue on top of subscriptions** |
 
-*(Further sections follow as extracted.)*
+**Admin agents**
+
+| Agent | Specification |
+|---|---|
+| **Moderation Agent** | triage of reports + **proactive detection** |
+| **UGC Quality-Scoring Agent** | **auto-verifying community resources against specifications before they rank** |
+| **Taxonomy Agent** | auto-tagging the **425k legacy-style resources to spec points** |
+| **Fraud/Abuse Ops** | wallet/account integrity |
+| **Content-Licensing Compliance** | Connect-Publications-style licensing enforcement |
+
+### Monetisation stack
+
+**Freemium student tier** → **student premium** (Examiner Agent + unlimited AI tutor) →
+**parent premium** (insights) → **per-seat school licences with MIS integration** →
+**tutor-marketplace take-rate** → and, in the StudYear model, **ACU-metered AI consumption**
+so heavy inference (essay marking, deep tutoring) **maps cleanly to unit economics rather
+than flat-rate margin erosion.**
+
+### Strategic note — the francophone-Africa play
+
+> This maps almost one-to-one onto a **francophone-Africa play**: DRC's **Exétat and
+> TENAFEP**, plus **WAEC/BEPC corridors**, have **zero equivalents** of this — and the
+> **BitriPay rail solves the payment problem that kills edtech subscriptions in that
+> market.** The UK version proves the model; **the Kinshasa version has no incumbent.**
+
+*(This is the strategic rationale behind the BitriPay gateway layer specified in
+`../ai-os/08-bitripay-gateway.md` — QR/wallet/mobile-money rails are exactly what African
+market payments require where card penetration is low.)*
+
+---
+
+**End of second-pass extraction.**
