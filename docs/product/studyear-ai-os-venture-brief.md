@@ -586,6 +586,17 @@ expansion, 5 the francophone corridor. Union with the earlier five-phase roadmap
 | **Trust & safety** | safeguarding response SLA adherence · verified-content share of top search results · integrity false-positive rate |
 | **Platform** | agent action success rate · p95 agent latency · **ACU cost-to-price ratio** · incident-free days |
 
+## 15. Risk Register (top-line)
+
+| Risk | Severity | Mitigation |
+|---|---|---|
+| **Examiner marking errors damage trust** | High | calibration harness against moderated human marking; **confidence-gated output**; human-review request path; **subject-by-subject GA gates** |
+| **Safeguarding incident in community/marketplace** | **Critical** | proactive classification, human queues, vetting, in-platform-only comms, **statutory workflow drills, insurance** |
+| **Inference costs outpace revenue** | High | ACU pre-authorisation, class-tiered models, degraded fallbacks, cost-to-price guardrail *(35% at drafting — **tightened to 34% by the 66% margin mandate**, §8)*, SY-A20 throttling |
+| **Exam-board content licensing friction** | Medium | licensing negotiations for mark-scheme corpus; **fallback to board-aligned original materials authored in-house**; legal review per board |
+| **Incumbent fast-follows with AI features** | Medium | **moat is the labelled interaction corpus + multi-persona architecture**; speed through shared X-EXECUTE runtime |
+| **DRC deployment complexity** | Medium | sequenced after UK proof; **BitriPay licence footprint and existing portfolio field operations reused**; local partnerships |
+
 ---
 
 *(Further sections follow as extracted.)*
