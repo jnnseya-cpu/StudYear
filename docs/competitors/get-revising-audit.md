@@ -368,4 +368,23 @@ students**; its core promise is **organised, self-directed revision.**
 | **Assignment Agent** | sets **differentiated homework automatically**: each student gets the version matched to their gap profile; **auto-marked, results flow back to the heatmap** |
 | **Reporting Agent** | drafts parent reports, predicted-grade commentary, and intervention lists **from live data** |
 
-*(Further persona agents follow as extracted.)*
+**School / MAT (multi-academy trust) layer**
+
+| Agent | Specification |
+|---|---|
+| **Cohort Analytics Agent** | predicted-grade distributions vs targets · **Progress 8 modelling** · early-warning flags for at-risk students **weeks before mocks** · department benchmarking · **MIS integration (Wonde/SIMS/Arbor) and SSO** |
+
+**Parent agents** *(turning the weakest persona into a revenue driver)*
+
+| Agent | Specification |
+|---|---|
+| **Weekly Digest Agent** | plain language: what was studied, mastery movement, predicted grades, **one concrete way to help this week**; escalation alerts for disengagement — **parent-funded premium is a proven edtech monetisation wedge** |
+
+**Private tutor agents** *(net-new persona = net-new marketplace revenue)*
+
+| Component | Specification |
+|---|---|
+| **Tutor workspace** | client roster · shared mastery view of each tutee (**with parental consent**) · **session-prep agent** generating lesson plans from the student's **live gap profile** · homework assignment between sessions |
+| **Tutor marketplace** | AI matching (**subject × board × gap profile × availability**) — **take-rate revenue on top of subscriptions** |
+
+*(Further sections follow as extracted.)*
