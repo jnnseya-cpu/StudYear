@@ -747,6 +747,152 @@ start (cf. exam-board licensing risk, venture brief §15). The **Reception** val
 the Level vocabulary (`12 §1`) with sub-Primary granularity — recorded as an enhancement to
 that enum. Pipeline currently empty — curation is early.
 
+### 4a.5 Revenue & Billing screen (as-is)
+
+**Stripe connection:** live but on a **restricted key (`rk_live…`)** with webhook secret
+set; console warns to prefer a standard `sk_` for Checkout or grant the rk_ scopes
+(Checkout Sessions, Customers, Prices, Coupons, Promotion codes, Webhooks). **Operational
+finding:** key scoping needs resolving before payment volume.
+
+**Economics panels:** Stripe gross 30d/90d (£0.00, no payments yet) · Est. AI API spend 30d
+(£0.05, token-based provider list prices USD × fixed USD→GBP hint, with an explicit
+"verify against OpenAI / Google Cloud invoices" caveat) · ACUs consumed 85 ≈ £0.85 ·
+**Indicative margin (30d): £−0.05** — the margin instrumentation exists and currently reads
+negative purely because revenue is £0. ACU £ value assumes the **Entry pack £5/500 ACUs**
+(consistent with £1 = 100 ACUs).
+
+**Live ACU debit ledger — tariff confirmation.** Observed feature debits match the
+commercial-model §5 tariff **exactly**:
+
+| Live feature label | Observed debit | Spec (`commercial-model §5`) |
+|---|---|---|
+| AI COURSE GENERATOR | −30 | course_generator 30 ✅ |
+| AI INTERACTIVE LESSON | −25 | interactive_lesson 25 ✅ |
+| AI QUIZ GENERATION | −10 | quiz_generation 10 ✅ |
+| AI EXPLANATION | −5 | quick_explanation 5 ✅ |
+
+**Backlog finding:** every debit shows *"No provider £ logged on this debit"* — per-action
+provider-cost telemetry isn't captured yet, which is required for the 66–100% margin
+band to be observable per feature (`infra/deployment.md` stability rules).
+
+**Discount codes (live — §12b confirmed in production):** codes **sync to Stripe
+automatically**; shareable links `/checkout?code=YOUR_CODE`; create form (code, type
+percentage/£ off, value, optional valid-until, optional max redemptions); active-code list
+with usage counters (e.g. `0/1 used`) and Deactivate. The §12b spec's remaining deltas:
+per-user limits, audience/product eligibility, bonus-ACU benefit type, margin-band check.
+
+### 4a.6 AI Usage & API Costs screen (as-is — `aiUsageLogs`)
+
+**Per-request logging exists in production:** user · feature (ACU debit) · **model** ·
+est. API cost £ (+ USD list-price hint, FX 0.79) · ACU £ value (Entry-pack rule £5/500) ·
+**status (success/failed)** · **latency (ms)** · timestamp.
+
+**Observed operational truths (~100 rows, May–Jul 2026):**
+
+| Truth | Evidence |
+|---|---|
+| **Provider mix is OpenAI-only in practice** | every row `openai`, models **gpt-4o** and **gpt-4-turbo** — despite the disclosed Google+OpenAI DPA pair, live traffic is single-provider → the AI Gateway/provider-switching directive (`../architecture/14 §0.0`) is not yet realised |
+| **Real per-action margin is healthy** | e.g. 25-ACU actions (£0.25) cost £0.006–£0.016 → **93–97% margin**, inside the 66–100% band |
+| **Fast-fail is not billed** | failed rows at 3–43ms charge 0 ACUs ✅ |
+| **⚠ Margin leak: unbilled successes** | multiple **success** rows with **0 ACUs charged but real API cost** (e.g. £0.0127, £0.0123, £0.0131) — AI work delivered free; either unmetered features or a metering bug. **Backlog: every successful AI call must map to a tariff debit** (commercial-model §11 "no unlimited AI") |
+| **Latency profile** | successful generations 3–31s (deep work); the 11–18s median matches deep-thinking-style generation |
+| **Cost-join gap** | the ACU debit ledger (§4a.5) shows "no provider £ logged" while `aiUsageLogs` *does* hold cost — the two ledgers need joining for per-feature margin observability |
+
+### 4a.7 Analytics & Reporting screen (as-is)
+
+**KPIs:** Total users **67** · Returning (30d, via `lastLoginAt`) **37** · New sign-ups
+(30d, via `createdAt`) **25** · AI requests logged (30d) **4**.
+
+**Charts live in production:** *New Users This Year* (monthly line, **Sept 2025 → Jul 2026**
+— dating the platform's launch to ~Sept 2025; y-axis 0–28) · *Avg. Study Time / Week
+(Hours)* (weekly line, May–Jun window; y-axis 0–4h).
+
+**Footer legal line confirms:** **© 2026 StudYear Ltd.** — a UK limited company; use
+subject to Terms, Privacy, Disclaimer, Cookies.
+
+### 4a.8 Fraud Monitoring screen (as-is)
+
+System-flagged accounts queue for **manual review**: columns User · **Reason for Flag** ·
+Status · Actions. Currently empty (no flagged users) — the queue exists ahead of volume,
+ready for the Sentinel/SY-A20 signal feeds (growth-programme §7 anti-fraud signals).
+
+### 4a.9 Support Tools screen (as-is — audited impersonation)
+
+**"View as User"** is implemented exactly to the audited-impersonation spec (`02 §2.4`,
+`ai-os/14 §0` break-glass pattern):
+
+- **secure, time-limited impersonation session**
+- target user by search or explicit UID
+- **Reason for Session is a required field** (e.g. "Investigating user report of missing
+  study plan…")
+- banner: **"All actions are logged."**
+
+This is the strongest governance signal in the live console — reason-required, time-boxed,
+logged impersonation was designed in from the start.
+
+### 4a.10 Contact Inbox & email delivery (as-is)
+
+**Email stack confirmed:** SMTP via **`smtp.hostinger.com:465`**, mailbox
+`contact@studyear.com` — **Hostinger hosts email as well as DNS**; welcome emails, top-up
+receipts and contact-form notifications all ride SMTP; the app runs on **Firebase App
+Hosting** (env vars + container **rollouts** explicitly referenced — confirming the
+deployment split directive's Firebase backend).
+
+**⚠ Active incident (as captured):** **SMTP login rejected (535)** — email delivery down.
+Console's own remediation: use full email as `MAIL_USERNAME`; `MAIL_PASSWORD` = mailbox
+webmail password (not hPanel); after changing Firebase env vars **trigger a new rollout**
+(old containers keep the previous password); prefer **Firebase Secret Manager** for
+passwords containing `@`; try `MAIL_SMTP_HOST=smtp.titan.email` if the mailbox uses Titan.
+Contact-form submissions still land in the inbox regardless.
+
+**Inbox structure:** 17 messages · types **support / billing / partnership** · statuses
+**NEW / READ / REPLIED** · reply directly from the inbox via SMTP · delivery address
+configurable (Admin → Settings or `CONTACT_INBOX_EMAIL`).
+
+**Findings (no PII persisted):**
+
+| Finding | Evidence pattern | Action |
+|---|---|---|
+| **⚠ Contact-form bot spam** | ~half the inbox is random-string names/bodies | add CAPTCHA/honeypot + rate limiting; spam-classify into a separate queue (SY-A16-adjacent) |
+| **Real payment friction** | a billing message: *"Hello, I cannot pay"* | aligns with the Stripe rk_ key scoping finding (§4a.5) — checkout path needs verification |
+| **Live B2B demand** | a partnership message: *"my school is ready for a demo"* | route to the school-pilot motion (GTM §12.1) — leads are already arriving inbound |
+| **Free-ACU requests** | *"I need free ACUs please"* | the admin goodwill-grant path exists (§4.1); needs a policy + canned response |
+
+### 4a.11 System & AI Settings screen (as-is — the config plane)
+
+**Feature flags (live, globally toggleable):** Tutor Marketplace · Parent Dashboard ·
+School Portal · AI Feedback Engine (Premium).
+
+**Pricing & Billing Rules (live):**
+
+| Setting | Live value | Significance |
+|---|---|---|
+| **ACU Pricing Multiplier** | **3** — "User charge = internal AI cost × this multiplier" | **the 66% margin rule is already implemented**: cost = ⅓ of charge ≈ 33.3% ≈ **66.7% margin**, precisely the band floor (`commercial-model §1`) — enforced as a single admin-tunable parameter |
+| **Tutor Marketplace Commission** | **20%** | **⚠ discrepancy:** commercial model §9 says **15%** per lesson; live config says 20% (admin-adjustable). Resolve which governs — the config plane makes either a one-field change |
+
+**AI Provider Settings (live):**
+
+| Slot | Value |
+|---|---|
+| Default provider | **OpenAI** |
+| Fallback provider | **OpenAI** (fallback not yet diversified) |
+| OpenAI models | cost-effective **gpt-4-turbo** · performance **gpt-4o** |
+| Google Gemini models | cost-effective **gemini-2.5-flash** · performance **gemini-2.5-pro** |
+| Google Vertex AI models | cost-effective **gemini-2.5-flash** · performance **gemini-2.5-pro** |
+
+> **Gateway status:** the **provider-switchable AI gateway exists in production config** —
+> default/fallback provider selection + per-provider cost/performance model tiers across
+> OpenAI, Gemini, and Vertex — but both slots currently point at OpenAI (matching the
+> OpenAI-only `aiUsageLogs`, §4a.6). Completing the directive (`../architecture/14 §0.0`)
+> means: diversify the fallback, add Anthropic Claude as a provider, and enforce
+> deep-thinking mode per call.
+
+**Communications settings (live):** configurable message copy (forgot-password, contact
+form, **signup welcome email** subject/body) · company identity **StudYear Ltd.**, listed
+address "123 Learning Lane, London SW1A 0AA" (**placeholder address — replace before
+compliance review**) · sender `noreply@studyear.com` (`MAIL_FROM_ADDRESS`) · support/inbox
+`contact@studyear.com`.
+
 **Site footer (as-is page map):** StudYear — *"an AI-powered academic command centre,
 unifying student data, learning, teaching, and communication in one intelligent
 platform."* · **Platform:** How It Works · Create · Find Resources · **Company:** About
