@@ -35,7 +35,8 @@ docs/architecture/
 ├── 08-technical-architecture.md  Multi-tenancy, services, data flows, integrations
 ├── 09-data-model.md            Core entities and relationships
 ├── 10-permissions-rbac.md      Roles, scopes, and the permission model
-└── 11-revision-resources.md    Module: the "create a revision resource" study toolset
+├── 11-revision-resources.md    Module: the "create a revision resource" study toolset
+└── 12-reference-data.md        Controlled vocabularies (Education Level, …)
 ```
 
 ## How to read this

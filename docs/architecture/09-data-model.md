@@ -43,7 +43,7 @@ graph from `01`.
 | Entity | Key fields | Notes |
 |---|---|---|
 | **Curriculum** | tenant_id, name | container for objectives |
-| **LearningObjective** | curriculum_id, code, standard_ref | the **shared taxonomy** all channels tag against |
+| **LearningObjective** | curriculum_id, code, standard_ref, level | the **shared taxonomy** all channels tag against; `level` per [12](12-reference-data.md) |
 | **Class** | tenant_id, curriculum_id, term | a cohort |
 | **Enrollment** | class_id, student_user_id, status | roster edge; authorization boundary |
 | **Lesson** | class_id, objective_ids[], assets[] | sequenced against calendar |

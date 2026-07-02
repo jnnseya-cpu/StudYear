@@ -36,7 +36,10 @@ Configuration for the academic *frame* every other persona operates within:
 *Architecture:* these are versioned, tenant-scoped `PolicyConfig`/`Curriculum` documents
 (`09 §2–3`) consumed by kernel services at decision points. The chosen curriculum defines
 the **LearningObjective taxonomy** that teachers, tutors, and the revision-resource sandbox
-all tag against — so "aligned to GCSE" is a data property, not a report artifact.
+all tag against — so "aligned to GCSE" is a data property, not a report artifact. The
+**Education Level** vocabulary these settings draw on (GCSE, IGCSE, IB, A-level, National 5,
+University, All Levels, Fun, Other, …) is the platform-wide controlled vocabulary in
+[12 — Reference Data](12-reference-data.md).
 
 ### 2.3 Role-Based Access Control (RBAC)
 Highly granular permission control **mapping roles to specific system data blocks** — e.g.
