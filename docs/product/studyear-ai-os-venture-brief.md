@@ -156,6 +156,268 @@ inference passes through the provider-switchable Gateway in deep-thinking mode.)
 | **Private tutor** | win matched clients; walk into every session already knowing the student's gaps; assign and track between sessions | Tutor Workspace · Session Prep · Marketplace Match |
 | **Platform admin** | keep content trustworthy, the community safe, and the platform compliant — at scale, **without linear headcount** | Moderation · Content Verification · Taxonomy · Fraud Ops |
 
+## 4. Agent Registry
+
+**Twenty-one named agents constitute the launch workforce.** Each is registered in the
+LangGraph orchestrator with declared tools, guardrails, escalation paths and an **ACU cost
+class**. **IDs are stable** and referenced throughout engineering tickets, billing events
+and audit logs.
+
+| ID | Agent | Persona(s) | Mandate | Class | Billing |
+|---|---|---|---|---|---|
+| **SY-A01** | Planner Agent | Student | builds and **continuously replans** the study timetable from mastery gaps, forgetting curves, exam dates, energy patterns and life constraints; **nightly rebalance; instant replan** on missed sessions or shock results | Orchestrator | Standard |
+| **SY-A02** | Tutor Agent | Student | Socratic, syllabus-grounded tutoring; **diagnoses the misconception behind an error** via the knowledge trace; never dumps answers; **adapts explanation style to the learner profile** | Reasoning | Premium |
+| **SY-A03** | Content Forge Agent | Student / Teacher | ingests typed notes, **photos of textbook pages, PDFs, slides** → flashcards, mindmaps, quizzes, cloze tests, condensed notes, **audio summaries** — auto-tagged to specification points | Generation | Standard |
+| **SY-A04** | Examiner Agent | Student / Teacher | marks free-text and essay answers **against genuine mark schemes**; marks per assessment objective, model improvements, predicted-mark commentary **in the examiner's register** | Reasoning | Premium |
+| **SY-A05** | Motivation Agent | Student | streaks, pacing, **burnout detection from behavioural telemetry**; wellbeing-aware nudges; **celebrates mastery gains rather than raw hours** | Lightweight | Included |
+| **SY-A06** | Class Cockpit Agent | Teacher | live class **heatmap of mastery per specification point**; collective weaknesses; **one-click interventions** | Analytics | Seat |
+| **SY-A07** | Assignment Agent | Teacher | **differentiated homework per student** from gap profiles; auto-marks; streams results to cockpit + learner state | Orchestrator | Seat |
+| **SY-A08** | Reporting Agent | Teacher / School | drafts parent reports, predicted-grade commentary, intervention lists, **inspection-ready progress evidence** from live data | Generation | Seat |
+| **SY-A09** | Cohort Analytics Agent | School / Trust | predicted-grade distributions vs targets, **Progress 8 modelling**, department benchmarking, **intervention ROI simulation** | Analytics | Enterprise |
+| **SY-A10** | Early-Warning Agent | School / Trust | flags at-risk students **weeks before mocks** from disengagement, mastery decay, behavioural drift; **routes to pastoral workflows** | Analytics | Enterprise |
+| **SY-A11** | Family Digest Agent | Parent | weekly plain-language digest: what was studied, mastery movement, predicted grades, **one concrete way to help this week**; **multilingual (English/French first)** | Generation | Parent tier |
+| **SY-A12** | Escalation Agent | Parent / School | alerts on disengagement, wellbeing flags, sustained decline — **consent-governed routing between home and school** | Lightweight | Parent tier |
+| **SY-A13** | Tutor Workspace Agent | Private tutor | client roster, **consent-governed shared mastery view** of each tutee, between-session assignments, progress tracking | Orchestrator | Tutor tier |
+| **SY-A14** | Session Prep Agent | Private tutor | lesson plan per session from the tutee's **live gap profile**, prior session notes, upcoming exam weightings | Generation | Tutor tier |
+| **SY-A15** | Marketplace Match Agent | Private tutor / Parent | matches on **subject × board × gap profile × availability × budget**; manages **BitriPay escrow and payout** | Orchestrator | Take-rate |
+| **SY-A16** | Moderation Agent | Admin | **proactive detection + report triage**: bullying, grooming, self-harm signals; human-escalation queue, full audit trail | Safety | Platform |
+| **SY-A17** | Content Verification Agent | Admin | scores every community resource for **factual accuracy and specification alignment before it can rank**; quarantines unverified material | Reasoning | Platform |
+| **SY-A18** | Taxonomy Agent | Admin | auto-tags legacy + new content to **board × subject × topic × specification point**; maintains the ontology as boards revise | Lightweight | Platform |
+| **SY-A19** | Integrity Agent | Admin / Teacher | detects **AI-misuse and plagiarism** with **calibrated, evidence-based reports rather than accusatory scores** | Analytics | Platform |
+| **SY-A20** | Fraud & Billing Ops Agent | Admin | payment anomaly detection, chargeback defence, **ACU abuse throttling**, marketplace payout compliance | Analytics | Platform |
+| **SY-A21** | Profile Agent | **All personas (substrate)** | maintains each student's **Learner Profile Vector** from behavioural telemetry (pace, format effectiveness, error taxonomy, cognitive load tolerance, engagement chronotype, confidence calibration, language profile); **serves the profile to every other agent**; drives the within-session / across-session / cohort adaptation loops | Analytics | Platform |
+
+> Union note (per the [mandate](../REQUIREMENTS-MANDATE.md)): **SY-A01–A21 is the canonical
+> launch registry.** The earlier rosters — 14-agent (`studyear-product-spec.md §5c`),
+> 25 enhanced (`../ai-os/04 §3A`), 18-build-list (Get Revising audit §5) — map into these
+> IDs as capabilities and sub-behaviours; anything not covered by an SY-ID remains in the
+> build queue as a post-launch specialisation. All agents run through the
+> [AI Gateway](../architecture/14-ai-agent-blueprint.md) (§0.0) in deep-thinking mode.
+
+## 5. Machine Learning Substrate
+
+**Five ML systems form the substrate every agent stands on.** They are the defensible moat:
+each **compounds with usage data the incumbent generation never collected.**
+
+### 5.1 Knowledge Tracing Engine (KTE)
+
+A **transformer-based deep knowledge tracing model (SAINT-class)** maintains, per student, a
+**mastery probability over every specification point of every supported exam board.** Every
+interaction — flashcard response, quiz item, marked essay, tutor exchange, assignment
+result — updates the vector. The KTE exposes **mastery, uncertainty and learning-velocity**
+estimates to all agents — the ground truth behind heatmaps, planning and prediction.
+
+- **Cold start:** priors from year group, course, school baseline data + an adaptive
+  placement diagnostic; **converges within the first two study weeks.**
+- **Granularity:** specification-point level (**thousands of nodes per subject**), rolled up
+  to topic and paper level for human-facing views.
+
+### 5.2 Memory & Scheduling Model (FSRS-class)
+
+A **per-item, per-student forgetting-curve model** predicts retention decay and computes the
+optimal review moment. The Planner Agent consumes its outputs so **the timetable stops being
+a calendar and becomes a retention strategy**: *"review electrolysis today because you are
+48 hours from forgetting it"* rather than *"Chemistry, Tuesday, 4pm."*
+
+### 5.3 Grade Prediction Model (GPM)
+
+A **gradient-boosted + transformer ensemble** maps mastery vectors, behavioural signals,
+mock results and **historical grade-boundary distributions** to a live predicted grade per
+subject with confidence intervals — plus **counterfactuals** (*"two focused hours per week
+on Paper 2 organic chemistry moves the central estimate from 6 to 7"*). One underlying
+inference powers student motivation, parent digests, teacher reports and school-level
+Progress 8 modelling.
+
+### 5.4 Retrieval-Grounded Knowledge Layer (RAG)
+
+Every supported specification, mark scheme, examiner report and past paper is **chunked,
+embedded and indexed with board/version metadata.** All pedagogical agents — Tutor,
+Examiner, Content Forge, Session Prep — are **contractually grounded: they must cite
+retrieved assessment material internally before emitting output**, eliminating syllabus
+drift and generic-chatbot error modes. The corpus design **anticipates francophone
+extension** (DRC Exétat programmes, BEPC/WAEC syllabi) with the same pipeline.
+
+### 5.5 Safety & Integrity Models
+
+- **Safeguarding classifiers** over community/messaging surfaces tuned for **minors' risk
+  signals** (bullying, grooming, self-harm) — conservative thresholds, human review queues,
+  **statutory-reporting workflows.**
+- **Content-quality models** scoring UGC for factual accuracy and specification alignment
+  (feeding **SY-A17**).
+- **Integrity models** producing **calibrated, evidence-first** analyses of suspected
+  AI-misuse (feeding **SY-A19**) — designed to **inform teacher judgement, never to
+  auto-accuse.**
+
+### 5.6 Personalisation Engine — one classroom, a thousand curricula
+
+**The founding premise of StudYear AI-OS:** students in the same school sit through the
+same lessons and the same lectures, yet **differ profoundly in how and how fast they
+understand.** The classroom cannot personalise the lesson; **the operating system
+personalises everything around the lesson. The teacher teaches once — the OS consolidates a
+thousand different ways.**
+
+**The Learner Profile Vector (LPV)** — alongside the mastery vector, every student carries a
+continuously-updated profile of *how they learn*, **inferred entirely from behaviour — never
+from questionnaires:**
+
+| Dimension | Detail |
+|---|---|
+| **Pace profile** | learning velocity per subject and topic type; exposures a concept typically needs before mastery stabilises; **optimal session length before accuracy decays** |
+| **Format effectiveness** | **measured retention lift per content format** (worked examples, flashcards, mindmaps, audio summaries, practice questions, Socratic dialogue) — per student, per topic type; serves **what demonstrably works for this child**, treated as an empirical per-topic measurement to stay aligned with the education-research evidence base |
+| **Error taxonomy** | characteristic failure modes — misread questions, procedural slips, conceptual gaps, recall failures, exam-technique losses — **each triggering a different remediation strategy** |
+| **Cognitive load tolerance** | how much new material per session before performance drops; **governs chunk size and scaffold density** |
+| **Engagement chronotype** | when this student actually learns well (day, time, rhythm) — **from telemetry rather than intention** |
+| **Confidence calibration** | gap between self-rated and actual performance — **over-confident → more retrieval testing; under-confident → visible mastery evidence** |
+| **Language profile** | EAL and bilingual signals (**English/French first**) — adjusts explanation register **without diluting content** |
+
+**Behavioural telemetry.** The LPV trains on the behavioural exhaust of every interaction:
+response latency and hesitation patterns, retry and self-correction behaviour, hint-seeking
+depth, abandonment points, session timing and rhythm, format dwell time, and the retention
+outcomes that follow. Every signal flows through **`learning.events.v1`** into the profile
+trainer; **no additional student effort is ever required to be profiled.**
+
+**Three adaptation loops:**
+
+| Loop | Timescale | Behaviour |
+|---|---|---|
+| **Within-session** | seconds | difficulty, scaffolding, format adjust in real time — a hesitating student gets a worked example; a cruising student gets a harder variant; a fatiguing student gets a format switch or a break |
+| **Across-session** | days | the Planner re-sequences topics, resizes chunks, re-times reviews from the LPV + memory model — **two classmates with identical timetables receive entirely different study plans** |
+| **Across-cohort** | weeks | the Class Cockpit shows teachers **not just what the class doesn't know but how differently they learn** — differentiated teaching and grouped interventions from the same single lesson |
+
+**Raising the floor and the ceiling together.** This is how *"improve everyone very
+quickly"* becomes an engineering property rather than a slogan: slower-to-start students get
+**catch-up compression** (smaller chunks, more retrieval, earlier reviews, targeted
+misconception repair) while fast movers get **stretch material and exam-technique
+refinement** instead of repetition. **The cohort's mean rises because no student is being
+served the average student's experience.**
+
+### The data flywheel
+
+Every marked answer improves the Examiner's calibration; every review improves the memory
+model; every cohort improves grade prediction. **The moat is not the models — it is the
+exam-board-labelled interaction corpus no competitor is collecting at this granularity.**
+
+## 6. System Architecture
+
+The platform is a **monorepo on the NSEYA X-EXECUTE reference stack**: **Next.js 14** client
+surfaces, a **NestJS** service mesh, **PostgreSQL** as the system of record, **Apache
+Kafka** as the event backbone, and **LangGraph** as the agent orchestration runtime.
+
+### 6.1 Layered view
+
+| Layer | Technology | Responsibility |
+|---|---|---|
+| **Experience** | Next.js 14 (App Router, RSC, Edge) | six role-scoped web surfaces + PWA mobile; server components for dashboards; **streaming UI for agent responses**; print/PDF pipeline for timetables and reports |
+| **API Gateway** | NestJS gateway + **BFF per surface** | AuthN/Z enforcement, rate limiting, **ACU pre-authorisation checks**, request shaping per persona |
+| **Domain services** | NestJS microservices | Identity & Consent · Learner State · Planning · Content · Assessment · Community · Marketplace · Billing · Notifications · Reporting |
+| **Agent runtime** | LangGraph on dedicated workers | stateful graphs per agent; tool registry; **guardrail nodes; human-in-the-loop escalation nodes**; checkpointed long-running flows (overnight replans, cohort simulations) |
+| **Event backbone** | Apache Kafka | every learning event, agent action, billing tick, safety signal is a **topic-published fact**; consumers: KTE trainer, ACU meter, analytics warehouse, audit store |
+| **Data** | PostgreSQL (+ **pgvector**), object storage, warehouse | OLTP system of record; RAG embeddings in pgvector; media in object storage; Kafka-fed warehouse for analytics + training sets |
+| **ML serving** | GPU inference pool + model registry | versioned serving of KTE/FSRS/GPM/safety/integrity models; **canary rollout; drift monitoring** |
+
+### 6.2 Kafka topic map (core)
+
+| Topic | Producers | Key consumers |
+|---|---|---|
+| `learning.events.v1` | all surfaces, Assignment Agent, Examiner Agent | KTE updater, FSRS updater, analytics warehouse |
+| `mastery.updates.v1` | KTE service | Planner, Cockpit, Digest, Early-Warning agents |
+| `agent.actions.v1` | LangGraph runtime | audit store, **ACU meter**, ops dashboards |
+| `billing.acu.v1` | ACU meter | billing service, **BitriPay charge orchestrator**, abuse throttling |
+| `safety.signals.v1` | safeguarding classifiers, Moderation Agent | human review queue, Escalation Agent, compliance archive |
+| `marketplace.lifecycle.v1` | Marketplace Match Agent, BitriPay webhooks | escrow service, payout ledger, fraud ops |
+| `consent.changes.v1` | Identity & Consent service | **every data-reading agent (hard gate)**, audit store |
+
+### 6.3 LangGraph orchestration pattern
+
+Each registry agent is a **versioned LangGraph graph**. Standard shape:
+
+```
+intake → consent & RBAC gate → context assembly (learner state + RAG retrieval)
+      → reasoning/tool loop → guardrail evaluation → emit + event publication
+```
+
+- Safety-relevant agents add a **mandatory human-escalation node.**
+- Long-horizon flows (nightly replanning, cohort simulation, marketplace matching) run as
+  **checkpointed graphs resumable across worker restarts.**
+- **Cross-agent calls occur only through the orchestrator — never peer-to-peer** —
+  preserving a single audit and billing chokepoint.
+
+### 6.4 Monorepo layout
+
+| Path | Contents |
+|---|---|
+| `apps/web` | Next.js 14 — all six surfaces behind role-scoped route groups |
+| `apps/gateway` | NestJS API gateway and per-surface BFFs |
+| `services/*` | domain microservices (learner-state, planning, assessment, marketplace, billing, …) |
+| `agents/*` | LangGraph graphs, **one package per registry ID** (`sy-a01` … `sy-a20`) |
+| `ml/*` | training pipelines, evaluation harnesses, model registry manifests |
+| `packages/*` | shared contracts: event schemas, RBAC policies, **ACU tariffs**, design system |
+| `infra/*` | IaC, Kafka topology, CI/CD, observability |
+
+> **Stack reconciliation** (per the [mandate](../REQUIREMENTS-MANDATE.md)): this NSEYA
+> X-EXECUTE reference stack (PostgreSQL/Kafka/NestJS/LangGraph) is the **flagship venture's
+> canonical build stack**. Earlier blueprints (MariaDB/Hostinger + Redis/FastAPI in
+> `../architecture/13`/`15`; Firebase as disclosed as-is in
+> `studyear-product-spec.md §3b`) remain recorded as, respectively, prior target sketches
+> and the migration starting point — union preserved, none removed.
+
+## 7. Core Data Model (highlights)
+
+| Aggregate | Key entities | Notes |
+|---|---|---|
+| **Identity & Consent** | User, Role, Guardianship, ConsentGrant, SchoolLink | Guardianship binds parents to minors; **ConsentGrant is the hard gate on every cross-persona data view** (tutor↔student, parent↔school) |
+| **Curriculum** | Board, Qualification, Specification, SpecPoint, Paper, MarkScheme | versioned per exam-board series; **SpecPoint is the atomic unit** the KTE and taxonomy operate on |
+| **Learner State** | MasteryVector, MemoryItem, BehaviourSignal, WellbeingFlag, PredictedGrade | **append-only event sourcing via Kafka; point-in-time reconstruction** for audits and model training |
+| **Planning** | Plan, StudySlot, Commitment, ReplanEvent | **every replan stores its trigger and rationale — explainability is a product feature** for parents and teachers |
+| **Content** | Resource, ResourceVersion, VerificationScore, TagSet | UGC and AI-generated content share one pipeline; **nothing ranks without a VerificationScore** |
+| **Assessment** | Attempt, FreeTextSubmission, MarkedResult, AOBreakdown, IntegrityReport | **MarkedResult stores the mark-scheme citation trail for every awarded mark** |
+| **Marketplace** | TutorProfile, Engagement, SessionRecord, EscrowLedger, Payout | **double-entry escrow ledger reconciled against BitriPay settlement events** |
+| **Billing** | AcuMeterEvent, AcuBalance, Subscription, Invoice | metering is **event-sourced from `agent.actions`; balances are derived, never authored** |
+
+## 8. ACU Billing Model
+
+The **AI Compute Unit (ACU) is the NSEYA X-EXECUTE metering standard**: one normalised unit
+of AI work, **priced consistently across the portfolio**, so heavy inference **scales
+revenue instead of destroying margin.**
+
+### 8.1 Metering principles
+
+- **Everything metered, not everything charged** — every agent action emits an ACU cost to
+  `billing.acu.v1`; subscription tiers include **generous allowances so the meter is
+  invisible to most users**; only sustained heavy usage draws down paid packs.
+- **Pre-authorisation** — the gateway checks ACU balance/allowance **before dispatching
+  Premium-class agent work**; degraded (lighter-model) fallbacks keep free users served.
+- **Transparency** — students and schools see plain-language usage (*"12 essays marked this
+  week"*), **never raw token counts.**
+
+### 8.2 ACU tariff by agent class
+
+| Agent class | Examples | Indicative ACU/action |
+|---|---|---|
+| **Lightweight** | motivation nudges, taxonomy tagging, escalation alerts | 0.1 – 0.5 |
+| **Standard** | Planner replan, Content Forge generation set | 1 – 3 |
+| **Analytics** | Cockpit refresh, early-warning sweep, integrity report | 2 – 6 |
+| **Reasoning (Premium)** | Tutor dialogue turn, content verification pass | 3 – 8 |
+| **Examiner (Premium)** | full essay marked with AO breakdown | 8 – 15 |
+| **Enterprise simulation** | cohort Progress 8 scenario, trust-wide forecast | 25 – 60 |
+
+### 8.3 Allowances and packs
+
+| Tier | Monthly ACU allowance | Top-up mechanism |
+|---|---|---|
+| **Student Free** | 60 ACUs (degraded models on premium classes) | none — upgrade path |
+| **Student Premium** | 600 ACUs | ACU packs via **BitriPay (student or diaspora-funded)** |
+| **Parent Insight** | included in child's premium + digest allowance | — |
+| **Teacher Seat** | 800 ACUs pooled per seat | school pool top-ups |
+| **School / Trust** | pooled per-seat allowance + **enterprise simulation quota** | annual ACU commitments, volume pricing |
+| **Tutor Pro** | 1,000 ACUs | packs; **session-prep ACUs billable to engagement** |
+
+### Unit-economics guardrail
+
+> Tariffs are set so that the **fully-loaded inference cost of one ACU never exceeds 35% of
+> its blended realised price.** The Fraud & Billing Ops Agent (**SY-A20**) throttles
+> anomalous consumption patterns **before they become margin events.**
+
 ---
 
 *(Further sections follow as extracted.)*
