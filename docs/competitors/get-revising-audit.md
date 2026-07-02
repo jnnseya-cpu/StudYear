@@ -1,0 +1,222 @@
+# Executive Product Audit & Next-Gen AI Transformation Map — Get Revising
+
+| | |
+|---|---|
+| **Platform** | Get Revising (an asset of **The Student Room Group**) |
+| **Target domain** | UK Secondary & Further Education (GCSE, AS/A2, International Baccalaureate) and Higher Education preparation |
+| **Relevance to StudYear** | direct-adjacent competitor in UK revision; contrast case for the closed-loop/agentic thesis (see `../product/`, `../ai-os/01-market-gap-analysis.md`) |
+
+## Part 1 — Current architecture & multi-tenant feature extraction
+
+Get Revising is a **crowdsourced educational content clearinghouse and structured
+time-blocking application.** The platform relies on **peer-to-peer resource loops and
+rule-based generation algorithms.**
+
+```
+                  ┌──────────────────────────────────────────────┐
+                  │                ADMIN ACTOR                   │
+                  │   (Moderation, Compliance, Analytics, SEO)   │
+                  └──────┬────────────────────────────────┬──────┘
+                         │                                │
+                         ▼                                ▼
+       ┌──────────────────────────────────┐    ┌──────────────────────────────────┐
+       │          STUDENT ACTOR           │    │           SCHOOL ACTOR           │
+       │ (Planner, Quizzes, Flashcards)   │    │  (Cohorts, Resource Assigning)   │
+       └─────────────────┬────────────────┘    └────────────────┬─────────────────┘
+                         │                                      │
+                         ▼                                      ▼
+       ┌──────────────────────────────────┐    ┌──────────────────────────────────┐
+       │          PARENT ACTOR            │    │       TEACHER / TUTOR ACTOR      │
+       │  (Progress Tracking, Guardrails) │    │   (Content Creation, Analytics)  │
+       └──────────────────────────────────┘    └──────────────────────────────────┘
+```
+
+### 1. Student Actor portfolio
+
+The core consumer loop centres on **minimizing friction between exam specs and a student's
+calendar.**
+
+| Feature | Detail |
+|---|---|
+| **Algorithmic Study Planner** (Revision Timetable Creator) | *Inputs:* exam boards (AQA, OCR, Edexcel, WJEC, CCEA), target subjects, specific dates, school hours, personal time-block constraints. *Outputs:* a color-coded, dynamic weekly/monthly calendar breaking topics into actionable blocks |
+| **Crowdsourced Resource Library consumer** | access to **1M+ user-generated assets** (revision notes, mind maps, essays, presentations); filterable by subject, exam board, qualification level |
+| **Interactive Tool Studio** | built-in creation suites for custom **Flashcards, Wordsearches, Crosswords, Quizzes** — active-recall support |
+| **Past Paper Hub** | official exam-board past papers tied to an internal marking system |
+| **AI Tutor Sandbox** *(recent iteration)* | guided step-by-step chat prompts that **prevent students from seeing full answers immediately**, forcing structured retrieval |
+
+### 2. Teacher & Private Tutor Actor portfolio
+
+Scale resource deployment and audit student readiness.
+
+| Feature | Detail |
+|---|---|
+| **Authoring Suite** | structured templates to upload, format, and tag revision materials with **exact exam-specification codes** |
+| **Resource Assignment Engine** | build curated reading packets or flashcard decks; distribute directly to student groups |
+| **Public Tutoring Profile Marketplace** | public landing pages with qualifications, specialties, and direct contact — converting browsing students into paying clients |
+
+### 3. School Admin & Institutional Actor portfolio
+
+Institutional insight across cohorts.
+
+| Feature | Detail |
+|---|---|
+| **Cohort Management Dashboards** | group by class year or target tiers (e.g., Foundation vs Higher) |
+| **Engagement & Activity Analytics** | minutes on self-directed revision vs active resource generation |
+| **Curriculum Alignment Mapping** | ensure crowdsourced/teacher content matches national exam boards |
+
+### 4. Parent Actor portfolio
+
+Observation and support, **data clarity rather than direct interaction.**
+
+| Feature | Detail |
+|---|---|
+| **Progress Mirroring** | read-only access to the student's Study Planner — verify time-blocking compliance |
+| **Target vs Actual reports** | dashboards of completed study sessions vs skipped blocks |
+| **Resource Procurement** | gateways to unlock premium test banks or connect with top-rated tutors |
+
+### 5. System Administrator portfolio
+
+The infrastructure backbone for content curation and data integrity.
+
+| Feature | Detail |
+|---|---|
+| **Crowdsourced Content Moderation pipeline** | automated flag queues + manual review panels — plagiarism, inaccuracy, copyright |
+| **SEO & Taxonomy Management engine** | high-volume landing pages organized around exam boards/keywords for organic search capture |
+| **User Auth & Data Governance** | UK GDPR + **Age Appropriate Design Code (AADC)** compliance guardrails |
+
+---
+
+## Part 2 — Blueprint for the generative-AI & agentic evolution
+
+To shift Get Revising from a **passive, crowdsourced library** into an **autonomous, agentic
+system**: move away from manual user uploads and static calendars, toward **continuous,
+closed-loop personalization.**
+
+```
+       ┌────────────────────────────────────────────────────────────────┐
+       │                ORCHESTRATION & ANALYTICS LAYERS                │
+       │          Omniscient Director Agent & Hyper-Personalized        │
+       │                   Student Knowledge Graph                      │
+       └───────────────────────────────┬────────────────────────────────┘
+                                       │
+        ┌──────────────────────────────┼──────────────────────────────┐
+        │                              │                              │
+        ▼                              ▼                              ▼
+┌──────────────────────────────┐┌──────────────────────────────┐┌──────────────────────────────┐
+│       STUDENT LAYER          ││    TEACHER/TUTOR LAYER       ││         PARENT LAYER         │
+├──────────────────────────────┤├──────────────────────────────┤├──────────────────────────────┤
+│ • Dynamic Micro-Scheduler    ││ • Co-Pilot Lesson Synthesizer││ • Non-Intrusive Coach        │
+│ • "Blurt" Voice Assessment   ││ • Automatic Exam Predictor   ││ • Real-time Intervention Hub │
+│ • Multi-Agent Debater Socratic│ • Auto-Grader Feedback       ││ • Conversational Progress    │
+└──────────────────────────────┘└──────────────────────────────┘└──────────────────────────────┘
+```
+
+### 2.1 The core infrastructure engine
+
+**Omniscient Director Agent (system router).** Instead of rule-based SQL keyword matching, a
+central coordinator agent manages all user interactions — **profiling user behavior, intent,
+and cognitive load in real time**, routing requests to specialized sub-agents.
+
+**Hyper-Personalized Student Knowledge Graph.** Beyond static profiles: a **live vector
+graph** tracking mastery per topic. Every interaction — a skipped study session, a paused
+video, a low past-paper score — **adjusts the graph's nodes**, mapping strengths and
+weaknesses **down to specific sub-chapters.**
+
+### 2.2 Next-gen Student agent features
+
+| Agent | Legacy system | AI transformation |
+|---|---|---|
+| **Dynamic Micro-Scheduler** | students manually drag-and-drop study blocks into a calendar | autonomous scheduling agent checks real-time performance + syncs external calendars; a poor afternoon chemistry quiz **automatically reshuffles the evening** toward chemistry active recall; accounts for **cognitive fatigue** by swapping intense writing tasks for light flashcard review later |
+| **"Blurt" Voice Assessment & Multi-Modal Processing** | typed paragraphs / basic MCQs | hands-free **voice explanation** of a topic (e.g., mitosis) → transcription → **semantic match against the official exam rubric** → omitted keywords & misconceptions highlighted in real time |
+| **Multi-Agent Socratic Debater** | static reading of uploaded essays | for humanities/essay subjects, a **dual-agent simulation**: **Agent A (Strict Examiner)** critiques structure, evidence, argument; **Agent B (Socratic Guide)** helps rewrite sections and adjust tone for top-tier marks |
+
+### 2.3 Next-gen Teacher & Private Tutor agent features
+
+| Agent | Legacy system | AI transformation |
+|---|---|---|
+| **Co-Pilot Lesson Synthesizer** | teachers spend hours compiling worksheets and searching for resources | content agent instantly generates **board-specific, non-plagiarized** homework packets, slide decks, flashcards from a basic prompt or raw lesson notes; **100% alignment with current AQA/Edexcel specs**, dynamically updated if the board changes criteria |
+| **Predictive Exam Matrix** | teachers manually guess likely exam topics from previous years | analytical agent processes **decades of historical papers, chief-examiner reports, and national performance data** → predictive analysis of high-yield topics, common pitfalls, recommended focus areas before test day |
+| **Synthetic Student Auto-Grader** | weekends spent manually marking mocks and writing feedback letters | **vision-language agent scans handwritten papers**, extracts text, scores against precise mark-scheme rubrics, line-by-line constructive feedback; groups class performance into a summary showing **exactly what to reteach Monday morning** |
+
+### 2.4 Next-gen Parent agent features
+
+| Agent | Legacy system | AI transformation |
+|---|---|---|
+| **Non-Intrusive Parent Coach** | parents log into a complex dashboard of incomplete tasks — friction with their child | agent summarizes performance into **clear, actionable updates via a messaging interface** — e.g. *"Marcus has mastered 85% of his Physics equations but is struggling with long-form electricity questions. Avoid asking him if he finished his homework; instead, encourage him to try one more practice problem before 8 PM."* |
+| **Dynamic Intervention & Private Tutor Concierge** | parents manually search hundreds of unverified tutor profiles | when the knowledge graph detects a student **stuck on a critical topic despite multiple revision attempts**, the system coordinates an intervention: packages the student's **specific error logs and learning preferences**, then **automatically alerts and matches** the family with the best-suited vetted tutor |
+
+### 2.5 Next-gen Admin & platform-management agent features
+
+| Agent | Legacy system | AI transformation |
+|---|---|---|
+| **Self-Cleaning Crowdsourced Curation** | high vulnerability to copyright complaints and incorrect, poorly formatted student notes | every upload passes an automated validation pipeline: **plagiarism check, formatting correction, mathematical/historical error fixing, exact exam-spec tagging**; substandard entries **quietly filtered out** |
+| **Conversational Database UI** (on local infrastructure) | rigid, slow SQL reports for engagement queries | admin staff query the entire data footprint in **natural language** against an internal, secure database — e.g. *"Generate a report showing which Edexcel Maths topics have seen the largest drop in student performance across Birmingham over the past 14 days, and format the output as a clean table."* |
+
+---
+
+## Part 3 — Strategic tech-stack migration plan
+
+To implement these changes **without relying on third-party backend infrastructures**, the
+engineering roadmap deploys **open-weight, production-ready AI frameworks locally:**
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                          LOCAL STORAGE ENGINE                          │
+│     MariaDB (Relational Core)  +   pgvector Extensions (Vector Core)   │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                        AGENT RUNTIME ENVIRONMENT                       │
+│      LangGraph / Autogen Orchestration  +  Ollama Inference Engine     │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                       MODELS DEPLOYED PER NODE                         │
+│   • Llama 3.1 70B (Complex Tasks)   • Mistral 7B (Fast-Text Processing)│
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+| Layer | Components | Role |
+|---|---|---|
+| **Local storage engine** | MariaDB (relational core) + pgvector extensions (vector core) | data + embeddings on owned infrastructure |
+| **Agent runtime** | LangGraph / AutoGen orchestration + **Ollama** inference engine | local agent mesh + self-hosted inference |
+| **Models per node** | **Llama 3.1 70B** (complex tasks) · **Mistral 7B** (fast text processing) | open-weight tiering by task complexity |
+
+> **Strategic note (StudYear lens):** this is the **opposite provider bet** to StudYear's —
+> Get Revising's map goes *self-hosted open-weight* (data sovereignty, no per-token cost,
+> AADC-friendly locality) while StudYear runs *frontier-API multi-provider*
+> (Google/OpenAI today; Claude/Gemini/OpenAI router in the target blueprint). The trade:
+> self-hosting trades capability ceiling and ops burden for cost control and locality;
+> frontier APIs trade per-token cost for state-of-the-art reasoning. A hybrid — frontier for
+> deep reasoning, local open-weight for high-volume classify/extract — is the pattern both
+> roadmaps converge toward.
+
+### 3.1 Data layer foundation
+- **Relational storage:** retain **MariaDB** as the primary engine for user profiles,
+  transactional data, billing records, and traditional application state.
+- **Vectorization:** deploy a local vector DB instance or **pgvector**-compatible services
+  for multi-dimensional student profiles, semantic resources, and exam rubrics.
+
+### 3.2 Agent runtime & orchestration
+- **State management:** **LangGraph or Microsoft AutoGen** for structured multi-agent
+  workflows — managing complex interactions between specialized agents **without losing
+  context.**
+- **Local inference pipeline:** **Ollama or vLLM** hosted on private cloud infrastructure
+  for open-weight models — **protects student data privacy and avoids high API usage costs.**
+
+### 3.3 Model selection strategy
+| Tier | Models | Tasks |
+|---|---|---|
+| **Heavy** | Llama 3.1 70B / **Qwen-2.5-72B** | complex multi-step: essay evaluation, Socratic debating, exam-board pattern analysis |
+| **Fast** | Mistral-7B / Llama-3.1-8B | low-latency: voice transcription, resource tagging, calendar updates |
+
+---
+
+## Positioning note
+
+Get Revising (a The Student Room Group property) is a **classic pre-AI edtech product:
+strong distribution, dated mechanics** — a crowdsourced library + manual timetable in an
+era of closed-loop agentic systems. It slots naturally next to StudYear as a portfolio
+teardown: the Part 2 reimagining above is what an incumbent *would have to build* to match
+the StudYear 2.0 blueprint (`../product/deep-platform-extraction-report.md` Part B) —
+which is precisely StudYear's window.
