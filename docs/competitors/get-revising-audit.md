@@ -333,4 +333,31 @@ students**; its core promise is **organised, self-directed revision.**
 > grades, parent/tutor command centres, marketplace) — this list is effectively StudYear's
 > competitive sales sheet against the largest incumbent library in UK revision.
 
-*(Further sections follow as extracted.)*
+## Part 2 (second pass) — The AI-native reimagining: a Revision AI-OS
+
+> Framed as built: a **multi-agent AI workforce operating on a shared learner state, with
+> role-scoped surfaces for six personas.**
+
+### The core ML substrate (what makes everything else possible)
+
+| # | Engine | Specification |
+|---|---|---|
+| 1 | **Knowledge Tracing Engine** | Deep Knowledge Tracing (**DKT/SAINT-style transformer**) maintaining a per-student **mastery vector over every specification point of every exam-board syllabus**; every interaction (flashcard flip, quiz answer, marked essay, tutor session) updates it |
+| 2 | **Spaced Repetition Scheduler** | **FSRS-style** forgetting-curve model **per item per student**, replacing dumb calendar slots with *"review this exact topic today because you're about to forget it"* |
+| 3 | **Grade Prediction Model** | gradient-boosted/transformer ensemble mapping mastery vectors + behavioural signals + **historical exam-board grade boundaries** → live predicted grade per subject, with confidence intervals and **"grade delta if you do X" counterfactuals** |
+| 4 | **RAG Knowledge Layer** | every exam-board specification, mark scheme, examiner report, and past paper indexed; all agents ground answers in the **actual assessment objectives (AO1/AO2/AO3)** rather than generic knowledge |
+| 5 | **Safeguarding & Integrity Models** | classifiers for **grooming/bullying/self-harm signals** in community spaces (critical: minors), plus **AI-misuse detection** for submitted work |
+
+### The agent workforce, per persona
+
+**Student agents**
+
+| Agent | Specification |
+|---|---|
+| **Planner Agent** | replaces the static timetable with **continuous replanning**: missed a session, bombed a quiz, exam date moved → **the plan rebalances overnight**, weighted by mastery gaps and forgetting curves, not naive subject hours |
+| **Tutor Agent** | **Socratic, syllabus-grounded, exam-board-aware**; never dumps answers — **diagnoses the misconception from the knowledge-trace** and targets it |
+| **Content Forge Agent** | modern cross-format generation: paste class notes or **photograph a textbook page** → flashcards, mindmap, quiz, cloze test, and a **60-second audio summary**, all auto-tagged to specification points |
+| **Examiner Agent** | **the killer feature Get Revising cannot do**: marks written answers (incl. essays and 6-markers) against the **real mark scheme**, returns **AO-by-AO breakdown**, model improvements, and predicted marks — **this alone justifies premium pricing** |
+| **Motivation Agent** | streaks, workload pacing, **burnout detection from behavioural signals**, wellbeing-aware nudges |
+
+*(Further persona agents follow as extracted.)*
