@@ -611,6 +611,49 @@ command centres, and tutor-marketplace workflows.
 *Note: the section numbering (`§5b`, `§6`) reflects incremental extraction; the prior
 "How this grounds the rest of the docs" guidance still applies below.*
 
+## 4a. Live Admin Dashboard (as-is extraction — actual console)
+
+The production admin dashboard, verbatim ("Welcome, Admin! Here is an overview of the
+platform's performance."):
+
+**Overview tiles:** Total Students **38** · Active Users **67** · **High-Risk Students 0** ·
+**Sponsored Students 0** · School Partners **3** · Est. AI spend (30d) **£0.05** · Stripe
+gross (30d) **£0.00**.
+
+**Platform economics panels:** Stripe gross 30d/90d (payment counts, billing detail link) ·
+Est. AI API spend 30d (*provider-side token estimate*, ≈$0.06 USD list-price hint @ 1 USD ≈
+0.79 GBP, usage log) · **ACUs consumed (30d): 85 ≈ £0.85 · 3 successful AI calls** (debit
+volume with entry-pack £ hint).
+
+**Management cards (12):**
+
+| Card | Function |
+|---|---|
+| User Management | view, edit, manage **user wallets and roles** |
+| Tutor Management | review tutor applications, manage profiles |
+| School Management | review/approve new school partner accounts |
+| Support Tools | incl. **"View as User"** to assist customers |
+| Contact inbox & email test | contact-form messages + test email send |
+| Blog | create posts, **publish to the public site**, view read counts |
+| Content Management | manage subjects/topics, moderate generated content |
+| **Growth Partner Programme** | approve influencers, review referrals, **monitor commission caps** |
+| Revenue & billing | Stripe gross, payments, **discount codes**, ACU ledger |
+| Analytics & Reporting | generation volumes, student engagement |
+| System & AI Settings | **AI rate limits, feature flags**, global settings |
+| Fraud Monitoring | review accounts flagged for suspicious activity |
+
+**Confirmed-in-production notes:** the ACU ledger, discount codes, Growth Partner
+Programme (with commission caps), impersonation ("View as User"), AI cost telemetry with
+margin hints, and **Sponsored Students** (a sponsorship construct not previously
+extracted — likely the bridge to local-authority/diaspora funding) all exist in the live
+console. The unit economics on display (85 ACUs ≈ £0.85 revenue-equivalent vs £0.05 AI
+spend ≈ **94% margin**) already sit inside the 66–100% band.
+
+**Site footer (as-is page map):** StudYear — *"an AI-powered academic command centre,
+unifying student data, learning, teaching, and communication in one intelligent
+platform."* · **Platform:** How It Works · Create · Find Resources · **Company:** About
+Us · Contact · Blog · **Legal:** Terms · Privacy · Disclaimer · Cookies.
+
 ## 4b. Senior-PM observations (teardown synthesis)
 
 Four findings stand out from the full public teardown:

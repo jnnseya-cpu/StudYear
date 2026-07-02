@@ -26,6 +26,36 @@
 
 ---
 
+## 0b. Admin console navigation (resolved IA — directive)
+
+The console's information architecture, **on top of everything specified below**:
+
+| # | Nav section | Maps to |
+|---|---|---|
+| 1 | **Dashboard** | KPI dashboard (§KPI) — usage, revenue, ACU consumption, growth |
+| 2 | **Users** | identity control (§1) — students, parents, teachers, schools, tutors, orgs |
+| 3 | **Tutor applications** | approval queue: identity + DBS evidence → approve/reject (§1, venture brief §10.2) |
+| 4 | **Blog** | AI-powered blog console — SY-A22 drafts → review → publish (`../product/marketing-engine.md`) |
+| 5 | **Content** | content library, moderation queue, verification scores (§6/§Moderation) |
+| 6 | **Revenue & billing** | payments, subscriptions, plans, ACU packs, refunds/credits (§3/§5/§7) |
+| 7 | **AI costs** | per-tool/provider inference cost, margin-band watch (66–100%, commercial-model §1), thinking-budget telemetry |
+| 8 | **Analytics** | platform analytics — engagement, cohort adoption, funnel, SEO first-page share (SY-A24) |
+| 9 | **Fraud** | Sentinel/SY-A20 queues — ACU abuse, payment anomalies, growth-programme fraud signals |
+| 10 | **Support** | ticket queues with agent-drafted replies (§6) |
+| 11 | **Contact inbox** | inbound email/contact-form messages ("Talk to our team" B2B route included) |
+| 12 | **Settings** | platform config: policy, taxonomy, pricing console, discount codes (§12b commercial-model), feature limits, RBAC |
+
+### Admin account privileges (directive)
+
+- **Free unlimited AI:** the Platform Admin account uses **all AI features without ACU
+  limits** — admin usage is unmetered against any wallet, but still **cost-logged** to the
+  AI-costs section (internal platform cost, visible, never billed) and still audited per
+  action. Unlimited applies to *usage*; it never bypasses safety guardrails or audit.
+- **Editable account & profile pictures:** the admin can edit **their own account
+  picture/profile picture**, and can **edit any user's account/profile picture** (e.g.
+  moderation of inappropriate images) — every such edit is an audited action with the
+  prior image retained in the audit trail.
+
 ## 1. Users, Students, Parents, Teachers, Tutors (Identity Control)
 
 **What it shows**
