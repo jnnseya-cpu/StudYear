@@ -202,4 +202,57 @@ then StudYear can reclaim:
 *(These rules compose with the [66% minimum-margin mandate](commercial-model.md §1): partner
 economics are computed on net eligible revenue after the margin floor is protected.)*
 
-*(Further programme sections follow as extracted.)*
+## 10. Attractive public offer
+
+### For everyday users
+
+> **Invite friends. Help them learn smarter. Get 250 free ACUs for every paid referral.**
+>
+> After 20 successful paid referrals, unlock **Growth Referrer** status and start earning
+> from the customers you bring.
+
+### For influencers
+
+> **Earn 1% lifetime commission from the StudYear customers you bring — capped at £10,000
+> per month, with up to £20,000 earning potential per customer.**
+>
+> Promote a platform that helps students, parents, tutors and schools **close learning gaps
+> with AI.**
+
+## 11. Programme tiers
+
+### Tier 1 — Standard Referrer
+
+| | |
+|---|---|
+| **Requirement** | any verified user |
+| **Reward** | 250 ACUs per paid referral |
+| **Minimum referral spend** | £10 |
+
+### Tier 2 — Growth Referrer
+
+| | |
+|---|---|
+| **Requirement** | 20 successful paid referrals |
+| **Reward** | 0.25% net eligible revenue |
+| **Conditions** | subject to influencer rules |
+
+### Tier 3 — Approved Influencer
+
+| | |
+|---|---|
+| **Requirement** | manual approval |
+| **Reward** | 1% net eligible revenue |
+| **Caps** | £10,000/month · £20,000/customer lifetime cap |
+
+### Tier 4 — Strategic Education Partner
+
+For: **school consultants · tuition networks · community organisations · education
+advocates · local authority connectors.**
+
+**Reward:** custom commercial agreement — **but never automatically above the 1% framework
+unless StudYear approves manually.**
+
+## 12. Programme naming
+
+*(Name options follow as extracted.)*
