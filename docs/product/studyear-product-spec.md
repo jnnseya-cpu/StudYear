@@ -9,6 +9,39 @@
 > file records the **real product's positioning, engine, wallet economics, and roles**, so
 > every downstream design stays grounded.
 
+## 0. The pedagogical thesis (first principle)
+
+> **We all go to the same school, the same lessons, the same lectures — but with different
+> styles of understanding and different speeds of understanding.** The platform must
+> therefore use **machine learning and behavioural learning to personalise learning for
+> each individual — and improve everyone, very quickly.**
+
+This is the root requirement every feature serves. Its implications:
+
+1. **The classroom is uniform; the learner is not.** Same teacher, same lecture, same
+   syllabus — yet each student arrives with a different starting point, learning style
+   (visual / verbal / game-based / audio), pace, confidence, energy pattern, and
+   forgetting curve. A platform that delivers the same experience to everyone reproduces
+   the classroom's limitation instead of fixing it.
+2. **ML personalises the *what*:** knowledge tracing establishes what each student
+   actually knows (per topic, per spec point); weak-topic detection, adaptive quizzes,
+   and the study-plan optimiser deliver the right material at the right difficulty next
+   (ML layer — `§5a`; knowledge-tracing/forgetting-curve engines — the extraction report
+   Part B).
+3. **Behavioural learning personalises the *how* and *when*:** best-time-to-study,
+   session-length tolerance, format preference (flashcards vs lessons vs voice), streak
+   and motivation patterns, burnout signals — every interaction teaches the platform how
+   this specific student learns best (behavioural intelligence — `docs/ai-os/07`;
+   Motivation/Family-Support agents — `docs/ai-os/04 §3A`).
+4. **"Improve everyone very quickly" is the success criterion.** Personalisation is not a
+   luxury feature; it is the mechanism by which every learner — fast or slow, visual or
+   verbal — converges on their target grade sooner than uniform instruction allows. The
+   metric is mastery-gain per study hour, for *every* student, not the average
+   (success metrics — extraction report B8).
+
+*In one line: the school delivers the same lesson to all; StudYear delivers a different
+path through it to each — and measures that every path is getting faster.*
+
 ## 1. Core purpose
 
 StudYear positions itself as **"The UK's AI-Powered Education OS"** — an Education
@@ -445,6 +478,56 @@ on the event stream and feature store of the data-intelligence layer
 (`docs/ai-os/07-data-intelligence-layer.md`), and are consumed by the enhanced agents
 (`docs/ai-os/04-multi-agent-ecosystem.md §3A`). The flywheel: more interactions → better
 models → better interventions → better outcomes → more usage.
+
+## 5e. Personalisation Engine — "one classroom, a thousand curricula" (v1.1)
+
+> The doctrinal heart of the blueprint, formalising the pedagogical thesis (`§0`): **the
+> teacher teaches once; the OS consolidates a thousand different ways.**
+
+### The Learner Profile Vector (LPV)
+
+Seven **behaviourally-inferred** dimensions per student:
+
+| # | Dimension | Captures |
+|---|---|---|
+| 1 | **Pace profile** | speed of understanding per topic family |
+| 2 | **Format effectiveness** | which format actually works — measured **per-student, per-topic**, empirically |
+| 3 | **Error taxonomy** | the *kinds* of mistakes this student makes |
+| 4 | **Cognitive load tolerance** | how much intensity per session before quality drops |
+| 5 | **Engagement chronotype** | when this student genuinely studies best |
+| 6 | **Confidence calibration** | gap between self-assessed and actual mastery |
+| 7 | **Language profile** | English / French (the francophone-corridor dimension) |
+
+**All learned from behavioural telemetry** — response latency, hesitation, retries,
+abandonment points, session rhythm — **never from questionnaires**: zero extra effort from
+the student.
+
+### Three adaptation loops ("improve everyone very quickly" as an engineering property)
+
+| Loop | Timescale | Behaviour |
+|---|---|---|
+| **Within-session** | seconds | difficulty and format shift in real time |
+| **Across-session** | days | the Planner gives two classmates with identical timetables **entirely different plans** |
+| **Across-cohort** | weeks | the teacher's Cockpit shows not just *what* the class doesn't know, but **how differently they learn** |
+
+### Closing principle
+
+**Catch-up compression** for slower starters; **stretch material** for fast movers — *the
+floor and the ceiling rise together, because nobody is served the average student's
+experience.*
+
+### Registry addition — SY-A21 Profile Agent
+
+The **Profile Agent (SY-A21)** joins the registry as **substrate serving all personas** —
+it owns the LPV and feeds every other agent. The blueprint agent registry now stands at
+**twenty-one agents**; per the [mandate](../REQUIREMENTS-MANDATE.md), this unions with the
+14-agent roster (`§5c`), the 25 enhanced agents (`../ai-os/04 §3A`), and the 18-agent build
+list (Get Revising audit §5).
+
+> **Deliberate framing choice:** *format effectiveness* is defined as a per-student,
+> per-topic **empirical measurement** rather than "learning styles" — achieving the
+> personalisation goal while staying aligned with the education-research evidence base.
+> This wording survives scrutiny from any headteacher or edtech-literate investor.
 
 ## 5b. The 20 key platform modules
 

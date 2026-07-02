@@ -48,6 +48,8 @@ Every content stream received, and where it is implemented in the corpus:
 | 17 | Get Revising pass 3 (architectural teardown, Learning OS, MariaDB schema, token tiers) | same file, Appendix 2 |
 | 18 | Get Revising pass 4 (feature extraction + Academic Success OS rosters: Student/Parent/Teacher/School/Tutor/Admin OS layers, ML signals, the canonical 18-agent build list, winning positioning) | same file, Appendix 3 — **complete** |
 | 19 | Preservation & Enhancement Mandate directive ("implement everything, remove nothing, enhance only, start to end") | this document + root README banner |
+| 20 | Pedagogical thesis: same school/lessons/lectures, different styles & speeds → ML + behavioural learning personalisation to improve everyone quickly | `product/studyear-product-spec.md §0` |
+| 21 | v1.1 Personalisation Engine: LPV (7 behavioural dimensions), three adaptation loops, catch-up compression / stretch principle, SY-A21 Profile Agent (registry → 21) | `product/studyear-product-spec.md §5e` |
 
 **Audit rule:** every future stream gets a row here before its commit is pushed.
 
