@@ -41,6 +41,42 @@ The five engines *are* the Assess→Plan→Learn→Improve loop: Diagnostic = As
 Plan, Learning Tools = Learn, Progress Intelligence = Improve — with the ACU Wallet metering
 the AI compute that powers all four.
 
+## 2b. Platform-level capability inventory (publicly confirmed)
+
+**Marquee capability strip** (homepage cards): AI Tutor · Smart Diagnostics · Study Plans ·
+Grade Prediction · Assignment Review · Visual Charts · Past Papers · School Command Centre ·
+Parent Dashboard · Tutor Marketplace · Interactive Lessons · Recovery Plans.
+
+**The six flagship modules**, as described on-site:
+
+| Flagship module | On-site description |
+|---|---|
+| **AI Tutor** | 24/7 conversational support with diagrams, quizzes, and step-by-step explanations |
+| **Diagnostic Engine** | pinpointing weak topics **before they become grade shocks** |
+| **Adaptive Study Plans** | week-by-week priorities that **shift as mastery improves** |
+| **Assignment Review** | predicted grades, structured feedback, and educational visuals |
+| **Visual Learning Tools** | charts, graphs, and diagrams **generated from your data** |
+| **Progress Intelligence** | real-time dashboards **for students, families, and leaders** |
+
+### 2b.1 The content layer (UGC / resource-sharing)
+
+StudYear is **not only consumption** — it has a UGC/resource-sharing marketplace dimension:
+
+- **Create studio** (`/create`) and a **Find Resources** search surface (`/search`) sit in
+  the primary navigation.
+- A **shared platform library**: the Terms reference resources users *"voluntarily
+  contribute to the shared platform library"* under a **broader licence** than private
+  content.
+- This is the live counterpart to the Content Library module (`§5b` #17) and the
+  revision-resources architecture (`docs/architecture/11`); the contribute-under-licence
+  mechanic is the legal basis for cross-user resource sharing.
+
+### 2b.2 Target market
+
+**GCSE and A-Level students through to university undergraduates**, with the platform
+**adapting to level** — matching the level-scoped Subject taxonomy in
+`docs/architecture/12` (school/FE set vs the University subject set).
+
 ## 3. ACU Wallet economics (the monetisation backbone)
 
 The service runs on a **strictly prepaid** AI Credit Unit model:
