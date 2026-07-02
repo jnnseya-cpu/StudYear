@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear Study — search, plan, practise, track</title>
+<style>
+  :root{
+    --navy-950:#060B18; --navy-900:#0B1220; --navy-800:#101B33;
+    --gold-300:#F2DCA0; --gold-400:#E3C567; --gold-500:#D4AF37;
+    --ink:#EDF1F8; --ink-2:#AAB6CC; --ink-3:#6B7A96;
+    --s1:#3987e5; --s2:#199e70; --s3:#c98500;
+    --good:#5CBB7B; --warn:#c98500; --crit:#e66767;
+    --line:rgba(212,175,55,.14);
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:
+    radial-gradient(1100px 600px at 80% -10%, rgba(212,175,55,.10), transparent 60%),
+    radial-gradient(900px 700px at -10% 30%, rgba(22,37,74,.85), transparent 65%),
+    var(--navy-950);
+    color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1240px;margin:0 auto;padding:40px 32px 90px}
+  header.page h1{font-family:var(--serif);font-weight:500;font-size:40px;letter-spacing:-.01em}
+  header.page .k{font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold-500);margin-bottom:12px}
+  header.page p{color:var(--ink-2);max-width:72ch;margin-top:10px;font-weight:300}
+
+  nav.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:30px 0 8px;border-bottom:1px solid var(--line);padding-bottom:0}
+  nav.tabs button{appearance:none;background:none;border:none;border-bottom:2px solid transparent;color:var(--ink-2);
+    font:600 13px var(--sans);letter-spacing:.04em;padding:12px 16px;cursor:pointer}
+  nav.tabs button:hover{color:var(--ink)}
+  nav.tabs button.on{color:var(--gold-300);border-bottom-color:var(--gold-500)}
+  main>section{display:none;margin-top:26px}
+  main>section.on{display:block}
+
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.62),rgba(11,18,32,.9));padding:20px 22px;position:relative}
+  .card h3{font-size:13px;font-weight:600;letter-spacing:.02em}
+  .card .sub{font-size:11.5px;color:var(--ink-3);margin:3px 0 12px}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+  .c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+
+  .filters{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;margin-bottom:18px}
+  input[type=text],select,textarea,input[type=date],input[type=number]{
+    width:100%;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;
+    color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:var(--gold-500)}
+  select option{background:#101B33}
+  label.f{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(212,175,55,.12);color:var(--gold-300);
+    font:600 13px var(--sans);border-radius:9px;padding:10px 18px;cursor:pointer;letter-spacing:.03em}
+  .btn:hover{background:rgba(212,175,55,.22)}
+  .btn.ghost{border-color:rgba(170,182,204,.25);background:none;color:var(--ink-2)}
+  .btn.sm{padding:6px 12px;font-size:12px}
+
+  .rgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .res{border:1px solid var(--line);border-radius:12px;background:rgba(16,27,51,.5);padding:16px 18px;cursor:pointer;transition:border-color .12s}
+  .res:hover{border-color:var(--gold-500)}
+  .res .type{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-400)}
+  .res h4{font-family:var(--serif);font-weight:500;font-size:17px;margin:6px 0 4px;line-height:1.3}
+  .res .meta{font-size:11.5px;color:var(--ink-3)}
+  .res .stats{display:flex;gap:14px;margin-top:10px;font-size:11.5px;color:var(--ink-2)}
+  .badge{display:inline-block;font-size:10px;letter-spacing:.08em;border:1px solid rgba(170,182,204,.25);border-radius:20px;padding:2px 9px;color:var(--ink-2);margin-right:6px}
+  .badge.mine{border-color:var(--good);color:var(--good)}
+  .empty{color:var(--ink-3);font-style:italic;padding:30px 0;text-align:center}
+
+  /* modal viewer */
+  #modal{position:fixed;inset:0;background:rgba(6,11,24,.85);z-index:50;display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:6vh 20px}
+  #modal.on{display:flex}
+  #modal .box{background:var(--navy-800);border:1px solid var(--gold-500);border-radius:16px;max-width:760px;width:100%;padding:28px 30px;position:relative}
+  #modal .x{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--ink-3);font-size:22px;cursor:pointer}
+  #modal h2{font-family:var(--serif);font-weight:500;font-size:26px;margin-bottom:2px}
+  #modal .mmeta{font-size:12px;color:var(--ink-3);margin-bottom:18px}
+
+  .flash{perspective:1000px;margin:14px 0}
+  .flash .inner{position:relative;width:100%;min-height:190px;transform-style:preserve-3d;transition:transform .45s;cursor:pointer}
+  .flash.flip .inner{transform:rotateY(180deg)}
+  .flash .face{position:absolute;inset:0;backface-visibility:hidden;border:1px solid var(--line);border-radius:14px;
+    display:flex;align-items:center;justify-content:center;text-align:center;padding:26px;font-size:18px;background:rgba(6,11,24,.6)}
+  .flash .back{transform:rotateY(180deg);background:rgba(212,175,55,.08);color:var(--gold-300)}
+  .fnav{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:8px}
+  .fnav .cnt{font-size:12px;color:var(--ink-3);min-width:70px;text-align:center}
+
+  .q-opt{display:block;width:100%;text-align:left;background:rgba(6,11,24,.55);border:1px solid rgba(170,182,204,.2);
+    border-radius:10px;color:var(--ink);font:400 14.5px var(--sans);padding:12px 14px;margin:8px 0;cursor:pointer}
+  .q-opt:hover{border-color:var(--gold-500)}
+  .q-opt.right{border-color:var(--good);background:rgba(92,187,123,.12)}
+  .q-opt.wrong{border-color:var(--crit);background:rgba(230,103,103,.12)}
+  .q-prog{font-size:12px;color:var(--ink-3);margin-bottom:10px}
+  .q-exp{font-size:13px;color:var(--ink-2);border-left:2px solid var(--gold-500);padding:6px 12px;margin-top:10px;display:none}
+
+  .notes-body{font-size:14.5px;color:var(--ink-2)}
+  .notes-body h5{color:var(--gold-300);font-family:var(--serif);font-weight:500;font-size:17px;margin:16px 0 6px}
+  .notes-body ul{margin:6px 0 6px 20px}
+  .notes-body b{color:var(--ink)}
+
+  /* planner */
+  .plan-week{margin-top:18px}
+  .plan-week h4{font-family:var(--serif);font-weight:500;font-size:18px;color:var(--gold-300);margin-bottom:8px}
+  table.tt{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.tt th{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+  table.tt td{padding:7px 8px;border-bottom:1px solid rgba(170,182,204,.08);vertical-align:top}
+  .sess{display:inline-flex;align-items:center;gap:8px}
+  .sess input{accent-color:var(--gold-500)}
+  .sess.done span{text-decoration:line-through;color:var(--ink-3)}
+  .subj-pill{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:7px;vertical-align:baseline}
+  .conf{display:flex;gap:8px;align-items:center}
+  .conf button{width:30px;height:30px;border-radius:8px;border:1px solid rgba(170,182,204,.25);background:none;color:var(--ink-2);cursor:pointer;font-size:13px}
+  .conf button.on{border-color:var(--gold-500);color:var(--gold-300);background:rgba(212,175,55,.12)}
+  .subj-row{display:grid;grid-template-columns:2fr 1fr auto;gap:10px;align-items:center;margin-bottom:10px}
+
+  /* past papers */
+  .paper{display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:11px;background:rgba(16,27,51,.5);padding:13px 16px;margin-bottom:9px}
+  .paper .t{flex:1}
+  .paper .t b{font-weight:600;font-size:14px}
+  .paper .t .m{font-size:11.5px;color:var(--ink-3)}
+  .paper .yr{font-family:var(--serif);font-size:20px;color:var(--gold-300);min-width:56px}
+
+  /* tutor */
+  #chat{height:420px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;background:rgba(6,11,24,.5);padding:16px;display:flex;flex-direction:column;gap:12px}
+  .msg{max-width:82%;border-radius:12px;padding:10px 14px;font-size:14px;white-space:pre-wrap}
+  .msg.me{align-self:flex-end;background:rgba(57,135,229,.18);border:1px solid rgba(57,135,229,.4)}
+  .msg.bot{align-self:flex-start;background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.3)}
+  .msg.bot b{color:var(--gold-300)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .chip{border:1px solid rgba(170,182,204,.3);border-radius:20px;background:none;color:var(--ink-2);font-size:12px;padding:5px 12px;cursor:pointer}
+  .chip:hover{border-color:var(--gold-500);color:var(--gold-300)}
+  .chatline{display:flex;gap:10px;margin-top:12px}
+
+  /* progress */
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+  .tile{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:rgba(16,27,51,.5)}
+  .tile .v{font-family:var(--serif);font-size:30px;color:var(--gold-300);line-height:1.1}
+  .tile .v small{font-size:14px;color:var(--ink-2);font-family:var(--sans)}
+  .tile .k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}
+  .bar{height:8px;border-radius:5px;background:rgba(170,182,204,.12);overflow:hidden;margin-top:6px}
+  .bar i{display:block;height:100%;background:var(--gold-500)}
+  .mrow{display:grid;grid-template-columns:150px 1fr 48px;gap:12px;align-items:center;margin:9px 0;font-size:13px}
+  .mrow .pc{text-align:right;color:var(--ink-2);font-size:12.5px}
+  svg{display:block;width:100%}
+  svg text{font-family:var(--sans)}
+  .tick{fill:#6B7A96;font-size:10.5px}
+  .note{font-size:11.5px;color:var(--ink-3);margin-top:10px;font-style:italic}
+
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);
+    border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}.grid>*{grid-column:auto}.rgrid{grid-template-columns:1fr}
+    .filters{grid-template-columns:1fr 1fr}.tiles{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="page">
+  <div class="k">StudYear · Study Workspace</div>
+  <h1>Search it. Plan it. Practise it. Track it.</h1>
+  <p>The complete Get-Revising-class toolset: a searchable library of revision resources across every UK level,
+     a personal study planner built in under five minutes, a past-papers locator, your own resource maker,
+     an always-on tutor, and live progress tracking. Everything below is interactive.</p>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-t="search" class="on">🔎 Find resources</button>
+  <button data-t="planner">🗓 Study planner</button>
+  <button data-t="papers">📄 Past papers</button>
+  <button data-t="create">✍️ Create your own</button>
+  <button data-t="tutor">🤖 Tutor bot</button>
+  <button data-t="progress">📈 My progress</button>
+</nav>
+
+<main>
+
+<!-- ============================ SEARCH ============================ -->
+<section id="tab-search" class="on">
+  <div class="filters">
+    <div><label class="f">Keyword</label><input type="text" id="q" placeholder="e.g. photosynthesis, quadratics, Macbeth…"></div>
+    <div><label class="f">Subject</label><select id="f-subj"><option value="">All subjects</option></select></div>
+    <div><label class="f">Study level</label><select id="f-level"><option value="">All levels</option></select></div>
+    <div><label class="f">Resource type</label><select id="f-type"><option value="">All types</option></select></div>
+  </div>
+  <div class="rgrid" id="results"></div>
+  <div class="empty" id="noresults" style="display:none">No resources match — try widening the filters, or create your own in ✍️.</div>
+</section>
+
+<!-- ============================ PLANNER ============================ -->
+<section id="tab-planner">
+  <div class="grid">
+    <div class="card c5">
+      <h3>Build my plan</h3><div class="sub">tell us your exams and your week — a personalised timetable appears instantly</div>
+      <div id="subj-rows"></div>
+      <button class="btn ghost sm" id="add-subj">+ add subject</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
+        <div><label class="f">First exam date</label><input type="date" id="p-exam"></div>
+        <div><label class="f">Study days / week</label><select id="p-days"><option>3</option><option>4</option><option selected>5</option><option>6</option></select></div>
+        <div><label class="f">Minutes per session</label><select id="p-mins"><option>25</option><option selected>40</option><option>60</option></select></div>
+        <div><label class="f">Best time of day</label><select id="p-time"><option>After school (16:30)</option><option>Evening (19:00)</option><option>Morning (07:30)</option></select></div>
+      </div>
+      <div style="margin-top:16px"><button class="btn" id="gen-plan">Generate my study plan →</button></div>
+      <div class="note">Weaker subjects automatically get more sessions; the last 7 days before the exam switch to past-paper mode.</div>
+    </div>
+    <div class="card c7">
+      <h3>Your personalised timetable</h3><div class="sub" id="plan-sub">no plan yet — fill in the left panel and generate</div>
+      <div id="plan-out"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ PAST PAPERS ============================ -->
+<section id="tab-papers">
+  <div class="filters">
+    <div><label class="f">Subject</label><select id="pp-subj"></select></div>
+    <div><label class="f">Level</label><select id="pp-level"><option>GCSE</option><option>A-Level</option></select></div>
+    <div><label class="f">Exam board</label><select id="pp-board"><option value="">All boards</option><option>AQA</option><option>Edexcel</option><option>OCR</option><option>WJEC</option></select></div>
+    <div><label class="f">Year</label><select id="pp-year"><option value="">All years</option></select></div>
+  </div>
+  <div id="pp-list"></div>
+</section>
+
+<!-- ============================ CREATE ============================ -->
+<section id="tab-create">
+  <div class="grid">
+    <div class="card c6">
+      <h3>Create a flashcard deck</h3><div class="sub">one card per line — front and back separated by " :: "</div>
+      <label class="f">Deck title</label><input type="text" id="c-f-title" placeholder="e.g. French irregular verbs">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div><label class="f">Subject</label><select id="c-f-subj"></select></div>
+        <div><label class="f">Level</label><select id="c-f-level"></select></div>
+      </div>
+      <label class="f" style="margin-top:10px">Cards</label>
+      <textarea id="c-f-cards" rows="7" placeholder="aller :: to go&#10;être :: to be&#10;avoir :: to have"></textarea>
+      <div style="margin-top:12px"><button class="btn" id="c-f-save">Save deck to library</button></div>
+    </div>
+    <div class="card c6">
+      <h3>Create revision notes</h3><div class="sub">saved into the searchable library, tagged as yours</div>
+      <label class="f">Title</label><input type="text" id="c-n-title" placeholder="e.g. Causes of WW1 — summary">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div><label class="f">Subject</label><select id="c-n-subj"></select></div>
+        <div><label class="f">Level</label><select id="c-n-level"></select></div>
+      </div>
+      <label class="f" style="margin-top:10px">Notes</label>
+      <textarea id="c-n-body" rows="7" placeholder="Write or paste your notes…"></textarea>
+      <div style="margin-top:12px"><button class="btn" id="c-n-save">Save notes to library</button></div>
+      <div class="note">Your creations appear in 🔎 Find resources with a green “mine” badge, stored locally in this browser.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ TUTOR ============================ -->
+<section id="tab-tutor">
+  <div class="grid">
+    <div class="card c8">
+      <h3>Tutor bot</h3><div class="sub">homework &amp; exam help, 24/7 — ask anything, or tap a suggestion</div>
+      <div id="chat"></div>
+      <div class="chips" id="chips"></div>
+      <div class="chatline">
+        <input type="text" id="chat-in" placeholder="Ask a question — e.g. how do I solve a quadratic equation?">
+        <button class="btn" id="chat-send">Send</button>
+      </div>
+    </div>
+    <div class="card c4">
+      <h3>How the tutor helps</h3><div class="sub">it teaches the method, never just the answer</div>
+      <div class="notes-body">
+        <ul>
+          <li><b>Explains step-by-step</b> — worked methods you can reuse.</li>
+          <li><b>Checks understanding</b> — ends with a try-it-yourself question.</li>
+          <li><b>Links resources</b> — points you at flashcards, quizzes and past papers in the library.</li>
+          <li><b>Feeds your plan</b> — topics you ask about get extra planner sessions.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ PROGRESS ============================ -->
+<section id="tab-progress">
+  <div class="tiles">
+    <div class="tile"><div class="v" id="pt-streak">0 <small>days</small></div><div class="k">Study streak</div></div>
+    <div class="tile"><div class="v" id="pt-points">0</div><div class="k">Points earned</div></div>
+    <div class="tile"><div class="v" id="pt-quizzes">0</div><div class="k">Quizzes taken</div></div>
+    <div class="tile"><div class="v" id="pt-adhere">–</div><div class="k">Plan adherence</div></div>
+  </div>
+  <div class="grid">
+    <div class="card c7"><h3>Quiz scores over time</h3><div class="sub">every quiz you finish lands here</div><div id="score-chart"><div class="empty">Take a quiz in 🔎 Find resources to start the chart.</div></div></div>
+    <div class="card c5"><h3>Mastery by subject</h3><div class="sub">rolling average of your quiz scores</div><div id="mastery"></div></div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<div id="modal"><div class="box"><button class="x" onclick="closeModal()">×</button><div id="modal-body"></div></div></div>
+<div id="toast"></div>
+
+<script>
+/* ============================ REFERENCE DATA ============================ */
+const SUBJECTS = ["Mathematics","Chemistry","Biology","Physics","English Literature","History","Geography","French","Spanish","Psychology","Business Studies","Computer Science","Economics","Religious Studies","Sociology"];
+const LEVELS = ["GCSE","A-Level","IB","University","KS3"];
+const TYPES = ["Flashcards","Quiz","Notes","Mindmap","Revision cards"];
+const SUBJ_COLOURS = {}; SUBJECTS.forEach((s,i)=>SUBJ_COLOURS[s]=["#3987e5","#199e70","#c98500","#5CBB7B","#e66767","#8b7cf6","#3aa7c9"][i%7]);
+
+/* ============================ RESOURCE LIBRARY ============================ */
+const LIB = [
+ {id:"r1",type:"Flashcards",title:"GCSE Chemistry — Bonding & Structure",subj:"Chemistry",level:"GCSE",board:"AQA",uses:12480,rating:4.8,
+  cards:[["What is an ionic bond?","Electrostatic attraction between oppositely charged ions, formed by electron transfer."],
+         ["What is a covalent bond?","A shared pair of electrons between two non-metal atoms."],
+         ["Why do ionic compounds have high melting points?","Strong electrostatic forces between ions need lots of energy to overcome."],
+         ["Why does graphite conduct electricity?","Each carbon bonds to 3 others, leaving one delocalised electron per atom free to move."],
+         ["What is a metallic bond?","Attraction between positive metal ions and a sea of delocalised electrons."]]},
+ {id:"r2",type:"Quiz",title:"Quadratic Equations — factorising & the formula",subj:"Mathematics",level:"GCSE",board:"Edexcel",uses:9310,rating:4.7,
+  qs:[{q:"Solve x² − 5x + 6 = 0",o:["x = 2 or x = 3","x = −2 or x = −3","x = 1 or x = 6","x = 5 or x = 6"],a:0,exp:"Factorise: (x−2)(x−3)=0, so x = 2 or 3."},
+      {q:"What is the discriminant of ax² + bx + c?",o:["b² − 4ac","4ac − b²","b² + 4ac","−b ± 2ac"],a:0,exp:"b² − 4ac tells you how many real roots exist."},
+      {q:"If the discriminant is negative, the equation has…",o:["no real roots","two real roots","one repeated root","infinite roots"],a:0,exp:"Negative discriminant → no real solutions."},
+      {q:"Solve x² = 49",o:["x = ±7","x = 7 only","x = ±24.5","x = 7 or 42"],a:0,exp:"Square roots have both a positive and negative solution."}]},
+ {id:"r3",type:"Notes",title:"Photosynthesis — complete revision notes",subj:"Biology",level:"GCSE",board:"AQA",uses:15920,rating:4.9,
+  body:`<h5>The equation</h5><p><b>carbon dioxide + water → glucose + oxygen</b> (6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂), driven by light energy absorbed by chlorophyll.</p>
+        <h5>Limiting factors</h5><ul><li><b>Light intensity</b> — more light, faster rate (until another factor limits).</li><li><b>CO₂ concentration</b> — raw material; greenhouses enrich it.</li><li><b>Temperature</b> — enzymes denature above ~45°C, rate collapses.</li></ul>
+        <h5>Uses of glucose</h5><ul><li>Respiration · making cellulose · making starch (storage) · making amino acids (with nitrates) · making fats and oils.</li></ul>
+        <h5>Exam tip</h5><p>Rate questions almost always want <b>inverse square law</b> for light or a <b>limiting factor</b> explanation — name the factor that stops the curve rising.</p>`},
+ {id:"r4",type:"Mindmap",title:"Macbeth — themes, characters, key quotes",subj:"English Literature",level:"GCSE",board:"AQA",uses:11240,rating:4.8,
+  map:{c:"MACBETH",n:[["Ambition",["'Vaulting ambition'","Lady M's drive","corrupts nobility"]],["Guilt",["'Out, damned spot'","Banquo's ghost","sleep no more"]],["Supernatural",["the witches","dagger vision","prophecy"]],["Kingship",["Duncan vs tyrant","divine right","Malcolm's test"]],["Violence",["brave Macbeth","Macduff's family","'blood will have blood'"]]]}},
+ {id:"r5",type:"Revision cards",title:"Causes of World War One",subj:"History",level:"GCSE",board:"Edexcel",uses:8630,rating:4.6,
+  cards:[["M — Militarism","Arms race: German navy vs British dreadnoughts; armies doubled 1900–14."],
+         ["A — Alliances","Triple Alliance vs Triple Entente turned a Balkan dispute into a continental war."],
+         ["I — Imperialism","Colonial rivalry (Morocco crises 1905, 1911) hardened distrust."],
+         ["N — Nationalism","Pan-Slavism and Serbian nationalism; the Black Hand assassinated Franz Ferdinand, 28 June 1914."],
+         ["The spark","Assassination → Austrian ultimatum → mobilisation dominoes → war by 4 August 1914."]]},
+ {id:"r6",type:"Quiz",title:"A-Level Psychology — Memory (MSM & WMM)",subj:"Psychology",level:"A-Level",board:"AQA",uses:6210,rating:4.7,
+  qs:[{q:"Capacity of short-term memory (Miller)?",o:["7 ± 2 items","5 ± 1 items","unlimited","3 ± 1 items"],a:0,exp:"Miller (1956): the magic number seven, plus or minus two."},
+      {q:"Coding in long-term memory is mainly…",o:["semantic","acoustic","visual","iconic"],a:0,exp:"Baddeley (1966): LTM confuses similar meanings — semantic coding."},
+      {q:"Which is NOT a component of the Working Memory Model?",o:["sensory register","central executive","phonological loop","visuo-spatial sketchpad"],a:0,exp:"The sensory register belongs to the Multi-Store Model."},
+      {q:"KF's case study challenged the MSM because…",o:["his visual STM was intact while verbal STM was damaged","he had no LTM at all","he could not form new memories","his IQ increased"],a:0,exp:"STM must have separate stores — evidence for the WMM."}]},
+ {id:"r7",type:"Flashcards",title:"French GCSE — 40 high-frequency verbs",subj:"French",level:"GCSE",board:"AQA",uses:7440,rating:4.5,
+  cards:[["aller","to go"],["être","to be"],["avoir","to have"],["faire","to do / make"],["pouvoir","to be able to"],["vouloir","to want"],["devoir","to have to"],["savoir","to know (a fact)"]]},
+ {id:"r8",type:"Notes",title:"A-Level Economics — Elasticities (PED, YED, XED, PES)",subj:"Economics",level:"A-Level",board:"Edexcel",uses:5330,rating:4.7,
+  body:`<h5>PED — price elasticity of demand</h5><p><b>%ΔQd ÷ %ΔP</b>. |PED| &gt; 1 elastic, &lt; 1 inelastic. Determinants: substitutes, necessity, time, share of income.</p>
+        <h5>Revenue rule</h5><p>Elastic → cut price to raise revenue. Inelastic → raise price to raise revenue. Exams love this with tobacco and rail fares.</p>
+        <h5>YED &amp; XED</h5><ul><li>YED &gt; 0 normal (·&gt;1 luxury), &lt; 0 inferior.</li><li>XED &gt; 0 substitutes, &lt; 0 complements.</li></ul>
+        <h5>PES</h5><p>Determined by spare capacity, stocks, factor mobility, production time. Perfectly inelastic in the immediate run (concert tickets).</p>`},
+ {id:"r9",type:"Mindmap",title:"The Water Cycle & River Landscapes",subj:"Geography",level:"GCSE",board:"OCR",uses:4980,rating:4.4,
+  map:{c:"RIVERS",n:[["Processes",["erosion: HAAS","transport: TSSS","deposition"]],["Landforms",["V-valleys","meanders","ox-bow lakes","levées"]],["Flooding",["hydrographs","urbanisation","hard vs soft engineering"]],["Water cycle",["evaporation","condensation","through-flow"]]]}},
+ {id:"r10",type:"Quiz",title:"IB Physics — Mechanics core check",subj:"Physics",level:"IB",board:"IB",uses:3120,rating:4.6,
+  qs:[{q:"A body in equilibrium has…",o:["zero resultant force and zero resultant torque","zero velocity","zero mass","constant acceleration"],a:0,exp:"Both translational and rotational equilibrium are required."},
+      {q:"Impulse equals…",o:["change in momentum","change in energy","force × distance","mass × velocity"],a:0,exp:"FΔt = Δp — the area under a force–time graph."},
+      {q:"In projectile motion (no air resistance), the horizontal velocity…",o:["stays constant","increases","decreases","is zero at the top"],a:0,exp:"No horizontal force acts, so no horizontal acceleration."}]},
+ {id:"r11",type:"Revision cards",title:"Computer Science — Big-O in 6 cards",subj:"Computer Science",level:"A-Level",board:"OCR",uses:4110,rating:4.8,
+  cards:[["O(1)","Constant — hash-table lookup. Doesn't grow with input."],["O(log n)","Logarithmic — binary search halves the problem each step."],["O(n)","Linear — one pass over the data."],["O(n log n)","Linearithmic — merge sort, the sorting floor for comparisons."],["O(n²)","Quadratic — nested loops; bubble sort's average case."],["O(2ⁿ)","Exponential — brute-force subsets; intractable fast."]]},
+ {id:"r12",type:"Notes",title:"University — Essay structure that examiners reward",subj:"English Literature",level:"University",board:"—",uses:2210,rating:4.5,
+  body:`<h5>The spine</h5><p><b>Thesis → argument paragraphs → counter-argument → conclusion that answers the question.</b> Every paragraph earns its place by advancing the thesis.</p>
+        <h5>PEEL, upgraded</h5><ul><li><b>Point</b> — one claim per paragraph.</li><li><b>Evidence</b> — quote or data, embedded, not bolted on.</li><li><b>Explain</b> — the 'because' chain: evidence → meaning → thesis.</li><li><b>Link</b> — pivot to the next claim, not a summary.</li></ul>
+        <h5>What loses marks</h5><ul><li>Narration instead of argument.</li><li>Quotes left to 'speak for themselves'.</li><li>Conclusions that introduce new material.</li></ul>`},
+ {id:"r13",type:"Flashcards",title:"Biology A-Level — Biological molecules",subj:"Biology",level:"A-Level",board:"AQA",uses:6870,rating:4.7,
+  cards:[["Bond in carbohydrates?","Glycosidic bond, formed by condensation."],["Test for reducing sugars?","Benedict's — heat; brick-red precipitate = positive."],["Structure of triglyceride?","One glycerol + three fatty acids joined by ester bonds."],["Primary protein structure?","The sequence of amino acids in the polypeptide chain."],["Induced fit model?","The active site moulds around the substrate on binding."]]},
+ {id:"r14",type:"Quiz",title:"Business Studies — Finance & break-even",subj:"Business Studies",level:"GCSE",board:"Edexcel",uses:3540,rating:4.4,
+  qs:[{q:"Break-even output =",o:["fixed costs ÷ contribution per unit","fixed costs ÷ price","total costs ÷ price","variable costs ÷ contribution"],a:0,exp:"Contribution = price − variable cost per unit."},
+      {q:"Which is a fixed cost?",o:["factory rent","raw materials","piece-rate wages","packaging"],a:0,exp:"Rent doesn't change with output."},
+      {q:"Margin of safety =",o:["actual output − break-even output","price − variable cost","revenue − total cost","fixed − variable costs"],a:0,exp:"How far sales can fall before losses begin."}]},
+ {id:"r15",type:"Mindmap",title:"Christianity — beliefs & practices overview",subj:"Religious Studies",level:"GCSE",board:"AQA",uses:2890,rating:4.3,
+  map:{c:"CHRISTIANITY",n:[["The Trinity",["Father","Son","Holy Spirit"]],["Salvation",["grace","atonement","sin"]],["Worship",["liturgical","informal","private prayer"]],["Sacraments",["baptism","Eucharist"]],["Festivals",["Christmas","Easter"]]]}},
+];
+
+/* user-created resources live in localStorage */
+const store = {
+  get(k,d){try{return JSON.parse(localStorage.getItem("sy-"+k)) ?? d}catch(e){return d}},
+  set(k,v){localStorage.setItem("sy-"+k,JSON.stringify(v))}
+};
+function allResources(){ return LIB.concat(store.get("mine",[])) }
+
+/* ============================ TABS ============================ */
+document.getElementById("tabs").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on",x===b));
+  document.querySelectorAll("main>section").forEach(s=>s.classList.toggle("on",s.id==="tab-"+b.dataset.t));
+  if(b.dataset.t==="progress") renderProgress();
+});
+
+/* ============================ SEARCH ============================ */
+function fillSelect(el,items,withBlank){ items.forEach(x=>{const o=document.createElement("option");o.textContent=x;el.appendChild(o)}) }
+fillSelect(document.getElementById("f-subj"),SUBJECTS);
+fillSelect(document.getElementById("f-level"),LEVELS);
+fillSelect(document.getElementById("f-type"),TYPES);
+["c-f-subj","c-n-subj","pp-subj"].forEach(id=>fillSelect(document.getElementById(id),SUBJECTS));
+["c-f-level","c-n-level"].forEach(id=>fillSelect(document.getElementById(id),LEVELS));
+
+const TYPE_ICON={Flashcards:"🃏",Quiz:"❓",Notes:"📓",Mindmap:"🧠","Revision cards":"🗂"};
+function renderResults(){
+  const q=document.getElementById("q").value.trim().toLowerCase();
+  const s=document.getElementById("f-subj").value, l=document.getElementById("f-level").value, t=document.getElementById("f-type").value;
+  const hits=allResources().filter(r=>
+    (!q || (r.title+" "+r.subj+" "+(r.body||"")+JSON.stringify(r.cards||r.qs||r.map||"")).toLowerCase().includes(q)) &&
+    (!s||r.subj===s)&&(!l||r.level===l)&&(!t||r.type===t));
+  const el=document.getElementById("results");
+  el.innerHTML=hits.map(r=>`
+    <div class="res" onclick="openRes('${r.id}')">
+      <div class="type">${TYPE_ICON[r.type]||"📚"} ${r.type}${r.mine?' <span class="badge mine">mine</span>':""}</div>
+      <h4>${esc(r.title)}</h4>
+      <div class="meta">${r.subj} · ${r.level}${r.board&&r.board!=="—"?" · "+r.board:""}</div>
+      <div class="stats"><span>★ ${r.rating??"–"}</span><span>${r.uses?r.uses.toLocaleString()+" uses":"just created"}</span></div>
+    </div>`).join("");
+  document.getElementById("noresults").style.display=hits.length?"none":"block";
+}
+["q","f-subj","f-level","f-type"].forEach(id=>document.getElementById(id).addEventListener("input",renderResults));
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+/* ============================ RESOURCE VIEWERS ============================ */
+const modal=document.getElementById("modal"), mbody=document.getElementById("modal-body");
+function closeModal(){modal.classList.remove("on")}
+modal.addEventListener("click",e=>{if(e.target===modal)closeModal()});
+function openRes(id){
+  const r=allResources().find(x=>x.id===id); if(!r) return;
+  touchStreak(); addPoints(2);
+  modal.classList.add("on");
+  const head=`<h2>${esc(r.title)}</h2><div class="mmeta">${r.type} · ${r.subj} · ${r.level}</div>`;
+  if(r.type==="Flashcards") viewFlash(r,head);
+  else if(r.type==="Quiz") viewQuiz(r,head);
+  else if(r.type==="Notes") mbody.innerHTML=head+`<div class="notes-body">${r.mine?esc(r.body).replace(/\n/g,"<br>"):r.body}</div>`;
+  else if(r.type==="Mindmap") viewMap(r,head);
+  else if(r.type==="Revision cards") mbody.innerHTML=head+r.cards.map(c=>`
+      <div class="card" style="margin-bottom:10px"><h3 style="color:var(--gold-300);font-family:var(--serif);font-size:17px;font-weight:500">${esc(c[0])}</h3>
+      <div style="font-size:14px;color:var(--ink-2);margin-top:4px">${esc(c[1])}</div></div>`).join("");
+}
+
+function viewFlash(r,head){
+  let i=0,flipped=false;
+  const draw=()=>{ mbody.innerHTML=head+`
+    <div class="flash ${flipped?"flip":""}" id="fl"><div class="inner">
+      <div class="face">${esc(r.cards[i][0])}</div><div class="face back">${esc(r.cards[i][1])}</div>
+    </div></div>
+    <div class="note" style="text-align:center;margin-top:0">tap the card to flip</div>
+    <div class="fnav">
+      <button class="btn ghost sm" id="fprev">← prev</button>
+      <span class="cnt">${i+1} / ${r.cards.length}</span>
+      <button class="btn ghost sm" id="fnext">next →</button>
+    </div>`;
+    document.getElementById("fl").onclick=()=>{flipped=!flipped;document.getElementById("fl").classList.toggle("flip",flipped)};
+    document.getElementById("fprev").onclick=()=>{i=(i-1+r.cards.length)%r.cards.length;flipped=false;draw()};
+    document.getElementById("fnext").onclick=()=>{i=(i+1)%r.cards.length;flipped=false;addPoints(1);draw()};
+  }; draw();
+}
+
+function viewQuiz(r,head){
+  let i=0,score=0,locked=false;
+  const draw=()=>{ const q=r.qs[i];
+    mbody.innerHTML=head+`<div class="q-prog">Question ${i+1} of ${r.qs.length} · score ${score}</div>
+      <div style="font-size:17px;font-family:var(--serif);margin-bottom:6px">${esc(q.q)}</div>
+      ${q.o.map((o,j)=>`<button class="q-opt" data-j="${j}">${esc(o)}</button>`).join("")}
+      <div class="q-exp" id="qexp">${esc(q.exp)}</div>
+      <div style="margin-top:14px;text-align:right"><button class="btn sm" id="qnext" style="visibility:hidden">${i+1<r.qs.length?"Next →":"Finish"}</button></div>`;
+    locked=false;
+    mbody.querySelectorAll(".q-opt").forEach(b=>b.onclick=()=>{
+      if(locked)return; locked=true;
+      const j=+b.dataset.j;
+      if(j===q.a){b.classList.add("right");score++} else {b.classList.add("wrong");mbody.querySelectorAll(".q-opt")[q.a].classList.add("right")}
+      document.getElementById("qexp").style.display="block";
+      document.getElementById("qnext").style.visibility="visible";
+    });
+    document.getElementById("qnext").onclick=()=>{ if(++i<r.qs.length) draw(); else finish(); };
+  };
+  const finish=()=>{
+    const pct=Math.round(100*score/r.qs.length);
+    recordQuiz(r,pct); addPoints(10+score*5);
+    mbody.innerHTML=head+`
+      <div style="text-align:center;padding:26px 0">
+        <div style="font-family:var(--serif);font-size:54px;color:var(--gold-300)">${pct}%</div>
+        <div style="color:var(--ink-2)">${score} of ${r.qs.length} correct · +${10+score*5} points · logged to 📈 My progress</div>
+        <div style="margin-top:18px"><button class="btn" onclick="openRes('${r.id}')">Retake quiz</button>
+        <button class="btn ghost" onclick="closeModal()">Done</button></div>
+      </div>`;
+  };
+  draw();
+}
+
+function viewMap(r,head){
+  const W=700,H=440,cx=W/2,cy=H/2,m=r.map;
+  let sv=`<svg viewBox="0 0 ${W} ${H}">`;
+  const N=m.n.length;
+  m.n.forEach((br,i)=>{
+    const a=-Math.PI/2+i*2*Math.PI/N, bx=cx+Math.cos(a)*170, by=cy+Math.sin(a)*140;
+    sv+=`<line x1="${cx}" y1="${cy}" x2="${bx}" y2="${by}" stroke="rgba(212,175,55,.35)" stroke-width="1.5"/>`;
+    br[1].forEach((leaf,j)=>{
+      const la=a+(j-(br[1].length-1)/2)*0.42, lx=bx+Math.cos(la)*95, ly=by+Math.sin(la)*72;
+      sv+=`<line x1="${bx}" y1="${by}" x2="${lx}" y2="${ly}" stroke="rgba(170,182,204,.25)" stroke-width="1"/>
+           <text x="${lx}" y="${ly}" text-anchor="middle" fill="#AAB6CC" font-size="10.5">${esc(leaf)}</text>`;
+    });
+    sv+=`<rect x="${bx-52}" y="${by-13}" width="104" height="26" rx="13" fill="#101B33" stroke="rgba(212,175,55,.5)"/>
+         <text x="${bx}" y="${by+4}" text-anchor="middle" fill="#F2DCA0" font-size="11.5" font-weight="600">${esc(br[0])}</text>`;
+  });
+  sv+=`<circle cx="${cx}" cy="${cy}" r="46" fill="#D4AF37" opacity=".92"/>
+       <text x="${cx}" y="${cy+4}" text-anchor="middle" fill="#060B18" font-size="12.5" font-weight="700">${esc(m.c)}</text></svg>`;
+  mbody.innerHTML=head+sv;
+}
+
+/* ============================ CREATE ============================ */
+document.getElementById("c-f-save").onclick=()=>{
+  const title=document.getElementById("c-f-title").value.trim();
+  const lines=document.getElementById("c-f-cards").value.split("\n").map(l=>l.split("::").map(s=>s.trim())).filter(p=>p.length===2&&p[0]&&p[1]);
+  if(!title||!lines.length){toast("Add a title and at least one card (front :: back)");return}
+  const mine=store.get("mine",[]);
+  mine.push({id:"u"+(mine.length+1)+"f",mine:true,type:"Flashcards",title,subj:document.getElementById("c-f-subj").value,level:document.getElementById("c-f-level").value,cards:lines});
+  store.set("mine",mine); addPoints(15); touchStreak();
+  document.getElementById("c-f-title").value="";document.getElementById("c-f-cards").value="";
+  renderResults(); toast("Deck saved — find it in 🔎 with the green badge (+15 pts)");
+};
+document.getElementById("c-n-save").onclick=()=>{
+  const title=document.getElementById("c-n-title").value.trim(), body=document.getElementById("c-n-body").value.trim();
+  if(!title||!body){toast("Add a title and some notes first");return}
+  const mine=store.get("mine",[]);
+  mine.push({id:"u"+(mine.length+1)+"n",mine:true,type:"Notes",title,subj:document.getElementById("c-n-subj").value,level:document.getElementById("c-n-level").value,body});
+  store.set("mine",mine); addPoints(15); touchStreak();
+  document.getElementById("c-n-title").value="";document.getElementById("c-n-body").value="";
+  renderResults(); toast("Notes saved to your library (+15 pts)");
+};
+
+/* ============================ PLANNER ============================ */
+const subjRows=document.getElementById("subj-rows");
+function addSubjRow(subj,conf){
+  const row=document.createElement("div");row.className="subj-row";
+  row.innerHTML=`<select>${SUBJECTS.map(s=>`<option${s===subj?" selected":""}>${s}</option>`).join("")}</select>
+    <div class="conf">${[1,2,3,4,5].map(n=>`<button data-n="${n}" class="${n<=conf?"on":""}">${n}</button>`).join("")}</div>
+    <button class="btn ghost sm rm">×</button>`;
+  row.querySelector(".conf").addEventListener("click",e=>{
+    const b=e.target.closest("button");if(!b)return;
+    row.querySelectorAll(".conf button").forEach(x=>x.classList.toggle("on",+x.dataset.n<=+b.dataset.n));
+  });
+  row.querySelector(".rm").onclick=()=>row.remove();
+  subjRows.appendChild(row);
+}
+addSubjRow("Mathematics",2);addSubjRow("Chemistry",3);addSubjRow("English Literature",4);
+document.getElementById("add-subj").onclick=()=>addSubjRow(SUBJECTS[0],3);
+(function(){const d=new Date();d.setDate(d.getDate()+35);document.getElementById("p-exam").value=d.toISOString().slice(0,10)})();
+
+document.getElementById("gen-plan").onclick=()=>{
+  const rows=[...subjRows.querySelectorAll(".subj-row")].map(r=>({
+    subj:r.querySelector("select").value,
+    conf:r.querySelectorAll(".conf button.on").length||3
+  }));
+  if(!rows.length){toast("Add at least one subject");return}
+  const exam=new Date(document.getElementById("p-exam").value+"T00:00:00");
+  const today=new Date(); today.setHours(0,0,0,0);
+  const daysLeft=Math.max(7,Math.round((exam-today)/86400000));
+  const perWeek=+document.getElementById("p-days").value, mins=+document.getElementById("p-mins").value;
+  const time=document.getElementById("p-time").value.match(/\((.+)\)/)[1];
+
+  /* weight sessions inversely to confidence */
+  const wsum=rows.reduce((a,r)=>a+(6-r.conf),0);
+  const weeks=Math.min(8,Math.ceil(daysLeft/7));
+  const DOW=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const plan=[];
+  let cursor=0;
+  const bag=[]; rows.forEach(r=>{for(let k=0;k<(6-r.conf);k++)bag.push(r.subj)});
+  for(let w=0;w<weeks;w++){
+    const lastWeek=(w===weeks-1)||((weeks-w)*7>=daysLeft-7&&w===weeks-1);
+    const wk={n:w+1,days:[]};
+    const useDays=DOW.slice(0,perWeek);
+    useDays.forEach(d=>{
+      const subj=bag[cursor%bag.length];cursor++;
+      const finalWeek=w===weeks-1;
+      wk.days.push({d,subj,time,mins,mode:finalWeek?"Past paper + mark-scheme review":pick(subj,cursor)});
+    });
+    plan.push(wk);
+  }
+  store.set("plan",{made:today.toISOString().slice(0,10),plan,done:store.get("plan",{done:{}}).done||{}});
+  renderPlan(); addPoints(20); touchStreak();
+  document.getElementById("plan-sub").textContent=
+    `${rows.length} subjects · ${perWeek} days/week · ${mins}-min sessions · ${daysLeft} days to first exam — weakest subjects weighted heaviest`;
+  toast("Plan generated in seconds — tick sessions as you finish them (+20 pts)");
+};
+function pick(subj,seed){
+  const modes=["Flashcards + recall test","Quiz + review wrong answers","Notes condensing (one page)","Mindmap from memory","Teach-it-back summary"];
+  return modes[(subj.length+seed)%modes.length];
+}
+function renderPlan(){
+  const saved=store.get("plan",null); const out=document.getElementById("plan-out");
+  if(!saved||!saved.plan){out.innerHTML='<div class="empty">Your timetable will appear here.</div>';return}
+  const done=saved.done||{};
+  out.innerHTML=saved.plan.map(wk=>`
+    <div class="plan-week"><h4>Week ${wk.n}</h4>
+    <table class="tt"><tr><th>Day</th><th>Subject</th><th>Session</th><th>When</th></tr>
+    ${wk.days.map((s,i)=>{const key=wk.n+"-"+i;const isDone=!!done[key];return `
+      <tr><td>${s.d}</td>
+      <td><span class="subj-pill" style="background:${SUBJ_COLOURS[s.subj]||"#3987e5"}"></span>${s.subj}</td>
+      <td><label class="sess ${isDone?"done":""}"><input type="checkbox" data-k="${key}" ${isDone?"checked":""}><span>${s.mode} · ${s.mins} min</span></label></td>
+      <td style="color:var(--ink-3)">${s.time}</td></tr>`}).join("")}
+    </table></div>`).join("");
+  out.querySelectorAll("input[type=checkbox]").forEach(cb=>cb.onchange=()=>{
+    const saved=store.get("plan",null); saved.done=saved.done||{};
+    if(cb.checked){saved.done[cb.dataset.k]=1;addPoints(5);touchStreak();toast("Session done +5 pts")} else delete saved.done[cb.dataset.k];
+    store.set("plan",saved); renderPlan();
+  });
+}
+renderPlan();
+
+/* ============================ PAST PAPERS ============================ */
+const PP_YEARS=[2025,2024,2023,2022,2021,2019];
+fillSelect(document.getElementById("pp-year"),PP_YEARS);
+function paperCode(board,subj,yr,paper){
+  const sc=subj.split(" ").map(w=>w[0]).join("").toUpperCase();
+  return `${board.slice(0,3).toUpperCase()}/${sc}${String(yr).slice(2)}/0${paper}`;
+}
+function renderPapers(){
+  const subj=document.getElementById("pp-subj").value, lvl=document.getElementById("pp-level").value;
+  const board=document.getElementById("pp-board").value, yr=document.getElementById("pp-year").value;
+  const boards=board?[board]:["AQA","Edexcel","OCR"];
+  const years=yr?[+yr]:PP_YEARS;
+  let html="";
+  years.forEach(y=>boards.forEach(b=>[1,2].forEach(p=>{
+    html+=`<div class="paper"><div class="yr">${y}</div>
+      <div class="t"><b>${subj} ${lvl} — Paper ${p}</b><div class="m">${b} · June ${y} · ${paperCode(b,subj,y,p)} · question paper + mark scheme + examiner report</div></div>
+      <button class="btn ghost sm" onclick="toast('Demo library — production build streams the PDF from the board archive')">Paper</button>
+      <button class="btn ghost sm" onclick="toast('Mark scheme opens beside the paper for self-marking')">Mark scheme</button>
+      <button class="btn sm" onclick="toast('Added to your planner as a timed past-paper session')">Add to plan</button></div>`;
+  })));
+  document.getElementById("pp-list").innerHTML=html||'<div class="empty">No papers found.</div>';
+}
+["pp-subj","pp-level","pp-board","pp-year"].forEach(id=>document.getElementById(id).addEventListener("input",renderPapers));
+
+/* ============================ TUTOR BOT ============================ */
+const chat=document.getElementById("chat");
+const KB=[
+ {k:/quadratic|x²|factoris/i,a:"Quadratics — the 3-step method:\n1) Try to factorise: find two numbers that multiply to c and add to b. e.g. x² − 5x + 6 → (x−2)(x−3).\n2) If it won't factorise, use the formula: x = (−b ± √(b²−4ac)) / 2a.\n3) Check the discriminant b²−4ac first — negative means no real roots, so don't waste exam time.\n\nYour turn: solve x² + 7x + 12 = 0. (Want a hint? Ask!)"},
+ {k:/photosynth/i,a:"Photosynthesis in one breath: 6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂, powered by light captured by chlorophyll.\n\nExam questions nearly always test limiting factors: light intensity, CO₂ concentration, temperature. The rate rises with a factor until a *different* one becomes limiting — name the new limiter for full marks.\n\nThere's a full notes resource in 🔎 — search 'photosynthesis'."},
+ {k:/macbeth|shakespeare/i,a:"For Macbeth essays, anchor every paragraph to one theme + one quote + one context point.\n\nStrongest quote bank: 'vaulting ambition' (ambition), 'out, damned spot' (guilt), 'fair is foul' (supernatural inversion). Tie context to James I: witchcraft (Daemonologie) and divine right of kings.\n\nThe Macbeth mindmap in 🔎 maps all five themes to quotes."},
+ {k:/essay|structure|introduc/i,a:"Essay skeleton that examiners reward:\n1) Thesis — answer the question in your first two sentences.\n2) 3–4 argument paragraphs, PEEL each: Point, Evidence, Explain (the 'because' chain), Link.\n3) One counter-argument you then defeat.\n4) Conclusion that answers the question — never new material.\n\nSearch 'essay structure' in 🔎 for the full notes."},
+ {k:/elastic|ped|demand/i,a:"PED = %ΔQd ÷ %ΔP. |PED| > 1 elastic, < 1 inelastic.\n\nThe revenue rule wins marks: inelastic demand → raising price raises revenue (think rail fares, tobacco); elastic → cut price to grow revenue.\n\nDeterminants mnemonic SNIT: Substitutes, Necessity, Income share, Time."},
+ {k:/revis|plan|organis|exam in/i,a:"Fastest way to a working plan: open 🗓 Study planner, add your subjects and rate your confidence 1–5, set the exam date — done in under 5 minutes.\n\nThe engine gives weak subjects more sessions and switches the final week to timed past papers. Tick sessions off to build your streak."},
+ {k:/bond|ionic|covalent/i,a:"Bonding in 3 lines:\n• Ionic — metal + non-metal, electrons *transferred*, giant lattice, high melting point, conducts when molten/dissolved.\n• Covalent — non-metals *share* electron pairs; simple molecules have weak intermolecular forces (low mp).\n• Metallic — positive ions in a sea of delocalised electrons → conduction + malleability.\n\nDrill the flashcard deck 'Bonding & Structure' in 🔎."},
+];
+function botReply(text){
+  const hit=KB.find(e=>e.k.test(text));
+  const a=hit?hit.a:
+    "Good question. Here's how I'd attack it:\n1) Break it into what you *know* vs what's *asked*.\n2) Search 🔎 for the topic — there are flashcards, notes and quizzes across "+SUBJECTS.length+" subjects.\n3) If it's homework, paste the exact question and I'll walk the method step-by-step (I teach the method, not just the answer).\n\nTry asking about quadratics, photosynthesis, Macbeth, essay structure, elasticity, or bonding.";
+  addMsg(a,"bot");
+}
+function addMsg(t,who){
+  const d=document.createElement("div");d.className="msg "+who;
+  d.innerHTML=(who==="bot"?"<b>Tutor</b> · ":"")+esc(t).replace(/\n/g,"<br>");
+  chat.appendChild(d);chat.scrollTop=chat.scrollHeight;
+}
+function sendChat(){
+  const inp=document.getElementById("chat-in");const t=inp.value.trim();if(!t)return;
+  addMsg(t,"me");inp.value="";touchStreak();addPoints(3);
+  setTimeout(()=>botReply(t),350);
+}
+document.getElementById("chat-send").onclick=sendChat;
+document.getElementById("chat-in").addEventListener("keydown",e=>{if(e.key==="Enter")sendChat()});
+["How do I solve a quadratic equation?","Explain photosynthesis limiting factors","Best Macbeth quotes for ambition?","How should I structure an essay?","Help me plan my revision"].forEach(s=>{
+  const c=document.createElement("button");c.className="chip";c.textContent=s;
+  c.onclick=()=>{document.getElementById("chat-in").value=s;sendChat()};
+  document.getElementById("chips").appendChild(c);
+});
+addMsg("Hi! I'm your StudYear tutor — here for homework help, exam technique and quick explanations, any subject, any time. Ask me anything or tap a suggestion below.","bot");
+
+/* ============================ PROGRESS ============================ */
+function todayKey(){return new Date().toISOString().slice(0,10)}
+function touchStreak(){
+  const s=store.get("streak",{days:[],best:0});
+  const t=todayKey();
+  if(!s.days.includes(t)){s.days.push(t);s.days=s.days.slice(-60)}
+  store.set("streak",s);
+}
+function streakLen(){
+  const s=store.get("streak",{days:[]});const set=new Set(s.days);
+  let n=0;const d=new Date();
+  while(set.has(d.toISOString().slice(0,10))){n++;d.setDate(d.getDate()-1)}
+  return n;
+}
+function addPoints(n){store.set("points",store.get("points",0)+n)}
+function recordQuiz(r,pct){
+  const h=store.get("quizzes",[]);
+  h.push({t:todayKey(),subj:r.subj,title:r.title,pct});store.set("quizzes",h);
+}
+function renderProgress(){
+  document.getElementById("pt-streak").innerHTML=streakLen()+" <small>days</small>";
+  document.getElementById("pt-points").textContent=store.get("points",0).toLocaleString();
+  const qz=store.get("quizzes",[]);
+  document.getElementById("pt-quizzes").textContent=qz.length;
+  const plan=store.get("plan",null);
+  if(plan&&plan.plan){
+    const total=plan.plan.reduce((a,w)=>a+w.days.length,0);
+    const done=Object.keys(plan.done||{}).length;
+    document.getElementById("pt-adhere").textContent=total?Math.round(100*done/total)+"%":"–";
+  }
+  /* score chart */
+  const sc=document.getElementById("score-chart");
+  if(qz.length){
+    const W=640,H=220,P=34;const n=qz.length;
+    const x=i=>P+(n===1?(W-2*P)/2:i*(W-2*P)/(n-1));
+    const y=v=>H-P-(v/100)*(H-2*P);
+    let sv=`<svg viewBox="0 0 ${W} ${H}">`;
+    [0,50,100].forEach(g=>{sv+=`<line x1="${P}" x2="${W-P}" y1="${y(g)}" y2="${y(g)}" stroke="rgba(170,182,204,.14)"/><text class="tick" x="${P-8}" y="${y(g)+4}" text-anchor="end">${g}</text>`});
+    if(n>1) sv+=`<polyline fill="none" stroke="#D4AF37" stroke-width="2" points="${qz.map((q,i)=>x(i)+","+y(q.pct)).join(" ")}"/>`;
+    qz.forEach((q,i)=>{sv+=`<circle cx="${x(i)}" cy="${y(q.pct)}" r="4.5" fill="#F2DCA0"/><text class="tick" x="${x(i)}" y="${H-P+16}" text-anchor="middle">${q.subj.slice(0,4)}</text>`});
+    sv+="</svg>";sc.innerHTML=sv;
+  }
+  /* mastery */
+  const by={};qz.forEach(q=>{(by[q.subj]=by[q.subj]||[]).push(q.pct)});
+  const mast=document.getElementById("mastery");
+  const rows=Object.entries(by).map(([s,v])=>[s,Math.round(v.reduce((a,b)=>a+b,0)/v.length)]);
+  mast.innerHTML=rows.length?rows.map(([s,m])=>`
+    <div class="mrow"><span>${s}</span><div class="bar"><i style="width:${m}%;background:${SUBJ_COLOURS[s]||"#D4AF37"}"></i></div><span class="pc">${m}%</span></div>`).join("")
+    :'<div class="empty">Finish a quiz to see mastery per subject.</div>';
+}
+
+/* ============================ MISC ============================ */
+let toastTimer;
+function toast(t){const el=document.getElementById("toast");el.textContent=t;el.style.opacity=1;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.style.opacity=0,2600)}
+
+renderResults();renderPapers();renderProgress();
+</script>
+</body>
+</html>
