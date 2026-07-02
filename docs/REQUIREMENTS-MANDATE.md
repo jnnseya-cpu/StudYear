@@ -52,6 +52,7 @@ Every content stream received, and where it is implemented in the corpus:
 | 21 | v1.1 Personalisation Engine: LPV (7 behavioural dimensions), three adaptation loops, catch-up compression / stretch principle, SY-A21 Profile Agent (registry → 21) | `product/studyear-product-spec.md §5e` |
 | 22 | Flagship venture brief: incumbent contrast, opposite-premise substrate, five-sided revenue, BitriPay rail, NSEYA X-EXECUTE assets, positioning; §2 definitive competitive teardown + market movement; §3 AI-OS doctrine + six surfaces | `product/studyear-ai-os-venture-brief.md` *(streaming)* |
 | 23 | AI Gateway directive: all AI through one provider-switchable gateway; **all AI activities in deep-thinking mode** (thinking budgets scaled to task; local-rule tier survives as non-AI) | `architecture/14-ai-agent-blueprint.md §0.0` |
+| 24 | **66% minimum-margin mandate** on all paid products (≤34% cost cap, tightened from 35%); only defined free accounts exempt; enforcement via pricing console, SY-A20 throttling, Revenue-Agent monitoring, Gateway thinking budgets | `product/studyear-ai-os-venture-brief.md §8` |
 
 **Audit rule:** every future stream gets a row here before its commit is pushed.
 

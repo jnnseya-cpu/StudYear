@@ -412,11 +412,118 @@ revenue instead of destroying margin.**
 | **School / Trust** | pooled per-seat allowance + **enterprise simulation quota** | annual ACU commitments, volume pricing |
 | **Tutor Pro** | 1,000 ACUs | packs; **session-prep ACUs billable to engagement** |
 
-### Unit-economics guardrail
+### Unit-economics guardrail — the 66% minimum-margin mandate
 
-> Tariffs are set so that the **fully-loaded inference cost of one ACU never exceeds 35% of
-> its blended realised price.** The Fraud & Billing Ops Agent (**SY-A20**) throttles
-> anomalous consumption patterns **before they become margin events.**
+> **To protect the business margin, a strong 66% minimum margin is MANDATORY across the
+> project — the only exemption is a defined free account.**
+
+Operationalised:
+
+- **Margin floor:** every paid product — ACU packs, subscriptions, seats, marketplace
+  take-rate, enterprise commitments — must clear **≥ 66% gross margin**. Equivalently, the
+  **fully-loaded cost of one ACU never exceeds 34% of its blended realised price**
+  (tightened from the earlier 35% cap; per the
+  [mandate](../REQUIREMENTS-MANDATE.md), the stricter rule governs).
+- **Free-account exemption:** only **defined free accounts** (e.g. Student Free — 60 ACUs
+  on degraded models, §8.3) sit outside the margin floor; they are the sanctioned
+  acquisition cost, budgeted deliberately, never an accidental margin leak.
+- **Enforcement:** tariff changes that would breach the floor are blocked at the pricing
+  console (`../ai-os/14` dual-control); the **Fraud & Billing Ops Agent (SY-A20)**
+  throttles anomalous consumption patterns **before they become margin events**; the
+  Revenue Agent (`../ai-os/04 §3A.2`) monitors blended margin per feature and flags any
+  tool whose ACU cost drifts toward the floor.
+- **Deep-thinking compatibility:** the AI Gateway's task-scaled thinking budgets
+  (`../architecture/14 §0.0`) are the cost lever that keeps universal deep reasoning
+  inside the 34% cost cap — budget per action class is tuned so quality stays maximal
+  *and* the margin floor holds.
+
+## 9. BitriPay Integration
+
+**BitriPay is the portfolio payment rail.** For StudYear it is **not a checkout widget** —
+it is the enabler of two strategic motions: **diaspora-funded education** and **marketplace
+escrow.**
+
+### 9.1 Payment surfaces
+
+- **Subscriptions and ACU packs:** card, wallet and **mobile-money** instruments across
+  UK/EU and DRC; **smart retries and grace-period logic tuned for family budgets.**
+- **Diaspora funding:** a UK/EU relative funds a student account in Kinshasa **in one
+  flow** — FX handled on-rail, receipts in **French and English**, **guardianship consent
+  enforced before account linkage.**
+- **Tutor marketplace escrow:** engagement funds held **on-ledger**, released on session
+  confirmation, disputed through a structured flow; **payouts to UK bank or DRC mobile
+  money** with KYC/AML on the BitriPay side.
+- **School invoicing:** annual per-seat licences and ACU commitments with
+  **purchase-order workflows**; DRC private-school segment paid via **BitriPay business
+  rails.**
+
+### 9.2 Event contract
+
+BitriPay webhooks (settlement, refund, dispute, payout) publish into
+`marketplace.lifecycle.v1` and billing streams; the **escrow ledger and ACU balances
+reconcile nightly against rail settlement**, with discrepancies routed to **SY-A20**.
+**No service ever mutates a balance outside this event path.**
+
+## 10. Security, Safeguarding & Compliance
+
+**The primary users are minors.** Security posture is therefore **Zero Trust in
+architecture and safeguarding-first in product** — engineered as **substrate under every
+agent.**
+
+### 10.1 Zero Trust & RBAC fabric (X-EXECUTE standard)
+
+- **Identity-centred perimeter:** every request — **human or agent** — carries a verified
+  identity; service-to-service traffic under **mTLS**; agents hold **scoped, short-lived
+  credentials issued per graph execution.**
+- **RBAC with consent overlay:** role policies (student, teacher, school admin, parent,
+  tutor, platform admin) **intersected with explicit ConsentGrants** — a tutor sees a
+  tutee's mastery **only while an active, revocable grant exists.**
+- **Least-privilege tool registry:** each LangGraph agent may invoke **only its declared
+  tools**; violations **halt the graph and alert ops.**
+- **Full audit chain:** `agent.actions.v1` provides an **immutable record of every agent
+  decision touching a child's data** — inspectable per student, per agent, per day.
+
+### 10.2 Safeguarding regime
+
+- **Proactive classification** across community/messaging surfaces with conservative
+  thresholds; human review queues staffed to **statutory-response SLAs**; documented
+  escalation to **designated safeguarding leads at partner schools.**
+- **Age-appropriate design:** default-private profiles for minors, **no stranger DMs, no
+  engagement-bait mechanics**; wellbeing pacing built into the Motivation Agent.
+- **Tutor marketplace vetting:** identity verification and **UK DBS-check evidence (or DRC
+  equivalent) before any tutor may transact**; sessions logged; **in-platform communication
+  only.**
+
+### 10.3 Regulatory alignment
+
+| Regime | Application |
+|---|---|
+| **UK GDPR / DPA 2018** | lawful bases mapped per data flow; DPIA maintained; school Data Processing Agreements standard; **data minimisation in model training sets** |
+| **ICO Age-Appropriate Design Code** | conformance assessment across **all fifteen standards**; high-privacy defaults for under-18s |
+| **KCSIE** | safeguarding workflows and school-facing reporting designed to **slot into KCSIE-governed school processes** |
+| **DRC data & consumer regimes** | localisation and consent handling for the Kinshasa deployment via the **X-EXECUTE compliance layer shared with BitriPay's EME licence footprint** |
+| **AI transparency** | **every agent output labelled as AI-generated**; Examiner marks carry **mark-scheme citation trails**; parents/schools can request **human review of any consequential automated assessment** |
+
+## 11. Monetisation & Pricing Architecture
+
+**Five revenue engines on one substrate.** Indicative launch pricing below; final pricing is
+set by the GTM playbook's willingness-to-pay research. *(All paid engines govern to the
+[66% minimum-margin mandate](#unit-economics-guardrail--the-66-minimum-margin-mandate),
+§8.)*
+
+| Engine | Offer | Indicative price | Notes |
+|---|---|---|---|
+| **Student Premium** | Examiner Agent, unlimited Tutor Agent, full Content Forge, advanced planner | **£7.99/mo or £59/yr** | free tier retains planner, library, basic testing — **the acquisition engine** |
+| **Parent Insight** | Family Digest, predicted grades, escalation alerts, multi-child | **£4.99/mo add-on** | **diaspora-funded variant priced for DRC corridor via BitriPay** |
+| **School Seat** | Cockpit, Assignment, Reporting agents; SSO + MIS integration | **£6–9 /student/yr** | trust-level volume bands; enterprise ACU commitments on top |
+| **Tutor Pro + Marketplace** | Workspace, Session Prep, matched leads | **£19/mo + 12% take-rate** | escrowed via BitriPay; take-rate on completed engagements |
+| **ACU Packs** | metered top-ups for heavy AI usage | **from £4.99 / 100 ACUs** | applies across all tiers; enterprise annual commitments discounted |
+
+### Sequencing logic
+
+> **Free students create the classroom pull that lands school seats; school data credibility
+> powers the parent upsell; parent demand seeds the tutor marketplace. Each engine lowers
+> the CAC of the next.**
 
 ---
 
