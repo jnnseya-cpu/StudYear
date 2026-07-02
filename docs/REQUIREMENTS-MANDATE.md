@@ -61,6 +61,9 @@ Every content stream received, and where it is implemented in the corpus:
 | 30 | **Growth Partner Programme** (complete): 250-ACU verified referrals, four-tier ladder to Strategic Education Partner, 1% lifetime-on-net influencer commission with £10k/mo + £20k/customer caps, per-account-type anti-abuse, payment timing, 20-signal anti-fraud, clawback, margin-protection exclusions, naming + public line | `product/growth-partner-programme.md` |
 | 31 | **Margin band finalized: 66%–100% on everything** (66% hard floor, optimise toward 100%; free accounts exempt) | `product/commercial-model.md §1` |
 | 32 | **Admin discount-code engine**: fully configurable codes (time window, redemption count, per-user limits, benefit types incl. bonus ACUs, audiences, min spend) — users get exactly what was set; guarded by margin band, commission exclusion, bonus-ACU expiry, anti-abuse, audit | `product/commercial-model.md §12b` |
+| 33 | Free accounts: **no tutor access**, everything limit-gated (resolves JN1.1); tutor-triggered ACUs only from paid wallets | `product/commercial-model.md §6/§9` |
+| 34 | **Deployment split directive**: frontend on Vercel, backend+shared on Firebase, domain on Hostinger — implemented as monorepo scaffold (apps/web, backend/, packages/shared, infra/) with Firestore rules encoding tenant/consent/wallet invariants and the ACU-metering Function core | `package.json`, `apps/web/`, `backend/`, `packages/shared/`, `infra/deployment.md`, `infra/hostinger-dns.md` |
+| 35 | **Marketing engine directive**: AI blog + marketing agents + SEO agent to keep the OS on the first page of all search engines and social media — registry Growth Extension SY-A22 (Blog), SY-A23 (Marketing), SY-A24 (SEO first-page keeper) with closed marketing loop and guardrails | `product/marketing-engine.md` |
 
 **Audit rule:** every future stream gets a row here before its commit is pushed.
 

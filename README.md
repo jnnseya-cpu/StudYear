@@ -25,6 +25,20 @@ surface.
 | **Student** | Consumes learning across both channels | Attend, learn, submit work, track progress, get help |
 | **Parent** | Sponsors & supervises the learner | Oversee progress, communicate, pay, approve, book support |
 
+## Implementation (monorepo)
+
+Deployment topology — **frontend on Vercel · backend + shared on Firebase · domain on
+Hostinger** (see [`infra/deployment.md`](infra/deployment.md)):
+
+```
+apps/web/            Next.js 14 frontend (Vercel) — cinematic landing at /, app shell at /app
+backend/             Firebase backend — Functions API (ACU metering), Firestore rules, Storage
+packages/shared/     @studyear/shared — roles, agent registry (SY-A01..A24), ACU tariffs,
+                     plans, margin band, discount/referral contracts
+web/landing/         source of the cinematic landing page (copied into apps/web/public)
+infra/               deployment runbooks + Hostinger DNS zone guide
+```
+
 ## Repository Layout
 
 ```

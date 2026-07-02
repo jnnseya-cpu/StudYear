@@ -1,0 +1,22 @@
+rules_version = '2';
+
+// Uploads: student work (photos/PDFs for Content Forge & Assignment Review),
+// tutor resource vaults, school exports. Reads are ownership/consent-scoped;
+// heavy processing happens server-side.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() { return request.auth != null; }
+
+    match /uploads/{userId}/{allPaths=**} {
+      allow read, write: if signedIn() && request.auth.uid == userId
+        && request.resource.size < 25 * 1024 * 1024; // 25MB cap per file
+    }
+
+    match /public/{allPaths=**} {
+      allow read: if true;   // published, verification-scored assets only
+      allow write: if false; // publish path is server-side (SY-A17 verification)
+    }
+
+    match /{allPaths=**} { allow read, write: if false; }
+  }
+}

@@ -1,0 +1,104 @@
+rules_version = '2';
+
+// StudYear security rules — encode the platform invariants at the data plane:
+//  1. Tenant isolation (docs/architecture/08 §1, 10 §6)
+//  2. Guardianship & ConsentGrant as the hard gate on cross-persona reads (venture brief §7/§10)
+//  3. ACU balances are DERIVED, never client-authored (venture brief §7 Billing)
+//  4. Free accounts have no tutor access (commercial-model §6, resolved directive)
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+    function userDoc() { return get(/databases/$(database)/documents/users/$(uid())); }
+    function role() { return userDoc().data.role; }
+    function tenantId() { return userDoc().data.tenantId; }
+    function isPlatformAdmin() { return signedIn() && role() == 'platform_admin'; }
+    function sameTenant(t) { return tenantId() == t; }
+
+    // A parent linked via guardianship, or a grantee holding an active consent grant.
+    function isGuardianOf(studentId) {
+      return exists(/databases/$(database)/documents/guardianships/$(uid() + '_' + studentId));
+    }
+    function hasConsent(studentId, scope) {
+      return exists(/databases/$(database)/documents/consentGrants/$(studentId + '_' + uid() + '_' + scope));
+    }
+
+    // ---------------- users & tenancy ----------------
+    match /users/{userId} {
+      allow read: if signedIn() && (uid() == userId || isPlatformAdmin() || isGuardianOf(userId));
+      allow create: if signedIn() && uid() == userId;
+      // role & tenant are server-assigned; clients may not self-elevate
+      allow update: if signedIn() && uid() == userId
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'tenantId', 'plan']);
+      allow delete: if false; // GDPR deletion runs server-side with retention checks
+    }
+
+    match /tenants/{tid} {
+      allow read: if signedIn() && (sameTenant(tid) || isPlatformAdmin());
+      allow write: if isPlatformAdmin(); // provisioning is an admin/server concern
+    }
+
+    match /guardianships/{gid} {
+      allow read: if signedIn() && (resource.data.guardianId == uid() || resource.data.studentId == uid() || isPlatformAdmin());
+      allow write: if false; // created server-side with verification + consent flow
+    }
+
+    match /consentGrants/{cid} {
+      allow read: if signedIn() && (resource.data.grantorUserId == uid() || resource.data.granteeUserId == uid() || isPlatformAdmin());
+      // grantor may revoke; creation is server-mediated
+      allow delete: if signedIn() && resource.data.grantorUserId == uid();
+      allow create, update: if false;
+    }
+
+    // ---------------- learner state ----------------
+    match /students/{studentId}/mastery/{topicId} {
+      allow read: if signedIn() && (
+        uid() == studentId
+        || isGuardianOf(studentId)
+        || hasConsent(studentId, 'mastery_view')   // tutors: consent-gated, revocable
+        || isPlatformAdmin()
+      );
+      allow write: if false; // mastery is written by the assessment/KTE pipeline only
+    }
+
+    match /students/{studentId}/plan/{docId} {
+      allow read: if signedIn() && (uid() == studentId || isGuardianOf(studentId) || isPlatformAdmin());
+      allow write: if false; // Planner Agent (SY-A01) writes server-side with rationale
+    }
+
+    // ---------------- ACU wallet (derived, never authored) ----------------
+    match /wallets/{ownerId} {
+      allow read: if signedIn() && (uid() == ownerId || isGuardianOf(ownerId) || isPlatformAdmin());
+      allow write: if false; // balances derive from acuTransactions written by Functions
+    }
+    match /acuTransactions/{txId} {
+      allow read: if signedIn() && (resource.data.ownerId == uid() || isGuardianOf(resource.data.ownerId) || isPlatformAdmin());
+      allow write: if false; // append-only, server-side, double-entry
+    }
+
+    // ---------------- content & community ----------------
+    match /resources/{resourceId} {
+      // nothing ranks unverified, but owners can read their drafts
+      allow read: if signedIn() && (resource.data.verified == true || resource.data.ownerId == uid() || isPlatformAdmin());
+      allow create: if signedIn() && request.resource.data.ownerId == uid();
+      allow update, delete: if signedIn() && resource.data.ownerId == uid();
+    }
+
+    // ---------------- marketplace (no free-tier access) ----------------
+    match /bookings/{bookingId} {
+      allow read: if signedIn() && (resource.data.studentId == uid() || resource.data.tutorId == uid()
+        || isGuardianOf(resource.data.studentId) || isPlatformAdmin());
+      // booking creation is server-mediated: it must verify paid plan / parent wallet
+      allow write: if false;
+    }
+
+    // ---------------- audit (read-only to admins, written by server) ----------------
+    match /auditEvents/{eventId} {
+      allow read: if isPlatformAdmin();
+      allow write: if false;
+    }
+
+    match /{document=**} { allow read, write: if false; } // deny by default
+  }
+}
