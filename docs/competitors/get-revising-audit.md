@@ -637,4 +637,69 @@ secure local database layout (a highly efficient **MariaDB** instance optimized 
 | Old way | platform cluttered with hundreds of identical low-value decks (*"GCSE Biology Vocab"*) |
 | Agentic upgrade | background agent identifies repetitive/duplicate resources and **merges identical decks into definitive, high-quality community versions** — cleaning search results, surfacing the best materials |
 
-*(Further PART 2 sections follow as extracted.)*
+## PART 3 — Systemic architecture & data integration strategy
+
+To build on standard hosting (e.g., **Hostinger**) while keeping operations fast and
+cost-effective: **clean separation between data storage and AI processing.**
+
+### 1. Database schema strategy (optimized for MariaDB)
+
+The core relational DB handles user states, system settings, analytics logs, and content
+metadata; **heavy vector-search tasks run in an external microservice or lightweight
+open-source extensions.**
+
+```
+                  ┌──────────────────────┐
+                  │      User Tiers      │
+                  └──────────┬───────────┘
+                             │ (1-to-Many)
+                             ▼
+                  ┌──────────────────────┐
+                  │    Core User Data    │
+                  └──────────┬───────────┘
+                             │ (1-to-Many)
+                             ▼
+        ┌──────────────────────────────────────────┐
+        ▼                                          ▼
+┌──────────────┐                            ┌──────────────┐
+│ Study Logs / │                            │ UGC Metadata │
+│ Performance  │                            │  & Resource  │
+│  Analytics   │                            │  Taxonomy    │
+└──────────────┘                            └──────────────┘
+```
+
+- **Partitioned analytics tables:** student study logs and performance history organized by
+  **cohort year and academic term** to prevent slow queries.
+- **Structured metadata indexing:** resource paths, review schedules, and category
+  hierarchies thoroughly indexed in MariaDB so the AI orchestration layer can **look up
+  context quickly without stressing the main database.**
+
+### 2. Multi-agent API orchestration & token optimization
+
+Running LLMs across millions of active users gets expensive fast. A **three-tiered
+filtering process** keeps API costs manageable:
+
+| Tier | Handles | Cost |
+|---|---|---|
+| **1. Local rule processing** | simple tasks — calendar updates on deadline changes, spaced-repetition interval calculation — handled entirely by **local code execution** | **zero AI tokens** |
+| **2. Lightweight processing** | routine language tasks — proofreading notes, markdown formatting, simple quiz generation — routed to **fast, cost-efficient small language models** | low |
+| **3. Advanced reasoning** | deep conceptual work — evaluating open-ended past-paper answers, mapping resources to complex curriculum frameworks, predictive learning analytics — reserved for **advanced reasoning models** | high, rationed |
+
+### Closing statement (third pass)
+
+> By modernizing Get Revising from a static, crowd-sourced resource library into an
+> intelligent, **agent-driven learning ecosystem**, the administrative burden is removed
+> from students, teachers, and parents — transforming the platform from a **simple utility
+> into an active partner in the learning process**, helping users focus on what matters
+> most: **mastering the material.**
+
+---
+
+**End of third-pass teardown.**
+
+> **Cross-portfolio note:** the three-tier token-optimization ladder above is the same
+> pattern as StudYear's Model Router policy (`../architecture/14 §0.1`) and the
+> local-vs-frontier hybrid flagged in Part 3 of the first pass — all three analyses converge
+> on: *rules where possible, small models for routine language, frontier models only for
+> deep reasoning.* This should be adopted as a standing principle in the StudYear AI compute
+> layer.
