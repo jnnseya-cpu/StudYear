@@ -243,4 +243,60 @@ function agents + guardian) → **ML Model Layer** (the shared intelligence subs
 store, ACU ledger) → **Platform Services** (model routing, RAG over syllabus/past-papers/
 mark-schemes, payments, zero-trust, compliance, observability).
 
-*(Sections B2+ follow as extracted.)*
+**Two foundational upgrades everything else stands on:**
+
+1. **Curriculum Knowledge Graph** — every GCSE/A-Level/university topic mapped to exam-board
+   specifications, mark schemes, and past-paper questions. Diagnostics, plans, predictions,
+   and content generation all **anchor to graph nodes instead of free text.**
+2. **Learning Record Store** — every quiz answer, tutor exchange, essay submission, and ACU
+   debit becomes a **standardised event** feeding the ML layer. **This is the moat.**
+
+### B2. Role Agents (persistent, one per user, memory-bearing)
+
+| Agent | Serves | Core behaviours |
+|---|---|---|
+| **Study Companion Agent** | Student | Owns the student's mastery graph; runs daily: reprioritises the plan, schedules **spaced-repetition reviews at forgetting-curve inflection points**, drafts tonight's session, initiates check-ins (*"You avoided Electrolysis three times — 15-minute rescue lesson?"*), detects frustration/burnout from interaction patterns and adjusts load |
+| **Family Insight Agent** | Parent | Translates telemetry into weekly plain-language briefings; pushes risk alerts with a **concrete recommended action** (*"Maths momentum dropped 22% in two weeks; a marketplace tutor slot Thursday would target the two failing topics"*); answers parent questions conversationally (*"How is Amara really doing in Chemistry?"*) |
+| **Classroom Copilot Agent** | Teacher | Auto pre-marks submissions against mark schemes with **teacher-moderated confidence scores**; generates differentiated lesson variants (**3 ability tiers**) from one prompt; produces the **"Monday briefing"**: who slipped, who's coasting, who's ready to be stretched; drafts parent communications for approval |
+| **Institution Intelligence Agent** | School leadership | Continuously recomputes cohort health; **simulates staff-deployment scenarios** (*"moving Ms Patel's intervention hours to Year 11 set 3 projects +0.4 grades average"*); **forecasts results day 6 months out with confidence bands**; auto-drafts governor/Ofsted-ready progress narratives; manages shared ACU pool allocation with **per-class ROI reporting** |
+| **Tutor Practice Agent** | Private tutor | Fills the pipeline (AI matching — B3); prepares **pre-session briefs from the student's live mastery graph**; generates session plans + follow-up homework; drafts parent progress reports; tracks earnings, **forecasts income, suggests rate/niche optimisation** |
+| **Platform Sentinel Agent** | Admin | Watches **ACU-economy health (margin per feature vs inference cost)**, reroutes model traffic on cost/quality drift, flags fraud/abuse anomalies, monitors AI-output quality via **automated evals**, executes GDPR retention/deletion schedules |
+
+### B3. Function Agents (shared services callable by any role agent)
+
+| # | Agent | Specification |
+|---|---|---|
+| 1 | **Diagnostic Agent** | Replaces the static onboarding assessment with **adaptive testing (CAT/IRT)**: each question chosen by an item-response model to maximise information, **cutting diagnostic length ~60% while increasing precision**; re-runs micro-diagnostics continuously in the background |
+| 2 | **Planning Agent** | **Constraint-solver + LLM hybrid**: takes exam dates, mastery gaps, forecasted forgetting, available hours, and **ACU budget** → emits an optimised schedule; **replans nightly** |
+| 3 | **Content Forge Agent** | Lessons, quizzes, flashcards, visuals, past-paper-style questions **generated on the knowledge graph, style-matched to the exact exam board**; every item **quality-scored by the Content Ranker model** before delivery |
+| 4 | **Examiner Agent** | **Mark-scheme-grounded** essay/answer marking with rubric-cited feedback, model-answer comparison, and calibrated predicted marks — trained against real graded scripts → **published accuracy stats: a trust weapon** |
+| 5 | **Intervention Agent** | When the Risk EWS fires: composes the recovery plan, notifies the right humans (parent/teacher/tutor) **with role-appropriate framing**, books the intervention, and **verifies impact two weeks later** |
+| 6 | **Matching Agent** | Two-sided marketplace ML: pairs students to tutors on subject-topic gap overlap, availability, learning-style fit, budget, and **historical uplift delivered by that tutor for similar profiles** — tutors **ranked by outcomes, not just reviews** |
+| 7 | **Guardian Agent** | Safeguarding + integrity layer: age-appropriate interaction enforcement, **academic-integrity guardrails (feedback-not-ghostwriting modes for assessed work)**, wellbeing signal escalation, and **bias auditing of all ML decisions** |
+
+### B4. ML Model Portfolio (the substrate)
+
+| Model | Technique | Powers |
+|---|---|---|
+| **Knowledge Tracing** | Deep Knowledge Tracing / Bayesian KT per topic node | True mastery estimation; the upgrade from "quiz scores" to **"probability of exam success per topic"** |
+| **Grade Forecaster** | Gradient-boosted survival/regression on LRS features, **retrained per exam season** | Predicted grades with confidence intervals + **trajectory bands (current path vs plan-adherent path)** |
+| **Risk Early-Warning System** | Multivariate time-series anomaly detection (engagement velocity, mastery decay, plan adherence, sentiment) | **Flags decline 4–6 weeks before it shows in grades**; feeds parent/teacher/school alerts |
+| **Forgetting-Curve Scheduler** | Per-student half-life regression (SuperMemo-class, personalised) | Spaced-repetition timing inside every study plan |
+| **ACU-ROI Optimiser** | Contextual bandits | Recommends the next best ACU spend: *"12 ACUs on a Circle Theorems lesson ≈ +0.3 predicted grade — highest-leverage action available"* — **turns the wallet into an investment advisor and directly lifts ARPU** |
+| **Tutor-Student Matcher** | Two-tower recommender + **uplift modelling** | Marketplace liquidity and outcome-ranked tutors |
+| **Content Quality Ranker** | RLHF-style reward model on completion/mastery-gain/teacher ratings | **Only top-decile generated content ships; the rest regenerates silently** |
+| **Cohort Benchmarker** | Federated/aggregate analytics | Schools compare against **national anonymised baselines — a B2B sales weapon no report card offers** |
+| **Fraud & Anomaly** | Isolation forests on ACU ledger + auth events | Wallet integrity, account sharing, scraping detection |
+
+### B5. New ACU-metered products this unlocks
+
+| # | Product | Mechanics |
+|---|---|---|
+| 1 | **Autopilot tiers** | Sell **agent labour, not just tool calls**: Companion-on-Autopilot (daily replanning + proactive nudges) as an **ACU-streaming subscription hybrid** |
+| 2 | **Exam War-Room Mode** | 6-week pre-exam intensive: agents run daily mock cycles, weakest-topic triage, and **countdown briefings for the whole family** |
+| 3 | **Predicted-vs-Actual Accuracy Guarantee** | Publish Examiner Agent calibration; offer **ACU rebates if predictions miss by a threshold** — converts trust into a feature |
+| 4 | **School ROI Dashboard** | Every ACU the institution spends **mapped to measured mastery gain**; renewals become data-driven |
+| 5 | **Multimodal ingestion** | Photograph handwritten work → Examiner marks it; voice-note a question to the Tutor; whiteboard-photo → flashcards — **massively widens the input funnel and ACU events per user** |
+| 6 | **Recovery-as-a-Service for schools** | Intervention Agent packages for at-risk cohorts, priced from the shared pool, with **verified-impact reporting** |
+
+*(Sections B6+ follow as extracted.)*
