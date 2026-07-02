@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { PERSONAS } from './personas';
 
 /**
@@ -12,11 +12,25 @@ import { PERSONAS } from './personas';
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 
 export default function AccountChooser() {
-  // legacy deep links: /app#school → /app/school/
+  const [session, setSession] = useState<{ name: string; role: string } | null>(null);
+
   useEffect(() => {
+    // legacy deep links: /app#school → /app/school/
     const h = window.location.hash.replace('#', '');
-    if (PERSONAS.some((p) => p.slug === h)) window.location.replace(`${BASE}/app/${h}/`);
+    if (PERSONAS.some((p) => p.slug === h)) {
+      window.location.replace(`${BASE}/app/${h}/`);
+      return;
+    }
+    try {
+      const s = JSON.parse(localStorage.getItem('sy-session') ?? 'null');
+      if (s?.role) setSession(s);
+    } catch {}
   }, []);
+
+  const signOut = () => {
+    localStorage.removeItem('sy-session');
+    setSession(null);
+  };
 
   return (
     <main className="pick-os">
@@ -27,27 +41,40 @@ export default function AccountChooser() {
           <img className="mark" src={`${BASE}/logo.svg`} alt="" width={34} height={34} />
           Stud<b>Year</b> <span className="os-tag">OS</span>
         </a>
+        {session ? (
+          <span className="sess">
+            Signed in as <b>{session.name}</b> ({PERSONAS.find((p) => p.slug === session.role)?.label ?? session.role})
+            <button onClick={signOut}>Sign out</button>
+          </span>
+        ) : (
+          <a className="sess-cta" href={`${BASE}/auth/`}>Sign in</a>
+        )}
       </header>
 
       <section className="hero">
         <p className="kicker">Choose your account</p>
         <h1>One OS. A console for every seat at the table.</h1>
         <p className="lede">
-          Each user category gets its own account, its own console and its own dashboard —
-          all reading the same live mastery record.
+          Each user category has its own account, console and dashboard — and access is
+          matched to your account type. Signing up for one category never opens another&apos;s doors.
         </p>
       </section>
 
       <section className="cards">
-        {PERSONAS.map((p) => (
-          <a key={p.slug} className="pcard" href={`${BASE}/app/${p.slug}/`}>
-            <span className="avatar">{p.label[0]}</span>
-            <span className="who">{p.label}</span>
-            <h2>{p.strap}</h2>
-            <span className="acct">{p.account.name} · {p.account.detail}</span>
-            <span className="go">Enter {p.label.toLowerCase()} console →</span>
-          </a>
-        ))}
+        {PERSONAS.map((p) => {
+          const mine = session?.role === p.slug;
+          return (
+            <a key={p.slug} className={`pcard${mine ? ' mine' : ''}`} href={`${BASE}/app/${p.slug}/`}>
+              <span className="avatar">{p.label[0]}</span>
+              <span className="who">{p.label}{mine && ' · your account'}</span>
+              <h2>{p.strap}</h2>
+              <span className="acct">
+                {p.slug === 'admin' ? 'Provisioned internally' : `Requires a ${p.label.toLowerCase()} account`}
+              </span>
+              <span className="go">{mine ? 'Enter your console →' : session ? 'Switch account to enter →' : 'Sign in / create account →'}</span>
+            </a>
+          );
+        })}
       </section>
 
       <footer className="os-foot">
@@ -64,7 +91,15 @@ const CSS = `
   .pick-os{min-height:100vh;max-width:1240px;margin:0 auto;padding:0 32px 60px;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   .pick-os a{text-decoration:none;color:inherit}
-  .bar{display:flex;align-items:center;gap:18px;padding:20px 0;border-bottom:1px solid rgba(77,157,224,.14)}
+  .bar{display:flex;align-items:center;gap:18px;padding:20px 0;border-bottom:1px solid rgba(77,157,224,.14);justify-content:space-between;flex-wrap:wrap}
+  .sess{font-size:13px;color:#AAB6CC;display:inline-flex;align-items:center;gap:12px}
+  .sess b{color:#EDF1F8}
+  .sess button{appearance:none;background:none;border:1px solid rgba(170,182,204,.3);border-radius:8px;
+    color:#AAB6CC;font:600 12px inherit;padding:7px 13px;cursor:pointer}
+  .sess button:hover{color:#A9CFF2;border-color:#3D8FD1}
+  .sess-cta{font-size:13px;font-weight:600;color:#fff !important;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);
+    border-radius:8px;padding:9px 18px}
+  .pcard.mine{border-color:#3D8FD1;box-shadow:0 0 34px rgba(61,143,209,.15)}
   .logo{font-family:Georgia,serif;font-size:22px;color:#EDF1F8;display:inline-flex;align-items:center;gap:10px}
   .logo .mark{filter:drop-shadow(0 0 12px rgba(79,166,224,.45))}
   .logo b{color:#4FA6E0;font-weight:600}

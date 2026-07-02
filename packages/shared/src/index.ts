@@ -18,6 +18,132 @@ export const ROLES = [
 ] as const;
 export type Role = (typeof ROLES)[number];
 
+// ------------------------------------------------------ study levels -------
+/**
+ * UK-wide study levels — the controlled vocabulary every surface lists
+ * (docs/architecture/12-reference-data.md). Covers England/Wales/NI and
+ * Scottish qualifications plus IB, BTEC and open categories.
+ */
+export const STUDY_LEVELS = [
+  'Primary School',
+  'Years 7-9 (KS3)',
+  'GCSE',
+  'IGCSE',
+  'National 5',
+  'BTEC National',
+  'AS',
+  'A2/A-level',
+  'Scottish Highers',
+  'Scottish Advanced Highers',
+  'International Baccalaureate',
+  'University',
+  'Fun',
+  'Other',
+  'All Levels',
+] as const;
+export type StudyLevel = (typeof STUDY_LEVELS)[number];
+
+/** UK-wide subject list — union of the provided catalogue and existing platform subjects. */
+export const SUBJECTS = [
+  'Accounting',
+  'Biology',
+  'Business Studies',
+  'Chemistry',
+  'Computer Science',
+  'Computing',
+  'Economics',
+  'English',
+  'English Language',
+  'English Literature',
+  'French',
+  'Fun',
+  'Geography',
+  'Government & Politics',
+  'Health & Social Care',
+  'History',
+  'ICT',
+  'Law',
+  'Mathematics',
+  'Media Studies',
+  'Music',
+  'Other',
+  'Philosophy',
+  'Physical Education',
+  'Physics',
+  'Psychology',
+  'Religious Studies',
+  'Science',
+  'Sociology',
+  'Spanish',
+] as const;
+export type Subject = (typeof SUBJECTS)[number];
+
+/** Exam boards served UK-wide (incl. NI's CCEA, Scotland's SQA, and international CIE). */
+export const EXAM_BOARDS = ['AQA', 'CCEA', 'CIE', 'Edexcel', 'ICAAE', 'OCR', 'SQA', 'WJEC', 'Other'] as const;
+export type ExamBoard = (typeof EXAM_BOARDS)[number];
+
+/** Curriculum topic taxonomy — the provided catalogue, searchable across resources. */
+export const TOPICS = [
+  'America - 19th and 20th century',
+  'An Inspector Calls',
+  'Approaches',
+  'Attachment',
+  'Biological molecules, organic chemistry and biochemistry',
+  'British monarchy - Tudors and Stuarts',
+  'Case studies',
+  'Cells, tissues and organs',
+  'Cellular processes and structure',
+  'Christianity',
+  'Crime and deviance',
+  'Criminal law',
+  'DNA, genetics and evolution',
+  'Education',
+  'Energy',
+  'Ethics',
+  'Families and households',
+  'Grammar and vocabulary',
+  'Human, animal and plant physiology',
+  'Medicine through time (OCR History A)',
+  'Memory',
+  'Modern Britain - 19th century onwards',
+  'Natural hazards',
+  'Philosophy',
+  'Religion and beliefs',
+  'Research methods and techniques',
+  'Russia - 19th and 20th century',
+  'The Cold War',
+  'WWII and Nazi Germany 1939-1945',
+] as const;
+export type Topic = (typeof TOPICS)[number];
+
+/** Resource types — the provided catalogue; every type is searchable and creatable. */
+export const RESOURCE_TYPES = [
+  'Advantages and disadvantages table',
+  'Audio',
+  'Causes and effects table',
+  'Character analysis',
+  'Compare and contrast table',
+  'Crossword',
+  'Document',
+  'Flashcards',
+  'Grid',
+  'Image',
+  'Mindmap',
+  'Multi-tool',
+  'Other',
+  'Presentation',
+  'Quiz',
+  'Quizsearch',
+  'Revision Cards',
+  'Revision Notes',
+  'SWOT analysis',
+  'Spreadsheet',
+  'Timeline',
+  'Video',
+  'Web Page',
+] as const;
+export type ResourceType = (typeof RESOURCE_TYPES)[number];
+
 // ------------------------------------------------------- agent registry ----
 /** SY-A01..A21 — stable IDs referenced in tickets, billing events and audit logs. */
 export enum AgentId {

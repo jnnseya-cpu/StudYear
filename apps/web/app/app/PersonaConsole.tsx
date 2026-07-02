@@ -1,10 +1,22 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ACU_PER_POUND, ACU_TARIFF, FREE_TIER } from '@studyear/shared';
 import { PERSONAS, type Persona } from './personas';
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+
+type Session = { name: string; email: string; role: string };
+
+/** Same access contract as guard.js: only the matching account category gets in. */
+function readSession(): Session | null {
+  try {
+    const s = JSON.parse(localStorage.getItem('sy-session') ?? 'null');
+    return s && s.role ? (s as Session) : null;
+  } catch {
+    return null;
+  }
+}
 
 const poundsFor = (acus: number) => `£${(acus / ACU_PER_POUND).toFixed(2)}`;
 // deterministic thousands separator — toLocaleString() differs between build-time
@@ -15,6 +27,32 @@ const price = (pence: number) => (pence === 0 ? 'Free' : `£${(pence / 100).toFi
 export default function PersonaConsole({ persona: p }: { persona: Persona }) {
   const walletAcus = 512; // demo balance — production reads the ledger via backend/functions
   const deepSessions = useMemo(() => Math.floor(walletAcus / ACU_TARIFF.tutor_session_deep), [walletAcus]);
+  const [session, setSession] = useState<Session | null>(null);
+
+  useEffect(() => {
+    const s = readSession();
+    const here = encodeURIComponent(window.location.pathname);
+    if (!s) {
+      window.location.replace(`${BASE}/auth/?role=${p.slug}&next=${here}`);
+    } else if (s.role !== p.slug) {
+      window.location.replace(`${BASE}/auth/?role=${p.slug}&mismatch=${encodeURIComponent(s.role)}&next=${here}`);
+    } else {
+      setSession(s);
+    }
+  }, [p.slug]);
+
+  const signOut = () => {
+    localStorage.removeItem('sy-session');
+    window.location.href = `${BASE}/`;
+  };
+
+  if (!session) {
+    return (
+      <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', color: '#6B7A96', fontFamily: 'system-ui, sans-serif', fontSize: 14, letterSpacing: '.2em', textTransform: 'uppercase' }}>
+        Checking your account…
+      </main>
+    );
+  }
 
   return (
     <main className="os">
@@ -29,16 +67,17 @@ export default function PersonaConsole({ persona: p }: { persona: Persona }) {
           Stud<b>Year</b> <span className="os-tag">OS</span>
         </a>
         <div className="acct">
-          <span className="avatar">{p.account.name[0]}</span>
+          <span className="avatar">{session.name[0]?.toUpperCase()}</span>
           <span>
-            <b>{p.account.name}</b>
-            <small>{p.account.detail}</small>
+            <b>{session.name}</b>
+            <small>{p.label} account · {session.email}</small>
           </span>
         </div>
         <div className="wallet" title={`£1 = ${ACU_PER_POUND} ACUs · hard stop at zero — no surprise bills`}>
           <span className="dot" /> {walletAcus} ACUs <small>≈ {deepSessions} deep sessions</small>
         </div>
         <a className="switch-acct" href={`${BASE}/app/`}>Switch account</a>
+        <button className="switch-acct signout" onClick={signOut}>Sign out</button>
       </header>
 
       <section className="hero">
@@ -118,6 +157,7 @@ const CSS = `
   .acct small{display:block;font-size:11px;color:#6B7A96}
   .switch-acct{font-size:12px;color:#AAB6CC;border:1px solid rgba(170,182,204,.3);border-radius:8px;padding:8px 14px}
   .switch-acct:hover{color:#A9CFF2;border-color:#3D8FD1}
+  button.signout{appearance:none;background:none;font-family:inherit;cursor:pointer}
   .wallet{border:1px solid rgba(79,166,224,.4);border-radius:20px;padding:7px 16px;font-size:13px;color:#A9CFF2;display:flex;align-items:center;gap:8px}
   .wallet small{color:#6B7A96}
   .dot{width:8px;height:8px;border-radius:50%;background:#5CBB7B;display:inline-block}

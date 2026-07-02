@@ -71,6 +71,7 @@
 </style>
 </head>
 <body>
+<script src="../../guard.js" data-role="school" data-base="../../"></script>
 <div id="tip"></div>
 <div class="wrap">
 
@@ -78,7 +79,7 @@
   <div class="k"><a href="../../" style="color:inherit;text-decoration:none">⌂ StudYear</a> · Command Centre Analytics · <a href="../../app/school/" style="color:inherit;text-decoration:none">Open the OS →</a></div>
   <h1>School & Trust dashboard.</h1>
   <p>Whole-cohort intelligence for leadership. All charts read the live mastery record — hover any mark.</p>
-  <nav class="dnav"><a href="../student/" class="">Student</a><a href="../parent/" class="">Parent</a><a href="../teacher/" class="">Teacher</a><a href="../school/" class="on">School & Trust</a><a href="../tutor/" class="">Tutor</a><a href="../../app/">Switch account</a></nav>
+  <nav class="dnav"><a href="../student/" class="">Student</a><a href="../parent/" class="">Parent</a><a href="../teacher/" class="">Teacher</a><a href="../school/" class="on">School & Trust</a><a href="../tutor/" class="">Tutor</a><a href="../../app/">Switch account</a><a href="#" onclick="localStorage.removeItem('sy-session');location.href='../../';return false">Sign out</a></nav>
 </header>
 
 <!-- ============================== SCHOOL ============================== -->

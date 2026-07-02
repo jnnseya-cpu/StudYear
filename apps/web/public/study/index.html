@@ -40,7 +40,7 @@
   .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
   .c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
 
-  .filters{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;margin-bottom:18px}
+  .filters{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1.4fr;gap:10px;margin-bottom:18px}
   input[type=text],select,textarea,input[type=date],input[type=number]{
     width:100%;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;
     color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}
@@ -149,6 +149,7 @@
 </style>
 </head>
 <body>
+<script src="../guard.js" data-role="student" data-base="../"></script>
 <div class="wrap">
 
 <header class="page">
@@ -177,6 +178,7 @@
     <div><label class="f">Subject</label><select id="f-subj"><option value="">All subjects</option></select></div>
     <div><label class="f">Study level</label><select id="f-level"><option value="">All levels</option></select></div>
     <div><label class="f">Resource type</label><select id="f-type"><option value="">All types</option></select></div>
+    <div><label class="f">Topic</label><select id="f-topic"><option value="">All topics</option></select></div>
   </div>
   <div class="rgrid" id="results"></div>
   <div class="empty" id="noresults" style="display:none">No resources match — try widening the filters, or create your own in ✍️.</div>
@@ -209,8 +211,8 @@
 <section id="tab-papers">
   <div class="filters">
     <div><label class="f">Subject</label><select id="pp-subj"></select></div>
-    <div><label class="f">Level</label><select id="pp-level"><option>GCSE</option><option>A-Level</option></select></div>
-    <div><label class="f">Exam board</label><select id="pp-board"><option value="">All boards</option><option>AQA</option><option>Edexcel</option><option>OCR</option><option>WJEC</option></select></div>
+    <div><label class="f">Level</label><select id="pp-level"><option>GCSE</option><option>IGCSE</option><option>National 5</option><option>AS</option><option>A2/A-level</option><option>Scottish Highers</option><option>Scottish Advanced Highers</option><option>BTEC National</option></select></div>
+    <div><label class="f">Exam board</label><select id="pp-board"><option value="">All boards</option><option>AQA</option><option>CCEA</option><option>CIE</option><option>Edexcel</option><option>ICAAE</option><option>OCR</option><option>SQA</option><option>WJEC</option><option>Other</option></select></div>
     <div><label class="f">Year</label><select id="pp-year"><option value="">All years</option></select></div>
   </div>
   <div id="pp-list"></div>
@@ -293,9 +295,10 @@
 
 <script>
 /* ============================ REFERENCE DATA ============================ */
-const SUBJECTS = ["Mathematics","Chemistry","Biology","Physics","English Literature","History","Geography","French","Spanish","Psychology","Business Studies","Computer Science","Economics","Religious Studies","Sociology"];
-const LEVELS = ["GCSE","A-Level","IB","University","KS3"];
-const TYPES = ["Flashcards","Quiz","Notes","Mindmap","Revision cards"];
+const SUBJECTS = ["Accounting", "Biology", "Business Studies", "Chemistry", "Computer Science", "Computing", "Economics", "English", "English Language", "English Literature", "French", "Fun", "Geography", "Government & Politics", "Health & Social Care", "History", "ICT", "Law", "Mathematics", "Media Studies", "Music", "Other", "Philosophy", "Physical Education", "Physics", "Psychology", "Religious Studies", "Science", "Sociology", "Spanish"];
+const LEVELS = ["Primary School", "Years 7-9 (KS3)", "GCSE", "IGCSE", "National 5", "BTEC National", "AS", "A2/A-level", "Scottish Highers", "Scottish Advanced Highers", "International Baccalaureate", "University", "Fun", "Other", "All Levels"];
+const TYPES = ["Advantages and disadvantages table", "Audio", "Causes and effects table", "Character analysis", "Compare and contrast table", "Crossword", "Document", "Flashcards", "Grid", "Image", "Mindmap", "Multi-tool", "Other", "Presentation", "Quiz", "Quizsearch", "Revision Cards", "Revision Notes", "SWOT analysis", "Spreadsheet", "Timeline", "Video", "Web Page"];
+const TOPICS = ["America - 19th and 20th century", "An Inspector Calls", "Approaches", "Attachment", "Biological molecules, organic chemistry and biochemistry", "British monarchy - Tudors and Stuarts", "Case studies", "Cells, tissues and organs", "Cellular processes and structure", "Christianity", "Crime and deviance", "Criminal law", "DNA, genetics and evolution", "Education", "Energy", "Ethics", "Families and households", "Grammar and vocabulary", "Human, animal and plant physiology", "Medicine through time (OCR History A)", "Memory", "Modern Britain - 19th century onwards", "Natural hazards", "Philosophy", "Religion and beliefs", "Research methods and techniques", "Russia - 19th and 20th century", "The Cold War", "WWII and Nazi Germany 1939-1945"];
 const SUBJ_COLOURS = {}; SUBJECTS.forEach((s,i)=>SUBJ_COLOURS[s]=["#3987e5","#199e70","#c98500","#5CBB7B","#e66767","#8b7cf6","#3aa7c9"][i%7]);
 
 /* ============================ RESOURCE LIBRARY ============================ */
@@ -311,50 +314,50 @@ const LIB = [
       {q:"What is the discriminant of ax² + bx + c?",o:["b² − 4ac","4ac − b²","b² + 4ac","−b ± 2ac"],a:0,exp:"b² − 4ac tells you how many real roots exist."},
       {q:"If the discriminant is negative, the equation has…",o:["no real roots","two real roots","one repeated root","infinite roots"],a:0,exp:"Negative discriminant → no real solutions."},
       {q:"Solve x² = 49",o:["x = ±7","x = 7 only","x = ±24.5","x = 7 or 42"],a:0,exp:"Square roots have both a positive and negative solution."}]},
- {id:"r3",type:"Notes",title:"Photosynthesis — complete revision notes",subj:"Biology",level:"GCSE",board:"AQA",uses:15920,rating:4.9,
+ {id:"r3",type:"Revision Notes",title:"Photosynthesis — complete revision notes",subj:"Biology",level:"GCSE",board:"AQA",topic:"Cellular processes and structure",uses:15920,rating:4.9,
   body:`<h5>The equation</h5><p><b>carbon dioxide + water → glucose + oxygen</b> (6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂), driven by light energy absorbed by chlorophyll.</p>
         <h5>Limiting factors</h5><ul><li><b>Light intensity</b> — more light, faster rate (until another factor limits).</li><li><b>CO₂ concentration</b> — raw material; greenhouses enrich it.</li><li><b>Temperature</b> — enzymes denature above ~45°C, rate collapses.</li></ul>
         <h5>Uses of glucose</h5><ul><li>Respiration · making cellulose · making starch (storage) · making amino acids (with nitrates) · making fats and oils.</li></ul>
         <h5>Exam tip</h5><p>Rate questions almost always want <b>inverse square law</b> for light or a <b>limiting factor</b> explanation — name the factor that stops the curve rising.</p>`},
  {id:"r4",type:"Mindmap",title:"Macbeth — themes, characters, key quotes",subj:"English Literature",level:"GCSE",board:"AQA",uses:11240,rating:4.8,
   map:{c:"MACBETH",n:[["Ambition",["'Vaulting ambition'","Lady M's drive","corrupts nobility"]],["Guilt",["'Out, damned spot'","Banquo's ghost","sleep no more"]],["Supernatural",["the witches","dagger vision","prophecy"]],["Kingship",["Duncan vs tyrant","divine right","Malcolm's test"]],["Violence",["brave Macbeth","Macduff's family","'blood will have blood'"]]]}},
- {id:"r5",type:"Revision cards",title:"Causes of World War One",subj:"History",level:"GCSE",board:"Edexcel",uses:8630,rating:4.6,
+ {id:"r5",type:"Revision Cards",title:"Causes of World War One",subj:"History",level:"GCSE",board:"Edexcel",topic:"Modern Britain - 19th century onwards",uses:8630,rating:4.6,
   cards:[["M — Militarism","Arms race: German navy vs British dreadnoughts; armies doubled 1900–14."],
          ["A — Alliances","Triple Alliance vs Triple Entente turned a Balkan dispute into a continental war."],
          ["I — Imperialism","Colonial rivalry (Morocco crises 1905, 1911) hardened distrust."],
          ["N — Nationalism","Pan-Slavism and Serbian nationalism; the Black Hand assassinated Franz Ferdinand, 28 June 1914."],
          ["The spark","Assassination → Austrian ultimatum → mobilisation dominoes → war by 4 August 1914."]]},
- {id:"r6",type:"Quiz",title:"A-Level Psychology — Memory (MSM & WMM)",subj:"Psychology",level:"A-Level",board:"AQA",uses:6210,rating:4.7,
+ {id:"r6",type:"Quiz",title:"A-Level Psychology — Memory (MSM & WMM)",subj:"Psychology",level:"A2/A-level",board:"AQA",topic:"Memory",uses:6210,rating:4.7,
   qs:[{q:"Capacity of short-term memory (Miller)?",o:["7 ± 2 items","5 ± 1 items","unlimited","3 ± 1 items"],a:0,exp:"Miller (1956): the magic number seven, plus or minus two."},
       {q:"Coding in long-term memory is mainly…",o:["semantic","acoustic","visual","iconic"],a:0,exp:"Baddeley (1966): LTM confuses similar meanings — semantic coding."},
       {q:"Which is NOT a component of the Working Memory Model?",o:["sensory register","central executive","phonological loop","visuo-spatial sketchpad"],a:0,exp:"The sensory register belongs to the Multi-Store Model."},
       {q:"KF's case study challenged the MSM because…",o:["his visual STM was intact while verbal STM was damaged","he had no LTM at all","he could not form new memories","his IQ increased"],a:0,exp:"STM must have separate stores — evidence for the WMM."}]},
  {id:"r7",type:"Flashcards",title:"French GCSE — 40 high-frequency verbs",subj:"French",level:"GCSE",board:"AQA",uses:7440,rating:4.5,
   cards:[["aller","to go"],["être","to be"],["avoir","to have"],["faire","to do / make"],["pouvoir","to be able to"],["vouloir","to want"],["devoir","to have to"],["savoir","to know (a fact)"]]},
- {id:"r8",type:"Notes",title:"A-Level Economics — Elasticities (PED, YED, XED, PES)",subj:"Economics",level:"A-Level",board:"Edexcel",uses:5330,rating:4.7,
+ {id:"r8",type:"Revision Notes",title:"A-Level Economics — Elasticities (PED, YED, XED, PES)",subj:"Economics",level:"A2/A-level",board:"Edexcel",uses:5330,rating:4.7,
   body:`<h5>PED — price elasticity of demand</h5><p><b>%ΔQd ÷ %ΔP</b>. |PED| &gt; 1 elastic, &lt; 1 inelastic. Determinants: substitutes, necessity, time, share of income.</p>
         <h5>Revenue rule</h5><p>Elastic → cut price to raise revenue. Inelastic → raise price to raise revenue. Exams love this with tobacco and rail fares.</p>
         <h5>YED &amp; XED</h5><ul><li>YED &gt; 0 normal (·&gt;1 luxury), &lt; 0 inferior.</li><li>XED &gt; 0 substitutes, &lt; 0 complements.</li></ul>
         <h5>PES</h5><p>Determined by spare capacity, stocks, factor mobility, production time. Perfectly inelastic in the immediate run (concert tickets).</p>`},
  {id:"r9",type:"Mindmap",title:"The Water Cycle & River Landscapes",subj:"Geography",level:"GCSE",board:"OCR",uses:4980,rating:4.4,
   map:{c:"RIVERS",n:[["Processes",["erosion: HAAS","transport: TSSS","deposition"]],["Landforms",["V-valleys","meanders","ox-bow lakes","levées"]],["Flooding",["hydrographs","urbanisation","hard vs soft engineering"]],["Water cycle",["evaporation","condensation","through-flow"]]]}},
- {id:"r10",type:"Quiz",title:"IB Physics — Mechanics core check",subj:"Physics",level:"IB",board:"IB",uses:3120,rating:4.6,
+ {id:"r10",type:"Quiz",title:"IB Physics — Mechanics core check",subj:"Physics",level:"International Baccalaureate",board:"IB",uses:3120,rating:4.6,
   qs:[{q:"A body in equilibrium has…",o:["zero resultant force and zero resultant torque","zero velocity","zero mass","constant acceleration"],a:0,exp:"Both translational and rotational equilibrium are required."},
       {q:"Impulse equals…",o:["change in momentum","change in energy","force × distance","mass × velocity"],a:0,exp:"FΔt = Δp — the area under a force–time graph."},
       {q:"In projectile motion (no air resistance), the horizontal velocity…",o:["stays constant","increases","decreases","is zero at the top"],a:0,exp:"No horizontal force acts, so no horizontal acceleration."}]},
- {id:"r11",type:"Revision cards",title:"Computer Science — Big-O in 6 cards",subj:"Computer Science",level:"A-Level",board:"OCR",uses:4110,rating:4.8,
+ {id:"r11",type:"Revision Cards",title:"Computer Science — Big-O in 6 cards",subj:"Computer Science",level:"A2/A-level",board:"OCR",uses:4110,rating:4.8,
   cards:[["O(1)","Constant — hash-table lookup. Doesn't grow with input."],["O(log n)","Logarithmic — binary search halves the problem each step."],["O(n)","Linear — one pass over the data."],["O(n log n)","Linearithmic — merge sort, the sorting floor for comparisons."],["O(n²)","Quadratic — nested loops; bubble sort's average case."],["O(2ⁿ)","Exponential — brute-force subsets; intractable fast."]]},
- {id:"r12",type:"Notes",title:"University — Essay structure that examiners reward",subj:"English Literature",level:"University",board:"—",uses:2210,rating:4.5,
+ {id:"r12",type:"Revision Notes",title:"University — Essay structure that examiners reward",subj:"English Literature",level:"University",board:"—",uses:2210,rating:4.5,
   body:`<h5>The spine</h5><p><b>Thesis → argument paragraphs → counter-argument → conclusion that answers the question.</b> Every paragraph earns its place by advancing the thesis.</p>
         <h5>PEEL, upgraded</h5><ul><li><b>Point</b> — one claim per paragraph.</li><li><b>Evidence</b> — quote or data, embedded, not bolted on.</li><li><b>Explain</b> — the 'because' chain: evidence → meaning → thesis.</li><li><b>Link</b> — pivot to the next claim, not a summary.</li></ul>
         <h5>What loses marks</h5><ul><li>Narration instead of argument.</li><li>Quotes left to 'speak for themselves'.</li><li>Conclusions that introduce new material.</li></ul>`},
- {id:"r13",type:"Flashcards",title:"Biology A-Level — Biological molecules",subj:"Biology",level:"A-Level",board:"AQA",uses:6870,rating:4.7,
+ {id:"r13",type:"Flashcards",title:"Biology A-Level — Biological molecules",subj:"Biology",level:"A2/A-level",board:"AQA",topic:"Biological molecules, organic chemistry and biochemistry",uses:6870,rating:4.7,
   cards:[["Bond in carbohydrates?","Glycosidic bond, formed by condensation."],["Test for reducing sugars?","Benedict's — heat; brick-red precipitate = positive."],["Structure of triglyceride?","One glycerol + three fatty acids joined by ester bonds."],["Primary protein structure?","The sequence of amino acids in the polypeptide chain."],["Induced fit model?","The active site moulds around the substrate on binding."]]},
  {id:"r14",type:"Quiz",title:"Business Studies — Finance & break-even",subj:"Business Studies",level:"GCSE",board:"Edexcel",uses:3540,rating:4.4,
   qs:[{q:"Break-even output =",o:["fixed costs ÷ contribution per unit","fixed costs ÷ price","total costs ÷ price","variable costs ÷ contribution"],a:0,exp:"Contribution = price − variable cost per unit."},
       {q:"Which is a fixed cost?",o:["factory rent","raw materials","piece-rate wages","packaging"],a:0,exp:"Rent doesn't change with output."},
       {q:"Margin of safety =",o:["actual output − break-even output","price − variable cost","revenue − total cost","fixed − variable costs"],a:0,exp:"How far sales can fall before losses begin."}]},
- {id:"r15",type:"Mindmap",title:"Christianity — beliefs & practices overview",subj:"Religious Studies",level:"GCSE",board:"AQA",uses:2890,rating:4.3,
+ {id:"r15",type:"Mindmap",title:"Christianity — beliefs & practices overview",subj:"Religious Studies",level:"GCSE",board:"AQA",topic:"Christianity",uses:2890,rating:4.3,
   map:{c:"CHRISTIANITY",n:[["The Trinity",["Father","Son","Holy Spirit"]],["Salvation",["grace","atonement","sin"]],["Worship",["liturgical","informal","private prayer"]],["Sacraments",["baptism","Eucharist"]],["Festivals",["Christmas","Easter"]]]}},
 ];
 
@@ -378,16 +381,18 @@ function fillSelect(el,items,withBlank){ items.forEach(x=>{const o=document.crea
 fillSelect(document.getElementById("f-subj"),SUBJECTS);
 fillSelect(document.getElementById("f-level"),LEVELS);
 fillSelect(document.getElementById("f-type"),TYPES);
+fillSelect(document.getElementById("f-topic"),TOPICS);
 ["c-f-subj","c-n-subj","pp-subj"].forEach(id=>fillSelect(document.getElementById(id),SUBJECTS));
 ["c-f-level","c-n-level"].forEach(id=>fillSelect(document.getElementById(id),LEVELS));
 
-const TYPE_ICON={Flashcards:"🃏",Quiz:"❓",Notes:"📓",Mindmap:"🧠","Revision cards":"🗂"};
+const TYPE_ICON={Flashcards:"🃏",Quiz:"❓","Revision Notes":"📓",Mindmap:"🧠","Revision Cards":"🗂",Crossword:"🧩",Timeline:"🕰",Video:"🎬",Audio:"🎧",Image:"🖼",Presentation:"📊",Document:"📄",Spreadsheet:"📑","Web Page":"🌐","Character analysis":"🎭","SWOT analysis":"🧭",Grid:"▦","Multi-tool":"🛠",Quizsearch:"🔍","Advantages and disadvantages table":"⚖️","Causes and effects table":"↔️","Compare and contrast table":"🆚",Other:"📚"};
 function renderResults(){
   const q=document.getElementById("q").value.trim().toLowerCase();
   const s=document.getElementById("f-subj").value, l=document.getElementById("f-level").value, t=document.getElementById("f-type").value;
+  const tp=document.getElementById("f-topic").value;
   const hits=allResources().filter(r=>
-    (!q || (r.title+" "+r.subj+" "+(r.body||"")+JSON.stringify(r.cards||r.qs||r.map||"")).toLowerCase().includes(q)) &&
-    (!s||r.subj===s)&&(!l||r.level===l)&&(!t||r.type===t));
+    (!q || (r.title+" "+r.subj+" "+(r.topic||"")+" "+(r.body||"")+JSON.stringify(r.cards||r.qs||r.map||"")).toLowerCase().includes(q)) &&
+    (!s||r.subj===s)&&(!l||r.level===l)&&(!t||r.type===t)&&(!tp||r.topic===tp));
   const el=document.getElementById("results");
   el.innerHTML=hits.map(r=>`
     <div class="res" onclick="openRes('${r.id}')">
@@ -398,7 +403,7 @@ function renderResults(){
     </div>`).join("");
   document.getElementById("noresults").style.display=hits.length?"none":"block";
 }
-["q","f-subj","f-level","f-type"].forEach(id=>document.getElementById(id).addEventListener("input",renderResults));
+["q","f-subj","f-level","f-type","f-topic"].forEach(id=>document.getElementById(id).addEventListener("input",renderResults));
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 
 /* ============================ RESOURCE VIEWERS ============================ */
@@ -412,9 +417,9 @@ function openRes(id){
   const head=`<h2>${esc(r.title)}</h2><div class="mmeta">${r.type} · ${r.subj} · ${r.level}</div>`;
   if(r.type==="Flashcards") viewFlash(r,head);
   else if(r.type==="Quiz") viewQuiz(r,head);
-  else if(r.type==="Notes") mbody.innerHTML=head+`<div class="notes-body">${r.mine?esc(r.body).replace(/\n/g,"<br>"):r.body}</div>`;
+  else if(r.type==="Revision Notes") mbody.innerHTML=head+`<div class="notes-body">${r.mine?esc(r.body).replace(/\n/g,"<br>"):r.body}</div>`;
   else if(r.type==="Mindmap") viewMap(r,head);
-  else if(r.type==="Revision cards") mbody.innerHTML=head+r.cards.map(c=>`
+  else if(r.type==="Revision Cards") mbody.innerHTML=head+r.cards.map(c=>`
       <div class="card" style="margin-bottom:10px"><h3 style="color:var(--gold-300);font-family:var(--serif);font-size:17px;font-weight:500">${esc(c[0])}</h3>
       <div style="font-size:14px;color:var(--ink-2);margin-top:4px">${esc(c[1])}</div></div>`).join("");
 }
@@ -504,7 +509,7 @@ document.getElementById("c-n-save").onclick=()=>{
   const title=document.getElementById("c-n-title").value.trim(), body=document.getElementById("c-n-body").value.trim();
   if(!title||!body){toast("Add a title and some notes first");return}
   const mine=store.get("mine",[]);
-  mine.push({id:"u"+(mine.length+1)+"n",mine:true,type:"Notes",title,subj:document.getElementById("c-n-subj").value,level:document.getElementById("c-n-level").value,body});
+  mine.push({id:"u"+(mine.length+1)+"n",mine:true,type:"Revision Notes",title,subj:document.getElementById("c-n-subj").value,level:document.getElementById("c-n-level").value,body});
   store.set("mine",mine); addPoints(15); touchStreak();
   document.getElementById("c-n-title").value="";document.getElementById("c-n-body").value="";
   renderResults(); toast("Notes saved to your library (+15 pts)");
