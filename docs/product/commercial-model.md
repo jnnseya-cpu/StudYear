@@ -16,20 +16,21 @@
 
 **Keep: £1 = 100 ACUs.**
 
-Internal profitability rule — **the 66% minimum-margin mandate governs (resolved
-directive):** **maximum real variable cost per 100 ACUs ≤ £0.34.**
+Internal profitability rule — **the margin band mandate (final, resolved):** on everything,
+**the only permitted gross-margin range is 66% to 100%.**
 
 | Per 100 ACUs | Value |
 |---|---|
 | Revenue | £1.00 |
-| Total variable cost | **≤ £0.34** |
-| Gross profit | **≥ £0.66 (≥ 66% margin)** |
+| Total variable cost | **≤ £0.34** (may approach £0.00) |
+| Gross profit | **£0.66 – £1.00 (66%–100% margin band)** |
 
-> **✅ Margin rule (resolved):** margin must be a **minimum of 66%** on every paid product —
-> the earlier ≤ £0.50 (50%-margin) draft ceiling is superseded; **≤ £0.34 per 100 ACUs is
-> the hard ceiling.** The only exemption remains **defined free accounts** (Child Free,
-> free teacher tooling). Variable cost includes provider inference, Stripe fees
-> (1.5% + 20p modelling), and hosting allocation.
+> **✅ Margin rule (final):** every paid product operates **inside the 66%–100% margin
+> band** — 66% is the hard floor (cost never exceeds 34% of realised price), and cost
+> optimisation pushes margin toward 100% wherever quality permits. The earlier
+> ≤ £0.50 (50%-margin) draft ceiling is superseded. The only exemption remains **defined
+> free accounts** (Child Free, free teacher tooling). Variable cost includes provider
+> inference, Stripe fees (1.5% + 20p modelling), and hosting allocation.
 
 ## 2. Student plans — monthly only
 
