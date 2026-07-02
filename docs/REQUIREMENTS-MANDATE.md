@@ -55,6 +55,7 @@ Every content stream received, and where it is implemented in the corpus:
 | 24 | **66% minimum-margin mandate** on all paid products (≤34% cost cap, tightened from 35%); only defined free accounts exempt; enforcement via pricing console, SY-A20 throttling, Revenue-Agent monitoring, Gateway thinking budgets | `product/studyear-ai-os-venture-brief.md §8` |
 | 25 | Venture brief completed §9–§16: BitriPay integration, security/safeguarding/compliance, pricing architecture, GTM, delivery roadmap, KPI framework, risk register, incumbent→StudYear upgrade matrix | `product/studyear-ai-os-venture-brief.md` |
 | 26 | **Founding project description** (genesis document): objectives, 19 build directives, Get Revising inspiration, freemium ratios (80/20 students, 50/50 teachers), vetted-teacher access, GA/Crashlytics/ML, AI-SEO blog — with evolution-mapping to the later corpus | `product/founding-project-description.md` |
+| 27 | **Commercial Reset — Final Recommendation** (operative pricing): £1=100 ACUs, ≤£0.50 cost rule (reconciled vs 66% directive: 50p hard ceiling / 34p goal), student+parent plans, top-ups, 19-activity ACU tariff, free-plan rules, referral 5% + influencer 20%-first-payment, tutor £10 + 15%, school tiers + bundles, margin-protection pseudocode + expiry controls, public headline offer | `product/commercial-model.md` |
 
 **Audit rule:** every future stream gets a row here before its commit is pushed.
 
