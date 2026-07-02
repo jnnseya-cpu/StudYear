@@ -880,6 +880,26 @@ Support/contact management · Content quality control · **AI Tutor governance**
 [mandate](../REQUIREMENTS-MANDATE.md), implementations satisfy the **union**: exam
 readiness and knowledge-retention scores here add to the StudYear portfolio.)*
 
+## 5. AI agents to build (the canonical 18)
+
+| # | Agent | # | Agent |
+|---|---|---|---|
+| 1 | Diagnostic Agent | 10 | School Performance Agent |
+| 2 | Study Planner Agent | 11 | Tutor Matching Agent |
+| 3 | AI Tutor Agent | 12 | Content Moderation Agent |
+| 4 | Past Paper Marking Agent | 13 | Curriculum Mapping Agent |
+| 5 | Flashcard Generator Agent | 14 | Exam Technique Agent |
+| 6 | Quiz Generator Agent | 15 | Burnout Prevention Agent |
+| 7 | Mind Map Agent | 16 | Resource Quality Agent |
+| 8 | Parent Briefing Agent | 17 | Admin Compliance Agent |
+| 9 | Teacher Intervention Agent | 18 | Monetisation / ACU Agent |
+
+*(Union note per the [mandate](../REQUIREMENTS-MANDATE.md): this 18-agent build list
+merges with the StudYear 14-agent roster (`../product/studyear-product-spec.md §5c`) and
+the 25 enhanced agents (`../ai-os/04 §3A`) — identical agents unify with all described
+capabilities; the net-new entries here (Mind Map, Exam Technique, Curriculum Mapping,
+Resource Quality as standalone builds) join the build queue.)*
+
 *(Further sections follow as extracted.)*
 
 > **Cross-portfolio note:** the three-tier token-optimization ladder above is the same
