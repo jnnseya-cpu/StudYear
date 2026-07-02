@@ -299,4 +299,49 @@ mark-schemes, payments, zero-trust, compliance, observability).
 | 5 | **Multimodal ingestion** | Photograph handwritten work → Examiner marks it; voice-note a question to the Tutor; whiteboard-photo → flashcards — **massively widens the input funnel and ACU events per user** |
 | 6 | **Recovery-as-a-Service for schools** | Intervention Agent packages for at-risk cohorts, priced from the shared pool, with **verified-impact reporting** |
 
-*(Sections B6+ follow as extracted.)*
+### B6. Guardrails (non-negotiable for UK education)
+
+- **Academic integrity by design:** assessed-work mode = **feedback and marking only, never
+  full generation**; watermark/provenance on generated content.
+- **Child safety:** age-gated agent behaviour, safeguarding escalation paths, **UK AADC
+  alignment on top of GDPR.**
+- **Explainability:** every risk flag, predicted grade, and staff-deployment suggestion
+  ships with **"why"** — teachers and parents can inspect the evidence.
+- **Human-in-the-loop:** agents draft and recommend; **teachers moderate marks, parents
+  approve tutor bookings, leaders approve deployments.**
+- **Model-provider neutrality:** router keeps Google/OpenAI/other interchangeable; **no user
+  content in provider training** (already contractual — preserve it).
+- **ACU transparency:** agent-initiated spend **always pre-quoted and capped by user-set
+  budgets**; the "no surprise bills" promise **extends to autonomous agents.**
+
+### B7. Phased roadmap
+
+| Phase | Duration | Ship |
+|---|---|---|
+| **1 — Intelligence Substrate** | 0–3 mo | Curriculum knowledge graph (**top 6 GCSE/A-Level subjects**), Learning Record Store, ACU event pipeline into feature store, Model Router |
+| **2 — Predictive Core** | 3–6 mo | Knowledge Tracing v1, Grade Forecaster v1 with confidence bands, Risk EWS feeding existing parent alerts, forgetting-curve scheduling inside study plans |
+| **3 — Agent Mesh v1** | 6–9 mo | Study Companion + Examiner + Content Forge agents live; **adaptive CAT diagnostic replaces static assessment**; teacher pre-marking workspace |
+| **4 — Multi-Role Autonomy** | 9–12 mo | Family Insight, Classroom Copilot, Institution Intelligence agents; Intervention Agent with **verified-impact loop**; ACU-ROI Optimiser in the wallet UI |
+| **5 — Marketplace & Scale** | 12–18 mo | Matching Agent + outcome-ranked tutors; Cohort Benchmarker; multimodal ingestion; Autopilot tiers; Exam War-Room; **published prediction-accuracy stats** |
+
+### B8. Success metrics
+
+| Domain | Metrics |
+|---|---|
+| **Learning** | median predicted-grade uplift per 100 ACUs · mastery-gain per study hour · risk-flag precision/recall · intervention verified-impact rate |
+| **Product** | weekly agent-initiated actions accepted per user · diagnostic completion time ↓60% · plan adherence ↑ |
+| **Commercial** | ACU consumption per MAU · parent-funded wallet attach rate · school pool renewal rate tied to ROI dashboard · marketplace fill rate & take |
+| **Trust** | Examiner calibration error vs real grades · explainability coverage (**100% of automated decisions**) · **zero safeguarding SLA breaches** |
+
+---
+
+## Closing assessment
+
+StudYear's current architecture is already unusually coherent: **diagnostic-first,
+closed-loop, ACU-metered, multi-role, GDPR-anchored.** What it monetises today is **AI tool
+calls.** The upgrade path monetises **AI labour and predictive certainty** — persistent
+agents that work between sessions, ML that tells every role the single highest-leverage next
+action, and published prediction accuracy that **no competitor in the UK EdTech space
+currently dares to offer.** The ACU ledger the platform already runs is both the **business
+model and the training-data engine**; StudYear 2.0 simply closes the loop the marketing
+already promises — **automatically, proactively, and measurably.**
