@@ -1,0 +1,123 @@
+# StudYear — Authoritative Product Specification (as-is)
+
+> **Source of truth for what StudYear *actually is today*** — extracted from the public site,
+> terms, privacy policy, and known OS logic. This is distinct from the aspirational
+> enterprise **AI-OS transformation** in [`docs/ai-os/`](../ai-os/README.md) (PART 4), which
+> *adds to* — never removes — what is documented here.
+>
+> Where the architecture docs (`docs/architecture/`) describe an idealized ecosystem, this
+> file records the **real product's positioning, engine, wallet economics, and roles**, so
+> every downstream design stays grounded.
+
+## 1. Core purpose
+
+StudYear is an **AI-powered Education Operating System** that connects diagnostics, AI
+tutoring, study planning, assignment review, live progress, parents, schools, teachers, and
+tutors in **one academic command centre.** It is built around a closed loop:
+
+```
+        ┌──────────────────────────────────────────────┐
+        │   ASSESS  →  PLAN  →  LEARN  →  IMPROVE  ──┐   │
+        └───────────────────────────────────────────┘   │
+                        ▲                                │
+                        └────────────────────────────────┘
+```
+
+It is **not just a learning app** — it is an **academic intelligence OS.**
+
+## 2. The system engine (5 cores)
+
+| # | Engine | What it does |
+|---|---|---|
+| 1 | **Diagnostic Engine** | Finds student baseline: current grades, confidence level, weak topics, strengths, and **risk profile**. |
+| 2 | **AI Study Roadmap** | Creates personalised **week-by-week** study plans from weak areas, exam timelines, and grade targets. |
+| 3 | **AI Learning Tools** | AI tutor, interactive lessons, quizzes, flashcards, topic summaries, essay feedback, diagrams, charts, past-paper support, revision resources. |
+| 4 | **Progress Intelligence** | Tracks quizzes, lessons, **mastery**, adherence, **predicted grades**, risk alerts, and improvement over time. |
+| 5 | **ACU Wallet System** | AI features consume prepaid **AI Credit Units (ACUs)**. When ACUs hit zero, **AI features stop** until the wallet is topped up. |
+
+The five engines *are* the Assess→Plan→Learn→Improve loop: Diagnostic = Assess, Roadmap =
+Plan, Learning Tools = Learn, Progress Intelligence = Improve — with the ACU Wallet metering
+the AI compute that powers all four.
+
+## 3. ACU Wallet economics (the monetisation backbone)
+
+- **Prepaid credits:** AI features draw down ACUs; **cost is per action** (per tool / per
+  generation), set by the platform.
+- **Hard stop at zero:** when the balance reaches zero, AI features are disabled until
+  top-up — a clean, usage-based gate (no silent overage).
+- **Where it plugs in:** every AI Learning Tool (`§2.3`) and AI-driven engine action checks
+  and decrements the wallet; balances, top-ups, deductions, refunds, and usage logs are
+  admin-managed (`§4`).
+- **Shared pools:** schools can operate a **shared ACU pool** across their cohort (`§4`).
+- This is the concrete instance of the "AI credit / ACU system" the AI-OS monetisation model
+  (PART 4) builds on.
+
+## 4. Roles — real feature extraction
+
+> Authenticated dashboards are private; the following is a senior product extraction from
+> public positioning, terms, and privacy policy. Treat as high-fidelity, not verbatim UI.
+
+### 4.1 Platform Admin — controls the whole OS
+
+| Area | Responsibilities |
+|---|---|
+| **Manage users** | students, parents, schools, teachers, tutors, staff, partner organisations |
+| **Roles & permissions** | decide what each role can see, edit, approve, create, purchase, assign, export, delete |
+| **Manage ACUs** | top-ups, balances, deductions, refunds policy, usage logs, fraud checks, pricing, **feature cost per action** |
+| **Manage AI tools** | enable/disable tools, set ACU cost, monitor usage, review errors, **control prompts, safety rules, output quality** |
+| **Content library** | shared resources, uploaded files, generated resources, public/private visibility, **moderation** |
+| **Manage schools** | approve school accounts, create school admin, assign teachers, manage **shared ACU pool**, cohort analytics |
+| **Manage tutors** | approve profiles, marketplace listing, verification, earnings, bookings, complaints, ratings |
+| **Manage payments** | **Stripe** transactions, failed payments, invoices, plans, subscriptions, **ACU packs** |
+| **Manage compliance** | GDPR, privacy, AI usage logs, data-deletion requests, audit trails, account security |
+| **Manage reporting** | export platform usage, revenue, ACU consumption, active users, resources created, student growth, school adoption |
+
+**Data collected (privacy basis):** profile data, AI inputs, usage data, ACU transactions,
+payment processing via **Stripe**, and technical/security data.
+
+> **Payments note:** the **live** payment processor is **Stripe**. **BitriPay** (requested in
+> the AI-OS master prompt) is a *planned additional* gateway documented in
+> [`docs/ai-os/`](../ai-os/README.md) — it augments, not replaces, Stripe.
+
+### 4.2 Student — the main learning user
+
+| Area | Responsibilities |
+|---|---|
+| **Create profile** | year group, subjects, target grades, current grades, exam board, confidence level |
+| **Run diagnostic** | identify weak topics, strengths, learning gaps, risk areas (Diagnostic Engine, `§2.1`) |
+| **Personal study plan** | weekly roadmap, priority topics, revision tasks, exam countdown (AI Study Roadmap, `§2.2`) |
+| **AI tutor** | ask questions 24/7; step-by-step explanations, diagrams, examples, quizzes |
+| **Create learning resources** | flashcards, quizzes, topic summaries, formula sheets, mind maps, essay plans, interactive lessons |
+| **Assignment review** | upload/write answers → feedback, **predicted grade**, improvement advice, structure comments |
+| **Track progress** | mastery score, study hours, completed tasks, predicted-grade movement, weak-area recovery |
+| **Use ACUs** | every AI action consumes credits; balance visible, topped up when low (`§3`) |
+
+The student *is* the Assess→Plan→Learn→Improve loop in first person: diagnostic → roadmap →
+AI tutor + resource creation → progress tracking, all metered by ACUs.
+
+### 4.3 Parent — support without micromanaging
+
+| Area | Responsibilities |
+|---|---|
+| **Link to child** | connect to one or more child profiles |
+| **View child dashboard** | progress, weak subjects, study consistency, predicted grade, completed tasks |
+| **Risk alerts** | low adherence, confidence drop, weak topic not improving, exam risk |
+| **AI parent briefing** | **weekly summary**: what changed, what needs support, what to ask the child |
+| **Intervention guidance** | practical advice to help without pressure |
+| **Manage payment / ACUs** | buy ACUs, monitor usage, control spend (`§3`) |
+| **Family dashboard** | multiple children, different subjects, different risk levels |
+
+The "AI parent briefing" is the real-product seed of the **Concierge.ai** agent (`14 §5`);
+risk alerts are Progress Intelligence (`§2.4`) surfaced to the guardian.
+
+*(Further roles — School, Teacher, Tutor — are appended here as extracted, in the same
+real-feature style.)*
+
+## 5. How this grounds the rest of the docs
+
+- The **architecture** docs (`docs/architecture/`) generalise this into a kernel + persona
+  model; the **mastery/closed-loop** thesis there is literally this product's Assess→Improve
+  loop plus Progress Intelligence.
+- The **AI-OS** docs (`docs/ai-os/`) transform this into enterprise infrastructure **without
+  removing** any engine, role, or the ACU economics — ACU becomes the metering layer for the
+  expanded agent workforce.
