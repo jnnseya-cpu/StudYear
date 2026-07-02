@@ -8,11 +8,9 @@ import {
   FREE_TIER,
   MARGIN,
   PARENT_PLANS,
-  REFERRAL,
   ROLES,
   SCHOOL_PLANS,
   STUDENT_PLANS,
-  TOPUPS,
   type MeteredActivity,
   type Plan,
   type Role,
@@ -203,10 +201,6 @@ export default function OSShell() {
               </article>
             ))}
           </div>
-          <p className="fine">
-            Top-ups from £{(TOPUPS[0].pence / 100).toFixed(0)} · refer a friend for {REFERRAL.rewardAcus} bonus ACUs ·
-            every paid product operates inside the {Math.round(MARGIN.FLOOR * 100)}–{Math.round(MARGIN.CEILING * 100)}% margin band.
-          </p>
         </section>
       )}
 
@@ -265,7 +259,6 @@ const CSS = `
   .pv{font-family:Georgia,serif;font-size:26px;color:#F2DCA0;margin-top:6px}
   .pa{font-size:12px;color:#6B7A96}
   .plan p{font-size:12.5px;color:#AAB6CC;margin:8px 0 0}
-  .fine{font-size:12px;color:#6B7A96;margin-top:14px;font-style:italic}
   .os-foot{display:flex;gap:22px;margin-top:56px;padding-top:18px;border-top:1px solid rgba(212,175,55,.14);
     font-size:12.5px;color:#6B7A96;flex-wrap:wrap}
   .os-foot a{color:#AAB6CC}
