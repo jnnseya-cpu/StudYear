@@ -93,6 +93,12 @@ Internal profitability rule — **the margin band mandate (final, resolved):** o
 - 100 ACUs every 3 months · **no cash-out value** · **no rollover after 90 days**
 - **One child account per verified parent/device**
 - No Assignment Review · no heavy AI course-generation abuse
+- **No access to the tutor marketplace** — free accounts cannot book tutors or receive
+  tutor-triggered AI support (resolved directive; upgrading to a paid plan or a parent
+  wallet unlocks it)
+- **Every free-tier feature is limit-gated** — where a limit is not yet explicitly
+  defined, a default cap applies until Admin sets one (limits are Admin-configurable per
+  feature, like ACU costs — `§12b` / `../ai-os/14`)
 - Referral ACUs cannot be withdrawn
 
 **Purpose: access, trust, community goodwill — not unlimited AI usage.**
@@ -133,7 +139,9 @@ commission) → **payout only after refund window closes.**
 | AI usage during lesson | **student pays ACUs** |
 
 Tutors can trigger AI support, but **ACUs must always come from the student wallet or
-parent wallet.**
+parent wallet.** Since **free accounts have no tutor access** (§6), tutor-triggered ACUs
+can only ever draw from a **paid** student plan or a parent wallet — the Child Free
+quarterly allowance can never be drained by a tutor. *(Resolves annotation JN1.1.)*
 
 ## 10. School pricing
 
