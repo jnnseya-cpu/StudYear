@@ -597,6 +597,21 @@ expansion, 5 the francophone corridor. Union with the earlier five-phase roadmap
 | **Incumbent fast-follows with AI features** | Medium | **moat is the labelled interaction corpus + multi-persona architecture**; speed through shared X-EXECUTE runtime |
 | **DRC deployment complexity** | Medium | sequenced after UK proof; **BitriPay licence footprint and existing portfolio field operations reused**; local partnerships |
 
+## 16. Appendix A — Incumbent Capability → StudYear Upgrade Matrix
+
+| Incumbent capability (Get Revising archetype) | StudYear AI-OS replacement |
+|---|---|
+| static one-shot revision timetable with manual subject weighting | **SY-A01 Planner**: mastery- and memory-driven plan, **replanned nightly and on-event, with explainable rationale** |
+| cloze-deletion keyword self-tests with peer time benchmarks | **adaptive assessment spanning items to full essays**, marked by **SY-A04** with AO-level breakdowns |
+| 400k+ unverified community resources ranked by ratings | **verification-scored content (SY-A17); nothing ranks unverified**; AI + UGC in one quality pipeline |
+| manual creation of flashcards, mindmaps, quizzes; template cross-generation | **SY-A03 Content Forge**: photo/PDF/notes ingestion → full multi-format study set, **spec-point tagged** |
+| forum Q&A with email notifications and vote-ranking | **SY-A02 Tutor Agent** instant, syllabus-grounded help; **community retained** with proactive moderation (**SY-A16**) |
+| teacher role = distribution channel with photocopiable packs | **teacher as served customer**: Cockpit, Assignment, Reporting agents on live class mastery data |
+| school role = VLE resource dumps, no analytics | Cohort Analytics, Early-Warning, **Progress 8 modelling, MIS/SSO integration, per-seat commercial product** |
+| parent role = a home-schooling timetable page | **Family Digest and Escalation agents; parent subscription; diaspora-funded accounts** |
+| private tutor role = non-existent | **Tutor Workspace, Session Prep, vetted Marketplace with BitriPay escrow and take-rate economics** |
+| admin = reactive moderation and manual taxonomy | **agentic operations**: proactive safety, auto-verification, auto-taxonomy, integrity and fraud ops |
+
 ---
 
 *(Further sections follow as extracted.)*
