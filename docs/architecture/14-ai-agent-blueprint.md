@@ -26,14 +26,39 @@ right model per task, with automatic failover and cost/latency awareness.
                  unified tool-use / structured-output contract
 ```
 
+### 0.0 The AI Gateway mandate (directive)
+
+**All AI must pass through a single AI Gateway that can switch between AI providers — and
+all AI activities must run in deep-thinking mode.** Two binding rules:
+
+1. **One gateway, no bypass.** Every AI call from every agent, tool, and surface routes
+   through the Gateway (the Model Router below is its routing brain). No component ever
+   calls a provider SDK directly — provider switching is a **config change at the Gateway**,
+   never a code change, and the platform can swap or add providers (Claude ⇄ Gemini ⇄
+   OpenAI ⇄ future) without touching any agent.
+2. **Deep thinking always.** Every AI activity executes with **extended/deep reasoning
+   enabled** — reasoning-capable models with thinking mode on (e.g. Claude extended
+   thinking, Gemini thinking, OpenAI reasoning models). Quality of thought is
+   non-negotiable regardless of which provider serves the call. The Gateway scales the
+   *thinking budget* to task weight (a quiz-tag lookup gets a small budget; essay marking
+   gets a large one) — but no AI activity runs in a shallow, non-reasoning mode.
+
+*Reconciliation with the token-tiering pattern (per the
+[mandate](../REQUIREMENTS-MANDATE.md) — union, not removal):* the **local-rule tier**
+(calendar math, spaced-repetition intervals — zero tokens) survives because those are not
+AI activities. The former "fast/cheap non-reasoning" tier is superseded upward: routine
+language tasks still route through the Gateway to reasoning-capable models with
+**appropriately small thinking budgets**, preserving cost discipline while honouring the
+deep-thinking rule.
+
 ### 0.1 Routing policy (capability-first, not vendor-first)
 
 | Workload shape | Routed to (capability) | Rationale |
 |---|---|---|
-| Deep reasoning, long-context agents, tool orchestration | frontier reasoning tier (e.g. Claude Opus) | reliability on multi-step agentic tasks |
-| High-volume, low-latency classify/extract/summarize | fast/cheap tier (e.g. Claude Haiku / small models) | cost at scale |
-| Large multimodal / very-long-context ingestion | long-context multimodal tier (e.g. Gemini) | context window & media |
-| Broad ecosystem / embeddings / specific strengths | provider best-of-breed (e.g. OpenAI) | task fit |
+| Deep reasoning, long-context agents, tool orchestration | frontier reasoning tier, **large thinking budget** (e.g. Claude Opus) | reliability on multi-step agentic tasks |
+| High-volume classify/extract/summarize | reasoning-capable efficient tier, **small thinking budget** (e.g. Claude Haiku with thinking) | cost at scale, deep-thinking rule intact |
+| Large multimodal / very-long-context ingestion | long-context multimodal thinking tier (e.g. Gemini) | context window & media |
+| Broad ecosystem / embeddings / specific strengths | provider best-of-breed reasoning models (e.g. OpenAI) | task fit |
 
 Routing is **policy-driven config**, so the mapping evolves without touching agent code.
 Independent providers also give **resilience** (failover on outage/rate-limit) and

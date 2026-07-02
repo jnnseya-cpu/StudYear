@@ -50,7 +50,8 @@ Every content stream received, and where it is implemented in the corpus:
 | 19 | Preservation & Enhancement Mandate directive ("implement everything, remove nothing, enhance only, start to end") | this document + root README banner |
 | 20 | Pedagogical thesis: same school/lessons/lectures, different styles & speeds → ML + behavioural learning personalisation to improve everyone quickly | `product/studyear-product-spec.md §0` |
 | 21 | v1.1 Personalisation Engine: LPV (7 behavioural dimensions), three adaptation loops, catch-up compression / stretch principle, SY-A21 Profile Agent (registry → 21) | `product/studyear-product-spec.md §5e` |
-| 22 | Flagship venture brief: incumbent-generation contrast, opposite-premise substrate, five-sided revenue architecture, BitriPay diaspora/francophone rail, NSEYA X-EXECUTE shared portfolio assets, positioning statement | `product/studyear-ai-os-venture-brief.md` |
+| 22 | Flagship venture brief: incumbent contrast, opposite-premise substrate, five-sided revenue, BitriPay rail, NSEYA X-EXECUTE assets, positioning; §2 definitive competitive teardown + market movement; §3 AI-OS doctrine + six surfaces | `product/studyear-ai-os-venture-brief.md` *(streaming)* |
+| 23 | AI Gateway directive: all AI through one provider-switchable gateway; **all AI activities in deep-thinking mode** (thinking budgets scaled to task; local-rule tier survives as non-AI) | `architecture/14-ai-agent-blueprint.md §0.0` |
 
 **Audit rule:** every future stream gets a row here before its commit is pushed.
 
