@@ -237,4 +237,43 @@ A **UK-focused revision and exam-preparation platform** (GCSE, AS/A2, IB, KS3–
 built on **three pillars: planning, content, and community.** It claims **over 1 million
 students**; its core promise is **organised, self-directed revision.**
 
-*(Sections follow as extracted.)*
+### 1. Student role (the primary persona)
+
+**Planning & organisation**
+- Personalised study plan generated **in under 5 minutes** based on what you're studying
+- **Timetable builder**: add exams (subject, level, exam board, date), colour-code, allocate
+  **revision weight per subject**; builds in breaks, lets students **block out unavailable
+  times**, and **prioritises weaker subjects**
+- Smart reminders; schedule built around the student's life; **printable colour PDF** timetable
+- Clicking any scheduled slot opens a dialogue **linking to specific topic resources for that
+  session** — planner-to-content linkage
+- Topic tick-off / progress tracking
+
+**Content consumption**
+- Library of **425,500+ learning resources**, tagged by exam board — class notes for
+  catch-up, multiple learning styles (visual mindmaps, game-based quizzes)
+- **Past-paper finder** covering all levels and subjects
+- Search by subject, topic, resource type, or keywords, filtered by level, with the
+  **highest teacher/user-rated resources surfaced first**
+
+**Content creation (the "Create" suite)**
+- Revision notes (with progressive condensing / **"chunking"**), flashcards, revision cards,
+  mindmaps (node-and-connection editor), quizzes, crosswords, and **quizsearches**
+  (crossword/wordsearch hybrids)
+- **Cross-format auto-generation**: create one resource type and the platform attempts to
+  generate the other formats from the same material
+- A **"select for test"** mechanism — highlighted words/phrases become testable items
+
+**Testing & self-assessment**
+- A smart testing tool using **cloze deletion** (strips key words/phrases), **varies removed
+  words on retries**, times the student, and **benchmarks performance against other students**
+- **Any resource on the platform can be turned into a test**
+
+**Community & social learning**
+- Study groups for every subject
+- An **"Ask" Q&A system**: subject-tagged questions, email notifications on answers,
+  answers rated up/down by usefulness
+- Discussion threads, peer messaging for constructive feedback on resources, and a report
+  mechanism for inappropriate behaviour
+
+*(Further sections follow as extracted.)*
