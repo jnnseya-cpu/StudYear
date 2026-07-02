@@ -528,6 +528,37 @@ command centres, and tutor-marketplace workflows.
 *Note: the section numbering (`§5b`, `§6`) reflects incremental extraction; the prior
 "How this grounds the rest of the docs" guidance still applies below.*
 
+## 4b. Senior-PM observations (teardown synthesis)
+
+Four findings stand out from the full public teardown:
+
+1. **The closed loop is the genuine moat.** Versus content libraries and single-point AI
+   tutors, the differentiator is the **write-back from every learning action into the
+   mastery model**, which then mutates the plan and the predicted grade — and the marketing
+   states it explicitly. (This validates the single-fact mastery thesis that anchors
+   `docs/architecture/00`/`07`.)
+
+2. **The ACU model is unusually disciplined for edtech** — strictly prepaid, no overdraft,
+   non-refundable. Commercially clean, but two watch-items:
+   - **UK consumer-rights friction** around non-refundability;
+   - **conversion drop at the "balance hit zero mid-revision" moment.**
+   The obvious next moves: **auto-top-up** and a **parent-funded wallet** (the
+   payer–beneficiary split already reconstructed in §4.3 and designed in
+   `docs/ai-os/` — ACU Control Agent, family wallet scope).
+
+3. **The liability posture is well-drafted:** grade predictions are framed as **estimates,
+   not guarantees**, and users are **solely responsible for verifying AI outputs** before
+   submitting academic work — the right academic-integrity stance.
+
+4. **The two most visible gaps** between the four marketed command centres and a full
+   six-role operating system: the **teacher-persona absence** (§4.5 finding) and the **thin
+   public detail on tutor payout mechanics** (§4.6 — Stripe Connect inferred, not stated).
+
+**Recommended next actions (product):** ship auto-top-up + parent-funded wallets to close
+the zero-balance drop; decide the teacher-persona question (staff-seat vs first-class) and
+align the marketing site; publish tutor payout mechanics (rail, schedule, fees) to
+strengthen marketplace supply trust.
+
 ## 5. How this grounds the rest of the docs
 
 - The **architecture** docs (`docs/architecture/`) generalise this into a kernel + persona
