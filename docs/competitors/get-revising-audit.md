@@ -620,4 +620,21 @@ secure local database layout (a highly efficient **MariaDB** instance optimized 
 | Agentic upgrade | monitors study patterns, surfaces **positive, actionable suggestions** |
 | How it works | instead of generic alerts: *"Sarah just finished a challenging 3-hour study stretch on a difficult topic. Now would be a perfect time to offer a quick break or her favorite snack to help keep her spirits up."* |
 
+#### 🛡️ Platform Admin: automated safety & systems operations
+
+**A. AI-powered exam-board verification** *(Grading & Quality Agent)*
+
+| | |
+|---|---|
+| Old way | community flag reports or manual admin spot-checks |
+| Agentic upgrade | **every uploaded file** runs an automated quality-control loop |
+| How it works | cross-check against the official exam specification → on factual errors, textbook plagiarism, or outdated syllabus references: **auto-route to review queue, draft a clear explanation for the author, or apply correct curriculum tags — no human intervention required** |
+
+**B. Semantic de-duplication and content upgrades**
+
+| | |
+|---|---|
+| Old way | platform cluttered with hundreds of identical low-value decks (*"GCSE Biology Vocab"*) |
+| Agentic upgrade | background agent identifies repetitive/duplicate resources and **merges identical decks into definitive, high-quality community versions** — cleaning search results, surfacing the best materials |
+
 *(Further PART 2 sections follow as extracted.)*
