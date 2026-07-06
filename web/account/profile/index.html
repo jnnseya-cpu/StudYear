@@ -234,6 +234,31 @@ if(profile.level)$('p-level').value=profile.level;
 if(profile.board)$('p-board').value=profile.board;
 if(new URLSearchParams(location.search).get('welcome')==='1')$('welcome').style.display='block';
 
+/* ---- school-managed fields ----
+   Your data is shared between your personal and school views, but fields the
+   school manages (year group, school-set targets) can only be changed by the
+   school — never here. Personal details stay yours. */
+function escSm(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function findSchoolLink(){
+  var email=(S.email||'').toLowerCase();
+  try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);var m=k&&k.match(/^sy-school:([^:]+):roster$/);if(!m)continue;var code=m[1];var roster=SY.schoolGet(code,'roster',[]);if((roster||[]).some(function(r){return (r.email||'').toLowerCase()===email})){return {code:code,name:SY.schoolGet(code,'name','your school')}}}}catch(e){}
+  return null;
+}
+var schoolLink=findSchoolLink();
+var managed=schoolLink?SY.schoolGet(schoolLink.code,'managed:'+(S.email||'').toLowerCase(),{}):{};
+window.__schoolManaged=managed;
+if(schoolLink){
+  if(managed.level)$('p-level').value=managed.level;
+  var lvl=$('p-level');lvl.disabled=true;lvl.style.opacity='.7';lvl.style.cursor='not-allowed';lvl.title='Managed by your school';
+  /* lock any school-set target grades */
+  var hasManagedTargets=managed.targets&&Object.keys(managed.targets).length;
+  var banner=document.createElement('div');
+  banner.style.cssText='border:1px solid rgba(77,157,224,.35);background:rgba(77,157,224,.08);border-radius:11px;padding:11px 14px;font-size:12.5px;color:var(--gold-300);margin:0 0 4px';
+  banner.innerHTML='🏫 Linked to <b>'+escSm(schoolLink.name)+'</b>. Your year group'+(hasManagedTargets?' and school-set targets are':' is')+' managed by your school and can only be changed by them. Your personal details, photos and other subjects stay yours.';
+  var acadCard=$('p-level').closest('.card');
+  acadCard.insertBefore(banner,acadCard.firstChild);
+}
+
 /* ---------- photos: downscale client-side, store as data URLs ---------- */
 function pickImage(input,maxDim,cb){
   input.onchange=function(){

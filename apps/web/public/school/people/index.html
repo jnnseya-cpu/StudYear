@@ -154,9 +154,11 @@ function draw(){
   /* roster */
   var rr='<tr><th>Name</th><th>Email</th><th>Year group</th><th>Progress</th><th></th></tr>';
   r.forEach(function(s,i){var pf=SY.readAccount(s.email,'profile',{});var prog=studentProgress(s.email);
+    var mg=SY.schoolGet(code,'managed:'+(s.email||'').toLowerCase(),{});
+    var yr=mg.level||pf.level||s.year||'—';
     rr+='<tr><td>'+esc(SY.accountName(s.email)||s.name||s.email)+'</td><td>'+esc(s.email)+'</td>'+
-      '<td>'+esc(pf.level||s.year||'—')+'</td><td>'+prog+'%</td>'+
-      '<td><button class="btn sm" data-remove-student="'+i+'">Remove</button></td></tr>';
+      '<td>'+esc(yr)+(mg.level?' <span class="badge">school-set</span>':'')+'</td><td>'+prog+'%</td>'+
+      '<td style="white-space:nowrap"><button class="btn sm" data-set-year="'+i+'">Set year</button> <button class="btn sm" data-remove-student="'+i+'">Remove</button></td></tr>';
   });
   $('roster-table').innerHTML=rr;
   $('roster-table').style.display=r.length?'table':'none';
@@ -172,6 +174,11 @@ function draw(){
     var st=staff();var i=+b.dataset.cohort;var cur=(st[i].cohorts||[]).join(', ');
     var v=prompt('Assign cohorts (comma-separated year groups, e.g. "GCSE, Year 11"). Leave blank for all year groups:',cur);
     if(v===null)return;st[i].cohorts=v.split(',').map(function(x){return x.trim()}).filter(Boolean);SY.schoolSet(code,'staff',st);toast('Cohorts updated');draw();}});
+  $('roster-table').querySelectorAll('[data-set-year]').forEach(function(b){b.onclick=function(){
+    var r=roster();var s=r[+b.dataset.setYear];var email=(s.email||'').toLowerCase();
+    var mg=SY.schoolGet(code,'managed:'+email,{});
+    var v=prompt('Set the school-managed year group / study level for '+(SY.accountName(s.email)||s.email)+'.\nThis is read-only on the student’s own profile — only the school can change it.',mg.level||'');
+    if(v===null)return;mg.level=v.trim();SY.schoolSet(code,'managed:'+email,mg);toast('Year group set (managed by school)');draw();}});
   $('roster-table').querySelectorAll('[data-remove-student]').forEach(function(b){b.onclick=function(){var r=roster();r.splice(+b.dataset.removeStudent,1);SY.schoolSet(code,'roster',r);draw()}});
 }
 draw();
