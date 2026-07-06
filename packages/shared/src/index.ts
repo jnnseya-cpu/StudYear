@@ -204,7 +204,7 @@ export const ACU_TARIFF = {
   diagnostic_results: 15,
   recovery_plan: 25,
   interactive_lesson: 25,
-  course_generator: 30,
+  course_generator: 15, // owner ruling 2026-07: 15 ACUs per course, no premium plan required
   predicted_grade: 20,
   assignment_review: 60,
   paper_analysis: 50,
@@ -224,7 +224,7 @@ export interface Plan {
 
 /** Student plans — commercial-model §2 (monthly only). */
 export const STUDENT_PLANS: Plan[] = [
-  { id: 'child_free', audience: 'student', label: 'Child Free', monthlyPence: 0, acus: 100, positioning: 'Start learning safely.' }, // 100 ACUs per QUARTER
+  { id: 'child_free', audience: 'student', label: 'Child Free', monthlyPence: 0, acus: 100, positioning: 'Start learning safely.' }, // 100 ACUs per MONTH (Child Free only — never added to paid plans)
   { id: 'student_access', audience: 'student', label: 'Student Access', monthlyPence: 500, acus: 500, positioning: 'A full week of AI-supported study.' },
   { id: 'student_premium', audience: 'student', label: 'Student Premium', monthlyPence: 1000, acus: 700, positioning: 'Unlock every premium learning tool.' },
   { id: 'student_premium_plus', audience: 'student', label: 'Student Premium+', monthlyPence: 2000, acus: 1650, positioning: 'Built for serious exam terms.' },
@@ -258,7 +258,8 @@ export const TOPUPS = [
 // ------------------------------------------------------------ free tier ----
 /** Free-plan rules — commercial-model §6 (incl. resolved directive: no tutor access). */
 export const FREE_TIER = {
-  acusPerQuarter: 100,
+  /** owner ruling 2026-07: Child Free grants 100 ACUs every month (this plan only — not stacked on paid subscriptions) */
+  acusPerMonth: 100,
   rolloverDays: 90,
   tutorMarketplaceAccess: false, // free accounts can never book tutors / receive tutor-triggered AI
   assignmentReview: false,

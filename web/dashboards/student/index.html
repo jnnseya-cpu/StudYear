@@ -4,13 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StudYear — Student Dashboard</title>
+<link rel="manifest" href="../../manifest.json">
+<link rel="icon" href="../../icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#060B18">
 <style>
   :root{
     --navy-950:#060B18; --navy-900:#0B1220; --navy-800:#101B33;
     --gold-300:#A9CFF2; --gold-400:#5FA8E0; --gold-500:#3D8FD1;
     --ink:#EDF1F8; --ink-2:#AAB6CC; --ink-3:#6B7A96;
-    /* validated categorical slots (dark, surface #0B1220 — all checks pass) */
-    --s1:#3987e5; --s2:#199e70; --s3:#c98500;
     --good:#5CBB7B; --warn:#c98500; --crit:#e66767;
     --line:rgba(77,157,224,.14);
     --serif:Georgia,"Times New Roman",serif;
@@ -22,217 +23,255 @@
     radial-gradient(900px 700px at -10% 30%, rgba(22,37,74,.85), transparent 65%),
     var(--navy-950);
     color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:1240px;margin:0 auto;padding:56px 32px 90px}
-  header.page h1{font-family:var(--serif);font-weight:500;font-size:44px;letter-spacing:-.01em}
-  header.page .k{font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold-500);margin-bottom:14px}
-  header.page p{color:var(--ink-2);max-width:70ch;margin-top:12px;font-weight:300}
+  .shell{display:flex;min-height:100vh;max-width:1400px;margin:0 auto}
+  aside.side{width:230px;flex:none;border-right:1px solid var(--line);padding:22px 14px 30px;position:sticky;top:0;align-self:flex-start;max-height:100vh;overflow-y:auto}
+  .slogo{font-family:var(--serif);font-size:19px;color:var(--ink);text-decoration:none;display:block;padding:4px 10px 14px}
+  .slogo b{color:#4FA6E0;font-weight:600}
+  aside.side nav a{display:block;font-size:13px;color:var(--ink-2);text-decoration:none;padding:7px 10px;border-radius:8px;margin:1px 0}
+  aside.side nav a:hover{color:var(--gold-300);background:rgba(77,157,224,.08)}
+  aside.side nav a.on{color:var(--gold-300);background:rgba(77,157,224,.12)}
+  aside.side nav a i{font-style:normal;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--warn);border:1px solid rgba(201,133,0,.5);border-radius:8px;padding:1px 6px;margin-left:6px;vertical-align:1px}
+  .sgroup{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);padding:16px 10px 5px}
+  main.content{flex:1;padding:36px 36px 90px;min-width:0}
+  @media(max-width:900px){.shell{flex-direction:column}aside.side{width:100%;position:static;max-height:none;border-right:none;border-bottom:1px solid var(--line);padding-bottom:12px}
+    aside.side nav{display:flex;flex-wrap:wrap;gap:2px}aside.side nav a{font-size:12px}.sgroup{width:100%}main.content{padding:26px 20px 70px}}
 
-  section{margin-top:64px}
-  .sec-head{display:flex;align-items:baseline;gap:16px;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:22px}
-  .sec-head h2{font-family:var(--serif);font-weight:500;font-size:27px}
-  .sec-head .who{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-400)}
-  .sec-head .tag{margin-left:auto;font-size:12px;color:var(--ink-3)}
-
-  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
-  .tile{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:rgba(16,27,51,.5)}
-  .tile .v{font-family:var(--serif);font-size:30px;color:var(--gold-300);line-height:1.1}
-  .tile .v small{font-size:14px;color:var(--ink-2);font-family:var(--sans)}
-  .tile .k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}
-  .tile .d{font-size:12px;margin-top:4px}
-  .up{color:var(--good)} .down{color:var(--crit)}
-
-  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
-  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.62),rgba(11,18,32,.9));padding:20px 22px;position:relative}
-  .card h3{font-size:13px;font-weight:600;letter-spacing:.02em}
-  .card .sub{font-size:11.5px;color:var(--ink-3);margin:3px 0 12px}
-  .legend{display:flex;gap:16px;flex-wrap:wrap;position:absolute;top:20px;right:22px}
-  .legend span{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--ink-2)}
-  .legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+  header.page h1{font-family:var(--serif);font-weight:500;font-size:34px;letter-spacing:-.01em}
+  header.page p{color:var(--ink-2);margin-top:6px;font-weight:300}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.62),rgba(11,18,32,.9));padding:20px 22px}
+  .card h3{font-family:var(--serif);font-weight:500;font-size:18px}
+  .card .sub{font-size:12px;color:var(--ink-2);margin:5px 0 12px;font-weight:300}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-top:20px}
   .c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
-  svg{display:block;width:100%}
-  svg text{font-family:var(--sans)}
-  .axis{stroke:rgba(170,182,204,.14);stroke-width:1}
-  .tick{fill:#6B7A96;font-size:10.5px}
-  .dlabel{fill:#EDF1F8;font-size:11px;font-weight:600}
-  .hover-rect{fill:transparent;cursor:crosshair}
+  @media(max-width:1050px){.grid>*{grid-column:span 12}}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);
+    font:600 12px var(--sans);border-radius:8px;padding:8px 14px;cursor:pointer;text-decoration:none;display:inline-block}
+  .btn:hover{background:rgba(77,157,224,.22)}
+  .btn.ghost{border-color:rgba(170,182,204,.25);background:none;color:var(--ink-2)}
 
-  #tip{position:fixed;z-index:99;pointer-events:none;background:#101B33;border:1px solid rgba(77,157,224,.4);
-    border-radius:8px;padding:8px 12px;font-size:12px;color:var(--ink);box-shadow:0 10px 30px rgba(0,0,0,.5);
-    opacity:0;transition:opacity .12s;max-width:240px}
-  #tip b{color:var(--gold-300)}
-  .note{font-size:11.5px;color:var(--ink-3);margin-top:10px;font-style:italic}
-  @media(max-width:980px){.grid{grid-template-columns:1fr}.grid>*{grid-column:auto}.tiles{grid-template-columns:repeat(2,1fr)}}
+  .plink{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+  .plink canvas{background:#fff;border-radius:10px;padding:8px;width:116px;height:116px}
+  .pcode{font-family:var(--serif);font-size:32px;letter-spacing:.14em;color:var(--gold-300)}
+  .pk{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
 
-  .dnav{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
-  .dnav a{font-size:12px;letter-spacing:.05em;color:var(--ink-2);text-decoration:none;
-    border:1px solid rgba(170,182,204,.25);border-radius:20px;padding:6px 14px}
-  .dnav a:hover{border-color:var(--gold-500);color:var(--gold-300)}
-  .dnav a.on{border-color:var(--gold-500);color:var(--gold-300);background:rgba(77,157,224,.1)}
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:20px}
+  @media(max-width:760px){.tiles{grid-template-columns:repeat(2,1fr)}}
+  .tile{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:rgba(16,27,51,.5)}
+  .tile .v{font-family:var(--serif);font-size:28px;color:var(--gold-300);line-height:1.1}
+  .tile .v small{font-size:13px;color:var(--ink-2);font-family:var(--sans)}
+  .tile .k{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}
+
+  /* calendar */
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:12px}
+  .cal .dow{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);text-align:center;padding-bottom:4px}
+  .cal .day{min-height:64px;border:1px solid var(--line);border-radius:8px;padding:5px 6px;font-size:11px;background:rgba(6,11,24,.35)}
+  .cal .day.empty{background:none;border-color:transparent}
+  .cal .day .n{color:var(--ink-3);font-size:11px}
+  .cal .day.today{border-color:var(--gold-500)}
+  .cal .sess{margin-top:3px;font-size:9.5px;color:var(--gold-300);line-height:1.25;border-left:2px solid var(--gold-500);padding-left:4px}
+  .cal .subj{font-weight:600}
+  .calbar{display:flex;align-items:center;gap:12px;margin-top:8px}
+  .calbar b{font-family:var(--serif);font-size:16px}
+
+  /* activity feed */
+  .feed{max-height:420px;overflow-y:auto}
+  .fev{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(170,182,204,.08)}
+  .fev .ic{width:30px;height:30px;border-radius:8px;flex:none;display:grid;place-items:center;background:rgba(77,157,224,.12);font-size:14px}
+  .fev b{font-size:13px;display:block}
+  .fev .d{font-size:11.5px;color:var(--ink-2)}
+  .fev .t{font-size:11px;color:var(--ink-3);margin-top:2px}
+  .brief p{font-size:13px;color:var(--ink-2);margin:8px 0}
+  .empty{color:var(--ink-3);font-style:italic;padding:16px 0}
 </style>
 </head>
 <body>
 <script src="../../guard.js" data-role="student" data-base="../../"></script>
-<div id="tip"></div>
-<div class="wrap">
+<script src="../../qrcode.min.js"></script>
+<div class="shell">
 
+<aside class="side">
+  <a class="slogo" href="../../">⌂ Stud<b>Year</b></a>
+  <nav>
+    <a href="./" class="on">Dashboard</a>
+    <a href="../../tutors/">Find tutors</a>
+    <a href="../../account/#parent-link">Parent link code</a>
+    <a href="../../study/#diag">Academic Diagnostic</a>
+    <a href="../../study/#diag-results">Diagnostic Results</a>
+    <a href="../../study/#recovery">Personal Recovery Plan</a>
+    <a href="../../study/#planner">AI Study Planner</a>
+    <a href="../../study/#tutor">AI Tutor</a>
+    <a href="../../study/#lesson">Interactive Lesson</a>
+    <a href="../../study/#course">AI Course</a>
+    <a href="../../study/#progress">My Progress</a>
+    <a href="../../study/#predict">Predicted Grade</a>
+    <a href="../../study/#review">Assignment Review</a>
+    <a href="../../account/library/">Saved Resources</a>
+    <a href="../../study/#create">Create Resource</a>
+    <a href="../../study/#search">Find Resources</a>
+    <a href="../../study/#create">Submit a Resource</a>
+    <div class="sgroup">Account</div>
+    <a href="../../account/">My Account</a>
+    <a href="../../account/profile/">Edit Profile</a>
+    <a href="../../account/topup/">Plans &amp; top-up</a>
+    <a href="#" id="signout">Sign out</a>
+  </nav>
+</aside>
+
+<main class="content">
 <header class="page">
-  <div class="k"><a href="../../" style="color:inherit;text-decoration:none">⌂ StudYear</a> · Command Centre Analytics · <a href="../../app/student/" style="color:inherit;text-decoration:none">Open the OS →</a></div>
-  <h1>Student dashboard.</h1>
-  <p>My grades, moving — live trajectory, mastery and plan adherence. All charts read the live mastery record — hover any mark.</p>
-  <nav class="dnav"><a href="../student/" class="on">Student</a><a href="../parent/" class="">Parent</a><a href="../teacher/" class="">Teacher</a><a href="../school/" class="">School & Trust</a><a href="../tutor/" class="">Tutor</a><a href="../../app/?switch=1">Switch account</a><a href="#" onclick="localStorage.removeItem('sy-session');location.href='../../';return false">Sign out</a></nav>
-<script>
-// a signed-in user sees only THEIR dashboard link, not the whole list
-(function(){try{var s=JSON.parse(localStorage.getItem('sy-session'));
-if(s&&s.role){document.querySelectorAll('.dnav a').forEach(function(a){
-var h=a.getAttribute('href')||'';
-if(h.indexOf('../')===0&&h.indexOf('app/')===-1&&h!=='../'+s.role+'/')a.remove();});}}catch(e){}})();
-</script>
+  <h1>Welcome back, <span id="hi-name">student</span>!</h1>
+  <p>Here's your academic command centre. Let's make today productive.</p>
 </header>
 
-<!-- ============================== STUDENT ============================== -->
-<section id="student">
-  <div class="sec-head"><span class="who">01 · Student</span><h2>My grades, moving.</h2><span class="tag">“Study smarter, not harder”</span></div>
-  <div class="tiles">
-    <div class="tile"><div class="v">Grade 7 <small>→ 8</small></div><div class="k">Predicted · Chemistry</div><div class="d up">▲ +2 grades since Sept</div></div>
-    <div class="tile"><div class="v">68%</div><div class="k">Topic mastery</div><div class="d up">▲ 11% this month</div></div>
-    <div class="tile"><div class="v">14 <small>days</small></div><div class="k">Study streak</div><div class="d">best: 21</div></div>
-    <div class="tile"><div class="v">512 <small>ACUs</small></div><div class="k">Wallet balance</div><div class="d">≈ 20 deep tutor sessions</div></div>
+<div class="grid">
+  <div class="card c12" id="parent-link">
+    <h3>Connect a parent</h3>
+    <div class="sub">Works on Free and Premium — your plan does not affect linking. Share this code so a parent can
+      connect in their Command Centre (they subscribe separately to view your progress).</div>
+    <div class="plink">
+      <canvas id="qr" width="232" height="232" aria-label="QR code for Parent Link Code"></canvas>
+      <div>
+        <div class="pk">Your Parent Link Code</div>
+        <div class="pcode" id="pcode">········</div>
+        <div style="margin-top:8px"><button class="btn" id="copy-code">Copy code for parent</button></div>
+        <div class="sub" style="margin-top:8px">Parents: Command Centre → Link a child → enter this code. Free students can link too.</div>
+      </div>
+    </div>
   </div>
-  <div class="grid">
-    <div class="card c7"><h3>Predicted grade trajectory — Chemistry (AQA · GCSE)</h3><div class="sub">weekly model estimate vs your target · confidence band</div><div id="ch-stu-traj"></div></div>
-    <div class="card c5"><h3>Mastery by topic</h3><div class="sub">sequential scale · darker = stronger · click-through to recovery plans</div><div id="ch-stu-heat"></div><div class="note">3 weak topics auto-scheduled into next week's plan</div></div>
-    <div class="card c12"><h3>Plan adherence — last 10 weeks</h3><div class="sub">sessions completed vs planned · replanned overnight when missed</div><div id="ch-stu-adhere"></div></div>
-  </div>
-</section>
+</div>
 
+<div class="tiles">
+  <div class="tile"><div class="v" id="t-grade">–</div><div class="k" id="t-grade-k">Predicted grade</div></div>
+  <div class="tile"><div class="v" id="t-streak">0 <small>days</small></div><div class="k">Study streak</div></div>
+  <div class="tile"><div class="v" id="t-lessons">0</div><div class="k">Lessons completed</div></div>
+  <div class="tile"><div class="v" id="t-weak">–</div><div class="k">Weakest subject</div></div>
+</div>
+
+<div class="grid">
+  <div class="card c8">
+    <h3>Study Calendar</h3>
+    <div class="sub">Sessions from your latest AI study plan appear here by date. Generate or refresh a plan in AI Study Planner.</div>
+    <div class="calbar"><b id="cal-title"></b>
+      <a class="btn ghost" href="../../study/#planner" style="margin-left:auto">Open planner</a>
+      <button class="btn ghost" id="cal-clear">Clear calendar</button></div>
+    <div class="cal" id="cal"></div>
+  </div>
+  <div class="card c4">
+    <h3>Intelligence Briefing</h3>
+    <div class="sub">System-generated insights to optimise your progress.</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <span class="pk" id="brief-stamp"></span>
+      <button class="btn ghost" id="brief-regen" style="margin-left:auto">Regenerate</button>
+    </div>
+    <div class="brief" id="brief"></div>
+  </div>
+  <div class="card c12">
+    <h3>Activity Feed</h3>
+    <div class="sub">A log of your recent actions on the platform.</div>
+    <div class="feed" id="feed"></div>
+  </div>
+</div>
+</main>
 </div>
 
 <script>
-/* ============ micro chart factory — thin marks, tooltips, direct labels ============ */
-const tip=document.getElementById('tip');
-function showTip(html,x,y){tip.innerHTML=html;tip.style.opacity=1;
-  tip.style.left=Math.min(x+14,innerWidth-260)+'px';tip.style.top=(y+14)+'px'}
-function hideTip(){tip.style.opacity=0}
-const NS='http://www.w3.org/2000/svg';
-function el(t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e}
-function mount(id,w,h){const s=el('svg',{viewBox:`0 0 ${w} ${h}`});document.getElementById(id).appendChild(s);return s}
-const GOLD='#5FA8E0',S1='#3987e5',S2='#199e70',S3='#c98500';
+(function(){
+'use strict';
+var SY=window.SY; if(!SY) return;
+var S=SY.session;
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var profile=SY.get('profile',{});
+$('hi-name').textContent=(profile.name||S.name||'student').split(' ')[0];
 
-/* line chart: series=[{name,color,values}], labels[] */
-function lineChart(id,labels,series,opts={}){
-  const w=560,h=opts.h||190,p={l:34,r:70,t:14,b:26},s=mount(id,w,h);
-  const all=series.flatMap(x=>x.values), max=opts.max??Math.max(...all)*1.15, min=opts.min??0;
-  const X=i=>p.l+i*(w-p.l-p.r)/(labels.length-1), Y=v=>h-p.b-(v-min)/(max-min)*(h-p.t-p.b);
-  for(let g=0;g<=3;g++){const y=p.t+g*(h-p.t-p.b)/3;
-    s.appendChild(el('line',{x1:p.l,x2:w-p.r,y1:y,y2:y,class:'axis'}));
-    const t=el('text',{x:p.l-8,y:y+4,'text-anchor':'end',class:'tick'});t.textContent=Math.round(max-g*(max-min)/3)+(opts.unit||'');s.appendChild(t)}
-  labels.forEach((L,i)=>{if(i%Math.ceil(labels.length/6)===0||i===labels.length-1){
-    const t=el('text',{x:X(i),y:h-8,'text-anchor':'middle',class:'tick'});t.textContent=L;s.appendChild(t)}});
-  if(opts.target){const y=Y(opts.target);
-    s.appendChild(el('line',{x1:p.l,x2:w-p.r,y1:y,y2:y,stroke:'rgba(77,157,224,.5)','stroke-dasharray':'5 6','stroke-width':1}));
-    const t=el('text',{x:w-p.r+6,y:y+4,class:'tick',fill:GOLD});t.textContent=opts.targetLabel||('target '+opts.target);s.appendChild(t)}
-  series.forEach(sr=>{
-    if(sr.band){const up=sr.values.map((v,i)=>`${X(i)},${Y(v+sr.band)}`).join(' ');
-      const dn=sr.values.map((v,i)=>`${X(i)},${Y(Math.max(v-sr.band,min))}`).reverse().join(' ');
-      s.appendChild(el('polygon',{points:up+' '+dn,fill:sr.color,opacity:.12}))}
-    s.appendChild(el('polyline',{points:sr.values.map((v,i)=>`${X(i)},${Y(v)}`).join(' '),
-      fill:'none',stroke:sr.color,'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'}));
-    const li=sr.values.length-1;
-    s.appendChild(el('circle',{cx:X(li),cy:Y(sr.values[li]),r:4.5,fill:sr.color,stroke:'#0B1220','stroke-width':2}));
-    const dl=el('text',{x:X(li)+9,y:Y(sr.values[li])+4,class:'dlabel',fill:sr.color});dl.textContent=sr.name;s.appendChild(dl);
-  });
-  const hov=el('rect',{x:p.l,y:p.t,width:w-p.l-p.r,height:h-p.t-p.b,class:'hover-rect'});s.appendChild(hov);
-  const dot=el('circle',{r:4,fill:'none',stroke:GOLD,'stroke-width':2,opacity:0});s.appendChild(dot);
-  hov.addEventListener('mousemove',e=>{const r=s.getBoundingClientRect();
-    const i=Math.max(0,Math.min(labels.length-1,Math.round((e.clientX-r.left)/(r.width)*(w)/( (w-p.l-p.r)/(labels.length-1) ) - p.l/((w-p.l-p.r)/(labels.length-1)) )));
-    dot.setAttribute('opacity',1);dot.setAttribute('cx',X(i));dot.setAttribute('cy',Y(series[0].values[i]));
-    showTip(`<b>${labels[i]}</b><br>`+series.map(sr=>`${sr.name}: <b>${sr.values[i]}${opts.unit||''}</b>`).join('<br>'),e.clientX,e.clientY)});
-  hov.addEventListener('mouseleave',()=>{hideTip();dot.setAttribute('opacity',0)});
+/* ---------- parent link code + QR ---------- */
+var code=SY.get('parentCode',null);
+if(!code){code=String(Math.floor(10000000+Math.random()*90000000));SY.set('parentCode',code)}
+$('pcode').textContent=code;
+try{
+  var qr=qrcode(0,'M');qr.addData(code);qr.make();
+  var n=qr.getModuleCount(),cv=$('qr'),ctx=cv.getContext('2d'),pad=12,cell=(cv.width-2*pad)/n;
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);ctx.fillStyle='#0B1220';
+  for(var r=0;r<n;r++)for(var c=0;c<n;c++)if(qr.isDark(r,c))ctx.fillRect(pad+c*cell,pad+r*cell,Math.ceil(cell),Math.ceil(cell));
+}catch(e){}
+$('copy-code').onclick=function(){
+  (navigator.clipboard?navigator.clipboard.writeText(code):Promise.reject()).then(function(){$('copy-code').textContent='Copied ✓';setTimeout(function(){$('copy-code').textContent='Copy code for parent'},1500)},function(){});
+};
+
+/* ---------- tiles ---------- */
+var quizzes=SY.get('quizzes',[]), diag=SY.get('diagnostics',[])[0]||null, activity=SY.get('activity',[]);
+function gradeFor(m){return Math.max(1,Math.min(9,Math.round(1+8*m/100)))}
+/* subject mastery blend */
+var by={};quizzes.forEach(function(q){(by[q.subj]=by[q.subj]||[]).push(q.pct)});
+var mastery={};Object.keys(by).forEach(function(s){mastery[s]=Math.round(by[s].reduce(function(a,b){return a+b},0)/by[s].length)});
+if(diag)diag.list.forEach(function(x){mastery[x.s]=mastery[x.s]!=null?Math.round((mastery[x.s]+x.mastery)/2):x.mastery});
+var subjKeys=Object.keys(mastery);
+var overall=subjKeys.length?Math.round(subjKeys.reduce(function(a,s){return a+mastery[s]},0)/subjKeys.length):null;
+var weakest=subjKeys.length?subjKeys.reduce(function(a,b){return mastery[a]<mastery[b]?a:b}):(profile.subjects&&profile.subjects[0]?profile.subjects[0].s:'–');
+if(overall!=null){
+  var g=gradeFor(overall), firstSub=weakest;
+  $('t-grade').textContent='Grade '+g;
+  $('t-grade-k').textContent='Predicted grade'+(firstSub?' · '+firstSub:'');
+}else{$('t-grade').textContent='–';}
+/* streak */
+(function(){var s=SY.get('streak',{days:[]}),set={};(s.days||[]).forEach(function(d){set[d]=1});
+  var nn=0,d=new Date();while(set[d.toISOString().slice(0,10)]){nn++;d.setDate(d.getDate()-1)}
+  $('t-streak').innerHTML=nn+' <small>days</small>';})();
+$('t-lessons').textContent=activity.filter(function(a){return a.k==='lesson'||a.k==='course'}).length;
+$('t-weak').textContent=weakest||'–';
+
+/* ---------- study calendar ---------- */
+var plan=SY.get('plan',null);
+var sessByDate={};
+if(plan&&plan.plan)plan.plan.forEach(function(w){w.days.forEach(function(s){if(s.date){(sessByDate[s.date]=sessByDate[s.date]||[]).push(s)}})});
+var now=new Date(), yr=now.getFullYear(), mo=now.getMonth();
+$('cal-title').textContent=['January','February','March','April','May','June','July','August','September','October','November','December'][mo]+' '+yr;
+function drawCal(){
+  var first=new Date(yr,mo,1).getDay(), days=new Date(yr,mo+1,0).getDate();
+  var html=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(function(d){return '<div class="dow">'+d+'</div>'}).join('');
+  for(var i=0;i<first;i++)html+='<div class="day empty"></div>';
+  var todayStr=now.toISOString().slice(0,10);
+  for(var dnum=1;dnum<=days;dnum++){
+    var iso=yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(dnum).padStart(2,'0');
+    var ss=sessByDate[iso]||[];
+    html+='<div class="day'+(iso===todayStr?' today':'')+'"><div class="n">'+dnum+'</div>'+
+      ss.slice(0,2).map(function(s){return '<div class="sess"><span class="subj">'+esc(s.subj)+'</span><br>'+esc((s.time||'')+' '+(s.mode||'')).slice(0,42)+'</div>'}).join('')+
+      (ss.length>2?'<div class="sess">+'+(ss.length-2)+' more</div>':'')+'</div>';
+  }
+  $('cal').innerHTML=html;
 }
+drawCal();
+$('cal-clear').onclick=function(){SY.remove('plan');sessByDate={};drawCal();};
 
-/* bar chart: rounded data-end, 2px gaps, per-bar hover */
-function barChart(id,labels,values,opts={}){
-  const w=560,h=opts.h||190,p={l:36,r:12,t:12,b:40},s=mount(id,w,h);
-  const max=opts.max??Math.max(...values)*1.18;
-  const bw=(w-p.l-p.r)/values.length, Y=v=>h-p.b-(v/max)*(h-p.t-p.b);
-  for(let g=0;g<=3;g++){const y=p.t+g*(h-p.t-p.b)/3;
-    s.appendChild(el('line',{x1:p.l,x2:w-p.r,y1:y,y2:y,class:'axis'}));
-    const t=el('text',{x:p.l-7,y:y+4,'text-anchor':'end',class:'tick'});t.textContent=Math.round(max-g*max/3)+(opts.unit||'');s.appendChild(t)}
-  values.forEach((v,i)=>{
-    const x=p.l+i*bw+2, wd=bw-4, y=Y(v), color=(opts.colors&&opts.colors[i])||opts.color||S1;
-    const bar=el('path',{d:`M${x},${h-p.b} L${x},${y+4} Q${x},${y} ${x+4},${y} L${x+wd-4},${y} Q${x+wd},${y} ${x+wd},${y+4} L${x+wd},${h-p.b} Z`,fill:color});
-    s.appendChild(bar);
-    if(opts.dlabels){const t=el('text',{x:x+wd/2,y:y-6,'text-anchor':'middle',class:'dlabel'});t.textContent=v+(opts.unit||'');s.appendChild(t)}
-    const lb=el('text',{x:x+wd/2,y:h-p.b+16,'text-anchor':'middle',class:'tick'});lb.textContent=labels[i];s.appendChild(lb);
-    if(opts.sublabels){const t2=el('text',{x:x+wd/2,y:h-p.b+30,'text-anchor':'middle',class:'tick',fill:'#4d5a75'});t2.textContent=opts.sublabels[i];s.appendChild(t2)}
-    bar.addEventListener('mousemove',e=>showTip(`<b>${labels[i]}</b><br>${opts.tipName||'value'}: <b>${v}${opts.unit||''}</b>${opts.tips?('<br>'+opts.tips[i]):''}`,e.clientX,e.clientY));
-    bar.addEventListener('mouseleave',hideTip);
-  });
-  if(opts.target){const y=Y(opts.target);
-    s.appendChild(el('line',{x1:p.l,x2:w-p.r,y1:y,y2:y,stroke:'rgba(77,157,224,.55)','stroke-dasharray':'5 6'}));
-    const t=el('text',{x:w-p.r-4,y:y-6,'text-anchor':'end',class:'tick',fill:GOLD});t.textContent=opts.targetLabel;s.appendChild(t)}
+/* ---------- intelligence briefing (saved + regenerate) ---------- */
+function buildBrief(){
+  var t=[];
+  if(weakest&&weakest!=='–')t.push('Your weakest area is <b>'+esc(weakest)+'</b> — book two short sessions on it this week and retest.');
+  t.push('Use active recall and spaced repetition: make flashcards for key terms and quiz yourself without notes.');
+  t.push('Prioritise problem-solving over re-reading — attempt past-paper questions before checking the answers.');
+  if(diag)t.push('Your latest diagnostic flagged '+(diag.weak.length||0)+' area'+(diag.weak.length===1?'':'s')+' under 60%. Your recovery plan targets them — follow it in the planner.');
+  else t.push('Run an <b>Academic Diagnostic</b> to pinpoint exactly what to fix first.');
+  return t;
 }
-
-/* grouped bars (2 series) */
-function groupBars(id,labels,a,b,opts={}){
-  const w=560,h=opts.h||190,p={l:36,r:12,t:12,b:28},s=mount(id,w,h);
-  const max=Math.max(...a,...b)*1.18, g=(w-p.l-p.r)/labels.length, bw=(g-10)/2, Y=v=>h-p.b-(v/max)*(h-p.t-p.b);
-  for(let k=0;k<=3;k++){const y=p.t+k*(h-p.t-p.b)/3;s.appendChild(el('line',{x1:p.l,x2:w-p.r,y1:y,y2:y,class:'axis'}))}
-  labels.forEach((L,i)=>{
-    const x0=p.l+i*g+4;
-    [[a[i],S1,opts.na||'A',x0],[b[i],S3,opts.nb||'B',x0+bw+2]].forEach(([v,c,n,x])=>{
-      const y=Y(v);
-      const bar=el('path',{d:`M${x},${h-p.b} L${x},${y+4} Q${x},${y} ${x+4},${y} L${x+bw-4},${y} Q${x+bw},${y} ${x+bw},${y+4} L${x+bw},${h-p.b} Z`,fill:c});
-      s.appendChild(bar);
-      bar.addEventListener('mousemove',e=>showTip(`<b>${L}</b><br>${n}: <b>${v}${opts.unit||''}</b>`,e.clientX,e.clientY));
-      bar.addEventListener('mouseleave',hideTip)});
-    const t=el('text',{x:x0+bw,y:h-8,'text-anchor':'middle',class:'tick'});t.textContent=L;s.appendChild(t)});
+function fmtStamp(iso){var d=new Date(iso);return d.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getFullYear()+', '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+function renderBrief(saved,fresh){
+  $('brief').innerHTML=saved.tips.map(function(t){return '<p>'+t+'</p>'}).join('');
+  $('brief-stamp').textContent=(fresh?'Generated':'Showing saved briefing')+' · '+fmtStamp(saved.when);
 }
+var brief=SY.get('brief',null);
+if(!brief){brief={tips:buildBrief(),when:new Date().toISOString()};SY.set('brief',brief);renderBrief(brief,true)}
+else renderBrief(brief,false);
+$('brief-regen').onclick=function(){brief={tips:buildBrief(),when:new Date().toISOString()};SY.set('brief',brief);renderBrief(brief,true)};
 
-/* heatmap: sequential single-hue gold ramp (monotonic lightness on dark) */
-const RAMP=['#0E1E33','#13294B','#18355B','#1E4270','#245086','#2B5F9C','#3370B3','#4283C6','#63A0D8','#8FBFE9'];
-function heat(id,rows,cols,data,opts={}){
-  const w=560, cell=Math.min((w-120)/cols.length, 26), h=rows.length*(cell+3)+46, s=mount(id,w,h);
-  rows.forEach((r,ri)=>{
-    const t=el('text',{x:112,y:ri*(cell+3)+cell/2+5,'text-anchor':'end',class:'tick'});t.textContent=r;s.appendChild(t);
-    cols.forEach((c,ci)=>{
-      const v=data[ri][ci];
-      const rc=el('rect',{x:120+ci*(cell+3),y:ri*(cell+3),width:cell,height:cell,rx:4,
-        fill:RAMP[Math.max(0,Math.min(9,Math.round(v/100*9)))]});
-      s.appendChild(rc);
-      rc.addEventListener('mousemove',e=>showTip(`<b>${r} × ${c}</b><br>mastery: <b>${v}%</b>${v<45?'<br>⚠ intervention suggested':''}`,e.clientX,e.clientY));
-      rc.addEventListener('mouseleave',hideTip)});
-  });
-  cols.forEach((c,ci)=>{const t=el('text',{x:120+ci*(cell+3)+cell/2,y:rows.length*(cell+3)+16,'text-anchor':'middle',class:'tick'});
-    t.textContent=c;s.appendChild(t)});
-  const cap=el('text',{x:120,y:rows.length*(cell+3)+38,class:'tick'});cap.textContent='weak ◄';s.appendChild(cap);
-  const cap2=el('text',{x:120+cols.length*(cell+3)-6,y:rows.length*(cell+3)+38,'text-anchor':'end',class:'tick'});cap2.textContent='► mastered';s.appendChild(cap2);
-}
+/* ---------- activity feed ---------- */
+var ICON={diagnostic:'🩺',plan:'🗓',tutor:'🤖',resource:'✍️',quiz:'❓',lesson:'📖',course:'🎓',review:'📝',billing:'💳',profile:'👤',account:'⚙️',booking:'📅'};
+$('feed').innerHTML=activity.length?activity.slice(0,40).map(function(a){
+  return '<div class="fev"><span class="ic">'+(ICON[a.k]||'•')+'</span><span><b>'+esc(a.t)+'</b>'+
+    (a.d?'<span class="d">'+esc(a.d)+'</span>':'')+'<div class="t">'+SY.timeAgo(a.when)+'</div></span></div>';
+}).join(''):'<div class="empty">No activity yet — generate a plan, run a diagnostic or take a quiz and it logs here.</div>';
 
-/* horizontal funnel bars */
-function funnel(id,stages,values){
-  const w=560,h=stages.length*44+10,s=mount(id,w,h),max=values[0];
-  stages.forEach((st,i)=>{
-    const y=i*44+6, bw=(values[i]/max)*(w-190);
-    const bar=el('rect',{x:150,y:y,width:bw,height:26,rx:5,fill:S1,opacity:1-(i*0.14)});
-    s.appendChild(bar);
-    const t=el('text',{x:142,y:y+18,'text-anchor':'end',class:'tick'});t.textContent=st;s.appendChild(t);
-    const v=el('text',{x:158+bw,y:y+18,class:'dlabel'});v.textContent=values[i]+(i>0?`  (${Math.round(values[i]/values[i-1]*100)}%)`:'');s.appendChild(v);
-    bar.addEventListener('mousemove',e=>showTip(`<b>${st}</b><br>count: <b>${values[i]}</b>${i>0?`<br>conversion: <b>${Math.round(values[i]/values[i-1]*100)}%</b>`:''}`,e.clientX,e.clientY));
-    bar.addEventListener('mouseleave',hideTip)});
-}
-
-// STUDENT
-lineChart('ch-stu-traj',['Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'],
-  [{name:'Predicted',color:GOLD,values:[5.0,5.2,5.4,5.8,6.0,6.3,6.5,6.7,6.9,7.1],band:.35}],
-  {min:4,max:9,target:8,targetLabel:'Target · Grade 8'});
-heat('ch-stu-heat',['Electrolysis','Bonding','Moles','Organic','Energy','Rates'],
-  ['W1','W2','W3','W4','W5','W6','W7','W8'],
-  [[22,25,28,34,40,48,55,62],[45,48,52,58,63,66,70,74],[60,62,66,70,72,75,78,81],
-   [38,40,42,44,50,56,61,66],[70,72,74,76,79,81,84,86],[52,55,57,60,63,67,70,73]]);
-barChart('ch-stu-adhere',['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10'],
-  [80,85,70,90,95,88,100,92,96,92],
-  {color:S1,unit:'%',tipName:'adherence',dlabels:false,target:85,targetLabel:'goal 85%',h:170,max:100});
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+})();
 </script>
 </body>
 </html>

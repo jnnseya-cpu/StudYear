@@ -186,7 +186,7 @@
 <div class="wrap">
 
 <header class="page">
-  <div class="k"><a href="../" style="color:inherit;text-decoration:none">⌂ StudYear</a> · Study Workspace · <a href="../app/" style="color:inherit;text-decoration:none">Open the OS →</a></div>
+  <div class="k"><a href="../" style="color:inherit;text-decoration:none">⌂ StudYear</a> · Study Workspace · <a href="../dashboards/student/" style="color:inherit;text-decoration:none">Dashboard</a> · <a href="../account/" style="color:inherit;text-decoration:none">My account</a> · <a href="../app/" style="color:inherit;text-decoration:none">Open the OS →</a></div>
   <h1>Search it. Plan it. Practise it. Track it.</h1>
   <p>The complete Get-Revising-class toolset: a searchable library of revision resources across every UK level,
      a personal study planner built in under five minutes, a past-papers locator, eight resource makers — flashcards to crosswords, timelines and SWOTs,
@@ -198,9 +198,13 @@
   <button data-t="planner">🗓 Study planner</button>
   <button data-t="papers">📄 Past papers</button>
   <button data-t="create">✍️ Create your own</button>
-  <button data-t="tutor">🤖 Tutor bot</button>
+  <button data-t="tutor">🤖 AI Tutor</button>
+  <button data-t="lesson">📖 Interactive Lesson</button>
+  <button data-t="course">🎓 AI Course</button>
+  <button data-t="review">📝 Assignment review</button>
   <button data-t="diag">🩺 Diagnostic</button>
   <button data-t="progress">📈 My progress</button>
+  <button data-t="predict">🎯 Predicted grade</button>
 </nav>
 
 <main>
@@ -213,6 +217,9 @@
     <div><label class="f">Study level</label><select id="f-level"><option value="">All levels</option></select></div>
     <div><label class="f">Resource type</label><select id="f-type"><option value="">All types</option></select></div>
     <div><label class="f">Topic</label><select id="f-topic"><option value="">All topics</option></select></div>
+    <div><label class="f">Saved resources</label>
+      <label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink-2);padding:10px 0">
+        <input type="checkbox" id="f-mine" style="width:auto;accent-color:var(--gold-500)">My resources only</label></div>
   </div>
   <div class="rgrid" id="results"></div>
   <div class="empty" id="noresults" style="display:none">No resources match — try widening the filters, or create your own in ✍️.</div>
@@ -222,20 +229,29 @@
 <section id="tab-planner">
   <div class="grid">
     <div class="card c5">
-      <h3>Build my plan</h3><div class="sub">tell us your exams and your week — a personalised timetable appears instantly</div>
-      <div id="subj-rows"></div>
-      <button class="btn ghost sm" id="add-subj">+ add subject</button>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
-        <div><label class="f">First exam date</label><input type="date" id="p-exam"></div>
-        <div><label class="f">Study days / week</label><select id="p-days"><option>3</option><option>4</option><option selected>5</option><option>6</option></select></div>
-        <div><label class="f">Minutes per session</label><select id="p-mins"><option>25</option><option selected>40</option><option>60</option></select></div>
-        <div><label class="f">Best time of day</label><select id="p-time"><option>After school (16:30)</option><option>Evening (19:00)</option><option>Morning (07:30)</option></select></div>
+      <h3>AI Study Planner</h3>
+      <div class="sub">Take the stress out of homework and exams. Tell the AI about your goals — you can plan for
+        all profile subjects or one subject (e.g. before a single exam). Everything autosaves.</div>
+      <label class="f">Subjects in this plan</label>
+      <select id="p-scope"><option value="all">All my profile subjects</option></select>
+      <div id="p-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+        <div><label class="f">Primary Exam Date</label><input type="date" id="p-exam"></div>
+        <div><label class="f">Study hours per week</label><input type="number" id="p-hours" min="1" max="40" placeholder="e.g. 15"></div>
+        <div><label class="f">Overall Target Grade</label><select id="p-target"><option value="">Select a grade</option><option>9</option><option>8</option><option>7</option><option>6</option><option>5</option><option>4</option><option>A*</option><option>A</option><option>B</option><option>C</option></select></div>
+        <div><label class="f">Preferred Learning Style <span style="text-transform:none;letter-spacing:0">(optional)</span></label><select id="p-style"><option value="">Select a style</option><option>Visual</option><option>Auditory</option><option>Reading &amp; writing</option><option>Kinaesthetic</option></select></div>
       </div>
-      <div style="margin-top:16px"><button class="btn" id="gen-plan">Generate my study plan →</button></div>
-      <div class="note">Weaker subjects automatically get more sessions; the last 7 days before the exam switch to past-paper mode.</div>
+      <label class="f" style="margin-top:10px">What are your weak areas? <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+      <input type="text" id="p-weak" placeholder="e.g. Algebra in Maths, essay structure in History…">
+      <label class="f" style="margin-top:10px">What are your strong areas? <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+      <input type="text" id="p-strong" placeholder="e.g. Essay writing in English, trigonometry in Maths…">
+      <div style="margin-top:16px"><button class="btn" id="gen-plan">Generate Plan</button></div>
+      <div class="note">Weak areas and your latest diagnostic weight the schedule; the last 7 days before the exam
+        switch to past-paper mode. Sessions land in your dashboard calendar by date.</div>
     </div>
     <div class="card c7">
-      <h3>Your personalised timetable</h3><div class="sub" id="plan-sub">no plan yet — fill in the left panel and generate</div>
+      <h3>Your AI-Generated Study Plan</h3>
+      <div class="sub" id="plan-sub">Your personalized schedule appears below by date. Tap 🔎 on a session to search matching resources.</div>
       <div id="plan-out"></div>
     </div>
   </div>
@@ -255,6 +271,30 @@
 <!-- ============================ CREATE ============================ -->
 <section id="tab-create">
   <div class="grid">
+    <div class="card c6">
+      <h3>AI Flashcard Generator</h3><div class="sub">generate a flippable deck from any topic — supercharge memory retention</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label class="f">Study level</label><select id="g-fc-level"></select></div>
+        <div><label class="f">Subject</label><select id="g-fc-subj"></select></div>
+      </div>
+      <label class="f" style="margin-top:10px">Topic</label>
+      <input type="text" id="g-fc-topic" placeholder="e.g. The Krebs Cycle, Bonding, Memory">
+      <div style="margin-top:12px"><button class="btn" id="g-fc-go">Generate Flashcards</button></div>
+      <div class="note">Builds cards from the library where a topic matches, then saves the deck. The full AI writer attaches with the backend.</div>
+    </div>
+    <div class="card c6">
+      <h3>AI Quiz Generator</h3><div class="sub">create a practice quiz on any topic to test yourself and friends</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div><label class="f">Study level</label><select id="g-qz-level"></select></div>
+        <div><label class="f">Subject</label><select id="g-qz-subj"></select></div>
+        <div><label class="f">Questions (3–10)</label><input type="number" id="g-qz-n" value="5" min="3" max="10"></div>
+      </div>
+      <label class="f" style="margin-top:10px">Topic</label>
+      <input type="text" id="g-qz-topic" placeholder="e.g. The Cold War, quadratics, memory">
+      <div style="margin-top:12px"><button class="btn" id="g-qz-go">Generate Quiz</button></div>
+      <div class="note">Assembled from the offline question bank; saves a playable quiz that logs to 📈 My progress.</div>
+    </div>
+
     <div class="card c6">
       <h3>Create a flashcard deck</h3><div class="sub">one card per line — front and back separated by " :: "</div>
       <label class="f">Deck title</label><input type="text" id="c-f-title" placeholder="e.g. French irregular verbs">
@@ -360,6 +400,113 @@
       <textarea id="c-m-branches" rows="6" placeholder="Structure :: 4 chambers, valves, septum&#10;Blood flow :: vena cava, lungs, aorta&#10;Problems :: CHD, statins, stents"></textarea>
       <div style="margin-top:12px"><button class="btn" id="c-m-save">Save mindmap to library</button></div>
     </div>
+
+    <div class="card c6">
+      <h3>Add a link or media resource</h3><div class="sub">save a video, audio, image, page or document link into your library — YouTube links play inline</div>
+      <label class="f">Title</label><input type="text" id="c-l-title" placeholder="e.g. Best walkthrough of titrations I've found">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div><label class="f">Type</label><select id="c-l-type"><option>Video</option><option>Audio</option><option>Image</option><option>Web Page</option><option>Document</option><option>Presentation</option><option>Spreadsheet</option><option>Other</option></select></div>
+        <div><label class="f">Subject</label><select id="c-l-subj"></select></div>
+        <div><label class="f">Level</label><select id="c-l-level"></select></div>
+        <div><label class="f">URL</label><input type="text" id="c-l-src" placeholder="https://…"></div>
+      </div>
+      <label class="f" style="margin-top:10px">Why it's useful (optional)</label>
+      <textarea id="c-l-note" rows="2" placeholder="One line on when to use it"></textarea>
+      <div style="margin-top:12px"><button class="btn" id="c-l-save">Save link to library</button></div>
+    </div>
+
+    <div class="card c6">
+      <h3>AI Formula Sheet Generator</h3><div class="sub">a concise sheet of essential formulas for a science or maths subject</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label class="f">Subject</label><select id="g-fm-subj"><option>Physics</option><option>Mathematics</option><option>Chemistry</option></select></div>
+        <div><label class="f">Study level</label><select id="g-fm-level"></select></div>
+      </div>
+      <div style="margin-top:12px"><button class="btn" id="g-fm-go">Generate Sheet</button></div>
+      <div class="note">Saved as a formula grid in your library.</div>
+    </div>
+    <div class="card c6">
+      <h3>AI Mind Map Generator</h3><div class="sub">enter a central topic — get a branching map of concepts and links</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label class="f">Subject</label><select id="g-mm-subj"></select></div>
+        <div><label class="f">Study level</label><select id="g-mm-level"></select></div>
+      </div>
+      <label class="f" style="margin-top:10px">Central topic</label>
+      <input type="text" id="g-mm-topic" placeholder="e.g. The Causes of World War I">
+      <div style="margin-top:12px"><button class="btn" id="g-mm-go">Generate Map</button></div>
+      <div class="note">Uses a curated map where one exists, otherwise a study scaffold you can refine.</div>
+    </div>
+
+    <div class="card c6">
+      <h3>AI Topic Summarizer</h3><div class="sub">paste an article or your notes — get a concise summary and key points</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label class="f">Subject</label><select id="c-sm-subj"></select></div>
+        <div><label class="f">Study level</label><select id="c-sm-level"></select></div>
+      </div>
+      <label class="f" style="margin-top:10px">Topic name</label>
+      <input type="text" id="c-sm-topic" placeholder="e.g. The Function of Mitochondria">
+      <label class="f" style="margin-top:10px">Text to summarise</label>
+      <textarea id="c-sm-text" rows="6" placeholder="Paste the article, notes or text you want to summarise…"></textarea>
+      <div style="margin-top:12px"><button class="btn" id="c-sm-save">Summarize Topic</button></div>
+      <div class="note">Extractive summary generated on-device; saved to your library as revision notes.</div>
+    </div>
+
+    <div class="card c6">
+      <h3>AI Essay Plan</h3><div class="sub">enter an essay title or question — get a thesis, introduction, body paragraphs and conclusion</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label class="f">Subject</label><select id="c-e-subj"></select></div>
+        <div><label class="f">Study level</label><select id="c-e-level"></select></div>
+      </div>
+      <label class="f" style="margin-top:10px">Essay topic or question</label>
+      <input type="text" id="c-e-q" placeholder="e.g. 'To what extent was the Cold War inevitable?'">
+      <div style="margin-top:12px"><button class="btn" id="c-e-save">Generate essay plan</button></div>
+      <div class="note">Structured scaffold, saved to your library. The full AI writer attaches when the backend is live.</div>
+    </div>
+
+    <div class="card c6">
+      <h3>Visual Tools &amp; Graphs</h3><div class="sub">build a chart, a coordinate/function graph or a geometry diagram — great for maths, science and 11+</div>
+      <label class="f">Title</label><input type="text" id="c-v-title" placeholder="e.g. Favourite sports survey">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div><label class="f">Chart type</label><select id="c-v-kind"><option value="bar">Bar Graph</option><option value="pie">Pie Chart</option><option value="line">Line Graph</option><option value="scatter">Scatter Plot</option><option value="coordinate">Coordinate Graph</option><option value="function">Function Graph (y = mx + c)</option><option value="geometry">Geometry Diagram (triangle)</option></select></div>
+        <div><label class="f">Subject</label><select id="c-v-subj"></select></div>
+        <div><label class="f">Level</label><select id="c-v-level"></select></div>
+      </div>
+      <div id="c-v-datawrap">
+        <label class="f" style="margin-top:10px" id="c-v-datalabel">Data — one per line: label :: value</label>
+        <textarea id="c-v-data" rows="5" placeholder="Maths :: 12&#10;English :: 9&#10;Science :: 15"></textarea>
+      </div>
+      <div id="c-v-fnwrap" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div><label class="f">Gradient (m)</label><input type="number" id="c-v-m" value="2" step="0.5"></div>
+        <div><label class="f">Intercept (c)</label><input type="number" id="c-v-c" value="1" step="1"></div>
+      </div>
+      <label class="f" style="margin-top:10px">Caption (optional)</label>
+      <input type="text" id="c-v-note" placeholder="One line explaining what it shows">
+      <div style="margin-top:12px"><button class="btn" id="c-v-save">Save visual to library</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ ASSIGNMENT REVIEW ============================ -->
+<section id="tab-review">
+  <div class="grid">
+    <div class="card c5">
+      <h3>AI Assignment Review</h3>
+      <div class="sub">Paste homework, essays or past-paper answers for feedback, a predicted grade and next steps.
+        Each review uses <b id="ar-price"></b> ACUs from your wallet. <span id="ar-bal"></span></div>
+      <label class="f">Assignment title</label><input type="text" id="ar-title" placeholder="e.g. The Causes of World War 1 essay">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div><label class="f">Level</label><select id="ar-level"></select></div>
+        <div><label class="f">Subject</label><select id="ar-subj"></select></div>
+      </div>
+      <label class="f" style="margin-top:10px">Assignment text <span style="text-transform:none;letter-spacing:0">(min. 100 characters)</span></label>
+      <textarea id="ar-text" rows="9" placeholder="Paste your assignment here…"></textarea>
+      <div style="margin-top:12px"><button class="btn" id="ar-go">Get Feedback</button></div>
+      <div class="note">Preview build: feedback is generated from a rules-based writing analysis. The live model
+        (SY-A16) marks against the exact board mark scheme and reads PDF/photo attachments when the backend goes live.</div>
+    </div>
+    <div class="card c7">
+      <h3>AI Review &amp; Feedback</h3><div class="sub" id="ar-sub">Feedback, strengths, targets and a scored breakdown appear here.</div>
+      <div id="ar-out"><div class="empty">Submit your assignment to begin the review process.</div></div>
+    </div>
   </div>
 </section>
 
@@ -367,21 +514,47 @@
 <section id="tab-diag">
   <div class="grid">
     <div class="card c5">
-      <h3>Academic diagnostic</h3><div class="sub">find exactly what you know, forget and need next — then turn it into a recovery plan</div>
+      <h3>Academic diagnostic</h3>
+      <div class="sub">Rate your confidence for each subject you want assessed — your profile subjects appear
+        automatically when available, and you can add any others from the catalog or type a custom name.</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div><label class="f">Subject</label><select id="dg-subj"></select></div>
-        <div><label class="f">Level</label><select id="dg-level"></select></div>
-        <div><label class="f">Target grade</label><select id="dg-target"><option>9</option><option>8</option><option selected>7</option><option>6</option><option>5</option><option>4</option></select></div>
-        <div><label class="f">Exam board</label><select id="dg-board"><option>AQA</option><option>CCEA</option><option>CIE</option><option>Edexcel</option><option>OCR</option><option>SQA</option><option>WJEC</option><option>Other</option></select></div>
+        <div><label class="f">Add from catalog</label><select id="dg-add"><option value="">Choose a subject to add…</option></select></div>
+        <div><label class="f">Or add custom subject</label><input type="text" id="dg-custom" placeholder="e.g. Latin, Astronomy…"></div>
       </div>
-      <label class="f" style="margin-top:14px">Rate each topic honestly</label>
-      <div id="dg-topics"></div>
-      <div style="margin-top:14px"><button class="btn" id="dg-run">Run diagnostic →</button></div>
+      <div class="note" id="dg-count"></div>
+      <div id="dg-rows"></div>
+      <div style="margin-top:14px">
+        <button class="btn" id="dg-quiz">Continue → 10 quick questions</button>
+        <button class="btn ghost" id="dg-skip">Skip questions</button>
+      </div>
       <div class="note">Rules-based preview — the AI diagnostic (SY-A04) attaches here when the backend is live.</div>
     </div>
     <div class="card c7">
-      <h3>Results &amp; recovery plan</h3><div class="sub" id="dg-sub">complete the panel on the left to see your mastery map, predicted grade and recovery plan</div>
+      <h3>Diagnostic report</h3><div class="sub" id="dg-sub">choose your subjects, answer the 10 quick questions, then generate your report</div>
       <div id="dg-out"></div>
+    </div>
+
+    <div class="card c6" id="diag-results">
+      <h3>My Diagnostic Results</h3><div class="sub">Review your past academic diagnostic reports.</div>
+      <div id="dg-history"></div>
+    </div>
+    <div class="card c6" id="recovery">
+      <h3>My Recovery Plans</h3><div class="sub">Review your AI-generated personal recovery plans designed to fix weak areas.</div>
+      <div id="rp-history"></div>
+    </div>
+
+    <div class="card c12">
+      <h3>Topic deep-dive (single subject)</h3><div class="sub">go one level deeper: rate every spec topic in one subject for a topic-by-topic mastery map and recovery week</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+        <div><label class="f">Subject</label><select id="dd-subj"></select></div>
+        <div><label class="f">Level</label><select id="dd-level"></select></div>
+        <div><label class="f">Target grade</label><select id="dd-target"><option>9</option><option>8</option><option selected>7</option><option>6</option><option>5</option><option>4</option></select></div>
+        <div><label class="f">Exam board</label><select id="dd-board"><option>AQA</option><option>CCEA</option><option>CIE</option><option>Edexcel</option><option>OCR</option><option>SQA</option><option>WJEC</option><option>Other</option></select></div>
+      </div>
+      <label class="f" style="margin-top:14px">Rate each topic honestly</label>
+      <div id="dd-topics"></div>
+      <div style="margin-top:14px"><button class="btn" id="dd-run">Run topic deep-dive →</button></div>
+      <div id="dd-out"></div>
     </div>
   </div>
 </section>
@@ -390,11 +563,11 @@
 <section id="tab-tutor">
   <div class="grid">
     <div class="card c8">
-      <h3>Tutor bot</h3><div class="sub">homework &amp; exam help, 24/7 — ask anything, or tap a suggestion</div>
+      <h3>AI Tutor</h3><div class="sub">Your personal AI-powered academic assistant. Ask questions, get explanations, and test your knowledge.</div>
       <div id="chat"></div>
       <div class="chips" id="chips"></div>
       <div class="chatline">
-        <input type="text" id="chat-in" placeholder="Ask a question — e.g. how do I solve a quadratic equation?">
+        <input type="text" id="chat-in" placeholder="Ask a question or type a topic…">
         <button class="btn" id="chat-send">Send</button>
       </div>
     </div>
@@ -412,6 +585,50 @@
   </div>
 </section>
 
+<!-- ============================ INTERACTIVE LESSON ============================ -->
+<section id="tab-lesson">
+  <div class="grid">
+    <div class="card c5">
+      <h3>AI Interactive Lesson</h3>
+      <div class="sub">Enter any topic and StudYear will generate a structured lesson, walk you through the material,
+        and quiz you at the end.</div>
+      <label class="f">What would you like to learn about today?</label>
+      <input type="text" id="il-topic" placeholder="e.g. Quantum Physics, The French Revolution…">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div><label class="f">Study level</label><select id="il-level"></select></div>
+        <div><label class="f">Subject (optional)</label><select id="il-subj"><option value="">Auto</option></select></div>
+      </div>
+      <div style="margin-top:14px"><button class="btn" id="il-go">Generate Lesson</button></div>
+      <div class="note" id="il-cost">Uses <b id="il-price"></b> ACUs per lesson. <span id="il-bal"></span></div>
+    </div>
+    <div class="card c7">
+      <h3>Your lesson</h3><div class="sub" id="il-sub">Enter a topic and generate a lesson to begin.</div>
+      <div id="il-out"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ AI COURSE ============================ -->
+<section id="tab-course">
+  <div class="grid">
+    <div class="card c5">
+      <h3>AI Course Generator</h3>
+      <div class="sub">Let StudYear build a structured course with modules, topics, and quizzes based on any topic
+        you choose.</div>
+      <label class="f">Study Level</label><select id="cg-level"><option value="">Select a level</option></select>
+      <label class="f" style="margin-top:10px">Topic</label><input type="text" id="cg-topic" placeholder="e.g. The Cold War">
+      <label class="f" style="margin-top:10px">Exam Board (Optional)</label>
+      <select id="cg-board"><option value="">Any</option><option>AQA</option><option>CCEA</option><option>CIE</option><option>Edexcel</option><option>OCR</option><option>SQA</option><option>WJEC</option></select>
+      <div style="margin-top:14px"><button class="btn" id="cg-go">Generate Course</button></div>
+      <div class="note" id="cg-cost">Uses <b id="cg-price"></b> ACUs per course — no premium plan required. <span id="cg-bal"></span></div>
+    </div>
+    <div class="card c7">
+      <h3>Generated Course Outline</h3><div class="sub" id="cg-sub">Your AI-generated course will appear below.</div>
+      <div id="cg-out"><div class="empty">Your course outline is waiting to be generated.</div></div>
+    </div>
+  </div>
+</section>
+
 <!-- ============================ PROGRESS ============================ -->
 <section id="tab-progress">
   <div class="tiles">
@@ -423,7 +640,32 @@
   </div>
   <div class="grid">
     <div class="card c7"><h3>Quiz scores over time</h3><div class="sub">every quiz you finish lands here</div><div id="score-chart"><div class="empty">Take a quiz in 🔎 Find resources to start the chart.</div></div></div>
-    <div class="card c5"><h3>Mastery by subject</h3><div class="sub">rolling average of your quiz scores</div><div id="mastery"></div></div>
+    <div class="card c5"><h3>Subject progress</h3><div class="sub">mastery per subject — quizzes + your latest diagnostic</div><div id="mastery"></div></div>
+    <div class="card c12">
+      <h3>AI Grade Improvement Plan</h3>
+      <div class="sub">Track your study progress and generate an improvement plan to reach your target grades.</div>
+      <div style="margin-top:10px"><button class="btn" id="imp-go">Generate AI Improvement Plan</button></div>
+      <div id="imp-out"><div class="empty">Your generated plan will appear here.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ PREDICTED GRADE ============================ -->
+<section id="tab-predict">
+  <div class="grid">
+    <div class="card c5">
+      <h3>AI Grade Predictor</h3>
+      <div class="sub">Select a subject to get a grade prediction and analysis based on your current progress.</div>
+      <label class="f">Subject</label>
+      <select id="pg-subj"><option value="">Select a subject</option></select>
+      <div style="margin-top:14px"><button class="btn" id="pg-go">Predict My Grade</button></div>
+      <div class="note">Blends your quiz history and latest diagnostic for the subject. Needs recorded activity like
+        quiz scores to run.</div>
+    </div>
+    <div class="card c7">
+      <h3>Prediction Analysis</h3><div class="sub" id="pg-sub">Your grade prediction will appear below.</div>
+      <div id="pg-out"><div class="empty">Your prediction is waiting to be generated.<br><span style="font-size:11.5px">(This requires recorded activity like quiz scores for the selected subject.)</span></div></div>
+    </div>
   </div>
 </section>
 
@@ -436,7 +678,7 @@
 <script>
 /* ============================ REFERENCE DATA ============================ */
 const SUBJECTS = ["Accounting", "Biology", "Business Studies", "Chemistry", "Computer Science", "Computing", "Economics", "English", "English Language", "English Literature", "French", "Fun", "Geography", "Government & Politics", "Health & Social Care", "History", "ICT", "Law", "Mathematics", "Media Studies", "Music", "Other", "Philosophy", "Physical Education", "Physics", "Psychology", "Religious Studies", "Science", "Sociology", "Spanish"];
-const LEVELS = ["Primary School", "Years 7-9 (KS3)", "GCSE", "IGCSE", "National 5", "BTEC National", "AS", "A2/A-level", "Scottish Highers", "Scottish Advanced Highers", "International Baccalaureate", "University", "Fun", "Other", "All Levels"];
+const LEVELS = ["Primary School", "11+ Exam", "Years 7-9 (KS3)", "GCSE", "IGCSE", "National 5", "BTEC National", "AS", "A2/A-level", "Scottish Highers", "Scottish Advanced Highers", "International Baccalaureate", "University", "Fun", "Other", "All Levels"];
 const TYPES = ["Advantages and disadvantages table", "Audio", "Causes and effects table", "Character analysis", "Compare and contrast table", "Crossword", "Document", "Flashcards", "Grid", "Image", "Mindmap", "Multi-tool", "Other", "Presentation", "Quiz", "Quizsearch", "Revision Cards", "Revision Notes", "SWOT analysis", "Spreadsheet", "Timeline", "Video", "Web Page"];
 const TOPICS = ["America - 19th and 20th century", "An Inspector Calls", "Approaches", "Attachment", "Biological molecules, organic chemistry and biochemistry", "British monarchy - Tudors and Stuarts", "Case studies", "Cells, tissues and organs", "Cellular processes and structure", "Christianity", "Crime and deviance", "Criminal law", "DNA, genetics and evolution", "Education", "Energy", "Ethics", "Families and households", "Grammar and vocabulary", "Human, animal and plant physiology", "Medicine through time (OCR History A)", "Memory", "Modern Britain - 19th century onwards", "Natural hazards", "Philosophy", "Religion and beliefs", "Research methods and techniques", "Russia - 19th and 20th century", "The Cold War", "WWII and Nazi Germany 1939-1945"];
 const SUBJ_COLOURS = {}; SUBJECTS.forEach((s,i)=>SUBJ_COLOURS[s]=["#3987e5","#199e70","#c98500","#5CBB7B","#e66767","#8b7cf6","#3aa7c9"][i%7]);
@@ -587,22 +829,114 @@ const LIB = [
          ["Mens rea — intention","Direct intent: aim or purpose (Mohan). Oblique intent: virtual certainty, defendant appreciates it (Woollin)."],
          ["Mens rea — recklessness","Subjective: defendant foresees the risk and takes it anyway (Cunningham; confirmed in G and R)."],
          ["Coincidence & transferred malice","AR and MR must coincide (Thabo Meli — continuing act); malice transfers to the actual victim (Latimer)."]]},
+ {id:"r28",type:"Video",title:"GCSE Science — required practical video walkthroughs",subj:"Science",level:"GCSE",board:"AQA",uses:8340,rating:4.8,
+  src:"https://www.youtube.com/@Freesciencelessons",note:"Freesciencelessons: every AQA required practical explained step by step. Watch the practical before you write it up."},
+ {id:"r29",type:"Audio",title:"GCSE French — daily listening practice",subj:"French",level:"GCSE",board:"AQA",uses:2140,rating:4.3,
+  src:"https://www.bbc.co.uk/sounds",note:"Ten minutes of French audio a day beats an hour the night before the listening paper. Start slow, use transcripts."},
+ {id:"r30",type:"Image",title:"The carbon cycle — one-glance diagram",subj:"Biology",level:"GCSE",board:"AQA",uses:3670,rating:4.5,
+  src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 560 300'%3E%3Crect width='560' height='300' fill='%230B1220'/%3E%3Crect x='190' y='16' width='180' height='44' rx='10' fill='%233D8FD1'/%3E%3Ctext x='280' y='43' text-anchor='middle' fill='%23060B18' font-family='sans-serif' font-size='15' font-weight='700'%3ECO2 in atmosphere%3C/text%3E%3Crect x='30' y='170' width='150' height='44' rx='10' fill='%23199e70'/%3E%3Ctext x='105' y='197' text-anchor='middle' fill='%23060B18' font-family='sans-serif' font-size='14' font-weight='700'%3EPlants%3C/text%3E%3Crect x='230' y='230' width='150' height='44' rx='10' fill='%23c98500'/%3E%3Ctext x='305' y='257' text-anchor='middle' fill='%23060B18' font-family='sans-serif' font-size='14' font-weight='700'%3EAnimals%3C/text%3E%3Crect x='400' y='170' width='140' height='44' rx='10' fill='%23e66767'/%3E%3Ctext x='470' y='197' text-anchor='middle' fill='%23060B18' font-family='sans-serif' font-size='13' font-weight='700'%3EFossil fuels%3C/text%3E%3Cg stroke='%23AAB6CC' stroke-width='2' fill='none'%3E%3Cpath d='M230 60 L120 168'/%3E%3Cpath d='M150 214 L260 232'/%3E%3Cpath d='M320 230 L300 64'/%3E%3Cpath d='M460 168 L350 60'/%3E%3C/g%3E%3Cg fill='%23AAB6CC' font-family='sans-serif' font-size='11'%3E%3Ctext x='120' y='110'%3Ephotosynthesis%3C/text%3E%3Ctext x='150' y='237'%3Eeating%3C/text%3E%3Ctext x='322' y='150'%3Erespiration%3C/text%3E%3Ctext x='412' y='105'%3Ecombustion%3C/text%3E%3C/g%3E%3C/svg%3E",
+  note:"Four stores, four transfers. Exam answers name the PROCESS (photosynthesis in, respiration/combustion out) — not just the arrow."},
+ {id:"r31",type:"Web Page",title:"Physics & Maths Tutor — past papers, notes and revision hubs",subj:"Other",level:"All Levels",board:"—",uses:19980,rating:4.9,
+  src:"https://www.physicsandmathstutor.com/",note:"The best free archive of past papers, mark schemes and topic questions across GCSE and A-level."},
+ {id:"r32",type:"Document",title:"AQA — official specifications and assessment resources",subj:"Other",level:"All Levels",board:"AQA",uses:6120,rating:4.6,
+  src:"https://www.aqa.org.uk/",note:"Always revise against the specification — if it isn't in the spec, it isn't in the exam."},
+ {id:"r33",type:"Spreadsheet",title:"Grade tracker — subjects × papers template",subj:"Other",level:"All Levels",board:"—",uses:1870,rating:4.2,
+  cols:["Subject","Paper 1","Paper 2","Mock","Target"],rows:[
+   ["Mathematics","—","—","6","8"],["English Literature","—","—","5","7"],["Chemistry","—","—","7","8"],
+   ["(add your own rows in ✍️ — one row per line: Subject :: grades)","","","",""]]},
+ {id:"r34",type:"Presentation",title:"Essay technique in 8 slides",subj:"English Literature",level:"GCSE",board:"—",uses:2540,rating:4.6,
+  slides:[{h:"Answer the question — in sentence one",pts:["Your first sentence IS your thesis","Rephrase the question's words back at it","Everything after exists to prove it"]},
+          {h:"Plan for 5 minutes",pts:["3–4 argument points, one per paragraph","Match one quote to each point before writing","Decide your conclusion first"]},
+          {h:"PEEL every paragraph",pts:["Point — one claim","Evidence — embedded quote","Explain — the 'because' chain","Link — pivot to the next claim"]},
+          {h:"Embed quotes",pts:["Short quotes woven into your sentence","Never 'this quote shows…' — analyse the word, not the quote","Zoom in on single words"]},
+          {h:"Context that earns marks",pts:["Context tied to the point, not bolted on","One sentence, then back to the text"]},
+          {h:"The counter-argument",pts:["'Some readers argue…' then defeat it","Shows evaluation — top-band skill"]},
+          {h:"Conclusions",pts:["Answer the question again with confidence","No new material, ever","End on the writer's purpose"]},
+          {h:"Timing",pts:["5 min plan · 30 min write · 5 min check","A finished average essay beats an unfinished brilliant one"]}]},
+ {id:"r35",type:"Quizsearch",title:"Quizsearch — find the right quiz fast",subj:"Other",level:"All Levels",board:"—",uses:5230,rating:4.7,
+  note:"Every quiz in the library in one place — filter by keyword and start instantly."},
+ {id:"r36",type:"Multi-tool",title:"Biology cells — complete revision kit",subj:"Biology",level:"GCSE",board:"AQA",topic:"Cells, tissues and organs",uses:2980,rating:4.7,
+  items:["r3","r18","r21","r13"],note:"Notes → crossword → comparison table → flashcards: one topic, four tools, in the right order."},
+
+ /* ---- 11+ exam preparation ---- */
+ {id:"r37",type:"Quiz",title:"11+ Verbal Reasoning — analogies & odd-one-out",subj:"Other",level:"11+ Exam",board:"Other",uses:4210,rating:4.6,
+  qs:[{q:"Cat is to Kitten as Dog is to…",o:["Puppy","Bone","Bark","Kennel"],a:0,exp:"A kitten is a baby cat; a puppy is a baby dog."},
+      {q:"Which word is the odd one out? rose, tulip, oak, daisy",o:["oak","rose","tulip","daisy"],a:0,exp:"Oak is a tree; the others are flowers."},
+      {q:"If BLUE is coded 2-12-21-5 (letter positions), what is RED?",o:["18-5-4","17-5-4","18-6-4","19-5-3"],a:0,exp:"R=18, E=5, D=4."},
+      {q:"Complete: 2, 4, 8, 16, __",o:["32","24","20","64"],a:0,exp:"Each term doubles."},
+      {q:"'Bought' is to 'Buy' as 'Taught' is to…",o:["Teach","Talk","Think","Tought"],a:0,exp:"Past tense → present tense: taught → teach."}]},
+ {id:"r38",type:"Non-Verbal Reasoning",title:"11+ Non-Verbal Reasoning — find the pattern",subj:"Other",level:"11+ Exam",board:"Other",uses:3560,rating:4.5,
+  puzzles:[
+   {q:"Which shape continues the sequence? △ (1 side up), ▷, ▽, ◁, …",o:["△","▷","▽","◁"],a:0,exp:"The triangle rotates 90° clockwise each step, so it returns to pointing up."},
+   {q:"A square has 4 sides, a pentagon 5, a hexagon 6. How many sides does the next shape (heptagon) have?",o:["7","8","6","9"],a:0,exp:"Each shape adds one side: 4, 5, 6, 7."},
+   {q:"If ● is to ○ (filled → hollow), then ■ is to…",o:["□","▲","●","◆"],a:0,exp:"The same transformation: filled square → hollow square."},
+   {q:"Which is the odd one out by symmetry? A, H, T, R",o:["R","A","H","T"],a:0,exp:"A, H and T have a vertical line of symmetry; R does not."}]},
+ {id:"r39",type:"Revision Notes",title:"11+ Maths — the essential toolkit",subj:"Mathematics",level:"11+ Exam",board:"Other",uses:5120,rating:4.7,
+  body:`<h5>Number</h5><ul><li>Times tables to 12×12 — instant recall wins time.</li><li>Fractions, decimals & percentages: ½ = 0.5 = 50%.</li><li>BODMAS order of operations.</li></ul>
+        <h5>Word problems</h5><p>Underline the question, list what you know, choose the operation, then check the answer makes sense.</p>
+        <h5>Shape & space</h5><ul><li>Perimeter = distance around; Area of a rectangle = length × width.</li><li>Right angle = 90°; angles on a straight line add to 180°.</li><li>Read coordinates as (across, up).</li></ul>
+        <h5>Exam technique</h5><p>Answer the easy questions first, keep an eye on the clock, and never leave a multiple-choice blank.</p>`},
+ {id:"r40",type:"Coordinate Graph",title:"Plotting points — (across, up) on the grid",subj:"Mathematics",level:"11+ Exam",board:"Other",uses:2740,rating:4.5,
+  chart:{kind:"coordinate",points:[[1,-4],[-2,3],[0,-5],[5,0],[3,3],[-4,-2]],note:"Read across (x) first, then up (y). Negative x goes left; negative y goes down."}},
+ {id:"r41",type:"Function Graph",title:"Straight-line graphs — y = 2x + 1",subj:"Mathematics",level:"GCSE",board:"AQA",uses:3180,rating:4.6,
+  chart:{kind:"function",fn:"2x+1",m:2,c:1,note:"Gradient 2 (up 2 for every 1 across), y-intercept +1."}},
+ {id:"r42",type:"Geometry Diagram",title:"Angles in a triangle sum to 180°",subj:"Mathematics",level:"GCSE",board:"AQA",uses:2610,rating:4.5,
+  chart:{kind:"geometry",shape:"triangle",labels:["a","b","c"],note:"The three interior angles of any triangle always add up to 180°."}},
+ {id:"r43",type:"Bar Graph",title:"Favourite subjects — tally survey",subj:"Mathematics",level:"11+ Exam",board:"Other",uses:1980,rating:4.3,
+  chart:{kind:"bar",data:[["Maths",12],["English",9],["Science",15],["History",6],["Art",8]],note:"Read the height of each bar against the axis."}},
+ {id:"r44",type:"Pie Chart",title:"How I spend a school day",subj:"Mathematics",level:"11+ Exam",board:"Other",uses:1740,rating:4.2,
+  chart:{kind:"pie",data:[["Lessons",6],["Break",2],["Homework",2],["Sleep",9],["Free time",5]],note:"The whole circle is 24 hours; each slice is a fraction of the day."}},
 ];
 
-/* user-created resources live in localStorage */
+/* every signed-in account gets its own namespace via guard.js (window.SY);
+   fallback keeps the page working where the guard is absent */
+const SY=window.SY||null;
 const store = {
-  get(k,d){try{return JSON.parse(localStorage.getItem("sy-"+k)) ?? d}catch(e){return d}},
-  set(k,v){localStorage.setItem("sy-"+k,JSON.stringify(v))}
+  get(k,d){ if(SY) return SY.get(k,d); try{return JSON.parse(localStorage.getItem("sy-"+k)) ?? d}catch(e){return d} },
+  set(k,v){ if(SY){SY.set(k,v);return} localStorage.setItem("sy-"+k,JSON.stringify(v)) }
 };
+const PROFILE=store.get("profile",{});
+function logEvent(k,t,d){ if(SY&&SY.log) SY.log(k,t,d) }
 function allResources(){ return LIB.concat(store.get("mine",[])) }
 
+/* ---------- ACU wallet (shared with the account pages) ---------- */
+function monthKey(){return new Date().toISOString().slice(0,7)}
+function getWallet(){
+  let w=store.get("wallet",null);
+  if(!w){w={acus:100,plan:"child_free",month:monthKey()};store.set("wallet",w)}
+  return w;
+}
+function walletBalance(){return getWallet().acus}
+/** spend ACUs with a hard stop at zero (mirrors the ledger contract). returns true on success */
+function spendAcus(n,label){
+  const w=getWallet();
+  if(w.acus<n){ toast("Not enough ACUs — "+w.acus+"/"+n+" needed. Top up in My account → Plans & top-up."); return false; }
+  w.acus-=n; store.set("wallet",w);
+  logEvent("billing",label+" — "+n+" ACUs",(w.acus)+" ACUs remaining.");
+  if(typeof refreshBalances==="function")refreshBalances();
+  return true;
+}
+
 /* ============================ TABS ============================ */
+function showTab(t){
+  document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));
+  document.querySelectorAll("main>section").forEach(s=>s.classList.toggle("on",s.id==="tab-"+t));
+  if(t==="progress") renderProgress();
+}
 document.getElementById("tabs").addEventListener("click",e=>{
   const b=e.target.closest("button"); if(!b) return;
-  document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on",x===b));
-  document.querySelectorAll("main>section").forEach(s=>s.classList.toggle("on",s.id==="tab-"+b.dataset.t));
-  if(b.dataset.t==="progress") renderProgress();
+  showTab(b.dataset.t);
 });
+/* deep links from the student sidebar: #diag #planner #tutor #progress #create #search #papers #mine */
+let myOnly=false;
+function applyHash(){
+  let h=location.hash.replace("#","");
+  if(h==="mine"){ myOnly=true; const c=document.getElementById("f-mine"); if(c)c.checked=true; h="search"; }
+  if(h==="diag-results") h="diag";
+  if(document.getElementById("tab-"+h)) showTab(h);
+  if(typeof renderResults==="function") try{renderResults()}catch(e){}
+}
+window.addEventListener("hashchange",applyHash);
 
 /* ============================ SEARCH ============================ */
 function fillSelect(el,items,withBlank){ items.forEach(x=>{const o=document.createElement("option");o.textContent=x;el.appendChild(o)}) }
@@ -610,16 +944,18 @@ fillSelect(document.getElementById("f-subj"),SUBJECTS);
 fillSelect(document.getElementById("f-level"),LEVELS);
 fillSelect(document.getElementById("f-type"),TYPES);
 fillSelect(document.getElementById("f-topic"),TOPICS);
-["c-f-subj","c-n-subj","c-q-subj","c-t-subj","c-x-subj","c-b-subj","c-s-subj","c-m-subj","pp-subj"].forEach(id=>fillSelect(document.getElementById(id),SUBJECTS));
-["c-f-level","c-n-level","c-q-level","c-t-level","c-x-level","c-b-level","c-s-level","c-m-level"].forEach(id=>fillSelect(document.getElementById(id),LEVELS));
+["c-f-subj","c-n-subj","c-q-subj","c-t-subj","c-x-subj","c-b-subj","c-s-subj","c-m-subj","c-l-subj","c-v-subj","c-e-subj","c-sm-subj","g-fc-subj","g-qz-subj","g-mm-subj","pp-subj"].forEach(id=>fillSelect(document.getElementById(id),SUBJECTS));
+["c-f-level","c-n-level","c-q-level","c-t-level","c-x-level","c-b-level","c-s-level","c-m-level","c-l-level","c-v-level","c-e-level","c-sm-level","g-fc-level","g-qz-level","g-fm-level","g-mm-level"].forEach(id=>fillSelect(document.getElementById(id),LEVELS));
 
-const TYPE_ICON={Flashcards:"🃏",Quiz:"❓","Revision Notes":"📓",Mindmap:"🧠","Revision Cards":"🗂",Crossword:"🧩",Timeline:"🕰",Video:"🎬",Audio:"🎧",Image:"🖼",Presentation:"📊",Document:"📄",Spreadsheet:"📑","Web Page":"🌐","Character analysis":"🎭","SWOT analysis":"🧭",Grid:"▦","Multi-tool":"🛠",Quizsearch:"🔍","Advantages and disadvantages table":"⚖️","Causes and effects table":"↔️","Compare and contrast table":"🆚",Other:"📚"};
+const TYPE_ICON={Flashcards:"🃏",Quiz:"❓","Revision Notes":"📓",Mindmap:"🧠","Revision Cards":"🗂",Crossword:"🧩",Timeline:"🕰",Video:"🎬",Audio:"🎧",Image:"🖼",Presentation:"📊",Document:"📄",Spreadsheet:"📑","Web Page":"🌐","Character analysis":"🎭","SWOT analysis":"🧭",Grid:"▦","Multi-tool":"🛠",Quizsearch:"🔍","Advantages and disadvantages table":"⚖️","Causes and effects table":"↔️","Compare and contrast table":"🆚","Non-Verbal Reasoning":"🧩","Bar Graph":"📊","Pie Chart":"🥧","Line Graph":"📈","Scatter Plot":"⚬","Coordinate Graph":"📐","Function Graph":"📈","Geometry Diagram":"📐",Other:"📚"};
 function renderResults(){
   const q=document.getElementById("q").value.trim().toLowerCase();
   const s=document.getElementById("f-subj").value, l=document.getElementById("f-level").value, t=document.getElementById("f-type").value;
   const tp=document.getElementById("f-topic").value;
+  const mineOnly=document.getElementById("f-mine").checked;
   const hits=allResources().filter(r=>
-    (!q || (r.title+" "+r.subj+" "+(r.topic||"")+" "+(r.body||"")+JSON.stringify(r.cards||r.qs||r.map||r.events||r.clues||r.rows||r.swot||r.facets||"")).toLowerCase().includes(q)) &&
+    (!mineOnly||r.mine)&&
+    (!q || (r.title+" "+r.subj+" "+(r.topic||"")+" "+(r.body||"")+(r.note||"")+JSON.stringify(r.cards||r.qs||r.map||r.events||r.clues||r.rows||r.swot||r.facets||r.slides||r.puzzles||r.chart||"")).toLowerCase().includes(q)) &&
     (!s||r.subj===s)&&(!l||r.level===l)&&(!t||r.type===t)&&(!tp||r.topic===tp));
   const el=document.getElementById("results");
   el.innerHTML=hits.map(r=>`
@@ -631,7 +967,7 @@ function renderResults(){
     </div>`).join("");
   document.getElementById("noresults").style.display=hits.length?"none":"block";
 }
-["q","f-subj","f-level","f-type","f-topic"].forEach(id=>document.getElementById(id).addEventListener("input",renderResults));
+["q","f-subj","f-level","f-type","f-topic","f-mine"].forEach(id=>document.getElementById(id).addEventListener("input",renderResults));
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 
 /* ============================ RESOURCE VIEWERS ============================ */
@@ -654,8 +990,151 @@ function openRes(id){
   else if(r.type==="Crossword") viewCross(r,head);
   else if(r.type==="SWOT analysis") viewSwot(r,head);
   else if(r.type==="Character analysis") viewChars(r,head);
-  else if(r.cols&&r.rows) viewTable(r,head); /* the three comparison tables + Grid */
+  else if(r.type==="Quizsearch") viewQuizsearch(r,head);
+  else if(r.type==="Multi-tool"&&r.items) viewKit(r,head);
+  else if(r.type==="Presentation"&&r.slides) viewSlides(r,head);
+  else if(r.type==="Non-Verbal Reasoning"&&r.puzzles) viewQuiz({title:r.title,subj:r.subj,qs:r.puzzles.map(p=>({q:p.q,o:p.o,a:p.a,exp:p.exp}))},head);
+  else if(r.chart) viewChart(r,head);        /* Bar/Pie/Line/Scatter/Coordinate/Function/Geometry */
+  else if(r.cols&&r.rows) viewTable(r,head); /* comparison tables + Grid + Spreadsheet */
+  else if(r.src) viewMedia(r,head);          /* Audio / Video / Image / Web Page / Document / … */
   else mbody.innerHTML=head+`<div class="empty">This resource type gets its full viewer when the backend goes live — meanwhile, try the maker in ✍️.</div>`;
+}
+
+/* ---------- visual tools: charts, graphs, geometry ---------- */
+const CH_COLORS=["#3987e5","#199e70","#c98500","#8b7cf6","#e66767","#3aa7c9","#5CBB7B","#A9CFF2"];
+function viewChart(r,head){
+  const c=r.chart, note=c.note?`<p style="font-size:13px;color:var(--ink-2);margin-top:12px">${esc(c.note)}</p>`:"";
+  const W=560,H=340;let sv="";
+  if(c.kind==="bar"){
+    const P={l:40,r:14,t:16,b:46}, max=Math.max(...c.data.map(d=>d[1]))*1.15||1;
+    const bw=(W-P.l-P.r)/c.data.length, Y=v=>H-P.b-(v/max)*(H-P.t-P.b);
+    sv=`<svg viewBox="0 0 ${W} ${H}">`;
+    for(let g=0;g<=4;g++){const y=P.t+g*(H-P.t-P.b)/4;sv+=`<line x1="${P.l}" x2="${W-P.r}" y1="${y}" y2="${y}" stroke="rgba(170,182,204,.14)"/><text x="${P.l-6}" y="${y+4}" text-anchor="end" fill="#6B7A96" font-size="10.5">${Math.round(max-g*max/4)}</text>`}
+    c.data.forEach((d,i)=>{const x=P.l+i*bw+4,y=Y(d[1]);
+      sv+=`<rect x="${x}" y="${y}" width="${bw-8}" height="${H-P.b-y}" rx="4" fill="${CH_COLORS[i%CH_COLORS.length]}"/>
+        <text x="${x+(bw-8)/2}" y="${y-6}" text-anchor="middle" fill="#EDF1F8" font-size="11" font-weight="600">${d[1]}</text>
+        <text x="${x+(bw-8)/2}" y="${H-P.b+16}" text-anchor="middle" fill="#6B7A96" font-size="10.5">${esc(String(d[0])).slice(0,8)}</text>`});
+    sv+="</svg>";
+  }else if(c.kind==="pie"){
+    const total=c.data.reduce((a,b)=>a+b[1],0)||1;let ang=-Math.PI/2;const cx=170,cy=H/2,rad=120;
+    sv=`<svg viewBox="0 0 ${W} ${H}">`;
+    c.data.forEach((d,i)=>{const a2=ang+2*Math.PI*d[1]/total;
+      const x1=cx+rad*Math.cos(ang),y1=cy+rad*Math.sin(ang),x2=cx+rad*Math.cos(a2),y2=cy+rad*Math.sin(a2);
+      const large=(a2-ang)>Math.PI?1:0;
+      sv+=`<path d="M${cx},${cy} L${x1},${y1} A${rad},${rad} 0 ${large} 1 ${x2},${y2} Z" fill="${CH_COLORS[i%CH_COLORS.length]}" stroke="#0B1220" stroke-width="1.5"/>`;
+      ang=a2;});
+    c.data.forEach((d,i)=>{sv+=`<rect x="330" y="${70+i*26}" width="13" height="13" rx="3" fill="${CH_COLORS[i%CH_COLORS.length]}"/>
+      <text x="350" y="${81+i*26}" fill="#AAB6CC" font-size="12.5">${esc(String(d[0]))} — ${Math.round(100*d[1]/total)}%</text>`});
+    sv+="</svg>";
+  }else if(c.kind==="line"||c.kind==="scatter"){
+    const pts=c.points||c.data.map((d,i)=>[i,d[1]]);
+    const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
+    const P={l:40,r:16,t:16,b:34},minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(0,...ys),maxY=Math.max(...ys)*1.1||1;
+    const X=v=>P.l+(v-minX)/((maxX-minX)||1)*(W-P.l-P.r),Y=v=>H-P.b-(v-minY)/((maxY-minY)||1)*(H-P.t-P.b);
+    sv=`<svg viewBox="0 0 ${W} ${H}">`;
+    for(let g=0;g<=4;g++){const y=P.t+g*(H-P.t-P.b)/4;sv+=`<line x1="${P.l}" x2="${W-P.r}" y1="${y}" y2="${y}" stroke="rgba(170,182,204,.14)"/>`}
+    if(c.kind==="line")sv+=`<polyline fill="none" stroke="#3987e5" stroke-width="2.5" points="${pts.map(p=>X(p[0])+","+Y(p[1])).join(" ")}"/>`;
+    pts.forEach(p=>sv+=`<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="4.5" fill="#A9CFF2"/>`);
+    sv+="</svg>";
+  }else if(c.kind==="coordinate"){
+    sv=coordSvg(W,H,c.points||[]);
+  }else if(c.kind==="function"){
+    const pts=[];for(let x=-6;x<=6;x++)pts.push([x,c.m*x+c.c]);
+    sv=coordSvg(W,H,[],pts);
+  }else if(c.kind==="geometry"){
+    sv=`<svg viewBox="0 0 ${W} ${H}">
+      <polygon points="280,60 120,280 440,280" fill="rgba(57,135,229,.15)" stroke="#3987e5" stroke-width="2"/>
+      <text x="280" y="88" text-anchor="middle" fill="#A9CFF2" font-size="15">${esc((c.labels&&c.labels[0])||"a")}</text>
+      <text x="152" y="272" fill="#A9CFF2" font-size="15">${esc((c.labels&&c.labels[1])||"b")}</text>
+      <text x="410" y="272" fill="#A9CFF2" font-size="15">${esc((c.labels&&c.labels[2])||"c")}</text>
+      <text x="280" y="315" text-anchor="middle" fill="#6B7A96" font-size="13">a + b + c = 180°</text></svg>`;
+  }
+  mbody.innerHTML=head+`<div class="card" style="padding:14px">${sv}</div>`+note;
+}
+function coordSvg(W,H,points,line){
+  const cx=W/2,cy=H/2,unit=Math.min(W,H)/14;
+  let sv=`<svg viewBox="0 0 ${W} ${H}">`;
+  for(let i=-6;i<=6;i++){
+    sv+=`<line x1="${cx+i*unit}" y1="8" x2="${cx+i*unit}" y2="${H-8}" stroke="rgba(170,182,204,.08)"/>
+         <line x1="8" y1="${cy+i*unit}" x2="${W-8}" y2="${cy+i*unit}" stroke="rgba(170,182,204,.08)"/>`;
+  }
+  sv+=`<line x1="8" y1="${cy}" x2="${W-8}" y2="${cy}" stroke="#6B7A96" stroke-width="1.5"/>
+       <line x1="${cx}" y1="8" x2="${cx}" y2="${H-8}" stroke="#6B7A96" stroke-width="1.5"/>
+       <text x="${W-14}" y="${cy-6}" fill="#6B7A96" font-size="11">x</text>
+       <text x="${cx+6}" y="16" fill="#6B7A96" font-size="11">y</text>`;
+  if(line&&line.length)sv+=`<polyline fill="none" stroke="#199e70" stroke-width="2.5" points="${line.map(p=>(cx+p[0]*unit)+","+(cy-p[1]*unit)).join(" ")}"/>`;
+  (points||[]).forEach(p=>{const px=cx+p[0]*unit,py=cy-p[1]*unit;
+    sv+=`<circle cx="${px}" cy="${py}" r="5" fill="#3987e5"/><text x="${px+8}" y="${py-6}" fill="#A9CFF2" font-size="11">(${p[0]}, ${p[1]})</text>`});
+  return sv+"</svg>";
+}
+
+/* ---------- media & link resources ---------- */
+function ytEmbed(src){
+  const m=src.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,})/);
+  return m?("https://www.youtube.com/embed/"+m[1]):null;
+}
+function viewMedia(r,head){
+  const note=r.note?`<p style="font-size:13.5px;color:var(--ink-2);margin-top:12px">${esc(r.note)}</p>`:"";
+  const open=`<div style="margin-top:14px"><a class="btn" href="${esc(r.src)}" target="_blank" rel="noopener noreferrer">Open ${esc(r.type.toLowerCase())} in a new tab →</a></div>`;
+  if(r.type==="Image"){
+    mbody.innerHTML=head+`<img src="${esc(r.src)}" alt="${esc(r.title)}" style="max-width:100%;border-radius:12px;border:1px solid var(--line)">`+note;
+  }else if(r.type==="Audio"&&/\.(mp3|ogg|wav|m4a)(\?|$)/i.test(r.src)){
+    mbody.innerHTML=head+`<audio controls src="${esc(r.src)}" style="width:100%"></audio>`+note+open;
+  }else if(r.type==="Video"&&ytEmbed(r.src)){
+    mbody.innerHTML=head+`<div style="position:relative;padding-top:56.25%;border-radius:12px;overflow:hidden;border:1px solid var(--line)">
+      <iframe src="${esc(ytEmbed(r.src))}" style="position:absolute;inset:0;width:100%;height:100%;border:0" allowfullscreen title="${esc(r.title)}"></iframe></div>`+note;
+  }else if(r.type==="Video"&&/\.(mp4|webm)(\?|$)/i.test(r.src)){
+    mbody.innerHTML=head+`<video controls src="${esc(r.src)}" style="width:100%;border-radius:12px"></video>`+note;
+  }else{
+    mbody.innerHTML=head+`<div class="card" style="margin-top:6px">
+      <div style="font-size:34px">${TYPE_ICON[r.type]||"🌐"}</div>
+      <div style="font-size:13px;color:var(--ink-3);margin-top:6px;word-break:break-all">${esc(r.src)}</div>${note}${open}
+    </div>`;
+  }
+}
+function viewSlides(r,head){
+  let i=0;
+  const draw=()=>{ const s=r.slides[i];
+    mbody.innerHTML=head+`
+      <div class="card" style="min-height:220px">
+        <div style="font-size:11px;letter-spacing:.16em;color:var(--ink-3);text-transform:uppercase">Slide ${i+1} / ${r.slides.length}</div>
+        <h3 style="font-family:var(--serif);font-weight:500;font-size:22px;color:var(--gold-300);margin:8px 0 10px">${esc(s.h)}</h3>
+        <ul style="margin-left:18px;font-size:14px;color:var(--ink-2)">${s.pts.map(p=>`<li style="margin:7px 0">${esc(p)}</li>`).join("")}</ul>
+      </div>
+      <div class="fnav">
+        <button class="btn ghost sm" id="sl-prev">← prev</button>
+        <span class="cnt">${i+1} / ${r.slides.length}</span>
+        <button class="btn ghost sm" id="sl-next">next →</button>
+      </div>`;
+    document.getElementById("sl-prev").onclick=()=>{i=(i-1+r.slides.length)%r.slides.length;draw()};
+    document.getElementById("sl-next").onclick=()=>{i=(i+1)%r.slides.length;addPoints(1);draw()};
+  }; draw();
+}
+function viewQuizsearch(r,head){
+  const quizzes=allResources().filter(x=>x.type==="Quiz");
+  mbody.innerHTML=head+`
+    <input type="text" id="qs-q" placeholder="Filter ${quizzes.length} quizzes — e.g. memory, quadratics…" style="margin-bottom:12px">
+    <div id="qs-list"></div>`;
+  const drawList=()=>{
+    const q=document.getElementById("qs-q").value.trim().toLowerCase();
+    const hits=quizzes.filter(x=>!q||(x.title+" "+x.subj+" "+x.level).toLowerCase().includes(q));
+    document.getElementById("qs-list").innerHTML=hits.length?hits.map(x=>`
+      <div class="paper"><div class="t"><b>${esc(x.title)}</b><div class="m">${esc(x.subj)} · ${esc(x.level)} · ${x.qs.length} questions</div></div>
+      <button class="btn sm" onclick="openRes('${x.id}')">Start quiz</button></div>`).join("")
+      :'<div class="empty">No quiz matches — try a broader keyword.</div>';
+  };
+  document.getElementById("qs-q").addEventListener("input",drawList);
+  drawList();
+}
+function viewKit(r,head){
+  const all=allResources();
+  mbody.innerHTML=head+(r.note?`<p style="font-size:13.5px;color:var(--ink-2);margin-bottom:12px">${esc(r.note)}</p>`:"")+
+    r.items.map((id,i)=>{
+      const x=all.find(y=>y.id===id); if(!x)return"";
+      return `<div class="paper"><div class="yr">${i+1}</div>
+        <div class="t"><b>${TYPE_ICON[x.type]||"📚"} ${esc(x.title)}</b><div class="m">${esc(x.type)} · ${esc(x.subj)} · ${esc(x.level)}</div></div>
+        <button class="btn sm" onclick="openRes('${x.id}')">Open</button></div>`;
+    }).join("");
 }
 
 function viewTimeline(r,head){
@@ -751,6 +1230,7 @@ function viewQuiz(r,head){
   const finish=()=>{
     const pct=Math.round(100*score/r.qs.length);
     recordQuiz(r,pct); addPoints(10+score*5);
+    logEvent("quiz","Quiz completed: "+r.title,"Scored "+pct+"% · "+r.subj+".");
     mbody.innerHTML=head+`
       <div style="text-align:center;padding:26px 0">
         <div style="font-family:var(--serif);font-size:54px;color:var(--gold-300)">${pct}%</div>
@@ -791,6 +1271,7 @@ function saveMine(obj,sfx,msg,clearIds){
   const mine=store.get("mine",[]);
   obj.id="u"+(mine.length+1)+sfx; obj.mine=true;
   mine.push(obj); store.set("mine",mine); addPoints(15); touchStreak();
+  logEvent("resource",(obj.subj?obj.subj+" — ":"")+obj.title,(obj.level?"Level: "+obj.level+". ":"")+"Saved to your library.");
   clearIds.forEach(id=>document.getElementById(id).value="");
   renderResults(); toast(msg+" — find it in 🔎 with the green badge (+15 pts)");
 }
@@ -856,78 +1337,270 @@ document.getElementById("c-m-save").onclick=()=>{
   if(!centre||!n.length){toast("Add a centre idea and at least one branch (Branch :: leaf, leaf)");return}
   saveMine({type:"Mindmap",title:centre,subj:$v("c-m-subj"),level:$v("c-m-level"),map:{c:centre.toUpperCase(),n}},"m","Mindmap saved",["c-m-title","c-m-branches"]);
 };
+document.getElementById("c-l-save").onclick=()=>{
+  const title=$v("c-l-title").trim(), src=$v("c-l-src").trim(), note=$v("c-l-note").trim();
+  if(!title){toast("Give the resource a title");return}
+  if(!/^https:\/\/\S+\.\S+/.test(src)){toast("Enter a full https:// link");return}
+  saveMine({type:$v("c-l-type"),title,subj:$v("c-l-subj"),level:$v("c-l-level"),src,note},"l","Link saved",["c-l-title","c-l-src","c-l-note"]);
+};
+/* AI formula sheet generator */
+const FORMULA_BANK={
+ "Physics":{cols:["Quantity","Formula","Units"],rows:[
+   ["Speed","v = d ÷ t","m/s"],["Acceleration","a = Δv ÷ t","m/s²"],["Force","F = m a","N"],
+   ["Weight","W = m g","N"],["Kinetic energy","Eₖ = ½ m v²","J"],["Gravitational PE","Eₚ = m g h","J"],
+   ["Work done","W = F d","J"],["Power","P = E ÷ t","W"],["Charge","Q = I t","C"],
+   ["Potential difference","V = I R","V"],["Electrical power","P = V I","W"],["Density","ρ = m ÷ V","kg/m³"]]},
+ "Mathematics":{cols:["Name","Formula","Notes"],rows:[
+   ["Area of circle","A = πr²","r = radius"],["Circumference","C = 2πr","or πd"],["Pythagoras","a² + b² = c²","right-angled triangles"],
+   ["Quadratic formula","x = (−b ± √(b²−4ac)) ÷ 2a","solves ax²+bx+c=0"],["Gradient","m = (y₂−y₁) ÷ (x₂−x₁)","of a line"],
+   ["Straight line","y = mx + c","m = gradient, c = intercept"],["Area of triangle","A = ½ b h","base × height"],
+   ["Volume of cuboid","V = l w h",""],["SOH CAH TOA","sin=O/H, cos=A/H, tan=O/A","trigonometry"]]},
+ "Chemistry":{cols:["Quantity","Formula","Notes"],rows:[
+   ["Moles","n = mass ÷ Mr","mol"],["Concentration","c = n ÷ V","mol/dm³"],["Moles of gas","n = V ÷ 24","at RTP, dm³"],
+   ["Percentage yield","(actual ÷ theoretical) × 100","%"],["Atom economy","(Mr of product ÷ Mr of reactants) × 100","%"],
+   ["Rate of reaction","amount ÷ time",""]]}};
+document.getElementById("g-fm-go").onclick=()=>{
+  const subj=$v("g-fm-subj"), fb=FORMULA_BANK[subj];
+  if(!fb){toast("Formula sheets cover Physics, Mathematics and Chemistry");return}
+  saveMine({type:"Grid",title:subj+" — essential formula sheet",subj,level:$v("g-fm-level"),cols:fb.cols,rows:fb.rows},"fm","Formula sheet generated",[]);
+};
+/* AI mind map generator */
+const MINDMAP_BANK={
+ "world war":{c:"CAUSES OF WW1",n:[["Militarism",["arms race","German navy","mobilisation plans"]],["Alliances",["Triple Entente","Triple Alliance","Balkan dominoes"]],["Imperialism",["colonial rivalry","Morocco crises"]],["Nationalism",["Pan-Slavism","Franz Ferdinand"]],["Spark",["assassination 1914","ultimatum","war by August"]]]},
+ "cold war":{c:"THE COLD WAR",n:[["Origins",["Yalta & Potsdam","ideology","the bomb"]],["Flashpoints",["Berlin","Cuba 1962","Korea"]],["Détente",["SALT","Helsinki"]],["End",["Gorbachev","1989","USSR dissolves"]]]},
+ "macbeth":{c:"MACBETH",n:[["Ambition",["vaulting ambition","Lady M"]],["Guilt",["out damned spot","Banquo's ghost"]],["Supernatural",["witches","dagger"]],["Kingship",["divine right","tyranny"]]]}};
+document.getElementById("g-mm-go").onclick=()=>{
+  const topic=$v("g-mm-topic").trim();
+  if(topic.length<3){toast("Enter a central topic");return}
+  const key=Object.keys(MINDMAP_BANK).find(k=>topic.toLowerCase().includes(k));
+  const map=key?MINDMAP_BANK[key]:{c:topic.toUpperCase(),n:[
+    ["Key terms",["definition","vocabulary","context"]],
+    ["Causes / how",["reason 1","reason 2","reason 3"]],
+    ["Examples",["case study","evidence","data"]],
+    ["Analysis",["strengths","weaknesses","significance"]],
+    ["Exam",["command words","common traps","technique"]]]};
+  saveMine({type:"Mindmap",title:topic+" — mind map",subj:$v("g-mm-subj"),level:$v("g-mm-level"),map},"mm","Mind map generated",["g-mm-topic"]);
+};
+
+/* AI topic summarizer — extractive: rank sentences by keyword frequency */
+document.getElementById("c-sm-save").onclick=()=>{
+  const topic=$v("c-sm-topic").trim(), text=$v("c-sm-text").trim();
+  if(!topic){toast("Give the topic a name");return}
+  if(text.length<120){toast("Paste at least a paragraph to summarise");return}
+  const sentences=text.replace(/\s+/g," ").match(/[^.!?]+[.!?]+/g)||[text];
+  const stop=new Set("the a an and or of to in is are was were be been being that this it its for on with as at by from into their they them he she his her we you your our".split(" "));
+  const freq={};
+  text.toLowerCase().match(/[a-z']{3,}/g).forEach(w=>{if(!stop.has(w))freq[w]=(freq[w]||0)+1});
+  const scored=sentences.map((s,i)=>{
+    let sc=0;(s.toLowerCase().match(/[a-z']{3,}/g)||[]).forEach(w=>{if(freq[w])sc+=freq[w]});
+    return {s:s.trim(),sc:sc/Math.max(6,(s.split(" ").length)),i};
+  }).sort((a,b)=>b.sc-a.sc);
+  const keepN=Math.max(3,Math.min(6,Math.round(sentences.length*0.35)));
+  const summary=scored.slice(0,keepN).sort((a,b)=>a.i-b.i).map(x=>x.s);
+  const keyTerms=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,6).map(x=>x[0]);
+  const body=`<h5>Summary</h5><p>${summary.map(esc).join(" ")}</p>
+    <h5>Key points</h5><ul>${summary.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
+    <h5>Key terms</h5><p>${keyTerms.map(esc).join(" · ")}</p>`;
+  saveMine({type:"Revision Notes",title:topic+" — summary",subj:$v("c-sm-subj"),level:$v("c-sm-level"),body},"sm","Summary saved",["c-sm-topic","c-sm-text"]);
+};
+
+/* AI flashcard generator — mines matching library cards/notes by topic */
+document.getElementById("g-fc-go").onclick=()=>{
+  const topic=$v("g-fc-topic").trim();
+  if(topic.length<3){toast("Enter a topic for your flashcards");return}
+  const t=topic.toLowerCase(), cards=[];
+  allResources().forEach(r=>{
+    const match=(r.title+" "+r.subj+" "+(r.topic||"")).toLowerCase().includes(t);
+    if(!match)return;
+    if(r.cards)r.cards.forEach(c=>cards.push([c[0],c[1]]));
+    if(r.qs)r.qs.forEach(q=>cards.push([q.q,q.o[q.a]]));
+  });
+  const uniq=[];const seen=new Set();
+  cards.forEach(c=>{const k=c[0];if(!seen.has(k)){seen.add(k);uniq.push(c)}});
+  if(uniq.length<3){toast("Not enough on '"+topic+"' in the offline bank — try Bonding, Memory, Photosynthesis, WW1…");return}
+  saveMine({type:"Flashcards",title:topic+" — generated deck",subj:$v("g-fc-subj"),level:$v("g-fc-level"),cards:uniq.slice(0,12)},"gf","Flashcards generated",["g-fc-topic"]);
+};
+/* AI quiz generator — assembles from the offline question bank */
+document.getElementById("g-qz-go").onclick=()=>{
+  const topic=$v("g-qz-topic").trim();
+  if(topic.length<3){toast("Enter a topic for your quiz");return}
+  const n=Math.max(3,Math.min(10,+$v("g-qz-n")||5));
+  const pool=tutorQuizBank(topic);
+  if(pool.length<3){toast("Not enough '"+topic+"' questions offline — try World War 2, quadratics, memory, mechanics…");return}
+  saveMine({type:"Quiz",title:topic+" — practice quiz",subj:$v("g-qz-subj"),level:$v("g-qz-level"),qs:pool.slice(0,n)},"gq","Quiz generated",["g-qz-topic"]);
+};
+
+/* AI essay plan — structured scaffold saved as revision notes */
+document.getElementById("c-e-save").onclick=()=>{
+  const q=$v("c-e-q").trim();
+  if(q.length<8){toast("Enter your essay title or question");return}
+  const subj=$v("c-e-subj"), level=$v("c-e-level");
+  const body=`<h5>Essay question</h5><p><b>${esc(q)}</b></p>
+    <h5>Thesis statement</h5><p>Answer the question directly in one or two sentences — take a clear position (e.g. "${esc(q.replace(/\?$/,""))}" was largely the case because…). Everything below proves this.</p>
+    <h5>Introduction</h5><ul><li>Open with your thesis — the examiner should know your answer by sentence two.</li><li>Signpost the 3 arguments you'll make.</li><li>Define any key term in the question.</li></ul>
+    <h5>Body paragraph 1 — strongest argument</h5><ul><li><b>Point:</b> your most convincing reason.</li><li><b>Evidence:</b> a specific fact, quote or example.</li><li><b>Explain:</b> the 'because' chain back to the thesis.</li></ul>
+    <h5>Body paragraph 2 — second argument</h5><ul><li>Point → Evidence → Explain, a new distinct reason.</li></ul>
+    <h5>Body paragraph 3 — counter-argument</h5><ul><li>"Some would argue…" — state the strongest opposing view fairly.</li><li>Then defeat it, showing why your thesis still holds. This evaluation earns the top band.</li></ul>
+    <h5>Conclusion</h5><ul><li>Restate your judgement with confidence — answer the question again.</li><li>Weigh the arguments: which mattered most and why.</li><li>No new evidence.</li></ul>`;
+  saveMine({type:"Revision Notes",title:"Essay plan — "+q,subj,level,body},"e","Essay plan saved",["c-e-q"]);
+};
+
+/* visual tools & graphs */
+const VKIND_LABEL={bar:"Bar Graph",pie:"Pie Chart",line:"Line Graph",scatter:"Scatter Plot",coordinate:"Coordinate Graph",function:"Function Graph",geometry:"Geometry Diagram"};
+document.getElementById("c-v-kind").addEventListener("input",function(){
+  const k=this.value;
+  document.getElementById("c-v-fnwrap").style.display=k==="function"?"grid":"none";
+  document.getElementById("c-v-datawrap").style.display=(k==="function"||k==="geometry")?"none":"block";
+  const lbl=document.getElementById("c-v-datalabel"), ta=document.getElementById("c-v-data");
+  if(k==="coordinate"||k==="scatter"){lbl.textContent="Points — one per line: x, y";ta.placeholder="1, -4\n-2, 3\n0, -5\n5, 0";}
+  else if(k==="line"){lbl.textContent="Values — one per line: label :: value";ta.placeholder="Mon :: 3\nTue :: 5\nWed :: 4";}
+  else{lbl.textContent="Data — one per line: label :: value";ta.placeholder="Maths :: 12\nEnglish :: 9\nScience :: 15";}
+});
+document.getElementById("c-v-save").onclick=()=>{
+  const title=$v("c-v-title").trim(), kind=$v("c-v-kind"), note=$v("c-v-note").trim();
+  if(!title){toast("Give the visual a title");return}
+  let chart={kind,note};
+  if(kind==="function"){chart.m=+$v("c-v-m")||0;chart.c=+$v("c-v-c")||0;chart.fn=chart.m+"x+"+chart.c;}
+  else if(kind==="geometry"){chart.shape="triangle";chart.labels=["a","b","c"];}
+  else if(kind==="coordinate"||kind==="scatter"){
+    const pts=$v("c-v-data").split("\n").map(l=>l.split(",").map(s=>parseFloat(s.trim()))).filter(p=>p.length===2&&!isNaN(p[0])&&!isNaN(p[1]));
+    if(!pts.length){toast("Add points as: x, y (one per line)");return}
+    chart.points=pts;
+  }else{
+    const data=$v("c-v-data").split("\n").map(l=>l.split("::").map(s=>s.trim())).map(p=>[p[0],parseFloat(p[1])]).filter(p=>p[0]&&!isNaN(p[1]));
+    if(!data.length){toast("Add data as: label :: value (one per line)");return}
+    chart.data=data;
+  }
+  saveMine({type:VKIND_LABEL[kind],title,subj:$v("c-v-subj"),level:$v("c-v-level"),chart},"v","Visual saved",["c-v-title","c-v-data","c-v-note"]);
+};
 
 /* ============================ PLANNER ============================ */
-const subjRows=document.getElementById("subj-rows");
-function addSubjRow(subj,conf){
-  const row=document.createElement("div");row.className="subj-row";
-  row.innerHTML=`<select>${SUBJECTS.map(s=>`<option${s===subj?" selected":""}>${s}</option>`).join("")}</select>
-    <div class="conf">${[1,2,3,4,5].map(n=>`<button data-n="${n}" class="${n<=conf?"on":""}">${n}</button>`).join("")}</div>
-    <button class="btn ghost sm rm">×</button>`;
-  row.querySelector(".conf").addEventListener("click",e=>{
-    const b=e.target.closest("button");if(!b)return;
-    row.querySelectorAll(".conf button").forEach(x=>x.classList.toggle("on",+x.dataset.n<=+b.dataset.n));
-  });
-  row.querySelector(".rm").onclick=()=>row.remove();
-  subjRows.appendChild(row);
+/* AI Study Planner: all profile subjects or one subject, hours/week, target,
+   weak/strong areas, learning style. Sessions get real DATES (the dashboard
+   calendar places them) and the whole form autosaves. */
+const pScope=document.getElementById("p-scope");
+(PROFILE.subjects&&PROFILE.subjects.length?PROFILE.subjects.map(x=>x.s):SUBJECTS).forEach(s=>{
+  const o=document.createElement("option");o.textContent=s;pScope.appendChild(o)});
+function planSubjects(){
+  if(pScope.value!=="all") return [pScope.value];
+  return PROFILE.subjects&&PROFILE.subjects.length?PROFILE.subjects.map(x=>x.s):["Mathematics","English","Science"];
 }
-addSubjRow("Mathematics",2);addSubjRow("Chemistry",3);addSubjRow("English Literature",4);
-document.getElementById("add-subj").onclick=()=>addSubjRow(SUBJECTS[0],3);
+function drawChips(){
+  const tg={};(PROFILE.subjects||[]).forEach(x=>tg[x.s]=x.target);
+  document.getElementById("p-chips").innerHTML=planSubjects().map(s=>
+    `<span class="badge">${esc(s)}${tg[s]?" · target "+esc(String(tg[s])):""}</span>`).join("");
+}
+pScope.addEventListener("input",()=>{drawChips();savePlanForm()});
 (function(){const d=new Date();d.setDate(d.getDate()+35);document.getElementById("p-exam").value=d.toISOString().slice(0,10)})();
 
-document.getElementById("gen-plan").onclick=()=>{
-  const rows=[...subjRows.querySelectorAll(".subj-row")].map(r=>({
-    subj:r.querySelector("select").value,
-    conf:r.querySelectorAll(".conf button.on").length||3
-  }));
-  if(!rows.length){toast("Add at least one subject");return}
-  const exam=new Date(document.getElementById("p-exam").value+"T00:00:00");
-  const today=new Date(); today.setHours(0,0,0,0);
-  const daysLeft=Math.max(7,Math.round((exam-today)/86400000));
-  const perWeek=+document.getElementById("p-days").value, mins=+document.getElementById("p-mins").value;
-  const time=document.getElementById("p-time").value.match(/\((.+)\)/)[1];
+/* autosave the form */
+const PFORM_IDS=["p-exam","p-hours","p-target","p-style","p-weak","p-strong"];
+function savePlanForm(){
+  const f={scope:pScope.value};PFORM_IDS.forEach(id=>f[id]=document.getElementById(id).value);
+  store.set("planform",f);
+}
+(function(){
+  const f=store.get("planform",null);
+  if(f){ if(f.scope&&[...pScope.options].some(o=>o.value===f.scope||o.textContent===f.scope))pScope.value=f.scope;
+    PFORM_IDS.forEach(id=>{if(f[id])document.getElementById(id).value=f[id]}) }
+  drawChips();
+})();
+PFORM_IDS.forEach(id=>document.getElementById(id).addEventListener("input",savePlanForm));
 
-  /* weight sessions inversely to confidence */
-  const wsum=rows.reduce((a,r)=>a+(6-r.conf),0);
-  const weeks=Math.min(8,Math.ceil(daysLeft/7));
-  const DOW=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-  const plan=[];
-  let cursor=0;
-  const bag=[]; rows.forEach(r=>{for(let k=0;k<(6-r.conf);k++)bag.push(r.subj)});
-  for(let w=0;w<weeks;w++){
-    const lastWeek=(w===weeks-1)||((weeks-w)*7>=daysLeft-7&&w===weeks-1);
-    const wk={n:w+1,days:[]};
-    const useDays=DOW.slice(0,perWeek);
-    useDays.forEach(d=>{
-      const subj=bag[cursor%bag.length];cursor++;
-      const finalWeek=w===weeks-1;
-      wk.days.push({d,subj,time,mins,mode:finalWeek?"Past paper + mark-scheme review":pick(subj,cursor)});
-    });
-    plan.push(wk);
-  }
-  store.set("plan",{made:today.toISOString().slice(0,10),plan,done:store.get("plan",{done:{}}).done||{}});
-  renderPlan(); addPoints(20); touchStreak();
-  document.getElementById("plan-sub").textContent=
-    `${rows.length} subjects · ${perWeek} days/week · ${mins}-min sessions · ${daysLeft} days to first exam — weakest subjects weighted heaviest`;
-  toast("Plan generated in seconds — tick sessions as you finish them (+20 pts)");
-};
-function pick(subj,seed){
-  const modes=["Flashcards + recall test","Quiz + review wrong answers","Notes condensing (one page)","Mindmap from memory","Teach-it-back summary"];
+const STYLE_MODES={
+  "Visual":["Mindmap from memory","Diagram + label drill","Flashcards + recall test"],
+  "Auditory":["Teach-it-back aloud","Record & replay a 2-min summary","Quiz + talk through every answer"],
+  "Reading & writing":["Notes condensing (one page)","Rewrite revision notes from memory","Written past-paper answers"],
+  "Kinaesthetic":["Practice questions sprint","Flashcards sort & stack","Timed quiz + review wrong answers"]};
+function pick(subj,seed,style){
+  const modes=STYLE_MODES[style]||["Flashcards + recall test","Quiz + review wrong answers","Notes condensing (one page)","Mindmap from memory","Teach-it-back summary"];
   return modes[(subj.length+seed)%modes.length];
 }
+function matchArea(text,subj){
+  if(!text)return null;
+  const hit=text.split(/[,;]/).map(s=>s.trim()).find(p=>p.toLowerCase().includes(subj.toLowerCase())||
+    (subj==="Mathematics"&&/maths?\b/i.test(p)));
+  return hit||null;
+}
+
+document.getElementById("gen-plan").onclick=()=>{
+  const subs=planSubjects();
+  if(!subs.length){toast("Add subjects to your profile first, or pick one subject");return}
+  const hours=+document.getElementById("p-hours").value;
+  if(!hours){toast("How many hours per week can you study? (e.g. 15)");return}
+  const exam=new Date(document.getElementById("p-exam").value+"T00:00:00");
+  const today=new Date(); today.setHours(0,0,0,0);
+  if(!(exam>today)){toast("Pick your primary exam date");return}
+  const target=document.getElementById("p-target").value;
+  const style=document.getElementById("p-style").value;
+  const weakTxt=document.getElementById("p-weak").value, strongTxt=document.getElementById("p-strong").value;
+  const daysLeft=Math.max(7,Math.round((exam-today)/86400000));
+
+  /* weights: diagnostic mastery + weak/strong areas + profile grade gap */
+  const diag=store.get("diagnostics",[])[0]||null;
+  const gradeNum=g=>({ "A*":9,"A":8,"B":6,"C":5,"D":4,"E":3,"U":1 }[g]??(+g||null));
+  const prof={};(PROFILE.subjects||[]).forEach(x=>prof[x.s]=x);
+  const weights=subs.map(s=>{
+    let w=1;
+    const d=diag&&diag.list.find(x=>x.s===s); if(d)w+=(100-d.mastery)/40;
+    if(matchArea(weakTxt,s))w+=1.5;
+    if(matchArea(strongTxt,s))w=Math.max(.4,w-.8);
+    const p=prof[s];
+    if(p&&gradeNum(p.target)&&gradeNum(p.current))w+=Math.max(0,(gradeNum(p.target)-gradeNum(p.current)))*.3;
+    return {s,w};
+  });
+  const bag=[];weights.forEach(x=>{for(let k=0;k<Math.max(1,Math.round(x.w*2));k++)bag.push(x.s)});
+
+  const perWeek=Math.max(3,Math.min(14,Math.round(hours*60/40))); // 40-min sessions
+  const weeks=Math.min(8,Math.ceil(daysLeft/7));
+  const dayGap=7/perWeek;
+  const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const plan=[];let cursor=0;
+  for(let w=0;w<weeks;w++){
+    const wk={n:w+1,days:[]};
+    for(let k=0;k<perWeek;k++){
+      const offset=w*7+Math.min(6,Math.round(k*dayGap));
+      const date=new Date(today);date.setDate(date.getDate()+offset);
+      if(date>=exam)break;
+      const subj=bag[cursor%bag.length];cursor++;
+      const finalStretch=(exam-date)/86400000<=7;
+      const focus=matchArea(weakTxt,subj);
+      const isWknd=date.getDay()===0||date.getDay()===6;
+      wk.days.push({date:date.toISOString().slice(0,10),d:DOW[date.getDay()],subj,time:isWknd?"10:00":"19:00",mins:40,
+        mode:(finalStretch?"Past paper + mark-scheme review":pick(subj,cursor,style))+(focus?" · focus: "+focus:"")});
+    }
+    if(wk.days.length)plan.push(wk);
+  }
+  store.set("plan",{made:today.toISOString().slice(0,10),hours,target,style,plan,done:store.get("plan",{done:{}}).done||{}});
+  savePlanForm();
+  renderPlan(); addPoints(20); touchStreak();
+  logEvent("plan","Study plan generated",subs.length+" subject"+(subs.length>1?"s":"")+" · "+hours+" hrs/week"+(target?" · target "+target:"")+" — sessions appear in your dashboard calendar by date.");
+  document.getElementById("plan-sub").textContent=
+    `${subs.length} subject${subs.length>1?"s":""} · ${perWeek} sessions/week · ${daysLeft} days to your exam — weak areas weighted heaviest. Autosaved.`;
+  toast("Plan generated — tick sessions as you finish them (+20 pts)");
+};
+function fmtDate(iso){const d=new Date(iso+"T00:00:00");return d.getDate()+" "+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]}
 function renderPlan(){
   const saved=store.get("plan",null); const out=document.getElementById("plan-out");
-  if(!saved||!saved.plan){out.innerHTML='<div class="empty">Your timetable will appear here.</div>';return}
+  if(!saved||!saved.plan||!saved.plan.length){out.innerHTML='<div class="empty">Fill out the form to generate your personalized study plan!</div>';return}
   const done=saved.done||{};
   out.innerHTML=saved.plan.map(wk=>`
     <div class="plan-week"><h4>Week ${wk.n}</h4>
-    <table class="tt"><tr><th>Day</th><th>Subject</th><th>Session</th><th>When</th></tr>
+    <table class="tt"><tr><th>Date</th><th>Subject</th><th>Session</th><th>When</th><th></th></tr>
     ${wk.days.map((s,i)=>{const key=wk.n+"-"+i;const isDone=!!done[key];return `
-      <tr><td>${s.d}</td>
+      <tr><td>${s.d}${s.date?" "+fmtDate(s.date):""}</td>
       <td><span class="subj-pill" style="background:${SUBJ_COLOURS[s.subj]||"#3987e5"}"></span>${s.subj}</td>
       <td><label class="sess ${isDone?"done":""}"><input type="checkbox" data-k="${key}" ${isDone?"checked":""}><span>${s.mode} · ${s.mins} min</span></label></td>
-      <td style="color:var(--ink-3)">${s.time}</td></tr>`}).join("")}
+      <td style="color:var(--ink-3)">${s.time}</td>
+      <td><button class="btn ghost sm" data-find="${esc(s.subj)}" title="Search matching resources">🔎</button></td></tr>`}).join("")}
     </table></div>`).join("");
+  out.querySelectorAll("[data-find]").forEach(b=>b.onclick=()=>{
+    showTab("search");
+    document.getElementById("q").value=b.dataset.find;
+    document.getElementById("f-subj").value=SUBJECTS.includes(b.dataset.find)?b.dataset.find:"";
+    renderResults();
+    toast("Matching resources for "+b.dataset.find);
+  });
   out.querySelectorAll("input[type=checkbox]").forEach(cb=>cb.onchange=()=>{
     const saved=store.get("plan",null); saved.done=saved.done||{};
     if(cb.checked){saved.done[cb.dataset.k]=1;addPoints(5);touchStreak();toast("Session done +5 pts")} else delete saved.done[cb.dataset.k];
@@ -971,11 +1644,75 @@ const KB=[
  {k:/revis|plan|organis|exam in/i,a:"Fastest way to a working plan: open 🗓 Study planner, add your subjects and rate your confidence 1–5, set the exam date — done in under 5 minutes.\n\nThe engine gives weak subjects more sessions and switches the final week to timed past papers. Tick sessions off to build your streak."},
  {k:/bond|ionic|covalent/i,a:"Bonding in 3 lines:\n• Ionic — metal + non-metal, electrons *transferred*, giant lattice, high melting point, conducts when molten/dissolved.\n• Covalent — non-metals *share* electron pairs; simple molecules have weak intermolecular forces (low mp).\n• Metallic — positive ions in a sea of delocalised electrons → conduction + malleability.\n\nDrill the flashcard deck 'Bonding & Structure' in 🔎."},
 ];
+const STUDENT_LEVEL=(PROFILE.level&&PROFILE.level!=="Other")?PROFILE.level:"GCSE";
+let pendingQuiz=null;
+
+function tutorQuizBank(topic){
+  const t=topic.toLowerCase();
+  const pool=[];
+  /* World War 2 / history warm-ups live here; everything else comes from the quiz library */
+  if(/ww ?2|world war (two|2|ii)|nazi/i.test(t))pool.push(
+    {q:"In which year did World War 2 begin in Europe?",o:["1939","1936","1941","1945"],a:0,exp:"Germany invaded Poland on 1 September 1939; Britain and France declared war two days later."},
+    {q:"What was the Blitz?",o:["Sustained German bombing of British cities 1940–41","The invasion of Normandy","Germany's tank strategy","The evacuation of Dunkirk"],a:0,exp:"From September 1940, the Luftwaffe bombed London and other cities for 57 consecutive nights at its peak."},
+    {q:"D-Day, 6 June 1944, was the Allied invasion of…",o:["Normandy, France","Sicily, Italy","North Africa","The Netherlands"],a:0,exp:"Operation Overlord — the largest seaborne invasion in history, opening the Western Front."});
+  allResources().forEach(r=>{ if(r.qs&&(r.title+" "+r.subj+" "+(r.topic||"")).toLowerCase().includes(t))
+    r.qs.forEach(q=>pool.push(q)) });
+  if(!pool.length)allResources().forEach(r=>{ if(r.qs&&t.split(/\s+/).some(w=>w.length>3&&(r.title+" "+r.subj).toLowerCase().includes(w)))
+    r.qs.forEach(q=>pool.push(q)) });
+  return pool;
+}
+function askPending(){
+  const q=pendingQuiz.qs[pendingQuiz.idx];
+  addMsg("Question "+(pendingQuiz.idx+1)+" of "+pendingQuiz.qs.length+":\n"+q.q+"\n"+
+    q.o.map((o,i)=>String.fromCharCode(65+i)+") "+o).join("\n")+"\n\nReply with A, B, C or D.","bot");
+}
 function botReply(text){
+  /* mid-quiz: interpret the reply as an answer */
+  if(pendingQuiz){
+    const m=text.trim().toUpperCase().match(/^[A-D]/);
+    if(m){
+      const q=pendingQuiz.qs[pendingQuiz.idx], pickIdx=m[0].charCodeAt(0)-65;
+      const right=pickIdx===q.a;
+      if(right)pendingQuiz.score++;
+      addMsg((right?"✅ Correct!":"❌ Not quite — the answer is "+String.fromCharCode(65+q.a)+") "+q.o[q.a]+".")+(q.exp?"\n"+q.exp:""),"bot");
+      pendingQuiz.idx++;
+      if(pendingQuiz.idx<pendingQuiz.qs.length){askPending()}
+      else{
+        addMsg("Done! You scored "+pendingQuiz.score+"/"+pendingQuiz.qs.length+
+          ".\n\nWant more? Say 'quiz me on <topic>' — or open 🔎 and filter by Quiz for full quizzes that log to 📈 My progress.","bot");
+        addPoints(5+3*pendingQuiz.score);pendingQuiz=null;
+      }
+      return;
+    }
+    addMsg("We're mid-quiz — reply with A, B, C or D (or say 'stop' to end).","bot");
+    if(/stop|quit|cancel/i.test(text))pendingQuiz=null;
+    return;
+  }
+  /* "quiz me / ask me N questions about X" */
+  const quizReq=text.match(/(?:quiz me|test me|ask me|warm.?up).*?(?:(\d+)\s+)?(?:questions?\s+)?(?:about|on)\s+(.+)/i);
+  if(quizReq){
+    const n=Math.min(+quizReq[1]||3,5), topic=quizReq[2].replace(/[.?!]$/,"");
+    const pool=tutorQuizBank(topic);
+    if(pool.length){
+      pendingQuiz={qs:pool.slice(0,n),idx:0,score:0};
+      addMsg("Let's warm up — "+pendingQuiz.qs.length+" question"+(pendingQuiz.qs.length>1?"s":"")+" on "+topic+", pitched at "+STUDENT_LEVEL+" level. Ready?","bot");
+      askPending();return;
+    }
+    addMsg("I don't have "+topic+" questions in the offline bank yet. Try 'quiz me on World War 2', memory, quadratics, mechanics, or break-even — or open 🔎 and filter by Quiz.","bot");
+    return;
+  }
+  /* "explain X like I'm 10" */
+  if(/like i'?m 10|eli ?10/i.test(text)&&/photosynth/i.test(text)){
+    addMsg("Photosynthesis, age-10 version 🌱\n\nPlants are hungry, but they can't eat sandwiches. So they make their own food:\n• They breathe in a gas from the air (carbon dioxide).\n• They drink water through their roots.\n• They catch sunlight with the green stuff in their leaves (chlorophyll) — it works like a tiny solar panel.\n\nMix those together and the plant builds sugar (its food) and breathes out oxygen — the exact gas WE need. Plants feed themselves and keep us alive at the same time.\n\nWant the "+STUDENT_LEVEL+" version with the equation and limiting factors? Just ask.","bot");
+    return;
+  }
   const hit=KB.find(e=>e.k.test(text));
-  const a=hit?hit.a:
-    "Good question. Here's how I'd attack it:\n1) Break it into what you *know* vs what's *asked*.\n2) Search 🔎 for the topic — there are flashcards, notes and quizzes across "+SUBJECTS.length+" subjects.\n3) If it's homework, paste the exact question and I'll walk the method step-by-step (I teach the method, not just the answer).\n\nTry asking about quadratics, photosynthesis, Macbeth, essay structure, elasticity, or bonding.";
-  addMsg(a,"bot");
+  if(hit){addMsg("("+STUDENT_LEVEL+" level)\n\n"+hit.a,"bot");return}
+  /* mine the library for anything matching */
+  const t=text.toLowerCase();
+  const rec=allResources().filter(r=>t.split(/\s+/).some(w=>w.length>3&&(r.title+" "+r.subj+" "+(r.topic||"")).toLowerCase().includes(w))).slice(0,3);
+  addMsg("Good question. Here's how I'd attack it at "+STUDENT_LEVEL+" level:\n1) Break it into what you *know* vs what's *asked*.\n2) If it's homework, paste the exact question and I'll walk the method step-by-step (I teach the method, never just the answer).\n3) Say 'quiz me on <topic>' and I'll test you right here."+
+    (rec.length?"\n\nFrom the library, these match:\n"+rec.map(r=>"• "+r.title+" ("+r.type+")").join("\n")+"\n— open 🔎 to launch them.":"\n\nTry quadratics, photosynthesis, Macbeth, essay structure, elasticity, bonding — or 'quiz me on World War 2'."),"bot");
 }
 function addMsg(t,who){
   const d=document.createElement("div");d.className="msg "+who;
@@ -985,16 +1722,17 @@ function addMsg(t,who){
 function sendChat(){
   const inp=document.getElementById("chat-in");const t=inp.value.trim();if(!t)return;
   addMsg(t,"me");inp.value="";touchStreak();addPoints(3);
+  logEvent("tutor","AI Tutor: "+(t.length>52?t.slice(0,52)+"…":t),"You asked the AI teaching assistant a question.");
   setTimeout(()=>botReply(t),350);
 }
 document.getElementById("chat-send").onclick=sendChat;
 document.getElementById("chat-in").addEventListener("keydown",e=>{if(e.key==="Enter")sendChat()});
-["How do I solve a quadratic equation?","Explain photosynthesis limiting factors","Best Macbeth quotes for ambition?","How should I structure an essay?","Help me plan my revision"].forEach(s=>{
+["Explain photosynthesis like I'm 10","Give me a step-by-step plan to solve a quadratic equation","Ask me 3 warm-up questions about World War 2"].forEach(s=>{
   const c=document.createElement("button");c.className="chip";c.textContent=s;
   c.onclick=()=>{document.getElementById("chat-in").value=s;sendChat()};
   document.getElementById("chips").appendChild(c);
 });
-addMsg("Hi! I'm your StudYear tutor — here for homework help, exam technique and quick explanations, any subject, any time. Ask me anything or tap a suggestion below.","bot");
+addMsg("How can I help you today?\nI can explain topics, solve problems, or quiz you.","bot");
 
 /* ============================ PROGRESS ============================ */
 function todayKey(){return new Date().toISOString().slice(0,10)}
@@ -1044,16 +1782,268 @@ function renderProgress(){
     qz.forEach((q,i)=>{sv+=`<circle cx="${x(i)}" cy="${y(q.pct)}" r="4.5" fill="#A9CFF2"/><text class="tick" x="${x(i)}" y="${H-P+16}" text-anchor="middle">${q.subj.slice(0,4)}</text>`});
     sv+="</svg>";sc.innerHTML=sv;
   }
-  /* mastery */
-  const by={};qz.forEach(q=>{(by[q.subj]=by[q.subj]||[]).push(q.pct)});
+  /* subject progress: quizzes blended with the latest diagnostic */
   const mast=document.getElementById("mastery");
-  const rows=Object.entries(by).map(([s,v])=>[s,Math.round(v.reduce((a,b)=>a+b,0)/v.length)]);
+  const rows=subjectMastery();
   mast.innerHTML=rows.length?rows.map(([s,m])=>`
-    <div class="mrow"><span>${s}</span><div class="bar"><i style="width:${m}%;background:${SUBJ_COLOURS[s]||"#3D8FD1"}"></i></div><span class="pc">${m}%</span></div>`).join("")
-    :'<div class="empty">Finish a quiz to see mastery per subject.</div>';
+    <div class="mrow"><span>${esc(s)}</span><div class="bar"><i style="width:${m}%;background:${SUBJ_COLOURS[s]||"#3D8FD1"}"></i></div><span class="pc">${m}%</span></div>`).join("")
+    :'<div class="empty">Finish a quiz or run a diagnostic to see subject progress.</div>';
 }
 
+/* combined mastery per subject: rolling quiz average + latest diagnostic confidence */
+function subjectMastery(){
+  const by={};store.get("quizzes",[]).forEach(q=>{(by[q.subj]=by[q.subj]||[]).push(q.pct)});
+  const diag=store.get("diagnostics",[])[0]||null;
+  const set={};
+  Object.entries(by).forEach(([s,v])=>{set[s]=Math.round(v.reduce((a,b)=>a+b,0)/v.length)});
+  if(diag)diag.list.forEach(x=>{ set[x.s]=set[x.s]!=null?Math.round((set[x.s]+x.mastery)/2):x.mastery });
+  return Object.entries(set).sort((a,b)=>a[1]-b[1]);
+}
+
+/* ---------- AI Grade Improvement Plan ---------- */
+function gradeWord(m){ return m<40?"Below Pass":m<50?"Pass":m<65?"Merit":m<80?"Distinction":"Distinction*" }
+document.getElementById("imp-go").onclick=()=>{
+  const rows=subjectMastery();
+  if(!rows.length){toast("Take a quiz or run a diagnostic first — the plan needs recorded activity");showTab("progress");return}
+  const overall=Math.round(rows.reduce((a,b)=>a+b[1],0)/rows.length);
+  const tg={};(PROFILE.subjects||[]).forEach(x=>tg[x.s]=x.target);
+  const targetTxt=(PROFILE.subjects&&PROFILE.subjects[0]&&PROFILE.subjects[0].target)||"your target";
+  const name=(SY&&SY.session&&SY.session.name)||"You";
+  const weak=rows.filter(r=>r[1]<65).slice(0,4);
+  logEvent("plan","AI improvement plan generated","Executive summary + per-subject plans across "+rows.length+" subjects.");
+  document.getElementById("imp-out").innerHTML=`
+    <div class="card" style="margin-top:12px">
+      <h3 style="font-family:var(--serif);font-weight:500;color:var(--gold-300)">Executive Summary</h3>
+      <div class="sub">A high-level overview of your current academic standing and path forward.</div>
+      <div class="tiles" style="grid-template-columns:repeat(2,1fr);margin:10px 0">
+        <div class="tile"><div class="v">${gradeWord(overall)}</div><div class="k">Predicted grade</div></div>
+        <div class="tile"><div class="v">${esc(String(targetTxt))}</div><div class="k">Target grade</div></div>
+      </div>
+      <p style="font-size:13.5px;color:var(--ink-2)">“${esc(name)}, your target is ambitious and achievable with focused effort.
+        Your current trajectory points to <b>${gradeWord(overall)}</b> overall — this plan is your direct pathway to close the gap.
+        By targeting your weakest areas with precision and consistent weekly action, you can transform your standing.
+        Let's turn ambition into achievement.”</p>
+    </div>
+    ${(weak.length?weak:rows.slice(0,3)).map(([s,m])=>{
+      const stretch=m<40?"Pass":m<55?"Merit":"Distinction";
+      const topics=(DIAG_TOPICS[s]||DIAG_FALLBACK).slice(0,5);
+      return `<div class="card" style="margin-top:10px">
+        <h3 style="font-family:var(--serif);font-weight:500;font-size:18px;color:var(--gold-300)">${esc(s)} Improvement Plan</h3>
+        <div class="tiles" style="grid-template-columns:repeat(3,1fr);margin:10px 0">
+          <div class="tile"><div class="v" style="font-size:20px">${m}%</div><div class="k">Current</div></div>
+          <div class="tile"><div class="v" style="font-size:20px">${gradeWord(m)}</div><div class="k">Predicted</div></div>
+          <div class="tile"><div class="v" style="font-size:20px;color:var(--good)">${stretch}</div><div class="k">Stretch target</div></div>
+        </div>
+        <p style="font-size:12.5px;color:var(--ink-3);font-style:italic">“${m<40?"A lack of engagement with core material is the main barrier — start with foundations."
+          :m<65?"Gaps in a few key topics are capping your grade — targeted practice will lift it fast."
+          :"You're close — precision on exam technique and evaluation converts this to a top grade."}”</p>
+        <div style="font-size:12px;color:var(--gold-400);margin:10px 0 4px;letter-spacing:.06em;text-transform:uppercase">Top priority topics</div>
+        <ul style="margin:0 0 8px 18px;font-size:13px;color:var(--ink-2)">${topics.map(t=>`<li style="margin:3px 0">${esc(t)}</li>`).join("")}</ul>
+        <div style="font-size:12px;color:var(--gold-400);margin:6px 0 4px;letter-spacing:.06em;text-transform:uppercase">Recommended actions</div>
+        <ul style="margin:0 0 0 18px;font-size:13px;color:var(--ink-2)">
+          <li>Weekly: complete 2–3 interactive lessons on the foundational topics above.</li>
+          <li>Weekly: make flashcards for every new key term, and use active recall daily.</li>
+          <li>Weekly: attempt past-paper questions on ${esc(s)}, marking against the scheme.</li>
+          <li>End of month: take a check quiz to confirm the topics have stuck.</li>
+        </ul>
+      </div>`;
+    }).join("")}`;
+  document.getElementById("imp-out").scrollIntoView({behavior:"smooth",block:"nearest"});
+};
+
 /* ============================ DIAGNOSTIC ============================ */
+/* Subject-level assessment: confidence sliders (profile subjects auto-loaded,
+   catalog + custom additions, max 24) → 10 random questions drawn from the
+   chosen subjects → report + risk level, saved to a reviewable history. */
+function gradeFor(m){ return Math.max(1, Math.min(9, Math.round(1 + 8*m/100))) }
+function riskFor(avg){ return avg<40?"CRITICAL":avg<55?"HIGH":avg<70?"MEDIUM":"LOW" }
+const RISK_COLOR={CRITICAL:"var(--crit)",HIGH:"var(--warn)",MEDIUM:"var(--gold-400)",LOW:"var(--good)"};
+function usDate(iso){ const d=new Date(iso); return (d.getMonth()+1)+"/"+d.getDate()+"/"+d.getFullYear() }
+
+const DG_QBANK={
+ "Mathematics":[{q:"Solve x² − 5x + 6 = 0",o:["x = 2 or x = 3","x = −2 or x = −3","x = 1 or x = 6","x = 5 or x = 6"],a:0},
+   {q:"What is 15% of 240?",o:["36","24","32","44"],a:0},
+   {q:"The gradient of the line y = 3x − 2 is…",o:["3","−2","2","⅓"],a:0}],
+ "English":[{q:"Which sentence is punctuated correctly?",o:["The results, however, were inconclusive.","The results however were, inconclusive.","The results, however were inconclusive,","The results however, were inconclusive."],a:0},
+   {q:"A metaphor is…",o:["saying one thing IS another","a comparison using like or as","an exaggeration","human traits given to objects"],a:0}],
+ "Physics":[{q:"A body in equilibrium has…",o:["zero resultant force","zero velocity","zero mass","constant acceleration"],a:0},
+   {q:"Kinetic energy equals…",o:["½ m v²","m g h","F × d","V I t"],a:0}],
+ "Geography":[{q:"The process by which rivers wear away their banks is…",o:["erosion","deposition","transportation","saltation"],a:0},
+   {q:"At a destructive plate margin…",o:["an oceanic plate subducts beneath another","plates slide past each other","plates move apart","new crust forms"],a:0}],
+ "History":[{q:"A source's 'provenance' means…",o:["who made it, when and why","what it says","how reliable it feels","its language"],a:0},
+   {q:"The Treaty of Versailles was signed in…",o:["1919","1914","1929","1939"],a:0}],
+ "ICT":[{q:"Which is an input device?",o:["scanner","printer","monitor","speaker"],a:0},
+   {q:"RAM is…",o:["volatile working memory","permanent storage","the processor","a network protocol"],a:0}],
+ "Chemistry":[{q:"An ionic bond forms between…",o:["a metal and a non-metal","two non-metals","two metals","two noble gases"],a:0},
+   {q:"The pH of a neutral solution is…",o:["7","0","14","1"],a:0}],
+ "Biology":[{q:"Aerobic respiration happens mainly in the…",o:["mitochondria","nucleus","ribosome","chloroplast"],a:0},
+   {q:"Osmosis is the movement of…",o:["water across a partially permeable membrane","glucose into cells","oxygen in blood","ions against a gradient"],a:0}],
+ "Science":[{q:"Which is a chemical change?",o:["burning wood","melting ice","dissolving sugar","boiling water"],a:0},
+   {q:"The independent variable is the one you…",o:["change on purpose","measure","keep the same","plot on the y-axis"],a:0}],
+ "Computer Science":[{q:"Binary 1011 in denary is…",o:["11","13","9","10"],a:0},
+   {q:"Which sort has O(n log n) average complexity?",o:["merge sort","bubble sort","linear search","insertion sort"],a:0}]};
+
+let dgSubs=(PROFILE.subjects&&PROFILE.subjects.length?PROFILE.subjects.map(x=>({s:x.s,conf:50})):
+  [{s:"Mathematics",conf:50},{s:"English",conf:50},{s:"Science",conf:50}]).slice(0,24);
+let dgQs=null, dgAnswers=null;
+
+fillSelect(document.getElementById("dg-add"),SUBJECTS);
+function drawDgRows(){
+  document.getElementById("dg-count").textContent=
+    dgSubs.length+" subject"+(dgSubs.length!==1?"s":"")+" in this run (max 24). Remove rows you do not want assessed.";
+  document.getElementById("dg-rows").innerHTML=dgSubs.map((r,i)=>`
+    <div style="margin:11px 0">
+      <div style="display:flex;align-items:center;gap:8px">
+        <b style="flex:1;font-size:13.5px">${esc(r.s)}</b>
+        <span style="font-size:12px;color:var(--gold-300)" id="dgv-${i}">${r.conf}%</span>
+        <button class="btn ghost sm" data-rm="${i}">×</button>
+      </div>
+      <input type="range" min="0" max="100" step="5" value="${r.conf}" data-i="${i}" style="width:100%;accent-color:var(--gold-500)">
+      <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink-3)"><span>Not confident</span><span>Very confident</span></div>
+    </div>`).join("");
+  document.querySelectorAll("#dg-rows input[type=range]").forEach(sl=>sl.oninput=()=>{
+    dgSubs[+sl.dataset.i].conf=+sl.value;
+    document.getElementById("dgv-"+sl.dataset.i).textContent=sl.value+"%";
+  });
+  document.querySelectorAll("#dg-rows [data-rm]").forEach(b=>b.onclick=()=>{dgSubs.splice(+b.dataset.rm,1);drawDgRows()});
+}
+function dgAddSubject(s){
+  s=s.trim(); if(!s) return;
+  if(dgSubs.length>=24){toast("Max 24 subjects per run");return}
+  if(dgSubs.some(x=>x.s.toLowerCase()===s.toLowerCase())){toast(s+" is already in this run");return}
+  dgSubs.push({s,conf:50}); drawDgRows();
+}
+document.getElementById("dg-add").addEventListener("input",function(){dgAddSubject(this.value);this.value=""});
+document.getElementById("dg-custom").addEventListener("keydown",function(e){
+  if(e.key==="Enter"){dgAddSubject(this.value);this.value=""}});
+drawDgRows();
+
+function dgQuestionPool(){
+  const chosen=dgSubs.map(x=>x.s);
+  let pool=[];
+  LIB.forEach(r=>{ if(r.qs&&chosen.includes(r.subj)) r.qs.forEach(q=>pool.push({q:q.q,o:q.o,a:q.a,subj:r.subj})) });
+  chosen.forEach(s=>{(DG_QBANK[s]||[]).forEach(q=>pool.push({...q,subj:s}))});
+  if(pool.length<10){ // pad with general questions from the whole bank
+    Object.keys(DG_QBANK).forEach(s=>{ if(!chosen.includes(s)) DG_QBANK[s].forEach(q=>pool.push({...q,subj:s})) });
+  }
+  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}
+  return pool.slice(0,10);
+}
+document.getElementById("dg-quiz").onclick=()=>{
+  if(!dgSubs.length){toast("Add at least one subject");return}
+  dgQs=dgQuestionPool(); dgAnswers=new Array(dgQs.length).fill(null);
+  document.getElementById("dg-sub").textContent="Answer the "+dgQs.length+" quick questions, then generate your report.";
+  document.getElementById("dg-out").innerHTML=dgQs.map((q,i)=>`
+    <div style="margin-bottom:14px">
+      <div style="font-size:14px;margin-bottom:4px"><b>${i+1}.</b> ${esc(q.q)} <span class="badge">${esc(q.subj)}</span></div>
+      ${q.o.map((o,j)=>`<button class="q-opt" data-q="${i}" data-j="${j}" style="margin:4px 0;padding:9px 12px">${esc(o)}</button>`).join("")}
+    </div>`).join("")+
+    `<div style="margin-top:10px"><button class="btn" id="dg-report">Generate my diagnostic report →</button></div>`;
+  document.querySelectorAll("#dg-out .q-opt").forEach(b=>b.onclick=()=>{
+    const qi=+b.dataset.q; dgAnswers[qi]=+b.dataset.j;
+    document.querySelectorAll(`#dg-out .q-opt[data-q="${qi}"]`).forEach(x=>x.style.borderColor=x===b?"var(--gold-500)":"rgba(170,182,204,.2)");
+  });
+  document.getElementById("dg-report").onclick=()=>{
+    if(dgAnswers.some(a=>a===null)){toast("Answer every question first — "+(dgAnswers.filter(a=>a!==null).length)+"/"+dgQs.length+" done");return}
+    dgGenerate();
+  };
+};
+document.getElementById("dg-skip").onclick=()=>{
+  if(!dgSubs.length){toast("Add at least one subject");return}
+  dgQs=null;dgAnswers=null;dgGenerate();
+};
+
+function dgGenerate(){
+  const bySubj={};
+  if(dgQs)dgQs.forEach((q,i)=>{
+    (bySubj[q.subj]=bySubj[q.subj]||{ok:0,n:0});
+    bySubj[q.subj].n++; if(dgAnswers[i]===q.a)bySubj[q.subj].ok++;
+  });
+  const targets={};(PROFILE.subjects||[]).forEach(x=>targets[x.s]=x.target);
+  const list=dgSubs.map(r=>{
+    const qs=bySubj[r.s];
+    const m=qs?Math.round(r.conf*0.6+100*qs.ok/qs.n*0.4):r.conf;
+    return {s:r.s,conf:r.conf,mastery:m,pred:gradeFor(m),target:targets[r.s]||null,asked:qs?qs.n:0,ok:qs?qs.ok:0};
+  }).sort((a,b)=>a.mastery-b.mastery);
+  const avg=Math.round(list.reduce((a,b)=>a+b.mastery,0)/list.length);
+  const risk=riskFor(avg);
+  const weak=list.filter(x=>x.mastery<60);
+  const report={when:new Date().toISOString(),avg,risk,list,weak:weak.map(w=>w.s),
+    asked:dgQs?dgQs.length:0,correct:dgQs?dgQs.filter((q,i)=>dgAnswers[i]===q.a).length:0};
+  const hist=store.get("diagnostics",[]); hist.unshift(report); store.set("diagnostics",hist.slice(0,30));
+  store.set("diagnostic",{avg,pred:gradeFor(avg),weak:report.weak,weakest:list[0]?list[0].s:null,when:todayKey()});
+  addPoints(25); touchStreak();
+  logEvent("diagnostic","Academic Diagnostic Completed","Your academic baseline report is ready.");
+  renderDgReport(report); renderDgHistory();
+}
+
+function renderDgReport(rep){
+  document.getElementById("dg-sub").innerHTML=
+    `Taken on ${usDate(rep.when)} · Risk Level: <b style="color:${RISK_COLOR[rep.risk]}">${rep.risk}</b>`+
+    (rep.asked?` · ${rep.correct}/${rep.asked} quick questions correct`:" · confidence-only run");
+  document.getElementById("dg-out").innerHTML=`
+    <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
+      <div class="tile"><div class="v">${rep.avg}%</div><div class="k">Overall mastery</div></div>
+      <div class="tile"><div class="v" style="color:${RISK_COLOR[rep.risk]}">${rep.risk}</div><div class="k">Risk level</div></div>
+      <div class="tile"><div class="v">${esc(rep.list[0]?rep.list[0].s:"–")}</div><div class="k">Weakest subject</div></div>
+    </div>
+    ${rep.list.map(x=>`<div class="mrow"><span>${esc(x.s)}</span>
+      <div class="bar"><i style="width:${x.mastery}%;background:${x.mastery<60?"var(--crit)":x.mastery<80?"var(--warn)":"var(--good)"}"></i></div>
+      <span class="pc">${x.mastery}% · G${x.pred}${x.target?" / target "+esc(String(x.target)):""}</span></div>`).join("")}
+    ${rep.weak.length?`<div style="margin-top:14px"><button class="btn" id="dg-recover">Generate my personal recovery plan →</button></div>`
+      :`<p class="note">No subject under 60% — keep momentum with past papers and the planner.</p>`}`;
+  const btn=document.getElementById("dg-recover");
+  if(btn)btn.onclick=()=>makeRecovery(rep);
+  document.getElementById("tab-diag").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+/* ---------- recovery plans ---------- */
+function makeRecovery(rep){
+  const weak=rep.list.filter(x=>x.mastery<60);
+  const plan={when:new Date().toISOString(),risk:rep.risk,
+    title:weak.length>2?"Comprehensive Academic Recovery Plan":"Initial Academic Recovery Plan",
+    steps:weak.map(w=>({s:w.s,from:w.mastery,aim:70,
+      actions:["15-min rescue lesson on the weakest topic","Flashcards + active recall drill","Timed mini-quiz, review every wrong answer","Past-paper questions on "+w.s]}))};
+  const hist=store.get("recoveries",[]); hist.unshift(plan); store.set("recoveries",hist.slice(0,30));
+  const saved=store.get("plan",{plan:[],done:{}});
+  const week={n:(saved.plan&&saved.plan.length?saved.plan[saved.plan.length-1].n+1:1),
+    days:weak.concat(weak).slice(0,5).map((w,i)=>({d:["Mon","Tue","Wed","Thu","Fri"][i],subj:w.s,time:"19:00",mins:40,mode:"RECOVERY · "+w.s+" foundations"}))};
+  saved.plan=(saved.plan||[]).concat([week]); store.set("plan",saved); renderPlan(); addPoints(10);
+  logEvent("plan","Recovery plan generated","A personalised recovery plan was added to your account.");
+  renderRpHistory();
+  toast("Recovery plan saved + a RECOVERY week added to 🗓 Study planner");
+  viewRecovery(plan);
+}
+function viewRecovery(p){
+  modal.classList.add("on");
+  mbody.innerHTML=`<h2>${esc(p.title)}</h2>
+    <div class="mmeta">Created on ${usDate(p.when)} · Risk Level: <b style="color:${RISK_COLOR[p.risk]}">${p.risk}</b></div>
+    ${p.steps.map((st,i)=>`<div class="card" style="margin-bottom:10px">
+      <h3 style="color:var(--gold-300);font-family:var(--serif);font-size:16px;font-weight:500">${i+1}. ${esc(st.s)} — ${st.from}% → aim ${st.aim}%+</h3>
+      <ul style="margin:8px 0 0 18px;font-size:13px;color:var(--ink-2)">${st.actions.map(a=>`<li style="margin:4px 0">${esc(a)}</li>`).join("")}</ul>
+    </div>`).join("")}`;
+}
+function renderDgHistory(){
+  const hist=store.get("diagnostics",[]);
+  document.getElementById("dg-history").innerHTML=hist.length?hist.map((r,i)=>`
+    <div class="paper"><div class="t"><b>Diagnostic</b>
+      <div class="m">Taken on ${usDate(r.when)} • Risk Level: <b style="color:${RISK_COLOR[r.risk]}">${r.risk}</b></div></div>
+      <button class="btn ghost sm" data-dg="${i}">View Report</button></div>`).join("")
+    :'<div class="empty">Run your first diagnostic to start your history.</div>';
+  document.querySelectorAll("#dg-history [data-dg]").forEach(b=>b.onclick=()=>renderDgReport(store.get("diagnostics",[])[+b.dataset.dg]));
+}
+function renderRpHistory(){
+  const hist=store.get("recoveries",[]);
+  document.getElementById("rp-history").innerHTML=hist.length?hist.map((p,i)=>`
+    <div class="paper"><div class="t"><b>${esc(p.title)}</b>
+      <div class="m">Created on ${usDate(p.when)} • Risk Level: <b style="color:${RISK_COLOR[p.risk]}">${p.risk}</b></div></div>
+      <button class="btn ghost sm" data-rp="${i}">View Plan</button></div>`).join("")
+    :'<div class="empty">Generate a recovery plan from any diagnostic report.</div>';
+  document.querySelectorAll("#rp-history [data-rp]").forEach(b=>b.onclick=()=>viewRecovery(store.get("recoveries",[])[+b.dataset.rp]));
+}
+renderDgHistory();renderRpHistory();
+
+/* ---------- topic deep-dive (single subject) ---------- */
 const DIAG_TOPICS = {
  "Mathematics":["Number & proportion","Algebra & quadratics","Geometry & trigonometry","Probability & statistics","Graphs & functions","Problem-solving / exam technique"],
  "Chemistry":["Atomic structure","Bonding & structure","Quantitative chemistry (moles)","Chemical changes","Energy changes","Organic chemistry"],
@@ -1068,15 +2058,16 @@ const DIAG_TOPICS = {
 const DIAG_FALLBACK = ["Core concepts","Applying knowledge","Analysis & evaluation","Recall speed","Past-paper fluency","Exam technique"];
 const DG_LABELS = ["No idea","Shaky","OK","Strong"];
 
-fillSelect(document.getElementById("dg-subj"), SUBJECTS);
-fillSelect(document.getElementById("dg-level"), LEVELS);
-document.getElementById("dg-subj").value = "Mathematics";
-document.getElementById("dg-level").value = "GCSE";
+fillSelect(document.getElementById("dd-subj"), SUBJECTS);
+fillSelect(document.getElementById("dd-level"), LEVELS);
+document.getElementById("dd-subj").value = (PROFILE.subjects&&PROFILE.subjects[0]&&SUBJECTS.includes(PROFILE.subjects[0].s))?PROFILE.subjects[0].s:"Mathematics";
+document.getElementById("dd-level").value = (PROFILE.level&&LEVELS.includes(PROFILE.level))?PROFILE.level:"GCSE";
+if(PROFILE.board)document.getElementById("dd-board").value=PROFILE.board;
 
-function dgTopics(){ return DIAG_TOPICS[document.getElementById("dg-subj").value] || DIAG_FALLBACK }
-function drawDgTopics(){
-  const el = document.getElementById("dg-topics");
-  el.innerHTML = dgTopics().map((t,i)=>`
+function ddTopics(){ return DIAG_TOPICS[document.getElementById("dd-subj").value] || DIAG_FALLBACK }
+function drawDdTopics(){
+  const el = document.getElementById("dd-topics");
+  el.innerHTML = ddTopics().map((t,i)=>`
     <div style="display:flex;align-items:center;gap:8px;margin:7px 0;flex-wrap:wrap">
       <span style="flex:1;font-size:13px;min-width:150px">${t}</span>
       <span class="conf" data-i="${i}">${DG_LABELS.map((l,j)=>`<button data-v="${j}" title="${l}" style="width:auto;padding:0 9px;font-size:11px">${l}</button>`).join("")}</span>
@@ -1086,37 +2077,32 @@ function drawDgTopics(){
     c.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
   }));
 }
-drawDgTopics();
-document.getElementById("dg-subj").addEventListener("input", drawDgTopics);
+drawDdTopics();
+document.getElementById("dd-subj").addEventListener("input", drawDdTopics);
 
-function gradeFor(m){ return Math.max(1, Math.min(9, Math.round(1 + 8*m/100))) }
-
-document.getElementById("dg-run").onclick = () => {
-  const topics = dgTopics();
-  const ratings = [...document.querySelectorAll("#dg-topics .conf")].map(c=>{
+document.getElementById("dd-run").onclick = () => {
+  const topics = ddTopics();
+  const ratings = [...document.querySelectorAll("#dd-topics .conf")].map(c=>{
     const on = c.querySelector("button.on"); return on ? +on.dataset.v : null;
   });
   if (ratings.some(r=>r===null)) { toast("Rate every topic first"); return; }
-  const subj = document.getElementById("dg-subj").value, target = +document.getElementById("dg-target").value;
+  const subj = document.getElementById("dd-subj").value, target = +document.getElementById("dd-target").value;
   const mastery = ratings.map(r=>Math.round(100*r/3));
   const avg = Math.round(mastery.reduce((a,b)=>a+b,0)/mastery.length);
   const pred = gradeFor(avg);
   const weak = topics.map((t,i)=>({t,m:mastery[i]})).filter(x=>x.m<60).sort((a,b)=>a.m-b.m);
-  store.set("diagnostic",{subj,target,avg,pred,weak:weak.map(w=>w.t),when:todayKey()});
   addPoints(25); touchStreak();
-  document.getElementById("dg-sub").textContent = subj+" · predicted vs target · recovery plan built from your weakest topics";
-  document.getElementById("dg-out").innerHTML = `
-    <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
-      <div class="tile"><div class="v">${avg}%</div><div class="k">Overall mastery</div></div>
+  logEvent("diagnostic","Topic deep-dive completed",subj+" — topic-by-topic mastery map generated.");
+  document.getElementById("dd-out").innerHTML = `
+    <div class="tiles" style="grid-template-columns:repeat(3,1fr);margin-top:16px">
+      <div class="tile"><div class="v">${avg}%</div><div class="k">${esc(subj)} mastery</div></div>
       <div class="tile"><div class="v">Grade ${pred}</div><div class="k">Predicted now</div></div>
       <div class="tile"><div class="v" style="color:${pred>=target?"var(--good)":"var(--warn)"}">${pred>=target?"On target":"Gap: "+(target-pred)}</div><div class="k">Target · Grade ${target}</div></div>
     </div>
     ${topics.map((t,i)=>`<div class="mrow"><span>${t}</span><div class="bar"><i style="width:${mastery[i]}%;background:${mastery[i]<60?"var(--crit)":mastery[i]<80?"var(--warn)":"var(--good)"}"></i></div><span class="pc">${mastery[i]}%</span></div>`).join("")}
-    ${weak.length?`<h3 style="color:var(--gold-300);font-family:var(--serif);font-weight:500;font-size:17px;margin:16px 0 6px">Recovery plan — ${weak.length} weak topic${weak.length>1?"s":""}</h3>
-      ${weak.map((w,i)=>`<div style="font-size:13.5px;color:var(--ink-2);padding:5px 0">${i+1}. <b style="color:var(--ink)">${w.t}</b> — 15-min rescue lesson + flashcards + retest (${w.m}% → aim 70%+)</div>`).join("")}
-      <div style="margin-top:12px"><button class="btn" id="dg-plan">Add recovery week to my study plan →</button></div>`
+    ${weak.length?`<div style="margin-top:12px"><button class="btn" id="dd-plan">Add a ${esc(subj)} recovery week to my study plan →</button></div>`
       :`<p class="note">No topics under 60% — you're exam-ready. Keep the streak going with past papers.</p>`}`;
-  const btn=document.getElementById("dg-plan");
+  const btn=document.getElementById("dd-plan");
   if(btn) btn.onclick=()=>{
     const saved = store.get("plan",{plan:[],done:{}});
     const week = { n:(saved.plan&&saved.plan.length?saved.plan[saved.plan.length-1].n+1:1), days:
@@ -1124,15 +2110,204 @@ document.getElementById("dg-run").onclick = () => {
         {d:["Mon","Tue","Wed","Thu","Fri"][i], subj:subj, time:"19:00", mins:40, mode:"RECOVERY · "+w.t}))};
     saved.plan=(saved.plan||[]).concat([week]); store.set("plan",saved);
     renderPlan(); addPoints(10);
+    logEvent("plan","Recovery plan generated","A personalised recovery plan was added to your account.");
     toast("Recovery week added — see 🗓 Study planner");
   };
+};
+
+/* ============================ ASSIGNMENT REVIEW ============================ */
+const AR_PRICE=60;
+fillSelect(document.getElementById("ar-level"),LEVELS);
+fillSelect(document.getElementById("ar-subj"),SUBJECTS);
+document.getElementById("ar-level").value=(PROFILE.level&&LEVELS.includes(PROFILE.level))?PROFILE.level:"GCSE";
+document.getElementById("ar-price").textContent=AR_PRICE;
+function refreshArBal(){const b=document.getElementById("ar-bal");if(b)b.textContent="Your balance: "+walletBalance()+" ACUs.";}
+refreshArBal();
+document.getElementById("ar-go").onclick=()=>{
+  const title=document.getElementById("ar-title").value.trim();
+  const text=document.getElementById("ar-text").value.trim();
+  if(text.length<100){toast("Paste at least 100 characters of your work");return}
+  if(!spendAcus(AR_PRICE,"Assignment review: "+(title||"untitled")))return;
+  refreshArBal();
+  const subj=document.getElementById("ar-subj").value, level=document.getElementById("ar-level").value;
+  /* rules-based writing analysis */
+  const words=text.split(/\s+/).filter(Boolean).length;
+  const sentences=text.split(/[.!?]+/).filter(s=>s.trim().length>3);
+  const avgLen=Math.round(words/Math.max(1,sentences.length));
+  const paras=text.split(/\n\s*\n/).filter(p=>p.trim()).length;
+  const quotes=(text.match(/["“'][^"”']{4,}["”']/g)||[]).length;
+  const connectives=(text.match(/\b(however|therefore|because|although|whereas|furthermore|moreover|consequently|in contrast|for example|this shows|this suggests)\b/gi)||[]).length;
+  const firstIsThesis=/^.{20,180}?[.!?]/.test(text)&&/\b(argue|because|this essay|will show|the main|because)\b/i.test(text.slice(0,180));
+  function score(cond,base){return Math.max(20,Math.min(100,base))}
+  const crit=[
+    {k:"Structure",v:score(1,40+Math.min(30,paras*8)+(firstIsThesis?18:0))},
+    {k:"Evidence",v:score(1,35+Math.min(40,quotes*12))},
+    {k:"Analysis",v:score(1,30+Math.min(45,connectives*7))},
+    {k:"Clarity",v:score(1,avgLen>10&&avgLen<26?85:avgLen<=10?60:55)},
+    {k:"Development",v:score(1,30+Math.min(50,Math.floor(words/40)))}];
+  const overall=Math.round(crit.reduce((a,b)=>a+b.v,0)/crit.length);
+  const grade=gradeFor(overall);
+  const strengths=[], targets=[];
+  (firstIsThesis?strengths:targets).push(firstIsThesis?"Clear thesis in your opening — you answer the question early.":"Open with a thesis: answer the question in your first two sentences.");
+  (quotes>=2?strengths:targets).push(quotes>=2?"Good use of evidence — "+quotes+" embedded quotes/examples.":"Add embedded evidence — quotes or specific examples to back each point.");
+  (connectives>=3?strengths:targets).push(connectives>=3?"Strong analytical linking ('this shows…', 'therefore…').":"Use more analytical connectives — 'this shows', 'therefore', 'however' — to build the 'because' chain.");
+  (avgLen>10&&avgLen<26?strengths:targets).push(avgLen>10&&avgLen<26?"Sentence length is varied and readable.":avgLen<=10?"Combine some short sentences for flow and sophistication.":"Break up long sentences — average is "+avgLen+" words; aim for 15–22.");
+  (paras>=3?strengths:targets).push(paras>=3?paras+" paragraphs — well organised.":"Split into more paragraphs — one clear point each (PEEL).");
+  addPoints(10);touchStreak();
+  logEvent("review","Assignment reviewed: "+(title||subj),level+(subj?" · "+subj:"")+" — predicted Grade "+grade+" ("+overall+"%).");
+  const barW=id=>crit.map(c=>`<div class="mrow"><span>${c.k}</span><div class="bar"><i style="width:${c.v}%;background:${c.v<60?"var(--crit)":c.v<80?"var(--warn)":"var(--good)"}"></i></div><span class="pc">${c.v}%</span></div>`).join("");
+  document.getElementById("ar-sub").textContent=(title||"Your assignment")+" · "+level+(subj?" · "+subj:"")+" · "+words+" words";
+  document.getElementById("ar-out").innerHTML=`
+    <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
+      <div class="tile"><div class="v">Grade ${grade}</div><div class="k">Predicted</div></div>
+      <div class="tile"><div class="v">${overall}%</div><div class="k">Overall</div></div>
+      <div class="tile"><div class="v" style="font-size:20px">${words}</div><div class="k">Words · ${sentences.length} sentences</div></div>
+    </div>
+    <h3 style="font-family:var(--serif);font-weight:500;font-size:16px;color:var(--gold-300);margin:14px 0 6px">Scored breakdown</h3>
+    ${barW()}
+    <h3 style="font-family:var(--serif);font-weight:500;font-size:16px;color:var(--good);margin:14px 0 6px">What's working</h3>
+    <ul style="margin:0 0 0 18px;font-size:13.5px;color:var(--ink-2)">${strengths.map(s=>`<li style="margin:4px 0">${esc(s)}</li>`).join("")||"<li>Keep writing to build strengths.</li>"}</ul>
+    <h3 style="font-family:var(--serif);font-weight:500;font-size:16px;color:var(--warn);margin:14px 0 6px">Targets to lift your grade</h3>
+    <ul style="margin:0 0 0 18px;font-size:13.5px;color:var(--ink-2)">${targets.map(s=>`<li style="margin:4px 0">${esc(s)}</li>`).join("")||"<li>Excellent — polish with a timed rewrite.</li>"}</ul>`;
+};
+
+/* ============================ PREDICTED GRADE ============================ */
+(function(){
+  const sel=document.getElementById("pg-subj");
+  const subs=(PROFILE.subjects&&PROFILE.subjects.length)?PROFILE.subjects.map(x=>x.s):
+    [...new Set(store.get("quizzes",[]).map(q=>q.subj))];
+  (subs.length?subs:SUBJECTS).forEach(s=>{const o=document.createElement("option");o.textContent=s;sel.appendChild(o)});
+})();
+document.getElementById("pg-go").onclick=()=>{
+  const subj=document.getElementById("pg-subj").value;
+  if(!subj){toast("Select a subject");return}
+  const qz=store.get("quizzes",[]).filter(q=>q.subj===subj);
+  const diag=store.get("diagnostics",[])[0];
+  const dRow=diag&&diag.list.find(x=>x.s===subj);
+  if(!qz.length&&!dRow){
+    document.getElementById("pg-out").innerHTML=`<div class="empty">No recorded activity for ${esc(subj)} yet.<br>
+      <span style="font-size:11.5px">Take a ${esc(subj)} quiz in 🔎, or include it in a diagnostic, then predict.</span></div>`;
+    return;
+  }
+  const qAvg=qz.length?Math.round(qz.reduce((a,b)=>a+b.pct,0)/qz.length):null;
+  const mastery=qAvg!=null&&dRow?Math.round((qAvg+dRow.mastery)/2):(qAvg!=null?qAvg:dRow.mastery);
+  const grade=gradeFor(mastery);
+  const target=(PROFILE.subjects||[]).find(x=>x.s===subj);
+  const tgt=target&&target.target?target.target:null;
+  /* trend from last few quiz scores */
+  let trend="steady";
+  if(qz.length>=3){const first=qz.slice(0,Math.ceil(qz.length/2)),last=qz.slice(-Math.ceil(qz.length/2));
+    const fa=first.reduce((a,b)=>a+b.pct,0)/first.length, la=last.reduce((a,b)=>a+b.pct,0)/last.length;
+    trend=la-fa>6?"improving":la-fa<-6?"slipping":"steady"}
+  const band=Math.max(1,Math.min(9,grade+(trend==="improving"?1:0)));
+  logEvent("diagnostic","Grade prediction: "+subj,"Predicted Grade "+grade+" from "+(qz.length)+" quizzes"+(dRow?" + diagnostic":"")+".");
+  document.getElementById("pg-sub").textContent=subj+" · based on "+qz.length+" quiz"+(qz.length!==1?"zes":"")+(dRow?" + your latest diagnostic":"");
+  document.getElementById("pg-out").innerHTML=`
+    <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
+      <div class="tile"><div class="v">Grade ${grade}</div><div class="k">Predicted now</div></div>
+      <div class="tile"><div class="v">${mastery}%</div><div class="k">Current mastery</div></div>
+      <div class="tile"><div class="v" style="color:${tgt&&grade>=(+tgt||0)?"var(--good)":"var(--warn)"}">${tgt?("Target "+tgt):"—"}</div><div class="k">${tgt?(grade>=(+tgt||0)?"On track":"Gap to close"):"Set a target in Edit Profile"}</div></div>
+    </div>
+    <p style="font-size:13.5px;color:var(--ink-2);margin-top:12px">Your ${esc(subj)} scores are <b style="color:${trend==="improving"?"var(--good)":trend==="slipping"?"var(--crit)":"var(--gold-300)"}">${trend}</b>.
+      With current momentum, the realistic band is <b>Grade ${Math.min(grade,band)}–${band}</b>.
+      ${mastery<60?"Focus on the weakest topics — a diagnostic will pinpoint them.":mastery<80?"Push exam technique and past papers to reach the top band.":"You're in strong shape — keep the streak going and stay sharp with timed papers."}</p>
+    ${qz.length>=2?`<div style="margin-top:12px">${(function(){
+      const W=560,H=150,P=28,n=qz.length;
+      const x=i=>P+(n===1?(W-2*P)/2:i*(W-2*P)/(n-1)), y=v=>H-P-(v/100)*(H-2*P);
+      let sv=`<svg viewBox="0 0 ${W} ${H}">`;
+      [0,50,100].forEach(g=>{sv+=`<line x1="${P}" x2="${W-P}" y1="${y(g)}" y2="${y(g)}" stroke="rgba(170,182,204,.14)"/>`});
+      sv+=`<polyline fill="none" stroke="#3D8FD1" stroke-width="2" points="${qz.map((q,i)=>x(i)+","+y(q.pct)).join(" ")}"/>`;
+      qz.forEach((q,i)=>sv+=`<circle cx="${x(i)}" cy="${y(q.pct)}" r="4" fill="#A9CFF2"/>`);
+      return sv+"</svg>";})()}</div>`:""}`;
+};
+
+/* ============================ INTERACTIVE LESSON ============================ */
+const IL_PRICE=25, CG_PRICE=15;
+fillSelect(document.getElementById("il-level"),LEVELS);
+fillSelect(document.getElementById("il-subj"),SUBJECTS);
+fillSelect(document.getElementById("cg-level"),LEVELS);
+document.getElementById("il-level").value=(PROFILE.level&&LEVELS.includes(PROFILE.level))?PROFILE.level:"GCSE";
+document.getElementById("cg-level").value=(PROFILE.level&&LEVELS.includes(PROFILE.level))?PROFILE.level:"GCSE";
+document.getElementById("il-price").textContent=IL_PRICE;
+document.getElementById("cg-price").textContent=CG_PRICE;
+function refreshBalances(){
+  const b=walletBalance();
+  const ilb=document.getElementById("il-bal"), cgb=document.getElementById("cg-bal");
+  if(ilb)ilb.textContent="Your balance: "+b+" ACUs.";
+  if(cgb)cgb.textContent="Your balance: "+b+" ACUs.";
+}
+refreshBalances();
+
+/* rules-based lesson scaffold — structured objectives → sections → check quiz */
+function buildLesson(topic,level){
+  const cap=topic.replace(/\b\w/g,c=>c.toUpperCase());
+  return {
+    topic:cap,level,
+    objectives:["Define "+topic+" and the key terms around it","Explain how and why it works","Apply it to an exam-style question","Recall the facts under timed conditions"],
+    sections:[
+      {h:"1 · What it is",b:"Start with a precise definition of "+topic+". At "+level+" level, examiners reward the exact vocabulary — learn the key terms first, then the ideas that connect them."},
+      {h:"2 · How it works",b:"Break "+topic+" into its moving parts. For each part, ask: what causes it, what does it lead to, and what would change if it were removed? That cause-and-effect chain is what longer exam answers are built from."},
+      {h:"3 · Worked example",b:"Take one typical "+level+" question on "+topic+" and work it through end to end, narrating every decision. Then redo it from a blank page — if you get stuck, that's the exact spot to revise."},
+      {h:"4 · Common exam traps",b:"Most marks are lost by describing when the question says explain, or forgetting to name the key term. For "+topic+", write the one sentence you must include for full marks and memorise it."}],
+    quiz:tutorQuizBank(topic).slice(0,3)
+  };
+}
+document.getElementById("il-go").onclick=()=>{
+  const topic=document.getElementById("il-topic").value.trim();
+  if(!topic){toast("Enter a topic to learn about");return}
+  if(!spendAcus(IL_PRICE,"Interactive lesson: "+topic))return;
+  const level=document.getElementById("il-level").value;
+  const L=buildLesson(topic,level);
+  addPoints(10);touchStreak();
+  logEvent("lesson","Interactive lesson: "+L.topic,level+" level — structured lesson generated.");
+  document.getElementById("il-sub").textContent=L.topic+" · "+level+" · walk through each section, then take the check quiz.";
+  document.getElementById("il-out").innerHTML=`
+    <div class="card" style="margin-bottom:10px"><h3 style="font-family:var(--serif);font-weight:500;color:var(--gold-300)">Learning objectives</h3>
+      <ul style="margin:8px 0 0 18px;font-size:13.5px;color:var(--ink-2)">${L.objectives.map(o=>`<li style="margin:4px 0">${esc(o)}</li>`).join("")}</ul></div>
+    ${L.sections.map(s=>`<div class="card" style="margin-bottom:10px">
+      <h3 style="font-family:var(--serif);font-weight:500;font-size:17px;color:var(--gold-300)">${esc(s.h)}</h3>
+      <p style="font-size:13.5px;color:var(--ink-2);margin-top:6px">${esc(s.b)}</p></div>`).join("")}
+    ${L.quiz.length?`<div style="margin-top:6px"><button class="btn" id="il-quiz">Take the end-of-lesson quiz (${L.quiz.length} Q) →</button></div>`
+      :`<p class="note">Generate a lesson on a topic with library questions (e.g. memory, quadratics, mechanics) to unlock an end quiz.</p>`}`;
+  const qb=document.getElementById("il-quiz");
+  if(qb)qb.onclick=()=>{ openInlineQuiz({title:L.topic+" — lesson check",subj:document.getElementById("il-subj").value||"Other",qs:L.quiz}); };
+};
+/* reuse the modal quiz viewer for generated quizzes */
+function openInlineQuiz(r){ r.id=r.id||("gen"+Date.now()); LIB.push(r); openRes(r.id); }
+
+/* ============================ AI COURSE ============================ */
+document.getElementById("cg-go").onclick=()=>{
+  const topic=document.getElementById("cg-topic").value.trim();
+  const level=document.getElementById("cg-level").value;
+  if(!level){toast("Select a study level");return}
+  if(!topic){toast("Enter a course topic");return}
+  if(!spendAcus(CG_PRICE,"AI course: "+topic))return;
+  const board=document.getElementById("cg-board").value;
+  const cap=topic.replace(/\b\w/g,c=>c.toUpperCase());
+  const modules=[
+    {t:"Foundations of "+cap,topics:["Key terms and definitions","Why "+topic+" matters","The big picture / timeline"]},
+    {t:"Core Concepts",topics:["The main principles of "+topic,"How the parts connect","Worked examples"]},
+    {t:"Going Deeper",topics:["Analysis and evaluation","Common misconceptions","Links to other topics"]},
+    {t:"Exam Mastery",topics:["Question types and command words","Mark-scheme thinking","Timed practice"]}];
+  addPoints(10);touchStreak();
+  logEvent("course","AI course: "+cap,level+(board?" · "+board:"")+" — "+modules.length+" modules generated.");
+  document.getElementById("cg-sub").textContent=cap+" · "+level+(board?" · "+board:"")+" · "+modules.length+" modules, each ending in a quiz.";
+  document.getElementById("cg-out").innerHTML=modules.map((m,i)=>`
+    <div class="card" style="margin-bottom:10px">
+      <div style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)">Module ${i+1}</div>
+      <h3 style="font-family:var(--serif);font-weight:500;font-size:18px;color:var(--gold-300);margin:2px 0 8px">${esc(m.t)}</h3>
+      <ul style="margin:0 0 0 18px;font-size:13.5px;color:var(--ink-2)">${m.topics.map(t=>`<li style="margin:4px 0">${esc(t)}</li>`).join("")}</ul>
+      <div style="margin-top:8px;font-size:12px;color:var(--gold-400)">▸ ends with a ${esc(topic)} check quiz</div>
+    </div>`).join("")+
+    `<div class="note">Preview build: the outline is generated from a rules-based scaffold. The live AI course engine
+      (SY-A05) writes full lesson content and adaptive quizzes when the backend goes live.</div>`;
 };
 
 /* ============================ MISC ============================ */
 let toastTimer;
 function toast(t){const el=document.getElementById("toast");el.textContent=t;el.style.opacity=1;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.style.opacity=0,2600)}
 
-renderResults();renderPapers();renderProgress();
+renderResults();renderPapers();renderProgress();applyHash();
 </script>
 </body>
 </html>

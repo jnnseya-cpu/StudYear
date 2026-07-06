@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Plans &amp; top-up</title>
+<link rel="manifest" href="../../manifest.json">
+<link rel="icon" href="../../icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#060B18">
+<style>
+  :root{
+    --navy-950:#060B18; --navy-900:#0B1220; --navy-800:#101B33;
+    --gold-300:#A9CFF2; --gold-400:#5FA8E0; --gold-500:#3D8FD1;
+    --ink:#EDF1F8; --ink-2:#AAB6CC; --ink-3:#6B7A96;
+    --good:#5CBB7B; --warn:#c98500; --crit:#e66767;
+    --line:rgba(77,157,224,.14);
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:
+    radial-gradient(1100px 600px at 80% -10%, rgba(77,157,224,.10), transparent 60%),
+    radial-gradient(900px 700px at -10% 30%, rgba(22,37,74,.85), transparent 65%),
+    var(--navy-950);
+    color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .shell{display:flex;min-height:100vh;max-width:1400px;margin:0 auto}
+  aside.side{width:230px;flex:none;border-right:1px solid var(--line);padding:22px 14px 30px;position:sticky;top:0;align-self:flex-start;max-height:100vh;overflow-y:auto}
+  .slogo{font-family:var(--serif);font-size:19px;color:var(--ink);text-decoration:none;display:block;padding:4px 10px 14px}
+  .slogo b{color:#4FA6E0;font-weight:600}
+  aside.side nav a{display:block;font-size:13px;color:var(--ink-2);text-decoration:none;padding:7px 10px;border-radius:8px;margin:1px 0}
+  aside.side nav a:hover{color:var(--gold-300);background:rgba(77,157,224,.08)}
+  aside.side nav a.on{color:var(--gold-300);background:rgba(77,157,224,.12)}
+  aside.side nav a i{font-style:normal;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--warn);border:1px solid rgba(201,133,0,.5);border-radius:8px;padding:1px 6px;margin-left:6px;vertical-align:1px}
+  .sgroup{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);padding:16px 10px 5px}
+  main.content{flex:1;padding:40px 36px 90px;min-width:0}
+  @media(max-width:900px){.shell{flex-direction:column}aside.side{width:100%;position:static;max-height:none;border-right:none;border-bottom:1px solid var(--line);padding-bottom:12px}
+    aside.side nav{display:flex;flex-wrap:wrap;gap:2px}aside.side nav a{font-size:12px}.sgroup{width:100%}main.content{padding:26px 20px 70px}}
+
+  header.page h1{font-family:var(--serif);font-weight:500;font-size:36px;letter-spacing:-.01em}
+  header.page p{color:var(--ink-2);max-width:76ch;margin-top:8px;font-weight:300}
+  h2.sec{font-family:var(--serif);font-weight:500;font-size:24px;margin:44px 0 6px}
+  p.sec-sub{color:var(--ink-2);font-size:13.5px;max-width:80ch;font-weight:300;margin-bottom:18px}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.62),rgba(11,18,32,.9));padding:22px 24px;margin-top:20px}
+  .card h3{font-family:var(--serif);font-weight:500;font-size:19px}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);
+    font:600 13px var(--sans);border-radius:9px;padding:10px 18px;cursor:pointer;letter-spacing:.03em;text-decoration:none;display:inline-block}
+  .btn:hover{background:rgba(77,157,224,.22)}
+  .btn.ghost{border-color:rgba(170,182,204,.25);background:none;color:var(--ink-2)}
+  .btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}
+  input{background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;
+    color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}
+  input:focus{border-color:var(--gold-500)}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
+  .step{border:1px solid var(--line);border-radius:11px;padding:12px 14px;font-size:12.5px;color:var(--ink-2);background:rgba(6,11,24,.4)}
+  .step b{display:block;font-family:var(--serif);font-size:19px;color:var(--gold-300);margin-bottom:4px}
+  @media(max-width:800px){.steps{grid-template-columns:1fr}}
+  .codeline{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+  .codeline input{flex:1;min-width:200px}
+
+  .packs{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+  .pack{border:1px solid var(--line);border-radius:14px;padding:18px 20px;background:rgba(16,27,51,.5);position:relative;display:flex;flex-direction:column}
+  .pack.pop{border-color:var(--gold-500)}
+  .flag{position:absolute;top:-10px;left:16px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+    background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff;border-radius:20px;padding:3px 11px}
+  .pack h4{font-size:13px;letter-spacing:.04em}
+  .pack .pv{font-family:var(--serif);font-size:27px;color:var(--gold-300);margin-top:8px}
+  .pack .pa{font-size:12px;color:var(--ink-3);margin:2px 0 14px}
+  .pack .btn{margin-top:auto;text-align:center}
+
+  .plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px}
+  .plan{border:1px solid var(--line);border-radius:14px;padding:18px 20px;background:rgba(16,27,51,.5);position:relative;display:flex;flex-direction:column}
+  .plan.rec{border-color:var(--gold-500)}
+  .plan h4{font-family:var(--serif);font-weight:500;font-size:18px}
+  .plan .pv{font-family:var(--serif);font-size:24px;color:var(--gold-300);margin-top:6px}
+  .plan ul{margin:12px 0 16px 17px;font-size:12.5px;color:var(--ink-2)}
+  .plan li{margin:5px 0}
+  .plan .btn{margin-top:auto;text-align:center}
+  .plan .cur{position:absolute;top:-10px;right:16px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+    border:1px solid rgba(92,187,123,.6);color:var(--good);background:var(--navy-900);border-radius:20px;padding:3px 11px}
+  .fine{font-size:11.5px;color:var(--ink-3);margin-top:26px;font-style:italic}
+  .walbar{border:1px solid var(--line);border-radius:12px;background:rgba(16,27,51,.5);padding:12px 18px;margin-top:20px;
+    font-size:13.5px;color:var(--ink-2);display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+  .walbar b{font-family:var(--serif);font-size:22px;color:var(--gold-300)}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);
+    border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+</style>
+</head>
+<body>
+<script src="../../guard.js" data-role="student" data-base="../../"></script>
+<div class="shell">
+
+<aside class="side">
+  <a class="slogo" href="../../">⌂ Stud<b>Year</b></a>
+  <nav>
+    <a href="../../dashboards/student/">Dashboard</a>
+    <a href="../../tutors/">Find tutors</a>
+    <a href="../#parent-link">Parent link code</a>
+    <a href="../../study/#diag">Academic Diagnostic</a>
+    <a href="../../study/#diag">Diagnostic Results</a>
+    <a href="../../study/#planner">Personal Recovery Plan</a>
+    <a href="../../study/#planner">AI Study Planner</a>
+    <a href="../../study/#tutor">AI Tutor</a>
+    <a href="../../app/student/">Interactive Lesson <i>soon</i></a>
+    <a href="../../app/student/">AI Course <i>soon</i></a>
+    <a href="../../study/#progress">My Progress</a>
+    <a href="../../study/#progress">Predicted Grade</a>
+    <a href="../../app/student/">Assignment Review <i>soon</i></a>
+    <a href="../../study/#mine">Saved Resources</a>
+    <a href="../../study/#create">Create Resource</a>
+    <a href="../../study/#search">Find Resources</a>
+    <a href="../../study/#create">Submit a Resource</a>
+    <div class="sgroup">Account</div>
+    <a href="../">My Account</a>
+    <a href="../profile/">Edit Profile</a>
+    <a href="./" class="on">Plans &amp; top-up</a>
+    <a href="#" id="signout">Sign out</a>
+  </nav>
+</aside>
+
+<main class="content">
+<header class="page">
+  <h1>Top up your ACU wallet</h1>
+  <p>One-off packs from £3 to £30 — ACUs power the AI tutor, diagnostics, planner, interactive lessons,
+     predictions, and other metered tools. Premium unlocks tools; usage is always metered (no unlimited AI).</p>
+</header>
+
+<div class="walbar">Current balance: <b id="wal">–</b> ACUs · plan: <span id="cur-plan">–</span></div>
+
+<div class="card">
+  <h3>Have a discount or promo code?</h3>
+  <p class="sec-sub" style="margin:6px 0 0">Apply it in the box below before you pick a plan. The discount is passed
+    to Stripe automatically when you click Purchase or Subscribe.</p>
+  <div class="steps">
+    <div class="step"><b>1</b>Enter your code here and click Apply code</div>
+    <div class="step"><b>2</b>Scroll down and click Purchase or Subscribe on any plan</div>
+    <div class="step"><b>3</b>On Stripe's secure page, your discount appears as a line-item reduction before you pay</div>
+  </div>
+  <div class="codeline">
+    <input type="text" id="promo" placeholder="e.g. SUMMER25" autocomplete="off">
+    <button class="btn" id="promo-apply">Apply code</button>
+  </div>
+</div>
+
+<h2 class="sec">ACU packs — one-time payments</h2>
+<p class="sec-sub">Instant credit, no subscription needed. Packs stack on any plan.</p>
+<div class="packs" id="packs"></div>
+
+<h2 class="sec">Student plans — monthly only</h2>
+<p class="sec-sub">Child Free is a separate student account — 100 ACUs every month, never added to paid plans.
+  Paid plans add larger monthly allowances — from £5 Student Access through to £30 Student Max for daily heavy usage.</p>
+<div class="plans" id="plans"></div>
+
+<p class="fine">Secure payments processed by Stripe. ACU packs are one-time payments. Subscriptions renew monthly
+  until cancelled.<br>Preview build: Stripe checkout connects when the backend and new billing keys go live —
+  purchases here credit your local preview wallet so you can exercise the full flow.</p>
+</main>
+</div>
+<div id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var SY=window.SY; if(!SY) return;
+function $(id){return document.getElementById(id)}
+var toastTimer;
+function toast(t){var el=$('toast');el.textContent=t;el.style.opacity=1;
+  clearTimeout(toastTimer);toastTimer=setTimeout(function(){el.style.opacity=0},3200)}
+function fmt(n){return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,',')}
+
+/* mirrors @studyear/shared TOPUPS + STUDENT_PLANS */
+var PACKS=[
+  {id:'mini_boost',label:'Mini Boost pack',acus:250,pounds:3,pop:false},
+  {id:'core_boost',label:'Core Boost pack',acus:500,pounds:5,pop:true},
+  {id:'growth_boost',label:'Growth Boost pack',acus:1100,pounds:10,pop:false},
+  {id:'exam_boost',label:'Exam Boost pack',acus:2400,pounds:20,pop:false},
+  {id:'power_boost',label:'Power Boost pack',acus:3750,pounds:30,pop:false}];
+var PLANS=[
+  {id:'child_free',label:'Child Free',pounds:0,acus:100,flag:'No payment',cta:'Continue with Child Free',
+   feats:['100 ACUs every month (Child Free only)','AI homework help & explanations','Not combined with paid plans — upgrade via checkout for more']},
+  {id:'student_access',label:'Student Access',pounds:5,acus:500,cta:'Subscribe with Stripe',
+   feats:['500 ACUs added on each successful monthly payment','Full learning access — tutor, planner, diagnostics, predictions, interactive lessons','Premium creator toolkit and Assignment Review not included']},
+  {id:'student_premium',label:'Student Premium',pounds:10,acus:700,flag:'Recommended',rec:true,cta:'Subscribe with Stripe',
+   feats:['700 ACUs added on each successful monthly payment','Unlocks the full premium toolkit — courses, flashcards, summaries, visuals, and more','Metered AI still spends ACUs — no unlimited usage','Assignment Review available (60 ACUs per use)']},
+  {id:'student_premium_plus',label:'Student Premium+',pounds:20,acus:1650,cta:'Subscribe with Stripe',
+   feats:['Everything in Student Premium','1,650 ACUs added on each successful monthly payment','Built for GCSE, A-Level, 11+, and intensive exam periods']},
+  {id:'student_max',label:'Student Max',pounds:30,acus:2750,cta:'Subscribe with Stripe',
+   feats:['Everything in Student Premium+','2,750 ACUs added on each successful monthly payment','Heavy daily usage — GCSE, A-Level, 11+, SATs, university prep']}];
+var LABELS={};PLANS.forEach(function(p){LABELS[p.id]=p.label});
+
+function monthKey(){return new Date().toISOString().slice(0,7)}
+var wallet=SY.get('wallet',null)||{acus:100,plan:'child_free',month:monthKey()};
+function drawWallet(){
+  $('wal').textContent=fmt(wallet.acus);
+  $('cur-plan').textContent=LABELS[wallet.plan]||wallet.plan;
+  document.querySelectorAll('.plan .cur').forEach(function(x){x.remove()});
+  var el=document.querySelector('.plan[data-id="'+wallet.plan+'"]');
+  if(el){var c=document.createElement('span');c.className='cur';c.textContent='Your plan';el.appendChild(c)}
+}
+
+var promo=SY.get('promo','');
+if(promo)$('promo').value=promo;
+$('promo-apply').onclick=function(){
+  promo=$('promo').value.trim().toUpperCase();
+  SY.set('promo',promo);
+  toast(promo?('Code '+promo+' saved — it is passed to Stripe when you click Purchase or Subscribe'):'Code cleared');
+};
+
+$('packs').innerHTML=PACKS.map(function(p){return '\
+  <div class="pack'+(p.pop?' pop':'')+'">'+(p.pop?'<span class="flag">Most popular</span>':'')+'\
+    <h4>'+p.label+'</h4>\
+    <div class="pv">'+fmt(p.acus)+' ACUs</div>\
+    <div class="pa">£'+p.pounds+'.00 one-time · '+fmt(p.acus)+' ACUs</div>\
+    <button class="btn solid" data-pack="'+p.id+'">Purchase now</button>\
+  </div>'}).join('');
+$('plans').innerHTML=PLANS.map(function(p){return '\
+  <div class="plan'+(p.rec?' rec':'')+'" data-id="'+p.id+'">'+(p.flag?'<span class="flag" style="position:absolute;top:-10px;left:16px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff;border-radius:20px;padding:3px 11px">'+p.flag+'</span>':'')+'\
+    <h4>'+p.label+'</h4>\
+    <div class="pv">'+(p.pounds===0?'£0 / forever':'£'+p.pounds+'.00/ month')+'</div>\
+    <ul>'+p.feats.map(function(f){return '<li>'+f+'</li>'}).join('')+'</ul>\
+    <button class="btn'+(p.rec?' solid':'')+'" data-plan="'+p.id+'">'+p.cta+'</button>\
+  </div>'}).join('');
+
+document.body.addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  if(b.dataset.pack){
+    var pk=PACKS.find(function(x){return x.id===b.dataset.pack});
+    wallet.acus+=pk.acus;SY.set('wallet',wallet);drawWallet();
+    SY.log('billing',pk.label+' purchased',fmt(pk.acus)+' ACUs added to your wallet.');
+    toast('Preview purchase'+(promo?' (code '+promo+')':'')+' — '+fmt(pk.acus)+' ACUs credited. Stripe checkout takes over when billing goes live.');
+  }
+  if(b.dataset.plan){
+    var pl=PLANS.find(function(x){return x.id===b.dataset.plan});
+    if(wallet.plan===pl.id){toast('You are already on '+pl.label);return}
+    wallet.plan=pl.id;
+    if(pl.pounds>0){wallet.acus+=pl.acus} // preview of the first successful monthly payment
+    wallet.month=monthKey();SY.set('wallet',wallet);drawWallet();
+    SY.log('billing','Subscribed to '+pl.label,pl.pounds>0?fmt(pl.acus)+' ACUs added on this month’s payment.':'Child Free — 100 ACUs every month.');
+    toast(pl.pounds===0?'You are on Child Free — 100 ACUs every month':'Preview subscription'+(promo?' (code '+promo+')':'')+' — '+pl.label+' active, '+fmt(pl.acus)+' ACUs added. Stripe renews it monthly when billing goes live.');
+  }
+});
+drawWallet();
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+})();
+</script>
+</body>
+</html>

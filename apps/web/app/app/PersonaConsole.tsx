@@ -24,10 +24,20 @@ const poundsFor = (acus: number) => `£${(acus / ACU_PER_POUND).toFixed(2)}`;
 const fmt = (n: number) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 const price = (pence: number) => (pence === 0 ? 'Free' : `£${(pence / 100).toFixed(pence % 100 ? 2 : 0)}/mo`);
 
+/** preview ACU wallet — same namespaced key the account pages maintain */
+function readWallet(email: string): number | null {
+  try {
+    const w = JSON.parse(localStorage.getItem(`sy-u:${email}:wallet`) ?? 'null');
+    return w && typeof w.acus === 'number' ? w.acus : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function PersonaConsole({ persona: p }: { persona: Persona }) {
-  const walletAcus = 512; // demo balance — production reads the ledger via backend/functions
-  const deepSessions = useMemo(() => Math.floor(walletAcus / ACU_TARIFF.tutor_session_deep), [walletAcus]);
   const [session, setSession] = useState<Session | null>(null);
+  const [walletAcus, setWalletAcus] = useState(512); // demo balance until the account's preview wallet loads
+  const deepSessions = useMemo(() => Math.floor(walletAcus / ACU_TARIFF.tutor_session_deep), [walletAcus]);
 
   useEffect(() => {
     const s = readSession();
@@ -38,6 +48,8 @@ export default function PersonaConsole({ persona: p }: { persona: Persona }) {
       window.location.replace(`${BASE}/auth/?role=${p.slug}&mismatch=${encodeURIComponent(s.role)}&next=${here}`);
     } else {
       setSession(s);
+      const acus = readWallet(s.email);
+      if (acus !== null) setWalletAcus(acus);
     }
   }, [p.slug]);
 
@@ -85,13 +97,14 @@ export default function PersonaConsole({ persona: p }: { persona: Persona }) {
         <h1>{p.strap}</h1>
         <p className="lede">
           Your own console, your own dashboard. Prepaid ACU wallet — {ACU_PER_POUND} ACUs to the pound,
-          a hard stop at zero, and the free tier ships {FREE_TIER.acusPerQuarter} ACUs a quarter.
+          a hard stop at zero, and Child Free ships {FREE_TIER.acusPerMonth} ACUs every month.
         </p>
         <div className="cta">
           <a className="btn gold" href={p.dashboard ? `${BASE}/dashboards/${p.dashboard}/` : `${BASE}/dashboards/`}>
             Open my {p.label.toLowerCase()} dashboard →
           </a>
           {p.slug === 'student' && <a className="btn ghost" href={`${BASE}/study/`}>Open study workspace</a>}
+          {p.slug === 'student' && <a className="btn ghost" href={`${BASE}/account/`}>My account</a>}
         </div>
       </section>
 
@@ -133,6 +146,7 @@ export default function PersonaConsole({ persona: p }: { persona: Persona }) {
         <a href={`${BASE}/`}>Home</a>
         <a href={p.dashboard ? `${BASE}/dashboards/${p.dashboard}/` : `${BASE}/dashboards/`}>My dashboard</a>
         {p.slug === 'student' && <a href={`${BASE}/study/`}>Study workspace</a>}
+        {p.slug === 'student' && <a href={`${BASE}/account/`}>My account</a>}
         <span>© StudYear — the AI Academic Operating System</span>
       </footer>
     </main>
