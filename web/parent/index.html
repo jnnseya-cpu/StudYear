@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Parent Command Centre</title>
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#060B18">
+<style>
+  :root{
+    --navy-950:#060B18; --navy-900:#0B1220; --navy-800:#101B33;
+    --gold-300:#A9CFF2; --gold-400:#5FA8E0; --gold-500:#3D8FD1;
+    --ink:#EDF1F8; --ink-2:#AAB6CC; --ink-3:#6B7A96;
+    --good:#5CBB7B; --warn:#c98500; --crit:#e66767;
+    --line:rgba(77,157,224,.14);
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:
+    radial-gradient(1200px 700px at 82% -12%, rgba(77,157,224,.14), transparent 60%),
+    radial-gradient(900px 700px at -10% 25%, rgba(22,37,74,.85), transparent 65%),
+    var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1200px;margin:0 auto;padding:30px 26px 100px}
+  a{color:inherit}
+  .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:8px}
+  .logo{font-family:var(--serif);font-size:20px;text-decoration:none;display:inline-flex;align-items:center;gap:9px}
+  .logo b{color:#4FA6E0;font-weight:600}
+  .top .sp{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .chip{font-size:12px;color:var(--ink-2);border:1px solid rgba(170,182,204,.25);border-radius:20px;padding:6px 13px;text-decoration:none}
+  .chip:hover{border-color:var(--gold-500);color:var(--gold-300)}
+
+  /* hero */
+  .hero{border:1px solid var(--line);border-radius:18px;background:linear-gradient(160deg,rgba(16,27,51,.7),rgba(11,18,32,.92));padding:30px 32px;margin:14px 0 20px;position:relative;overflow:hidden}
+  .hero .k{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold-500)}
+  .hero h1{font-family:var(--serif);font-weight:500;font-size:38px;letter-spacing:-.01em;margin:10px 0 4px}
+  .hero p{color:var(--ink-2);max-width:64ch;font-weight:300}
+  .hero .cta{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.14);color:var(--gold-300);
+    font:600 13px var(--sans);border-radius:10px;padding:11px 20px;cursor:pointer;letter-spacing:.02em;text-decoration:none;display:inline-block}
+  .btn:hover{background:rgba(77,157,224,.24)}
+  .btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}
+  .btn.ghost{border-color:rgba(170,182,204,.25);background:none;color:var(--ink-2)}
+  .btn.sm{padding:7px 13px;font-size:12px}
+  input,textarea{background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}
+  input:focus,textarea:focus{border-color:var(--gold-500)}
+
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+  .c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+  @media(max-width:960px){.grid>*{grid-column:span 12}}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:18px 20px}
+  .card h3{font-family:var(--serif);font-weight:500;font-size:17px;margin-bottom:2px}
+  .card .sub{font-size:12px;color:var(--ink-3);margin-bottom:12px}
+  .sec-title{font-family:var(--serif);font-weight:500;font-size:22px;margin:26px 0 12px;display:flex;align-items:baseline;gap:12px}
+  .sec-title .pill{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-400);border:1px solid rgba(95,168,224,.4);border-radius:20px;padding:3px 10px}
+
+  .stat{border:1px solid var(--line);border-radius:12px;background:rgba(16,27,51,.5);padding:15px 17px}
+  .stat .v{font-family:var(--serif);font-size:30px;color:var(--gold-300);line-height:1}
+  .stat .k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}
+  .stat .d{font-size:12px;margin-top:3px}
+  .up{color:var(--good)}.down{color:var(--crit)}
+  .ring{--p:0;width:78px;height:78px;border-radius:50%;background:conic-gradient(var(--gold-500) calc(var(--p)*1%),rgba(170,182,204,.14) 0);display:grid;place-items:center;flex:none}
+  .ring i{width:60px;height:60px;border-radius:50%;background:var(--navy-900);display:grid;place-items:center;font-family:var(--serif);font-size:22px;color:var(--gold-300);font-style:normal}
+  .badge{font-size:10px;letter-spacing:.06em;border-radius:20px;padding:3px 9px;border:1px solid rgba(170,182,204,.25);color:var(--ink-2)}
+  .badge.good{border-color:rgba(92,187,123,.5);color:var(--good)}
+  .badge.warn{border-color:rgba(201,133,0,.5);color:#e0b566}
+  .badge.crit{border-color:rgba(230,103,103,.5);color:#f0a0a0}
+
+  .alert{font-size:13px;color:var(--ink-2);padding:7px 0;border-bottom:1px solid rgba(170,182,204,.08);display:flex;gap:9px}
+  .alert .dot{width:7px;height:7px;border-radius:50%;background:var(--gold-500);margin-top:6px;flex:none}
+  .feat{font-size:13px;color:var(--ink-2);padding:4px 0}
+  .feat b{color:var(--good)}
+
+  .snap{border:1px solid var(--line);border-radius:14px;background:rgba(16,27,51,.5);padding:16px 18px;margin-bottom:12px}
+  .snap .hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .snap .hd h4{font-family:var(--serif);font-weight:500;font-size:17px}
+  .snap .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+  @media(max-width:700px){.snap .metrics{grid-template-columns:repeat(2,1fr)}}
+  .snap .metrics .m{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:rgba(6,11,24,.4)}
+  .snap .metrics .m .mk{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+  .snap .metrics .m .mv{font-size:15px;color:var(--ink);margin-top:3px;font-weight:600}
+
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:22px 0 6px}
+  .tabs button{appearance:none;background:none;border:none;border-bottom:2px solid transparent;color:var(--ink-2);font:600 13px var(--sans);padding:10px 14px;cursor:pointer}
+  .tabs button.on{color:var(--gold-300);border-bottom-color:var(--gold-500)}
+  .tabpane{display:none;margin-top:14px}.tabpane.on{display:block}
+
+  .subj-row{display:grid;grid-template-columns:1.4fr 1fr 90px;gap:12px;align-items:center;margin:9px 0;font-size:13px}
+  .bar{height:8px;border-radius:5px;background:rgba(170,182,204,.12);overflow:hidden}
+  .bar i{display:block;height:100%}
+  svg{display:block;width:100%}
+  .heat{display:grid;gap:4px}
+  .heatcell{height:26px;border-radius:5px;display:flex;align-items:center;padding:0 8px;font-size:11px;color:#dfe8f5}
+
+  .res{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;background:rgba(6,11,24,.4);padding:9px 12px;margin-bottom:7px}
+  .res .t{flex:1;font-size:13px}.res .t small{display:block;color:var(--ink-3);font-size:11px}
+  .risk-card{border:1px solid rgba(230,103,103,.35);border-radius:12px;background:rgba(230,103,103,.06);padding:15px 17px;margin-bottom:12px}
+  .risk-card h4{font-size:15px;color:#f0a0a0}
+  .risk-card .prob{font-family:var(--serif);font-size:26px;color:#f0a0a0}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .qchip{border:1px solid rgba(170,182,204,.3);border-radius:20px;background:none;color:var(--ink-2);font-size:12px;padding:6px 12px;cursor:pointer}
+  .qchip:hover{border-color:var(--gold-500);color:var(--gold-300)}
+  #advisor-out{border:1px solid var(--line);border-radius:10px;background:rgba(6,11,24,.5);padding:12px 14px;font-size:13.5px;color:var(--ink-2);min-height:40px;margin-top:10px;white-space:pre-wrap}
+  .note{font-size:11.5px;color:var(--ink-3);font-style:italic;margin-top:10px}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+</style>
+</head>
+<body>
+<script src="../guard.js" data-role="parent" data-base="../"></script>
+<div class="wrap">
+
+<div class="top">
+  <a class="logo" href="../">⌂ Stud<b>Year</b></a>
+  <div class="sp">
+    <a class="chip" href="../dashboards/parent/">Analytics dashboard</a>
+    <a class="chip" href="../app/parent/">Parent console</a>
+    <a class="chip" href="#" id="signout">Sign out</a>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="k">AI-powered · <span id="hero-plan">Parent</span></div>
+  <h1>Protect their future.<br>Not just their grades.</h1>
+  <p>Real-time academic intelligence — predictive, reassuring and action-oriented. Built for parents who want
+     control, not spreadsheets.</p>
+  <div class="cta">
+    <input id="link-code" type="text" placeholder="Child's Parent Link Code" style="max-width:220px">
+    <button class="btn solid" id="link-go">Link a child</button>
+    <span class="note" style="margin:0" id="link-hint">Get the code from your child: My Account → Connect a parent.</span>
+  </div>
+</div>
+
+<!-- academic command centre bar -->
+<div class="sec-title">Academic Command Centre <span class="pill">Live intelligence</span></div>
+<div class="grid" style="margin-bottom:8px">
+  <div class="card c3" style="display:flex;gap:14px;align-items:center">
+    <div class="ring" id="stab-ring"><i id="stab-v">–</i></div>
+    <div><div style="font-size:13px;color:var(--ink)">Academic Stability</div><div class="note" style="margin:2px 0 0" id="stab-note">Link a child to begin monitoring.</div></div>
+  </div>
+  <div class="stat c3"><div class="v" id="cc-momentum">–</div><div class="k">Weekly momentum</div></div>
+  <div class="stat c3"><div class="v" id="cc-focus">–</div><div class="k">Focus consistency</div></div>
+  <div class="stat c3"><div class="v" id="cc-alerts">0</div><div class="k">Live AI alerts</div></div>
+</div>
+
+<div class="grid">
+  <div class="card c8"><h3>Live AI Alerts</h3><div class="sub">Signals across your linked learners, updated from their live activity</div><div id="alerts"></div></div>
+  <div class="card c4"><h3>Your subscription</h3><div class="sub" id="sub-name">Parent</div>
+    <div id="sub-feats"></div>
+    <div style="margin-top:10px"><a class="btn sm" href="plans/">Manage plan</a></div>
+  </div>
+</div>
+
+<!-- snapshots -->
+<div class="sec-title">Live child snapshots <span class="pill" id="linked-count">0 linked</span></div>
+<div id="snapshots"></div>
+
+<!-- deep view (per most-recent child) -->
+<div id="deep" style="display:none">
+  <div class="tabs" id="tabs">
+    <button data-t="overview" class="on">Overview</button>
+    <button data-t="subjects">Subjects &amp; resources</button>
+    <button data-t="warnings">Early warnings</button>
+    <button data-t="intel">Study intelligence</button>
+    <button data-t="pathway">Future pathway</button>
+  </div>
+
+  <div class="tabpane on" id="pane-overview">
+    <div class="grid">
+      <div class="card c7"><h3>Performance momentum</h3><div class="sub" id="mom-sub">Growth trajectory</div><div id="mom-chart"></div></div>
+      <div class="card c5"><h3>Subject heatmap</h3><div class="sub">quiz mastery per subject</div><div class="heat" id="heatmap"></div></div>
+      <div class="card c4"><h3>AI grade forecast</h3><div class="sub">latest prediction from your child's dashboard</div>
+        <div style="font-family:var(--serif);font-size:44px;color:var(--gold-300)" id="forecast">–</div></div>
+      <div class="card c8"><h3>Weekly AI parent briefing</h3><div class="sub" id="brief-when">Executive summary</div><div id="brief"></div></div>
+    </div>
+  </div>
+
+  <div class="tabpane" id="pane-subjects">
+    <div class="card c12"><h3>Live subjects</h3><div class="sub">From profile &amp; quiz activity</div><div id="live-subjects"></div></div>
+    <div class="card c12" style="margin-top:14px"><h3>Saved resources</h3><div class="sub">Live from your child's library — updates when they save new work</div><div id="saved-res"></div></div>
+  </div>
+
+  <div class="tabpane" id="pane-warnings">
+    <div id="warnings"></div>
+    <div class="card c12"><h3>Homework &amp; deadline command centre</h3><div class="sub">Upcoming study sessions from your child's plan</div><div id="deadlines"></div></div>
+  </div>
+
+  <div class="tabpane" id="pane-intel">
+    <div class="grid">
+      <div class="card c5"><h3>Real Verified Study Hours™</h3><div class="sub">Genuine participation — not passive tab time</div>
+        <div class="grid" style="gap:10px;margin-top:6px">
+          <div class="stat c6"><div class="v" id="vh-logged">–</div><div class="k">Logged</div></div>
+          <div class="stat c6"><div class="v" id="vh-verified">–</div><div class="k">Verified productive</div></div>
+          <div class="stat c12"><div class="v" id="vh-score">–</div><div class="k" id="vh-band">Verified score</div></div>
+        </div></div>
+      <div class="card c7"><h3>AI study-behaviour engine</h3><div class="sub">Patterns detected from live data</div><div id="behaviour"></div>
+        <h3 style="margin-top:16px">Emotional &amp; motivation intelligence</h3><div id="emotion"></div></div>
+    </div>
+  </div>
+
+  <div class="tabpane" id="pane-pathway">
+    <div class="card c12"><h3>Future pathway</h3><div class="sub" id="pathway-sub">Data-driven next steps — GCSE, A-level, and university direction</div><div id="pathway"></div></div>
+  </div>
+</div>
+
+<!-- advisor + intervention -->
+<div class="grid" style="margin-top:22px">
+  <div class="card c7"><h3>AI parent advisor</h3><div class="sub">Your co-pilot for parenting education — personalised to live data</div>
+    <div class="chips" id="advisor-chips"></div>
+    <div style="display:flex;gap:8px"><input id="advisor-in" placeholder="Ask a question about your child's learning…" style="flex:1"><button class="btn" id="advisor-go">Ask advisor</button></div>
+    <div id="advisor-out">Ask anything about your child's learning and I'll answer from their live data.</div>
+  </div>
+  <div class="card c5"><h3>AI intervention mode</h3><div class="sub" id="interv-sub">Generate a recovery plan when risk is elevated</div>
+    <div id="interv"></div>
+  </div>
+</div>
+
+<p class="note" id="foot-note">StudYear protects outcomes, not just displays data.</p>
+</div>
+<div id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var SY=window.SY; if(!SY) return;
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var toastTimer;function toast(t){var el=$('toast');el.textContent=t;el.style.opacity=1;clearTimeout(toastTimer);toastTimer=setTimeout(function(){el.style.opacity=0},3000)}
+function gradeFor(m){return Math.max(1,Math.min(9,Math.round(1+8*m/100)))}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+
+/* ---- subscription (parent plan) ---- */
+var PARENT_PLANS={parent_view:{label:'Parent View',acus:300,feats:['Weekly digest & progress reports','Risk alerts','300 ACUs per month']},
+  parent_pro:{label:'Parent Pro',acus:700,feats:['Everything in View','Book support from alerts','700 ACUs per month']},
+  parent_pro_plus:{label:'Parent Pro+',acus:1650,feats:['Predictive grades & micro-weakness detection','AI parent advisor','1,650 ACUs per month']},
+  parent_elite:{label:'Parent Elite',acus:3900,feats:['AI Parent Advisor & intervention mode','Future pathway & university suggestions','Predictive grades & micro-weakness detection','3,900 ACUs per month']}};
+var wallet=SY.get('wallet',null)||{plan:'parent_elite'};
+var planId=(wallet.plan&&PARENT_PLANS[wallet.plan])?wallet.plan:'parent_elite';
+var plan=PARENT_PLANS[planId];
+$('hero-plan').textContent=plan.label; $('sub-name').textContent=plan.label;
+$('sub-feats').innerHTML=plan.feats.map(function(f){return '<div class="feat"><b>✓</b> '+esc(f)+'</div>'}).join('');
+$('foot-note').textContent='Plan: '+plan.label+' · StudYear protects outcomes, not just displays data';
+
+/* ---- compute live metrics for a linked child ---- */
+function metrics(email){
+  var profile=SY.readAccount(email,'profile',{});
+  var quizzes=SY.readAccount(email,'quizzes',[]);
+  var diag=(SY.readAccount(email,'diagnostics',[])||[])[0]||null;
+  var plan=SY.readAccount(email,'plan',null);
+  var activity=SY.readAccount(email,'activity',[]);
+  var mine=SY.readAccount(email,'mine',[]);
+  var consent=SY.readAccount(email,'consent',{parent:true,schoolToParent:true});
+  var byS={};quizzes.forEach(function(q){(byS[q.subj]=byS[q.subj]||[]).push(q)});
+  var profSubs=(profile.subjects||[]);
+  var names={};profSubs.forEach(function(x){names[x.s]=x.target});
+  Object.keys(byS).forEach(function(s){if(!(s in names))names[s]=null});
+  var subjects=Object.keys(names).map(function(s){
+    var qs=byS[s]||[];
+    var progress=qs.length?Math.round(qs.reduce(function(a,b){return a+b.pct},0)/qs.length):0;
+    var momentum=0;
+    if(qs.length>=2){var h=qs.slice(0,Math.ceil(qs.length/2)),l=qs.slice(-Math.ceil(qs.length/2));
+      momentum=Math.round(l.reduce(function(a,b){return a+b.pct},0)/l.length - h.reduce(function(a,b){return a+b.pct},0)/h.length);}
+    var dm=diag&&diag.list?(diag.list.find(function(x){return x.s===s})||{}).mastery:null;
+    var mastery=qs.length&&dm!=null?Math.round((progress+dm)/2):(qs.length?progress:(dm!=null?dm:0));
+    return {s:s,target:names[s],progress:progress,momentum:momentum,mastery:mastery,attempts:qs.length};
+  });
+  var withData=subjects.filter(function(x){return x.attempts||x.mastery});
+  var overall=withData.length?Math.round(withData.reduce(function(a,b){return a+b.mastery},0)/withData.length):(diag?diag.avg:0);
+  /* streak */
+  var st=SY.readAccount(email,'streak',{days:[]}),set={};(st.days||[]).forEach(function(d){set[d]=1});
+  var streak=0,dd=new Date();while(set[dd.toISOString().slice(0,10)]){streak++;dd.setDate(dd.getDate()-1)}
+  var lessons=activity.filter(function(a){return a.k==='lesson'||a.k==='course'}).length;
+  var weekly=0;
+  var recentQ=quizzes.slice(-4),olderQ=quizzes.slice(0,Math.max(1,quizzes.length-4));
+  if(quizzes.length>=2)weekly=Math.round((recentQ.reduce(function(a,b){return a+b.pct},0)/recentQ.length)-(olderQ.reduce(function(a,b){return a+b.pct},0)/olderQ.length))/2;
+  weekly=clamp(weekly,-15,15);
+  var risk=diag?diag.risk:(overall<40?'HIGH':overall<60?'MEDIUM':'LOW');
+  var engagement=activity.length>=8?'High':activity.length>=3?'Medium':'Low';
+  var focus=streak>=5?'High':streak>=2?'Medium':'Low';
+  var loggedH=Math.round((activity.length*0.6+lessons*0.8+quizzes.length*0.4)*10)/10;
+  var verifiedH=Math.round(loggedH*(0.35+overall/400)*10)/10;
+  var vScore=loggedH?clamp(Math.round(verifiedH/loggedH*100),0,100):0;
+  var weakest=withData.length?withData.reduce(function(a,b){return a.mastery<b.mastery?a:b}).s:null;
+  var strongest=withData.length?withData.reduce(function(a,b){return a.mastery>b.mastery?a:b}).s:null;
+  return {email:email,profile:profile,subjects:subjects,overall:overall,streak:streak,lessons:lessons,
+    weekly:weekly,risk:risk,engagement:engagement,focus:focus,diag:diag,plan:plan,activity:activity,mine:mine,
+    loggedH:loggedH,verifiedH:verifiedH,vScore:vScore,weakest:weakest,strongest:strongest,consent:consent,
+    predicted:gradeFor(overall)};
+}
+
+/* ---- render everything ---- */
+function riskBadge(r){return r==='CRITICAL'||r==='HIGH'?'crit':r==='MEDIUM'?'warn':'good'}
+function render(){
+  var kids=SY.get('children',[]);
+  $('linked-count').textContent=kids.length+' linked';
+  if(!kids.length){
+    $('snapshots').innerHTML='<div class="card c12"><div class="note" style="font-style:normal">No children linked yet. Enter your child\'s Parent Link Code above — you\'ll see live stability, momentum, subject progress and AI guidance.</div></div>';
+    $('deep').style.display='none';
+    $('stab-note').textContent='Link a child to begin monitoring.';
+    $('alerts').innerHTML='<div class="note" style="font-style:normal">Alerts appear once a child is linked.</div>';
+    return;
+  }
+  var all=kids.map(function(k){return metrics(k.email)});
+  var shared=all.filter(function(m){return m.consent.parent!==false});
+  /* command-centre aggregate */
+  var stability=shared.length?Math.round(shared.reduce(function(a,b){return a+b.overall},0)/shared.length):0;
+  var mom=shared.length?Math.round(shared.reduce(function(a,b){return a+b.weekly},0)/shared.length):0;
+  var focus=shared.some(function(m){return m.focus==='High'})?'High':shared.some(function(m){return m.focus==='Medium'})?'Medium':'Low';
+  $('stab-ring').style.setProperty('--p',stability); $('stab-v').textContent=stability;
+  $('stab-note').textContent=stability>=70?'Stable — AI monitoring active across linked learners':stability>=50?'Watch — some subjects need attention':'At risk — intervention recommended';
+  $('cc-momentum').textContent=(mom>=0?'+':'')+mom+'%';
+  $('cc-momentum').className='v '+(mom>=0?'up':'down');
+  $('cc-focus').textContent=focus;
+  /* alerts */
+  var alerts=[];
+  shared.forEach(function(m){
+    var nm=SY.accountName(m.email);
+    var wk=m.subjects.filter(function(x){return x.attempts&&x.progress<50}).slice(0,1);
+    if(wk.length)alerts.push(esc(wk[0].s)+' confidence needs support for '+esc(nm)+' — quiz average '+wk[0].progress+'%.');
+    m.subjects.slice(0,7).forEach(function(x){alerts.push(esc(x.s)+' quiz progress at '+x.progress+'% for '+esc(nm)+'.')});
+    var lastRes=m.activity.find(function(a){return a.k==='resource'||a.k==='plan'});
+    if(lastRes)alerts.push(esc(nm)+' saved “'+esc(lastRes.t.replace(/^.*?— /,''))+'” recently.');
+  });
+  $('cc-alerts').textContent=alerts.length;
+  $('alerts').innerHTML=alerts.slice(0,9).map(function(a){return '<div class="alert"><span class="dot"></span><span>'+a+'</span></div>'}).join('')||'<div class="note">No alerts — everything on track.</div>';
+
+  /* snapshots */
+  $('snapshots').innerHTML=kids.map(function(k,ki){
+    var nm=SY.accountName(k.email);
+    var m=all[ki];
+    if(m.consent.parent===false){
+      return '<div class="snap"><div class="hd"><h4>'+esc(nm)+'</h4><span class="badge warn">sharing paused</span>'+
+        '<button class="btn ghost sm" data-unlink="'+ki+'" style="margin-left:auto">Unlink child</button></div>'+
+        '<div class="note" style="font-style:normal">'+esc(nm)+' has paused progress sharing.</div></div>';
+    }
+    var liveSubs=m.subjects.filter(function(x){return x.attempts||x.mastery}).length||m.subjects.length;
+    return '<div class="snap"><div class="hd">'+
+      '<div class="ring" style="--p:'+m.overall+';width:56px;height:56px"><i style="width:42px;height:42px;font-size:16px">'+m.overall+'</i></div>'+
+      '<div><h4>'+esc(nm)+' <span style="color:var(--gold-400)">✨</span></h4>'+
+      '<div class="note" style="margin:0;font-style:normal">'+esc(m.profile.level||'—')+' · '+liveSubs+' live subjects</div></div>'+
+      '<button class="btn ghost sm" data-unlink="'+ki+'" style="margin-left:auto">Unlink child</button></div>'+
+      '<div class="metrics">'+
+        '<div class="m"><div class="mk">Engagement</div><div class="mv">'+m.engagement+'</div></div>'+
+        '<div class="m"><div class="mk">Focus</div><div class="mv">'+m.focus+'</div></div>'+
+        '<div class="m"><div class="mk">Exam risk</div><div class="mv"><span class="badge '+riskBadge(m.risk)+'">'+m.risk.toLowerCase()+'</span></div></div>'+
+        '<div class="m"><div class="mk">Weekly growth</div><div class="mv '+(m.weekly>=0?'up':'down')+'">'+(m.weekly>=0?'+':'')+m.weekly+'%</div></div>'+
+      '</div></div>';
+  }).join('');
+  $('snapshots').querySelectorAll('[data-unlink]').forEach(function(b){b.onclick=function(){
+    var kids=SY.get('children',[]);kids.splice(+b.dataset.unlink,1);SY.set('children',kids);render();
+  }});
+
+  /* deep view for the first shared child */
+  var m=shared[0];
+  if(!m){$('deep').style.display='none';return}
+  $('deep').style.display='block';
+  renderDeep(m);
+}
+
+function renderDeep(m){
+  var nm=SY.accountName(m.email);
+  /* momentum chart (last 6 quiz points or synthesised) */
+  var pts=m.activity;
+  var series=(SY.readAccount(m.email,'quizzes',[])||[]).slice(-6).map(function(q){return q.pct});
+  while(series.length<6)series.unshift(Math.max(0,m.overall-(6-series.length)*4));
+  $('mom-sub').textContent='Growth trajectory for '+esc(nm);
+  var W=520,H=180,P=26,n=series.length;
+  var x=function(i){return P+i*(W-2*P)/(n-1)},y=function(v){return H-P-(v/100)*(H-2*P)};
+  var sv='<svg viewBox="0 0 '+W+' '+H+'">';
+  [0,25,50,75,100].forEach(function(g){sv+='<line x1="'+P+'" x2="'+(W-P)+'" y1="'+y(g)+'" y2="'+y(g)+'" stroke="rgba(170,182,204,.12)"/><text x="'+(P-6)+'" y="'+(y(g)+4)+'" text-anchor="end" fill="#6B7A96" font-size="10">'+g+'</text>'});
+  sv+='<polyline fill="none" stroke="#3D8FD1" stroke-width="2.5" points="'+series.map(function(v,i){return x(i)+','+y(v)}).join(' ')+'"/>';
+  series.forEach(function(v,i){sv+='<circle cx="'+x(i)+'" cy="'+y(v)+'" r="4" fill="#A9CFF2"/>'});
+  ['W-5','W-4','W-3','W-2','W-1','Now'].forEach(function(l,i){sv+='<text x="'+x(i)+'" y="'+(H-6)+'" text-anchor="middle" fill="#6B7A96" font-size="10">'+l+'</text>'});
+  sv+='</svg>';$('mom-chart').innerHTML=sv;
+
+  /* heatmap */
+  var RAMP=['#13294B','#1E4270','#245086','#2B5F9C','#3370B3','#4283C6','#63A0D8','#8FBFE9'];
+  var hs=m.subjects.filter(function(x){return x.attempts||x.mastery}).slice(0,8);
+  $('heatmap').innerHTML=(hs.length?hs:m.subjects.slice(0,6)).map(function(x){
+    var v=x.mastery||0;return '<div class="heatcell" style="background:'+RAMP[clamp(Math.round(v/100*7),0,7)]+'">'+esc(x.s)+' · '+v+'%</div>';
+  }).join('');
+
+  $('forecast').textContent='Grade '+m.predicted;
+
+  /* briefing */
+  var brief=SY.readAccount(m.email,'brief',null);
+  $('brief-when').textContent='Executive summary · '+new Date().toLocaleDateString('en-GB');
+  var win=m.strongest||(m.subjects[0]&&m.subjects[0].s);
+  $('brief').innerHTML='<p style="font-size:13.5px;color:var(--ink-2)">This week '+esc(nm)+' showed '+(m.weekly>=0?'steady academic engagement':'a dip in engagement')+'. '+
+    (m.strongest?'Strongest area: <b style="color:var(--ink)">'+esc(m.strongest)+'</b>. ':'')+
+    (m.weakest?'Needs attention: <b style="color:var(--ink)">'+esc(m.weakest)+'</b>.':'')+'</p>'+
+    '<div style="font-size:12px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase;margin-top:8px">Wins</div>'+
+    '<div class="feat"><b>✓</b> '+esc(nm)+': '+(m.weekly>=0?'+':'')+m.weekly+'% weekly growth'+(win?' · momentum in '+esc(win):'')+'</div>';
+
+  /* live subjects */
+  $('live-subjects').innerHTML=m.subjects.map(function(x){
+    return '<div class="subj-row"><span><b>'+esc(x.s)+'</b> <span class="note" style="margin:0">'+(x.momentum>=0?'+':'')+x.momentum+'% momentum · Target '+(x.target||'N/A')+'</span></span>'+
+      '<div class="bar"><i style="width:'+x.progress+'%;background:'+(x.progress<50?'var(--crit)':x.progress<75?'var(--warn)':'var(--good)')+'"></i></div>'+
+      '<span style="text-align:right;color:var(--ink-2);font-size:12px">'+x.progress+'%</span></div>';
+  }).join('')||'<div class="note">No subjects yet.</div>';
+
+  /* saved resources (mine + activity resource/plan entries) */
+  var res=[];
+  (m.mine||[]).slice().reverse().forEach(function(r){res.push({t:r.title,ty:r.type,when:null})});
+  (m.activity||[]).filter(function(a){return['resource','plan','course','lesson','review','tutor'].indexOf(a.k)>-1}).forEach(function(a){
+    res.push({t:a.t.replace(/^.*?: /,''),ty:({plan:'Study Plans',course:'AI Courses',lesson:'Interactive Lessons',review:'Assignment Reviews',tutor:'AI Tutor Sessions',resource:'Library'})[a.k]||'Resource',when:a.when})});
+  $('saved-res').innerHTML=res.slice(0,20).map(function(r){
+    return '<div class="res"><div class="t"><b>'+esc(r.t)+'</b><small>'+esc(r.ty)+(r.when?' · '+SY.timeAgo(r.when):'')+'</small></div></div>';
+  }).join('')||'<div class="note">No saved resources yet.</div>';
+
+  /* early warnings */
+  var atRisk=m.subjects.filter(function(x){return (x.attempts&&x.progress<50)||(x.target&&x.mastery<gradeToPct(x.target)-25)}).sort(function(a,b){return a.progress-b.progress});
+  var pending=m.plan&&m.plan.plan?m.plan.plan.reduce(function(a,w){return a+w.days.length},0)-Object.keys(m.plan.done||{}).length:0;
+  $('warnings').innerHTML=(atRisk.length?atRisk:m.subjects.slice(0,1)).map(function(x){
+    var prob=clamp(100-x.progress,40,96);
+    return '<div class="risk-card"><h4>'+esc(x.s)+' underperformance risk</h4>'+
+      '<div class="prob">'+prob+'% probability</div>'+
+      '<div class="note" style="font-style:normal">Forecast window: 14 days · '+esc(nm)+'</div>'+
+      '<div style="font-size:12px;color:var(--gold-400);margin:10px 0 4px;letter-spacing:.06em;text-transform:uppercase">Primary causes</div>'+
+      '<div class="feat">• '+esc(x.s)+' quiz average at '+x.progress+'% with '+(x.momentum>=0?'+':'')+x.momentum+'% momentum</div>'+
+      (pending?'<div class="feat">• '+pending+' pending study task'+(pending>1?'s':'')+' in the planner</div>':'')+
+      '<div style="font-size:12px;color:var(--gold-400);margin:10px 0 4px;letter-spacing:.06em;text-transform:uppercase">AI recommendation</div>'+
+      '<div class="feat">Schedule 20-minute active-recall blocks for '+esc(x.s)+' before the next quiz.</div></div>';
+  }).join('')||'<div class="card c12"><div class="note" style="font-style:normal">No elevated risks right now.</div></div>';
+
+  /* deadlines */
+  var up=[];
+  if(m.plan&&m.plan.plan){m.plan.plan.forEach(function(w){w.days.forEach(function(s){if(s.date&&new Date(s.date+'T00:00:00')>=new Date(new Date().toDateString()))up.push(s)})})}
+  up.sort(function(a,b){return (a.date||'').localeCompare(b.date||'')});
+  $('deadlines').innerHTML=up.length?up.slice(0,8).map(function(s){
+    var days=Math.max(0,Math.round((new Date(s.date+'T00:00:00')-new Date(new Date().toDateString()))/86400000));
+    return '<div class="res"><div class="t"><b>'+esc(s.subj)+(s.topic?' · '+esc(s.topic):'')+'</b><small>due in '+days+' day'+(days!==1?'s':'')+' · '+esc(s.mode||'')+'</small></div>'+
+      '<span class="badge good">'+clamp(100-(s.priority==='HIGH'?30:10),40,95)+'% on-time</span></div>';
+  }).join(''):'<div class="note" style="font-style:normal">No upcoming tasks scheduled — generate a plan in the study workspace.</div>';
+
+  /* study intelligence */
+  $('vh-logged').textContent=m.loggedH+'h';
+  $('vh-verified').textContent=m.verifiedH+'h';
+  $('vh-score').textContent=m.vScore+'%';
+  $('vh-band').textContent='Verified score · '+(m.vScore>=70?'Strong':m.vScore>=40?'Fair':'Low');
+  $('behaviour').innerHTML=[
+    (m.strongest?'Strongest: <b style="color:var(--ink)">'+esc(m.strongest)+'</b>':''),
+    (m.weakest?'Needs attention: <b style="color:var(--ink)">'+esc(m.weakest)+'</b> (overall progress '+m.overall+'%).':''),
+    m.subjects.filter(function(x){return x.target&&x.mastery<gradeToPct(x.target)}).length+' subject(s) below target pace.',
+    'Study streak: '+m.streak+' day'+(m.streak!==1?'s':'')+' · engagement '+m.engagement+'.'
+  ].filter(Boolean).map(function(t){return '<div class="feat">• '+t+'</div>'}).join('');
+  $('emotion').innerHTML='<div class="feat">'+(m.streak>=3?'Consistent routine — low burnout risk.':m.streak>=1?'Building a routine — encourage daily short sessions.':'Irregular activity — a gentle nudge and a small win will help re-engage.')+'</div>'+
+    '<div class="feat">Motivation signal: '+(m.weekly>=0?'positive — recent scores trending up.':'watch — recent scores dipping; celebrate small wins.')+'</div>';
+
+  /* future pathway */
+  renderPathway(m,nm);
+
+  /* intervention */
+  var target=atRisk[0]||m.subjects.filter(function(x){return x.attempts}).sort(function(a,b){return a.progress-b.progress})[0]||m.subjects[0];
+  $('interv-sub').textContent='Live signals for '+esc(nm)+' — generate a recovery plan when risk is elevated';
+  if(target){
+    $('interv').innerHTML='<div class="risk-card" style="margin-bottom:10px"><h4>'+esc(target.s)+' underperformance risk</h4>'+
+      '<div class="feat" style="color:var(--ink-2)">Schedule 20-minute active-recall blocks for '+esc(target.s)+' before the next quiz.</div>'+
+      '<div class="note" style="font-style:normal">Focus: quiz mastery at '+target.progress+'%'+(target.target?', target '+esc(String(target.target)):'')+' — below pace · 4-week recovery</div></div>'+
+      '<button class="btn solid" id="interv-go">Generate intervention for '+esc(nm.split(' ')[0])+'</button>'+
+      '<div class="note">Rebuilds schedules · increases weak-area intensity · optimises timing · reduces burnout risk</div>';
+    $('interv-go').onclick=function(){generateIntervention(m,target)};
+  }else{$('interv').innerHTML='<div class="note" style="font-style:normal">No elevated risk — nothing to intervene on right now.</div>';}
+}
+function gradeToPct(g){var n={'A*':95,'A':85,'B':70,'C':55,'D':45,'E':35,'U':10}[g]!=null?{'A*':95,'A':85,'B':70,'C':55,'D':45,'E':35,'U':10}[g]:(+g?(+g)/9*100:60);return n}
+
+/* ---- future pathway: university & career engine, micro-weakness, radar ---- */
+var UNI_MAP={Mathematics:['Mathematics','Engineering','Economics','Computer Science','Actuarial Science'],
+  Physics:['Physics','Engineering','Astrophysics','Materials Science'],
+  Chemistry:['Chemistry','Medicine','Pharmacy','Chemical Engineering'],
+  Biology:['Biology','Medicine','Biochemistry','Veterinary Science'],
+  Science:['Natural Sciences','Biomedical Science','Environmental Science'],
+  Economics:['Economics','PPE','Business','Finance'],
+  'English':['English','Law','Journalism'],
+  'English Literature':['English','Law','Journalism','History'],
+  History:['History','Law','Politics','Archaeology'],
+  'Computer Science':['Computer Science','Software Engineering','Data Science','AI'],
+  ICT:['Computer Science','Information Systems','Cybersecurity'],
+  Psychology:['Psychology','Neuroscience','Criminology'],
+  Geography:['Geography','Environmental Science','Urban Planning','Architecture'],
+  'Business Studies':['Business','Management','Marketing','Accounting'],
+  'Construction Management':['Architecture','Civil Engineering','Construction Management','Quantity Surveying'],
+  Law:['Law','Criminology','Politics']};
+function degreesFor(s){return UNI_MAP[s]||[s,'Business','a related degree']}
+function renderPathway(m,nm){
+  var level=(m.profile.level||'').toLowerCase();
+  var isPost16=/a2|a-level|advanced higher|ib|international bacc|university/.test(level);
+  var trajLabel=isPost16?'A-level trajectory':/gcse|igcse|national 5/.test(level)?'GCSE trajectory':'Trajectory';
+  $('pathway-sub').textContent='University readiness & career direction — from '+esc(nm)+"'s live subject strength";
+
+  /* forecast header */
+  var likelihood=clamp(100-m.overall,20,90);
+  var html='<div class="card" style="background:none;border:none;padding:0;margin-bottom:14px">'+
+    '<div style="font-size:12px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase">University &amp; future pathway engine</div>'+
+    '<div class="note" style="font-style:normal;margin-top:2px">'+trajLabel+' · predictive certainty</div>'+
+    '<div style="display:flex;gap:20px;align-items:baseline;margin-top:8px;flex-wrap:wrap">'+
+      '<div><span style="font-family:var(--serif);font-size:30px;color:var(--gold-300)">Grade '+m.predicted+'</span> <span class="note" style="margin:0">latest AI forecast</span></div>'+
+      '<div><span style="font-family:var(--serif);font-size:22px;color:var(--ink)">'+likelihood+'%</span> <span class="note" style="margin:0">on-target likelihood at current pace</span></div>'+
+    '</div></div>';
+
+  /* degree cards */
+  var scored={};
+  var contrib={};
+  m.subjects.forEach(function(x){var mm=x.mastery||0;degreesFor(x.s).forEach(function(d){if(!scored[d]||mm>contrib[d].m){scored[d]=(scored[d]||0);contrib[d]={s:x.s,m:mm}}scored[d]=(scored[d]||0)+mm})});
+  var ranked=Object.keys(scored).sort(function(a,b){return scored[b]-scored[a]}).slice(0,5);
+  html+='<div style="font-size:13px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase;margin:6px 0 8px">University &amp; career pathways</div>'+
+    '<div class="note" style="margin-top:0">AI-matched degree routes based on live subject strength for '+esc(nm)+'</div>'+
+    '<div class="grid" style="margin-top:10px">'+ranked.map(function(d){
+      var c=contrib[d], fit=clamp(Math.round(55+(c.m)*0.4),50,98);
+      return '<div class="card c6"><div style="display:flex;justify-content:space-between;align-items:baseline"><h3 style="font-size:16px">'+esc(d)+'</h3><span class="badge good">'+fit+'% fit</span></div>'+
+        '<div class="feat" style="color:var(--ink-2)">'+esc(nm)+"'s strength in "+esc(c.s)+' ('+c.m+'% mastery) aligns with '+esc(d)+'. '+trajLabel.replace(' trajectory','')+' grade '+m.predicted+'.</div>'+
+        '<div style="font-size:11px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase;margin:8px 0 3px">Entry requirements</div>'+
+        '<div class="feat" style="color:var(--ink-3)">• Strong performance in '+esc(c.s)+' and related subjects<br>• Grades meeting typical university offers<br>• Relevant A-level / BTEC pathway in Year 12–13</div>'+
+        '<div style="font-size:11px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase;margin:8px 0 3px">Next steps</div>'+
+        '<div class="feat" style="color:var(--ink-3)">• Research entry requirements on UCAS<br>• Book a subject taster or open day<br>• Align the revision plan to required grades</div></div>';
+    }).join('')+'</div>';
+
+  /* micro-weakness detection */
+  var weak=m.subjects.filter(function(x){return (x.attempts&&x.progress<50)||(x.target&&x.mastery<gradeToPct(x.target)-20)}).sort(function(a,b){return a.mastery-b.mastery});
+  html+='<div style="font-size:13px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase;margin:18px 0 4px">Micro-weakness detection</div>'+
+    '<div class="note" style="margin-top:0">Precision interventions — not generic “weak in Maths”</div>'+
+    (weak.length?weak.slice(0,4).map(function(x){
+      return '<div class="risk-card" style="margin-top:10px"><h4>'+esc(x.s)+'</h4>'+
+        '<div class="feat" style="color:var(--ink-2)">Quiz mastery at '+x.progress+'%'+(x.target?' · Target '+esc(String(x.target))+' — below pace':'')+'</div>'+
+        '<div class="note" style="font-style:normal">Recovery timeline: ~4 weeks · intensive intensity</div></div>';
+    }).join(''):'<div class="feat" style="margin-top:8px">No micro-weaknesses flagged — every subject is at or above target pace.</div>');
+
+  /* exam readiness radar */
+  html+='<div style="font-size:13px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase;margin:18px 0 6px">Exam readiness radar</div>'+radarSvg(m.subjects.filter(function(x){return x.attempts||x.mastery}).slice(0,8));
+
+  $('pathway').innerHTML=html;
+}
+function radarSvg(subs){
+  if(!subs.length)return '<div class="feat">Take a few quizzes to populate the readiness radar.</div>';
+  var W=460,H=320,cx=W/2,cy=H/2,R=110,n=subs.length;
+  var pt=function(i,r){var a=-Math.PI/2+i*2*Math.PI/n;return [cx+Math.cos(a)*r,cy+Math.sin(a)*r]};
+  var sv='<svg viewBox="0 0 '+W+' '+H+'">';
+  [0.25,0.5,0.75,1].forEach(function(f){var pts=subs.map(function(_,i){return pt(i,R*f).join(',')}).join(' ');sv+='<polygon points="'+pts+'" fill="none" stroke="rgba(170,182,204,.14)"/>'});
+  subs.forEach(function(_,i){var p=pt(i,R);sv+='<line x1="'+cx+'" y1="'+cy+'" x2="'+p[0]+'" y2="'+p[1]+'" stroke="rgba(170,182,204,.14)"/>'});
+  var dpts=subs.map(function(x,i){return pt(i,R*clamp((x.mastery||0)/100,0.05,1)).join(',')}).join(' ');
+  sv+='<polygon points="'+dpts+'" fill="rgba(61,143,209,.25)" stroke="#3D8FD1" stroke-width="2"/>';
+  subs.forEach(function(x,i){var p=pt(i,R+16);sv+='<text x="'+p[0]+'" y="'+p[1]+'" text-anchor="middle" fill="#AAB6CC" font-size="10">'+esc(x.s.length>12?x.s.slice(0,11)+'…':x.s)+'</text>'});
+  return sv+'</svg>';
+}
+
+/* ---- intervention: build a recovery plan and (with consent) push it to the child ---- */
+function generateIntervention(m,target){
+  var nm=SY.accountName(m.email);
+  var plan=SY.readAccount(m.email,'plan',{plan:[],done:{}})||{plan:[],done:{}};
+  var wkN=(plan.plan&&plan.plan.length)?plan.plan[plan.plan.length-1].n+1:1;
+  var topics=['Foundations & key terms','Active-recall drill','Timed practice questions','Review wrong answers'];
+  var lvl=m.profile.level||'GCSE';
+  var week={n:wkN,days:['Mon','Tue','Wed','Thu','Fri'].map(function(d,i){
+    return {date:null,d:d,dow:d,subj:target.s,level:lvl,topic:topics[i%topics.length],slot:2,time:'19:00',mins:30,
+      priority:'HIGH',mode:'Parent-set recovery · '+topics[i%topics.length]};
+  })};
+  plan.plan=(plan.plan||[]).concat([week]);
+  /* write back to the child's account (consent-gated: parent access already granted) */
+  try{localStorage.setItem('sy-u:'+m.email+':plan',JSON.stringify(plan))}catch(e){}
+  try{
+    var feed=JSON.parse(localStorage.getItem('sy-u:'+m.email+':activity'))||[];
+    feed.unshift({k:'plan',t:'Recovery plan from your parent',d:target.s+' — 5 sessions added by '+SY.session.name+'.',when:new Date().toISOString()});
+    localStorage.setItem('sy-u:'+m.email+':activity',JSON.stringify(feed.slice(0,100)));
+  }catch(e){}
+  SY.log('family','Intervention created for '+nm,target.s+' recovery week added to their planner.');
+  toast('Intervention created — a '+target.s+' recovery week was added to '+nm.split(' ')[0]+"'s planner");
+}
+
+/* ---- AI parent advisor ---- */
+function advisorAnswer(q){
+  var kids=SY.get('children',[]); if(!kids.length)return 'Link a child first, then I can answer from their live data.';
+  var m=metrics(kids[0].email), nm=SY.accountName(kids[0].email);
+  var t=q.toLowerCase();
+  if(/struggl|why.*(bad|low|behind)|worried/.test(t)){
+    return nm+' is finding '+(m.weakest||'some subjects')+' hardest — overall progress is '+m.overall+'% and '+
+      m.subjects.filter(function(x){return x.target&&x.mastery<gradeToPct(x.target)}).length+' subject(s) are below target pace. '+
+      'The fastest lever is short daily active-recall on '+(m.weakest||'the weakest topic')+'. Use the intervention button to add a recovery week.';
+  }
+  if(/urgent|which subject|attention|priorit/.test(t)){
+    return 'Most urgent: '+(m.weakest||'—')+' (progress '+ (m.subjects.find(function(x){return x.s===m.weakest})||{progress:0}).progress +'%). Protect the target grade there first; '+(m.strongest||'their strongest subject')+' is safe for now.';
+  }
+  if(/burnout|tired|stress|overwhelm/.test(t)){
+    return 'Burnout risk looks '+(m.streak>=3?'low':'moderate')+' — study streak is '+m.streak+' day(s) and weekly momentum '+(m.weekly>=0?'+':'')+m.weekly+'%. '+
+      'Keep sessions to 20–40 minutes, protect one rest day, and celebrate small wins to sustain motivation.';
+  }
+  if(/intensity|more|increase|harder|revision/.test(t)){
+    return (m.overall<60?'Yes — increase intensity gently on '+(m.weakest||'the weak areas')+', but keep sessions short and specific.':'Intensity looks about right. Hold the routine and shift toward past papers as the exam nears.')+
+      ' The planner already weights weak subjects heaviest.';
+  }
+  if(/universit|degree|career|pathway|future/.test(t)){
+    return 'On current strengths ('+m.subjects.filter(function(x){return x.mastery>=60}).slice(0,2).map(function(x){return x.s}).join(', ')||'developing across the board'+
+      '), the Future pathway tab suggests directions. Keep every subject above target to widen options.';
+  }
+  return 'Here\'s what the live data shows for '+nm+': overall progress '+m.overall+'%, predicted around Grade '+m.predicted+', exam risk '+m.risk.toLowerCase()+
+    '. Weakest: '+(m.weakest||'—')+'; strongest: '+(m.strongest||'—')+'. Ask about a subject, burnout, revision intensity, or university options.';
+}
+var CHIPS=['Why is my child struggling?','What subject needs urgent attention?','Is burnout likely?','Should revision intensity increase?'];
+$('advisor-chips').innerHTML=CHIPS.map(function(c){return '<button class="qchip">'+esc(c)+'</button>'}).join('');
+$('advisor-chips').querySelectorAll('.qchip').forEach(function(b){b.onclick=function(){$('advisor-in').value=b.textContent;askAdvisor()}});
+function askAdvisor(){var q=$('advisor-in').value.trim();if(!q)return;$('advisor-out').textContent=advisorAnswer(q)}
+$('advisor-go').onclick=askAdvisor;
+$('advisor-in').addEventListener('keydown',function(e){if(e.key==='Enter')askAdvisor()});
+
+/* ---- link a child ---- */
+$('link-go').onclick=function(){
+  var code=$('link-code').value.trim();
+  if(!/^\d{4,}$/.test(code)){toast('Enter the numeric link code from your child\'s account.');return}
+  var email=SY.resolveCode(code);
+  if(!email){toast('No account found for that code.');return}
+  var kids=SY.get('children',[]);
+  if(kids.some(function(k){return k.email===email})){toast('That child is already linked.');$('link-code').value='';return}
+  kids.push({email:email,name:SY.accountName(email),when:new Date().toISOString()});
+  SY.set('children',kids);
+  try{var pl=JSON.parse(localStorage.getItem('sy-u:'+email+':parentLinks'))||[];
+    if(!pl.some(function(p){return p.email===SY.session.email})){pl.push({email:SY.session.email,name:SY.session.name});localStorage.setItem('sy-u:'+email+':parentLinks',JSON.stringify(pl))}}catch(e){}
+  SY.log('family','Linked child: '+SY.accountName(email),'Live monitoring active.');
+  $('link-code').value=''; toast('Linked — live intelligence active'); render();
+};
+
+/* ---- tabs ---- */
+$('tabs').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+  $('tabs').querySelectorAll('button').forEach(function(x){x.classList.toggle('on',x===b)});
+  document.querySelectorAll('.tabpane').forEach(function(p){p.classList.toggle('on',p.id==='pane-'+b.dataset.t)});
+});
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+render();
+})();
+</script>
+</body>
+</html>

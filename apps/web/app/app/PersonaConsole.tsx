@@ -105,6 +105,7 @@ export default function PersonaConsole({ persona: p }: { persona: Persona }) {
           </a>
           {p.slug === 'student' && <a className="btn ghost" href={`${BASE}/study/`}>Open study workspace</a>}
           {p.slug === 'student' && <a className="btn ghost" href={`${BASE}/account/`}>My account</a>}
+          {p.slug === 'parent' && <a className="btn ghost" href={`${BASE}/parent/`}>Parent Command Centre</a>}
         </div>
       </section>
 
