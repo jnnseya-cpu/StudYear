@@ -210,10 +210,10 @@
   <div class="card c6">
     <h3>Subscription</h3>
     <div class="sub">Child Free includes 100 ACUs every month (this plan only — not added to paid subscriptions).
-      Paid plans from £5/mo add separate monthly ACU allowances; Premium (£10) unlocks the full toolkit.</div>
+      Paid plans run for a single 30-day term; Premium (£10) unlocks the full toolkit.</div>
     <div style="font-size:18px;font-family:var(--serif)"><span id="sub-plan">–</span><span class="pill" id="sub-status">active</span></div>
-    <div class="note">Top up ACUs anytime from Plans &amp; top-up — paid plans add monthly ACUs automatically when
-      Stripe bills successfully.</div>
+    <div class="note">Every paid plan stops automatically after 30 days — no auto-renewal and nothing to cancel.
+      Renew whenever you choose from Plans &amp; top-up.</div>
     <div class="row"><a class="btn" href="topup/">Plans &amp; top-up</a></div>
   </div>
 
@@ -257,21 +257,30 @@ var av=$('avatar');
 if(profile.photo){av.innerHTML='<img src="'+profile.photo+'" alt="">'}
 else{av.textContent=((profile.name||S.name)[0]||'?').toUpperCase()}
 
-/* ---------- wallet: Child Free ships 100 ACUs every month (this plan only) ---------- */
+/* ---------- wallet + subscription lifecycle ----------
+   Owner policy 2026-07: every paid monthly plan runs for exactly 30 days
+   then STOPS automatically — no auto-renewal, no lock-in, no retention flow.
+   Child Free (no payment) keeps granting 100 ACUs each month. ------------- */
 var PLAN_LABELS={child_free:'Child Free',student_access:'Student Access',student_premium:'Student Premium',
   student_premium_plus:'Student Premium+',student_max:'Student Max'};
-var MONTHLY_ACUS={child_free:100,student_access:500,student_premium:700,student_premium_plus:1650,student_max:2750};
 function monthKey(){return new Date().toISOString().slice(0,7)}
-var wallet=SY.get('wallet',null);
-if(!wallet){wallet={acus:100,plan:'child_free',month:monthKey()};SY.set('wallet',wallet)}
-if(wallet.month!==monthKey()){
-  if(wallet.plan==='child_free'){wallet.acus=100} // reset, never stacked
-  else{wallet.acus+=(MONTHLY_ACUS[wallet.plan]||0)} // preview of the successful-billing grant
-  wallet.month=monthKey();SY.set('wallet',wallet);
+function normalizeWallet(w){
+  if(!w){w={acus:100,plan:'child_free',month:monthKey()}}
+  // paid plan reached its 30-day end → stop, revert to Child Free, no renewal
+  if(w.plan!=='child_free'&&w.planExpires&&Date.now()>new Date(w.planExpires).getTime()){
+    w.endedPlan=PLAN_LABELS[w.plan]||w.plan; w.plan='child_free'; delete w.planExpires; w.month=monthKey();
+  }
+  // Child Free free tier: +100 ACUs at the start of each new month (packs kept)
+  if(w.plan==='child_free'&&w.month!==monthKey()){w.acus=(w.acus||0)+100; w.month=monthKey();}
+  return w;
 }
+var wallet=normalizeWallet(SY.get('wallet',null));
+SY.set('wallet',wallet);
+if(wallet.endedPlan){SY.log('billing',wallet.endedPlan+' ended','Your 30-day plan finished — no auto-renewal. You are back on Child Free; renew any time.');delete wallet.endedPlan;SY.set('wallet',wallet);}
 $('wal-acus').textContent=wallet.acus.toLocaleString();
 $('sub-plan').textContent=PLAN_LABELS[wallet.plan]||wallet.plan;
-$('sub-status').textContent='Status: active';
+function fmtDay(iso){try{return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}catch(e){return iso}}
+$('sub-status').textContent=wallet.plan==='child_free'?'Status: active (free)':('Ends '+fmtDay(wallet.planExpires));
 
 /* ---------- parent link code + QR ---------- */
 var code=SY.get('parentCode',null);

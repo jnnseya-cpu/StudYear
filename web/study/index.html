@@ -968,11 +968,18 @@ const PROFILE=store.get("profile",{});
 function logEvent(k,t,d){ if(SY&&SY.log) SY.log(k,t,d) }
 function allResources(){ return LIB.concat(store.get("mine",[])) }
 
-/* ---------- ACU wallet (shared with the account pages) ---------- */
+/* ---------- ACU wallet (shared with the account pages) ----------
+   Paid monthly plans stop automatically after 30 days (owner policy 2026-07):
+   no auto-renewal. Child Free keeps its monthly 100-ACU free grant. */
 function monthKey(){return new Date().toISOString().slice(0,7)}
 function getWallet(){
   let w=store.get("wallet",null);
-  if(!w){w={acus:100,plan:"child_free",month:monthKey()};store.set("wallet",w)}
+  if(!w){w={acus:100,plan:"child_free",month:monthKey()}}
+  if(w.plan!=="child_free"&&w.planExpires&&Date.now()>new Date(w.planExpires).getTime()){
+    w.plan="child_free";delete w.planExpires;w.month=monthKey();
+  }
+  if(w.plan==="child_free"&&w.month!==monthKey()){w.acus=(w.acus||0)+100;w.month=monthKey();}
+  store.set("wallet",w);
   return w;
 }
 function walletBalance(){return getWallet().acus}

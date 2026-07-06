@@ -150,9 +150,10 @@
   Paid plans add larger monthly allowances — from £5 Student Access through to £30 Student Max for daily heavy usage.</p>
 <div class="plans" id="plans"></div>
 
-<p class="fine">Secure payments processed by Stripe. ACU packs are one-time payments. Subscriptions renew monthly
-  until cancelled.<br>Preview build: Stripe checkout connects when the backend and new billing keys go live —
-  purchases here credit your local preview wallet so you can exercise the full flow.</p>
+<p class="fine">Secure payments processed by Stripe. ACU packs are one-time payments. <b>Every paid plan runs for exactly
+  30 days, then stops automatically — no auto-renewal, no lock-in and nothing to cancel.</b> Renew whenever you choose.
+  <br>Preview build: Stripe checkout connects when the backend and new billing keys go live — purchases here credit
+  your local preview wallet so you can exercise the full flow.</p>
 </main>
 </div>
 <div id="toast"></div>
@@ -188,10 +189,16 @@ var PLANS=[
 var LABELS={};PLANS.forEach(function(p){LABELS[p.id]=p.label});
 
 function monthKey(){return new Date().toISOString().slice(0,7)}
+var DAY=86400000;
+function fmtDay(iso){try{return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}catch(e){return iso}}
 var wallet=SY.get('wallet',null)||{acus:100,plan:'child_free',month:monthKey()};
+/* enforce the 30-day stop on load: a lapsed paid plan reverts to Child Free */
+if(wallet.plan!=='child_free'&&wallet.planExpires&&Date.now()>new Date(wallet.planExpires).getTime()){
+  wallet.plan='child_free';delete wallet.planExpires;wallet.month=monthKey();SY.set('wallet',wallet);
+}
 function drawWallet(){
   $('wal').textContent=fmt(wallet.acus);
-  $('cur-plan').textContent=LABELS[wallet.plan]||wallet.plan;
+  $('cur-plan').textContent=(LABELS[wallet.plan]||wallet.plan)+(wallet.plan!=='child_free'&&wallet.planExpires?(' · ends '+fmtDay(wallet.planExpires)):'');
   document.querySelectorAll('.plan .cur').forEach(function(x){x.remove()});
   var el=document.querySelector('.plan[data-id="'+wallet.plan+'"]');
   if(el){var c=document.createElement('span');c.className='cur';c.textContent='Your plan';el.appendChild(c)}
@@ -230,12 +237,18 @@ document.body.addEventListener('click',function(e){
   }
   if(b.dataset.plan){
     var pl=PLANS.find(function(x){return x.id===b.dataset.plan});
-    if(wallet.plan===pl.id){toast('You are already on '+pl.label);return}
-    wallet.plan=pl.id;
-    if(pl.pounds>0){wallet.acus+=pl.acus} // preview of the first successful monthly payment
-    wallet.month=monthKey();SY.set('wallet',wallet);drawWallet();
-    SY.log('billing','Subscribed to '+pl.label,pl.pounds>0?fmt(pl.acus)+' ACUs added on this month’s payment.':'Child Free — 100 ACUs every month.');
-    toast(pl.pounds===0?'You are on Child Free — 100 ACUs every month':'Preview subscription'+(promo?' (code '+promo+')':'')+' — '+pl.label+' active, '+fmt(pl.acus)+' ACUs added. Stripe renews it monthly when billing goes live.');
+    if(wallet.plan===pl.id&&pl.pounds>0){toast('You are already on '+pl.label);return}
+    wallet.plan=pl.id;wallet.month=monthKey();
+    if(pl.pounds>0){
+      wallet.acus+=pl.acus;                          // the single 30-day payment's ACUs
+      wallet.planStart=new Date().toISOString();
+      wallet.planExpires=new Date(Date.now()+30*DAY).toISOString(); // stops automatically after 30 days
+    }else{delete wallet.planExpires}
+    SY.set('wallet',wallet);drawWallet();
+    SY.log('billing',pl.pounds>0?('Started '+pl.label):'Switched to Child Free',
+      pl.pounds>0?(fmt(pl.acus)+' ACUs added · 30-day term, ends '+fmtDay(wallet.planExpires)+' with no auto-renewal.'):'Child Free — 100 ACUs every month.');
+    toast(pl.pounds===0?'You are on Child Free — 100 ACUs every month'
+      :'Preview '+pl.label+(promo?' (code '+promo+')':'')+' — '+fmt(pl.acus)+' ACUs added. Runs 30 days then stops automatically (no auto-renewal).');
   }
 });
 drawWallet();
