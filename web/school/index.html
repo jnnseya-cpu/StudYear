@@ -134,6 +134,11 @@
     </div>
   </div>
 
+  <div class="card c12" id="briefing-card" style="margin-top:18px;display:none">
+    <h3 id="briefing-h">☀️ Morning briefing</h3><div class="sub">School AI Command Centre™ — what needs you today. No surprises, only informed decisions.</div>
+    <div id="briefing"></div>
+  </div>
+
   <div class="card c12" id="cert-card" style="margin-top:16px;display:none"></div>
 
   <div class="sec-title">School Leadership Command Centre</div>
@@ -190,6 +195,14 @@
     <div class="card c6"><h3>Core progress</h3><div class="sub">Reading age, writing, maths &amp; predicted grades</div><div id="core-prog"></div></div>
     <div class="card c6"><h3>Readiness</h3><div class="sub">Career · university · apprenticeship · employment</div><div id="readiness"></div></div>
     <div class="card c6"><h3>Engagement &amp; wellbeing</h3><div class="sub">Homework, parental engagement &amp; mental wellbeing</div><div id="engage"></div></div>
+  </div>
+
+  <div class="sec-title">⚖️ AI Equity Engine™</div>
+  <div class="grid">
+    <div class="card c12"><h3>Progress by group</h3><div class="sub">Every group monitored — no group assumed to face the same challenge. Widest gaps drive targeted, evidence-based intervention.</div>
+      <div id="equity"></div>
+      <div id="equity-recs" style="margin-top:12px"></div>
+    </div>
   </div>
 
   <div class="grid" style="margin-top:16px">
@@ -625,6 +638,65 @@ function renderCertification(){
 }
 renderCertification();
 
+/* ============ Morning briefing (School AI Command Centre) ============ */
+function renderMorning(){
+  var card=$('briefing-card');if(!M.length){card.style.display='none';return}
+  card.style.display='block';
+  var attRisk=M.filter(function(m){return fld(m,'attendance',93)<85});
+  var wellAlert=M.filter(function(m){return fld(m,'wellbeing',72)<55});
+  var readConcern=M.filter(function(m){return fld(m,'readingAge',12)<(parseInt((''+m.year).match(/\d+/)||[7],10)+3.5)});
+  var mathConcern=M.filter(function(m){return fld(m,'maths',m.overall)<50});
+  var sendC=M.filter(function(m){return m.send});
+  var lowParent=M.filter(function(m){return fld(m,'parentEngage',60)<45});
+  var uni=Math.round(100*M.filter(function(m){return m.destination==='University'||m.overall>=72}).length/M.length);
+  var exceptional=M.filter(function(m){return fld(m,'progress',0)>=25}).length;
+  var workload=staff.length?Math.round(clamp(M.length/staff.length*4,0,100)):0;
+  var ppCount=M.filter(function(m){return m.pp||m.disadvantaged}).length;
+  var safeguard=SY.schoolGet(code,'safeguard',[]).length||M.filter(function(m){return m.risk==='CRITICAL'}).length;
+  var items=[
+    {i:'🚨',k:'Immediate intervention',v:atRisk.length,d:atRisk.length?atRisk.slice(0,2).map(function(m){return SY.accountName(m.email)}).join(', ')+(atRisk.length>2?'…':''):'None today',t:atRisk.length?'crit':'good'},
+    {i:'📈',k:'Exceptional progress',v:exceptional,d:'students accelerating',t:'good'},
+    {i:'📉',k:'Attendance risks',v:attRisk.length,d:'below 85%',t:attRisk.length?'warn':'good'},
+    {i:'❤️',k:'Wellbeing alerts',v:wellAlert.length,d:'need a check-in',t:wellAlert.length?'warn':'good'},
+    {i:'📚',k:'Reading concerns',v:readConcern.length,d:'below expected reading age',t:readConcern.length?'warn':'good'},
+    {i:'➗',k:'Maths concerns',v:mathConcern.length,d:'below 50% mastery',t:mathConcern.length?'warn':'good'},
+    {i:'🧠',k:'SEND',v:sendC.length,d:'on the register',t:'neutral'},
+    {i:'👨‍👩‍👧',k:'Parent engagement',v:lowParent.length,d:'low-engagement families',t:lowParent.length?'warn':'good'},
+    {i:'🎓',k:'Career readiness',v:uni+'%',d:'university-ready',t:'neutral'},
+    {i:'👩‍🏫',k:'Teacher workload',v:workload+'%',d:workload>80?'high — automate tasks':'sustainable',t:workload>80?'warn':'good'},
+    {i:'💰',k:'Funding',v:ppCount,d:'PP-eligible · grants',t:'neutral'},
+    {i:'⚠️',k:'Safeguarding',v:safeguard,d:safeguard?'active alerts':'clear',t:safeguard?'crit':'good'}
+  ];
+  $('briefing').innerHTML='<div class="signals">'+items.map(function(it){var c=it.t==='crit'?'#e66767':it.t==='warn'?'#c98500':it.t==='good'?'#5CBB7B':'#5FA8E0';
+    return '<div class="sig"><div class="sv" style="color:'+c+'">'+it.v+'</div><div class="sk">'+it.i+' '+it.k+'</div><div style="font-size:11px;color:var(--ink-3);margin-top:3px">'+esc(it.d)+'</div></div>';
+  }).join('')+'</div>';
+}
+renderMorning();
+
+/* ============ AI Equity Engine ============ */
+function renderEquity(){
+  if(!M.length){$('equity').innerHTML='<div class="empty">Load the demo school or link students to monitor equity.</div>';$('equity-recs').innerHTML='';return}
+  var groups=[
+    ['Disadvantaged',function(m){return m.disadvantaged||m.pp}],
+    ['White working-class',function(m){return m.ethnicity==='White British'&&(m.disadvantaged||m.pp)}],
+    ['Black pupils',function(m){return m.ethnicity==='Black'}],
+    ['Asian pupils',function(m){return m.ethnicity==='Asian'}],
+    ['Mixed heritage',function(m){return m.ethnicity==='Mixed heritage'}],
+    ['Girls',function(m){return m.gender==='Female'}],['Boys',function(m){return m.gender==='Male'}],
+    ['SEND',function(m){return m.send}],['EAL',function(m){return m.eal}],
+    ['Young carers',function(m){return m.youngCarer}],['Looked-after / in care',function(m){return m.lac}],
+    ['Refugees',function(m){return m.refugee}],['Traveller communities',function(m){return m.traveller}],
+    ['Recent migrants',function(m){return m.migrant}],['Low-income households',function(m){return m.lowIncome}]
+  ];
+  var rows=groups.map(function(g){var grp=M.filter(g[1]);if(grp.length<1)return null;var a=Math.round(avg(grp.map(function(m){return m.overall})));return {label:g[0],n:grp.length,avg:a,gap:cohort-a}}).filter(Boolean).sort(function(x,y){return y.gap-x.gap});
+  $('equity').innerHTML=rows.map(function(r){var c=r.gap<=4?'var(--good)':r.gap<=12?'var(--warn)':'var(--crit)';
+    return '<div class="rank"><span style="width:180px;font-size:12.5px">'+esc(r.label)+' <span style="color:var(--ink-3)">('+r.n+')</span></span><span class="bar"><i style="width:'+clamp(r.avg,0,100)+'%;background:'+c+'"></i></span><span class="val" style="width:92px">'+r.avg+'% <span style="color:'+c+'">'+(r.gap>0?'▼'+r.gap:'▲'+(-r.gap))+'</span></span></div>';
+  }).join('');
+  var worst=rows.filter(function(r){return r.gap>8}).slice(0,3);
+  $('equity-recs').innerHTML=worst.length?('<div class="note" style="font-style:normal;margin-bottom:4px">Targeted, evidence-based recommendations from the Inclusion &amp; Equity Agent:</div>'+worst.map(function(r){return '<div class="rec"><span class="ri">→</span><span><b>'+esc(r.label)+'</b> are '+r.gap+' pts behind the cohort — mentoring, targeted tutoring and family engagement for this group.</span></div>'}).join('')):'<div class="note">No group is materially behind — equitable outcomes across the cohort. Keep monitoring.</div>';
+}
+renderEquity();
+
 /* demo banner */
 if(DEMO){var db=$('demobar');db.style.display='flex';db.innerHTML='🎓 <b style="color:#e0b566">Demo school loaded</b> — '+M.length+' students, '+staff.length+' staff, fully populated with sample data. <b>No AI credits are used</b> — explore every dashboard freely. <button class="btn sm" id="clear-demo" style="margin-left:auto;padding:5px 11px">Clear demo</button>';
   $('clear-demo').onclick=function(){if(!confirm('Remove all demo data? Your real students and staff are not affected unless they were part of the demo.'))return;
@@ -663,10 +735,13 @@ function loadDemoSchool(){
     var gifted=overall>=86;var predicted=gradeFor(overall);
     var destination=overall>=75?'University':overall>=60?'Sixth Form / College':overall>=45?'Apprenticeship':'Needs support';
     var gender=Math.random()<0.49?'Female':'Male';var send=Math.random()<0.14;var pp=Math.random()<0.25;var eal=Math.random()<0.12;
+    var eth=pick(['White British','White British','White British','White other','Black','Asian','Asian','Mixed heritage','Other']);
+    var lowIncome=pp||Math.random()<0.12;var youngCarer=Math.random()<0.05;var lac=Math.random()<0.025;var refugee=Math.random()<0.04;var traveller=Math.random()<0.015;var migrant=eal&&Math.random()<0.4;
     var yrNum=parseInt((year.match(/\d+/)||[7])[0],10);
     var readingAge=Math.round(clamp(yrNum+5+ (overall-60)/12 + rnd(-1.2,1.2),6,19)*10)/10;
     roster.push({email:email,name:name,year:year,demo:true,m:{overall:overall,hw:Math.round(clamp(overall*0.7+rnd(10,35),10,100)),risk:risk,mastery:mastery,attendance:attendance,behaviour:behaviour,progress:progress,gifted:gifted,predicted:predicted,curriculum:Math.round(clamp(overall+rnd(0,14),20,100)),destination:destination,parentLinks:Math.random()<0.7?1:0,
-      gender:gender,send:send,pp:pp,eal:eal,readingAge:readingAge,writing:Math.round(clamp(overall+rnd(-10,8),15,100)),maths:mastery['Mathematics']||overall,parentEngage:Math.round(clamp((Math.random()<0.7?1:0)*40+overall*0.5+rnd(0,20),10,100)),wellbeing:Math.round(clamp(behaviour+rnd(-8,10),30,100))}});
+      gender:gender,send:send,pp:pp,eal:eal,readingAge:readingAge,writing:Math.round(clamp(overall+rnd(-10,8),15,100)),maths:mastery['Mathematics']||overall,parentEngage:Math.round(clamp((Math.random()<0.7?1:0)*40+overall*0.5+rnd(0,20),10,100)),wellbeing:Math.round(clamp(behaviour+rnd(-8,10),30,100)),
+      ethnicity:eth,lowIncome:lowIncome,disadvantaged:(pp||lowIncome),youngCarer:youngCarer,lac:lac,refugee:refugee,traveller:traveller,migrant:migrant}});
   }
   var depts=['Mathematics','Science','English','Humanities','Computing','Languages','Business','Social Sciences'];
   var staffN=[];for(var j=0;j<14;j++){var tn=pick(fn)+' '+pick(ln);staffN.push({email:'demo.teacher'+j+'@studyear.demo',name:tn,dept:depts[j%depts.length],perf:Math.round(clamp(rnd(55,95),40,98)),demo:true,cohorts:[],students:[]})}
