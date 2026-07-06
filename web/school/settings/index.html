@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — School Settings</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--gold-300:#A9CFF2;--gold-500:#3D8FD1;--good:#5CBB7B;--warn:#c98500;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#6B7A96;--line:rgba(77,157,224,.14);--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}body{background:radial-gradient(1200px 700px at 82% -12%,rgba(77,157,224,.13),transparent 60%),var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  .shell{display:flex;min-height:100vh;max-width:1440px;margin:0 auto}
+  aside{width:236px;flex:none;border-right:1px solid var(--line);padding:22px 14px 30px;position:sticky;top:0;align-self:flex-start;max-height:100vh;overflow-y:auto}
+  .slogo{font-family:var(--serif);font-size:19px;color:var(--ink);text-decoration:none;display:block;padding:4px 10px 14px}.slogo b{color:#4FA6E0;font-weight:600}
+  aside nav a{display:block;font-size:13px;color:var(--ink-2);text-decoration:none;padding:8px 10px;border-radius:8px;margin:1px 0}aside nav a:hover{color:var(--gold-300);background:rgba(77,157,224,.08)}aside nav a.on{color:var(--gold-300);background:rgba(77,157,224,.12)}
+  main{flex:1;padding:30px 30px 90px;min-width:0;max-width:860px}@media(max-width:960px){.shell{flex-direction:column}aside{width:100%;position:static;max-height:none;border-right:none;border-bottom:1px solid var(--line)}aside nav{display:flex;flex-wrap:wrap;gap:2px}main{padding:22px 18px 70px}}
+  a{color:inherit}h1{font-family:var(--serif);font-weight:500;font-size:28px}p.lede{color:var(--ink-2);font-weight:300;margin-top:6px;max-width:80ch}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:20px 22px;margin-top:18px}.card h3{font-family:var(--serif);font-weight:500;font-size:17px}.card .sub{font-size:12.5px;color:var(--ink-3);margin:5px 0 12px}
+  label.f{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:12px 0 5px}
+  input,select,textarea{width:100%;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}input:focus,select:focus,textarea:focus{border-color:var(--gold-500)}select option{background:#101B33}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:640px){.two{grid-template-columns:1fr}}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12px var(--sans);border-radius:9px;padding:9px 15px;cursor:pointer;text-decoration:none;display:inline-block}.btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}.btn.sm{padding:6px 11px;font-size:11.5px}
+  .code{font-family:var(--serif);font-size:28px;letter-spacing:.18em;color:var(--gold-300)}
+  .verify{border:1px solid rgba(201,133,0,.4);background:rgba(201,133,0,.08);border-radius:12px;padding:11px 15px;font-size:12.5px;color:#e0b566;margin-top:8px}
+  .prog{height:8px;border-radius:5px;background:rgba(170,182,204,.12);overflow:hidden;margin-top:8px}.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-500),var(--good))}
+  .note{font-size:11.5px;color:var(--ink-3);font-style:italic;margin-top:8px}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+</style></head><body>
+<script src="../../guard.js" data-role="school" data-base="../../"></script>
+<div class="shell">
+<aside><a class="slogo" href="../../">⌂ Stud<b>Year</b></a><nav>
+  <a href="../">Command Centre</a><a href="../#risk">Risk intelligence</a><a href="../interventions/">Intervention war room</a><a href="../people/">People management</a><a href="../analytics/">Analytics</a><a href="../acu/">ACU command</a><a href="../assessments/">Assessments</a><a href="../reports/">Executive reports</a><a href="../resources/">Knowledge hub</a><a href="../plans/">Top up ACUs</a><a href="./" class="on">Settings</a>
+</nav></aside>
+<main>
+  <h1>School Settings</h1><p class="lede">Set up your school with all the information StudYear needs to personalise every learner, deploy staff, and keep your institution compliant. Record MIS integration plans (automated sync remains optional).</p>
+
+  <div class="card"><h3>Setup progress</h3><div class="prog"><i id="setup-bar" style="width:0%"></i></div><div class="note" id="setup-note" style="font-style:normal"></div>
+    <div class="verify" id="verify"></div></div>
+
+  <div class="card"><h3>School Join Code</h3><div class="sub">Teachers enter this code on their Command Centre to link to your school. You can also invite them by email on People management.</div>
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span class="code" id="join-code">------</span><button class="btn sm" id="copy-code">Copy</button><button class="btn sm" id="regen">Regenerate</button></div></div>
+
+  <div class="card"><h3>Institution details</h3><div class="sub">The core record for your school.</div>
+    <div class="two">
+      <div><label class="f">School display name *</label><input type="text" id="s-name" placeholder="e.g. Elmwood High School"></div>
+      <div><label class="f">Legal / registered name</label><input type="text" id="s-legal" placeholder="e.g. Elmwood Academy Trust"></div>
+      <div><label class="f">School type *</label><select id="s-type"><option value="">Select…</option><option>Primary</option><option>Secondary</option><option>All-through</option><option>Sixth form / college</option><option>Independent</option><option>Special school</option><option>Academy trust / MAT</option><option>Tuition centre</option></select></div>
+      <div><label class="f">Country / region *</label><select id="s-region"><option value="">Select…</option><option>England</option><option>Scotland</option><option>Wales</option><option>Northern Ireland</option><option>Other (UK)</option><option>International</option></select></div>
+      <div><label class="f">DfE / URN / centre number</label><input type="text" id="s-urn" placeholder="e.g. 123456"></div>
+      <div><label class="f">Timezone</label><select id="s-tz"><option>Europe/London</option><option>Europe/Dublin</option><option>UTC</option></select></div>
+      <div><label class="f">Approx. number of students *</label><input type="text" id="s-size" placeholder="e.g. 850"></div>
+      <div><label class="f">Main contact email</label><input type="text" id="s-email" placeholder="admin@school.uk"></div>
+    </div>
+    <label class="f">Address</label><input type="text" id="s-address" placeholder="Street, town, postcode">
+  </div>
+
+  <div class="card"><h3>Safeguarding &amp; leadership</h3><div class="sub">Required so risk alerts and interventions route to the right people.</div>
+    <div class="two">
+      <div><label class="f">Designated Safeguarding Lead (DSL)</label><input type="text" id="s-dsl" placeholder="Name"></div>
+      <div><label class="f">DSL contact email</label><input type="text" id="s-dsl-email" placeholder="dsl@school.uk"></div>
+      <div><label class="f">Head / Principal</label><input type="text" id="s-head" placeholder="Name"></div>
+      <div><label class="f">Data protection contact</label><input type="text" id="s-dpo" placeholder="Name / email"></div>
+    </div>
+    <label style="display:flex;gap:9px;align-items:center;font-size:13px;color:var(--ink-2);margin-top:12px"><input type="checkbox" id="s-consent" style="width:auto;accent-color:var(--gold-500)">We have parental consent processes in place for students under 13 (COPPA/UK-GDPR).</label>
+  </div>
+
+  <div class="card"><h3>MIS integration (planned / current)</h3><div class="sub">Automated sync is optional — record your plans now.</div>
+    <div class="two">
+      <div><label class="f">MIS provider</label><select id="s-mis"><option>Not connected</option><option>SIMS</option><option>Arbor</option><option>Bromcom</option><option>ScholarPack</option><option>iSAMS</option><option>Other</option></select></div>
+      <div><label class="f">Preferred sync</label><select id="s-sync"><option>Manual CSV import</option><option>Scheduled API sync (planned)</option><option>None for now</option></select></div>
+    </div>
+    <label class="f">Integration notes</label><textarea id="s-notes" rows="3" placeholder="API keys, contact at vendor, data-mapping decisions…"></textarea>
+  </div>
+
+  <div style="margin-top:20px"><button class="btn solid" id="save">Save settings</button> <a class="btn" href="../people/">Go to People management</a></div>
+</main>
+</div>
+<div id="toast"></div>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;var S=SY.session;
+function $(id){return document.getElementById(id)}var tt;function toast(t){var el=$('toast');el.textContent=t;el.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){el.style.opacity=0},2600)}
+var code=SY.get('schoolCode',null);if(!code){code=(Math.random().toString(36).slice(2,10)).toUpperCase();SY.set('schoolCode',code)}
+$('join-code').textContent=code;
+var profile=SY.get('profile',{});var settings=SY.get('schoolSettings',{});
+var FIELDS=['name','legal','type','region','urn','tz','size','email','address','dsl','dsl-email','head','dpo','mis','sync','notes'];
+$('s-name').value=settings.name||profile.name||S.name||'';
+FIELDS.forEach(function(f){if(f==='name')return;var el=$('s-'+f);if(el&&settings[f]!=null)el.value=settings[f]});
+$('s-consent').checked=!!settings.consent;
+var REQUIRED=['name','type','region','size'];
+function progress(){
+  var filled=0,tot=REQUIRED.length;REQUIRED.forEach(function(f){if(($('s-'+f).value||'').trim())filled++});
+  var pct=Math.round(100*filled/tot);
+  $('setup-bar').style.width=pct+'%';
+  $('setup-note').textContent=pct===100?'Core setup complete — your school is ready to deploy staff and students.':filled+' of '+tot+' required fields complete.';
+  var verified=pct===100&&($('s-email').value||'').trim();
+  $('verify').innerHTML=verified?'✓ Core details recorded. Full platform verification completes when our team confirms your institution (you can use everything meanwhile).':'⚠ Your institution shows as <b>pending</b> until the required details are saved. You can use the Command Centre, onboarding and ACU tools while setup is in progress.';
+}
+REQUIRED.forEach(function(f){$('s-'+f).addEventListener('input',progress)});progress();
+$('s-email').addEventListener('input',progress);
+
+$('copy-code').onclick=function(){(navigator.clipboard?navigator.clipboard.writeText(code):Promise.reject()).then(function(){toast('Join code copied')},function(){toast('Code: '+code)})};
+$('regen').onclick=function(){if(!confirm('Regenerate the join code? New staff/students must use the new code.'))return;code=(Math.random().toString(36).slice(2,10)).toUpperCase();SY.set('schoolCode',code);SY.schoolSet(code,'name',$('s-name').value||S.name);$('join-code').textContent=code;toast('New join code generated')};
+$('save').onclick=function(){
+  var name=$('s-name').value.trim();if(name.length<2){toast('Enter your school display name');return}
+  if(!$('s-type').value||!$('s-region').value){toast('Select school type and region');return}
+  var out={};FIELDS.forEach(function(f){var el=$('s-'+f);if(el)out[f]=el.value.trim?el.value.trim():el.value});
+  out.consent=$('s-consent').checked; out.verified=($('setup-bar').style.width==='100%');
+  SY.set('schoolSettings',out);
+  profile.name=name;SY.set('profile',profile);
+  try{var us=JSON.parse(localStorage.getItem('sy-users'))||[];var me=us.find(function(u){return u.email===S.email&&u.role==='school'});if(me){me.name=name;localStorage.setItem('sy-users',JSON.stringify(us))}S.name=name;localStorage.setItem('sy-session',JSON.stringify(S))}catch(e){}
+  SY.schoolSet(code,'name',name);
+  SY.log('settings','School settings saved',name+' · '+($('s-type').value||''));
+  toast('School settings saved');progress();
+};
+})();
+</script>
+</body></html>

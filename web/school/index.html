@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — School Command Centre</title>
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--navy-900:#0B1220;--navy-800:#101B33;--gold-300:#A9CFF2;--gold-400:#5FA8E0;--gold-500:#3D8FD1;
+    --ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#6B7A96;--good:#5CBB7B;--warn:#c98500;--crit:#e66767;--line:rgba(77,157,224,.14);
+    --serif:Georgia,"Times New Roman",serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:radial-gradient(1200px 700px at 82% -12%,rgba(77,157,224,.14),transparent 60%),radial-gradient(900px 700px at -10% 25%,rgba(22,37,74,.85),transparent 65%),var(--navy-950);
+    color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .shell{display:flex;min-height:100vh;max-width:1440px;margin:0 auto}
+  aside{width:236px;flex:none;border-right:1px solid var(--line);padding:22px 14px 30px;position:sticky;top:0;align-self:flex-start;max-height:100vh;overflow-y:auto}
+  .slogo{font-family:var(--serif);font-size:19px;color:var(--ink);text-decoration:none;display:block;padding:4px 10px 14px}.slogo b{color:#4FA6E0;font-weight:600}
+  aside nav a{display:block;font-size:13px;color:var(--ink-2);text-decoration:none;padding:8px 10px;border-radius:8px;margin:1px 0}
+  aside nav a:hover{color:var(--gold-300);background:rgba(77,157,224,.08)}
+  aside nav a.on{color:var(--gold-300);background:rgba(77,157,224,.12)}
+  main{flex:1;padding:30px 30px 90px;min-width:0}
+  @media(max-width:960px){.shell{flex-direction:column}aside{width:100%;position:static;max-height:none;border-right:none;border-bottom:1px solid var(--line)}aside nav{display:flex;flex-wrap:wrap;gap:2px}main{padding:22px 18px 70px}}
+  a{color:inherit}
+  .hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .hd .live{font-size:11px;color:var(--good);border:1px solid rgba(92,187,123,.4);border-radius:20px;padding:3px 10px}
+  .hd .sp{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .chip{font-size:12px;color:var(--ink-2);border:1px solid rgba(170,182,204,.25);border-radius:20px;padding:6px 12px;text-decoration:none}
+  h1{font-family:var(--serif);font-weight:500;font-size:30px;letter-spacing:-.01em;margin-top:6px}
+  .lede{color:var(--ink-2);font-weight:300;margin-top:4px}
+  .avatar{width:34px;height:34px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px;text-decoration:none}
+  .avatar img{width:100%;height:100%;object-fit:cover}
+  .sec-title{font-family:var(--serif);font-weight:500;font-size:20px;margin:26px 0 12px}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+  .c3{grid-column:span 3}.c4{grid-column:span 4}.c6{grid-column:span 6}.c8{grid-column:span 8}.c12{grid-column:span 12}
+  @media(max-width:960px){.grid>*{grid-column:span 6}}@media(max-width:600px){.grid>*{grid-column:span 12}}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:16px 18px}
+  .card h3{font-family:var(--serif);font-weight:500;font-size:16px}.card .sub{font-size:12px;color:var(--ink-3);margin:4px 0 10px}
+  .stat .v{font-family:var(--serif);font-size:28px;color:var(--gold-300);line-height:1}
+  .stat .k{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12px var(--sans);border-radius:9px;padding:9px 16px;cursor:pointer;text-decoration:none;display:inline-block}
+  .btn:hover{background:rgba(77,157,224,.22)}.btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}
+  .badge{font-size:10px;letter-spacing:.06em;border-radius:20px;padding:3px 9px;border:1px solid rgba(170,182,204,.25);color:var(--ink-2)}
+  .badge.warn{border-color:rgba(201,133,0,.5);color:#e0b566}.badge.crit{border-color:rgba(230,103,103,.5);color:#f0a0a0}.badge.good{border-color:rgba(92,187,123,.5);color:var(--good)}
+  .heatrow{display:flex;align-items:center;gap:10px;margin:7px 0}
+  .heatrow .hb{flex:1;height:10px;border-radius:5px;background:rgba(170,182,204,.12);overflow:hidden}
+  .heatrow .hb i{display:block;height:100%}
+  .empty{color:var(--ink-3);font-style:italic;padding:16px 0}
+  .tl{font-size:13px;color:var(--ink-2);padding:7px 0;border-bottom:1px solid rgba(170,182,204,.08)}
+  .tl b{color:var(--ink)}.tl .w{color:var(--ink-3);font-size:11.5px}
+  .note{font-size:11.5px;color:var(--ink-3);font-style:italic;margin-top:8px}
+</style>
+</head>
+<body>
+<script src="../guard.js" data-role="school" data-base="../"></script>
+<div class="shell">
+<aside>
+  <a class="slogo" href="../">⌂ Stud<b>Year</b></a>
+  <nav>
+    <a href="./" class="on">Command Centre</a>
+    <a href="#risk">Risk intelligence</a>
+    <a href="interventions/">Intervention war room</a>
+    <a href="people/">People management</a>
+    <a href="analytics/">Analytics</a>
+    <a href="acu/">ACU command</a>
+    <a href="assessments/">Assessments</a>
+    <a href="reports/">Executive reports</a>
+    <a href="resources/">Knowledge hub</a>
+    <a href="plans/">Top up ACUs</a>
+    <a href="settings/">Settings</a>
+  </nav>
+</aside>
+<main>
+  <div class="hd">
+    <span class="live">● Live</span>
+    <span class="badge warn" id="verif">setup in progress</span>
+    <div class="sp">
+      <a class="chip" href="people/">People</a>
+      <a class="chip" href="plans/">Top up</a>
+      <a class="chip" href="account/">Settings</a>
+      <a class="avatar" href="account/" id="topavatar"></a>
+    </div>
+  </div>
+  <h1>AI Academic Operations Centre</h1>
+  <p class="lede" id="lede">Executive visibility across your institution.</p>
+
+  <div class="sec-title">Mission-critical intelligence</div>
+  <div class="grid">
+    <div class="card stat c3"><div class="v" id="m-students">0</div><div class="k">Active students</div></div>
+    <div class="card stat c3"><div class="v" id="m-risk">0</div><div class="k">At risk</div></div>
+    <div class="card stat c3"><div class="v" id="m-cohort">0%</div><div class="k">Cohort progress</div></div>
+    <div class="card stat c3"><div class="v" id="m-hw">0%</div><div class="k">Homework completion</div></div>
+    <div class="card stat c3"><div class="v" id="m-interv">0</div><div class="k">Active interventions</div></div>
+    <div class="card stat c3"><div class="v" id="m-staff">0</div><div class="k">Staff deployed</div></div>
+    <div class="card stat c3"><div class="v" id="m-parents">0</div><div class="k">Parent links</div></div>
+    <div class="card stat c3"><div class="v" id="m-acu">0</div><div class="k">ACU balance (pool)</div></div>
+  </div>
+
+  <div class="grid" style="margin-top:16px">
+    <div class="card c6">
+      <h3>People management</h3><div class="sub">Invite teachers, link students, assign cohorts — one page</div>
+      <div style="display:flex;gap:18px;margin:8px 0"><div class="stat"><div class="v" id="pm-staff">0</div><div class="k">Staff</div></div><div class="stat"><div class="v" id="pm-students">0</div><div class="k">Students</div></div></div>
+      <div class="row" style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn solid" href="people/">Open people management</a><a class="btn" href="people/#add-teacher">Add teachers</a><a class="btn" href="people/#add-student">Add students</a></div>
+    </div>
+    <div class="card c6">
+      <h3>School insight snapshot</h3><div class="sub">AI analysis from live cohort data</div>
+      <div id="insight"></div>
+    </div>
+    <div class="card c6" id="analytics">
+      <h3>Year-group health map</h3><div class="sub">Green stable · amber declining · red critical</div>
+      <div id="healthmap"></div>
+    </div>
+    <div class="card c6">
+      <h3>Subject / department pressure</h3><div class="sub">Weakest areas requiring leadership attention</div>
+      <div id="pressure"></div>
+    </div>
+    <div class="card c8" id="risk">
+      <h3>Live Risk Intelligence</h3><div class="sub">AI-detected academic risk signals — declining grades, homework gaps, urgency</div>
+      <div id="riskfeed"></div>
+    </div>
+    <div class="card c4">
+      <h3>Intervention war room</h3><div class="sub">Academic recovery pipeline</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0">
+        <div class="stat"><div class="v" id="iv-id">0</div><div class="k">Identified</div></div>
+        <div class="stat"><div class="v" id="iv-active">0</div><div class="k">Active</div></div>
+        <div class="stat"><div class="v" id="iv-improve">0</div><div class="k">Improving</div></div>
+        <div class="stat"><div class="v" id="iv-closed">0</div><div class="k">Closed</div></div>
+      </div>
+      <a class="btn" href="interventions/">Manage war room</a>
+    </div>
+    <div class="card c8">
+      <h3>Live school timeline</h3><div class="sub">Operational activity across your institution</div>
+      <div id="timeline"></div>
+    </div>
+    <div class="card c4" id="acu">
+      <h3>ACU command centre</h3><div class="sub">Live AI consumption infrastructure</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0">
+        <div class="stat"><div class="v" id="acu-bal">0</div><div class="k">Balance</div></div>
+        <div class="stat"><div class="v" id="acu-burn">0</div><div class="k">7-day burn</div></div>
+      </div>
+      <div class="note" id="acu-note" style="font-style:normal">AI consumption is within sustainable range for your cohort size.</div>
+      <div style="margin-top:8px"><a class="btn solid" href="plans/">Top up ACUs</a></div>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top:16px">
+    <div class="card c6" id="assessments"><h3>Assessments</h3><div class="sub">Upcoming assessments across cohorts</div><div id="assess"></div></div>
+    <div class="card c6" id="reports"><h3>Executive reports</h3><div class="sub">Board-ready summaries</div>
+      <div class="note" style="font-style:normal">Generate a cohort report once students are linked — attainment vs target, risk register, and ACU usage.</div>
+      <div style="margin-top:8px"><a class="btn" href="#" id="gen-report">Generate summary</a></div>
+      <div id="report-out"></div></div>
+    <div class="card c12" id="knowledge"><h3>Knowledge hub</h3><div class="sub">Shared resources set to your cohort</div>
+      <div class="note" style="font-style:normal">Post class work and resources to your join code — linked students (and their parents, if allowed) receive it. Manage from People management.</div></div>
+  </div>
+</main>
+</div>
+
+<script>
+(function(){
+'use strict';
+var SY=window.SY; if(!SY) return; var S=SY.session;
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function gradeFor(m){return Math.max(1,Math.min(9,Math.round(1+8*m/100)))}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+
+var profile=SY.get('profile',{});
+var schoolName=profile.name||S.name||'Your school';
+$('lede').textContent='Executive visibility for '+schoolName+'.';
+var _ta=$('topavatar');
+if(profile.photo)_ta.innerHTML='<img src="'+profile.photo+'" alt="">';else _ta.textContent=(schoolName[0]||'S').toUpperCase();
+
+/* school join code (published so teachers/students can link) */
+var code=SY.get('schoolCode',null);
+if(!code){code=(Math.random().toString(36).slice(2,10)).toUpperCase();SY.set('schoolCode',code)}
+SY.schoolSet(code,'name',schoolName); SY.schoolSet(code,'admin',S.email);
+$('verif').textContent=(profile.verified?'verified':'setup in progress');
+
+var roster=SY.schoolGet(code,'roster',[]);
+var staff=SY.schoolGet(code,'staff',[]);
+var interventions=SY.schoolGet(code,'interventions',[]);
+var pool=SY.schoolGet(code,'acu',{balance:0,burn:[]});
+
+/* live metrics per student */
+function metrics(email){
+  var pf=SY.readAccount(email,'profile',{}),qz=SY.readAccount(email,'quizzes',[]),diag=(SY.readAccount(email,'diagnostics',[])||[])[0]||null,plan=SY.readAccount(email,'plan',null),act=SY.readAccount(email,'activity',[]),consent=SY.readAccount(email,'consent',{parent:true});
+  var by={};qz.forEach(function(q){(by[q.subj]=by[q.subj]||[]).push(q.pct)});
+  var mast={};Object.keys(by).forEach(function(s){mast[s]=Math.round(by[s].reduce(function(a,b){return a+b},0)/by[s].length)});
+  if(diag)diag.list.forEach(function(x){mast[x.s]=mast[x.s]!=null?Math.round((mast[x.s]+x.mastery)/2):x.mastery});
+  var subs=Object.keys(mast),overall=subs.length?Math.round(subs.reduce(function(a,s){return a+mast[s]},0)/subs.length):(diag?diag.avg:0);
+  var total=plan&&plan.plan?plan.plan.reduce(function(a,w){return a+w.days.length},0):0,done=plan&&plan.done?Object.keys(plan.done).length:0;
+  var hw=total?Math.round(100*done/total):0;
+  var parentLinks=(SY.readAccount(email,'parentLinks',[])||[]).length;
+  return {email:email,profile:pf,mastery:mast,overall:overall,risk:diag?diag.risk:(overall<40?'HIGH':overall<60?'MEDIUM':'LOW'),hw:hw,parentLinks:parentLinks,year:pf.level||'—'};
+}
+var M=roster.map(function(r){return metrics(r.email)});
+var atRisk=M.filter(function(m){return m.risk==='HIGH'||m.risk==='CRITICAL'});
+var cohort=M.length?Math.round(M.reduce(function(a,b){return a+b.overall},0)/M.length):0;
+var hwAvg=M.length?Math.round(M.reduce(function(a,b){return a+b.hw},0)/M.length):0;
+var parentTotal=M.reduce(function(a,b){return a+b.parentLinks},0);
+
+$('m-students').textContent=M.length; $('pm-students').textContent=M.length;
+$('m-risk').textContent=atRisk.length;
+$('m-cohort').textContent=cohort+'%';
+$('m-hw').textContent=hwAvg+'%';
+$('m-interv').textContent=interventions.filter(function(i){return i.status==='active'||i.status==='identified'}).length;
+$('m-staff').textContent=staff.length; $('pm-staff').textContent=staff.length;
+$('m-parents').textContent=parentTotal;
+$('m-acu').textContent=(pool.balance||0).toLocaleString();
+
+/* insight snapshot */
+if(!M.length){$('insight').innerHTML='<div class="empty">Deploy students and staff to unlock AI-powered school insight snapshots.</div>';}
+else{
+  var weakSubj={};M.forEach(function(m){Object.keys(m.mastery).forEach(function(s){(weakSubj[s]=weakSubj[s]||[]).push(m.mastery[s])})});
+  var pressure=Object.keys(weakSubj).map(function(s){return {s:s,avg:Math.round(weakSubj[s].reduce(function(a,b){return a+b},0)/weakSubj[s].length)}}).sort(function(a,b){return a.avg-b.avg});
+  $('insight').innerHTML='<div class="tl">Cohort attainment averages <b>'+cohort+'%</b> across '+M.length+' students.</div>'+
+    (atRisk.length?'<div class="tl"><b>'+atRisk.length+'</b> student(s) flagged at elevated risk — see Risk Intelligence.</div>':'<div class="tl">No students at elevated risk right now.</div>')+
+    (pressure[0]?'<div class="tl">Greatest pressure: <b>'+esc(pressure[0].s)+'</b> ('+pressure[0].avg+'% average).</div>':'');
+  /* health map by year group */
+  var byYear={};M.forEach(function(m){(byYear[m.year]=byYear[m.year]||[]).push(m.overall)});
+  $('healthmap').innerHTML=Object.keys(byYear).map(function(y){var a=Math.round(byYear[y].reduce(function(x,z){return x+z},0)/byYear[y].length);
+    var col=a>=70?'var(--good)':a>=50?'var(--warn)':'var(--crit)';
+    return '<div class="heatrow"><span style="width:110px;font-size:12.5px">'+esc(y)+'</span><div class="hb"><i style="width:'+a+'%;background:'+col+'"></i></div><span style="font-size:12px;color:var(--ink-2);width:44px;text-align:right">'+a+'%</span></div>';
+  }).join('');
+  $('pressure').innerHTML=pressure.slice(0,6).map(function(p){var col=p.avg>=70?'var(--good)':p.avg>=50?'var(--warn)':'var(--crit)';
+    return '<div class="heatrow"><span style="width:130px;font-size:12.5px">'+esc(p.s)+'</span><div class="hb"><i style="width:'+p.avg+'%;background:'+col+'"></i></div><span style="font-size:12px;color:var(--ink-2);width:44px;text-align:right">'+p.avg+'%</span></div>';
+  }).join('');
+}
+if(!M.length){$('healthmap').innerHTML='<div class="empty">No data yet — link students to populate the health map.</div>';$('pressure').innerHTML='<div class="empty">No data yet — link students to populate the health map.</div>';}
+
+/* risk feed */
+$('riskfeed').innerHTML=atRisk.length?atRisk.map(function(m){
+  return '<div class="tl"><span class="badge '+(m.risk==='CRITICAL'?'crit':'warn')+'">'+m.risk.toLowerCase()+'</span> <b>'+esc(SY.accountName(m.email))+'</b> · overall '+m.overall+'% · homework '+m.hw+'% <a href="interventions/" style="color:var(--gold-300)">→ intervene</a></div>';
+}).join(''):'<div class="empty">'+(M.length?'No active alerts — the system flags students automatically from performance data.':'Import students or link accounts to activate live intelligence.')+'</div>';
+
+/* intervention counts */
+$('iv-id').textContent=interventions.filter(function(i){return i.status==='identified'}).length;
+$('iv-active').textContent=interventions.filter(function(i){return i.status==='active'}).length;
+$('iv-improve').textContent=interventions.filter(function(i){return i.status==='improving'}).length;
+$('iv-closed').textContent=interventions.filter(function(i){return i.status==='closed'}).length;
+
+/* timeline (from school log + roster activity) */
+var events=(SY.get('activity',[])||[]).slice(0,10).map(function(a){return {t:a.t,w:a.when}});
+M.forEach(function(m){(SY.readAccount(m.email,'activity',[])||[]).slice(0,2).forEach(function(a){events.push({t:SY.accountName(m.email)+': '+a.t,w:a.when})})});
+events.sort(function(a,b){return (b.w||'').localeCompare(a.w||'')});
+$('timeline').innerHTML=events.length?events.slice(0,12).map(function(e){return '<div class="tl"><b>'+esc(e.t)+'</b> <span class="w">'+(e.w?SY.timeAgo(e.w):'')+'</span></div>'}).join(''):'<div class="empty">No recent activity yet.</div>';
+
+/* ACU command */
+$('acu-bal').textContent=(pool.balance||0).toLocaleString();
+var burn=(pool.burn||[]).reduce(function(a,b){return a+b},0);
+$('acu-burn').textContent=burn.toLocaleString();
+var intensity=pool.balance?clamp(Math.round(burn/Math.max(1,pool.balance)*100),0,100):0;
+$('acu-note').textContent=intensity>80?'High consumption — consider a top-up or plan upgrade.':'AI consumption is within sustainable range for your cohort size ('+intensity+'% intensity).';
+
+/* assessments (from linked students' plans, nearest exam dates) */
+var assess=[];M.forEach(function(m){var p=SY.readAccount(m.email,'planform',null);});
+$('assess').innerHTML='<div class="empty">'+(M.length?'No shared assessments scheduled — post one from People management.':'Link students to see upcoming assessments.')+'</div>';
+
+$('gen-report').onclick=function(e){e.preventDefault();
+  if(!M.length){$('report-out').innerHTML='<div class="note" style="font-style:normal">Link students first.</div>';return}
+  $('report-out').innerHTML='<div class="tl" style="margin-top:10px"><b>Executive summary</b></div>'+
+    '<div class="tl">Cohort attainment '+cohort+'% · '+atRisk.length+' at-risk · homework completion '+hwAvg+'% · '+staff.length+' staff · '+M.length+' students.</div>'+
+    '<div class="tl">Recommended focus: '+(atRisk.length?'the '+atRisk.length+' at-risk students and the weakest department.':'sustain momentum; no critical risks.')+'</div>';
+};
+})();
+</script>
+</body>
+</html>

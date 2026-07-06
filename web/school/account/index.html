@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — School Account</title>
+<link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--navy-900:#0B1220;--gold-300:#A9CFF2;--gold-400:#5FA8E0;--gold-500:#3D8FD1;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#6B7A96;--good:#5CBB7B;--crit:#e66767;--warn:#c98500;--line:rgba(77,157,224,.14);--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:radial-gradient(1100px 600px at 80% -10%,rgba(77,157,224,.1),transparent 60%),var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  .wrap{max-width:1040px;margin:0 auto;padding:30px 26px 90px}a{color:inherit}
+  .top{display:flex;gap:12px;align-items:center;margin-bottom:8px}.logo{font-family:var(--serif);font-size:20px;text-decoration:none;display:inline-flex;gap:9px;align-items:center}.logo b{color:#4FA6E0;font-weight:600}.top .sp{margin-left:auto;display:flex;gap:8px}.chip{font-size:12px;color:var(--ink-2);border:1px solid rgba(170,182,204,.25);border-radius:20px;padding:6px 13px;text-decoration:none}
+  header.page h1{font-family:var(--serif);font-weight:500;font-size:32px;margin-top:8px}header.page p{color:var(--ink-2);margin-top:6px;font-weight:300}
+  .banner{border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-top:16px;background:rgba(16,27,51,.5)}
+  .banner .cov{height:140px;background:linear-gradient(120deg,#13294B,#0B1220)}.banner .cov img{width:100%;height:100%;object-fit:cover}
+  .banner .idrow{display:flex;gap:16px;align-items:center;padding:0 22px 18px;margin-top:-34px}
+  .avatar{width:78px;height:78px;border-radius:18px;flex:none;display:grid;place-items:center;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff;font-weight:700;font-size:30px;overflow:hidden;border:3px solid var(--navy-900)}.avatar img{width:100%;height:100%;object-fit:cover}
+  .banner .idrow b{display:block;font-size:20px;font-family:var(--serif)}.banner .idrow small{color:var(--ink-3);font-size:13px}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-top:18px}.c6{grid-column:span 6}.c12{grid-column:span 12}@media(max-width:840px){.grid>*{grid-column:span 12}}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.62),rgba(11,18,32,.9));padding:20px 22px}.card h3{font-family:var(--serif);font-weight:500;font-size:18px}.card .sub{font-size:12.5px;color:var(--ink-2);margin:6px 0 12px;font-weight:300}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 13px var(--sans);border-radius:9px;padding:10px 18px;cursor:pointer;text-decoration:none;display:inline-block}.btn:hover{background:rgba(77,157,224,.22)}.btn.ghost{border-color:rgba(170,182,204,.25);background:none;color:var(--ink-2)}.btn.danger{border-color:rgba(230,103,103,.6);background:rgba(230,103,103,.08);color:#f0b3b3}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}label.f{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:12px 0 5px}input{width:100%;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}
+  .wal{font-family:var(--serif);font-size:48px;color:var(--gold-300);line-height:1}.wal-k{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}
+  .pill{display:inline-block;font-size:11px;border:1px solid rgba(201,133,0,.5);color:#e0b566;border-radius:20px;padding:3px 11px;margin-left:8px;vertical-align:5px}
+  .danger-card{border-color:rgba(230,103,103,.35)}.danger-card h3{color:#f0b3b3}.hidden{display:none}.note{font-size:11.5px;color:var(--ink-3);margin-top:12px;font-style:italic}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+</style>
+</head>
+<body>
+<script src="../../guard.js" data-role="school" data-base="../../"></script>
+<div class="wrap">
+<div class="top"><a class="logo" href="../../">⌂ Stud<b>Year</b></a><div class="sp"><a class="chip" href="../">Command Centre</a><a class="chip" href="#" id="signout">Sign out</a></div></div>
+<header class="page"><h1>My Account</h1><p>View your account details, manage your settings, and top up your credits.</p></header>
+<div class="banner"><div class="cov" id="cover"></div><div class="idrow"><span class="avatar" id="avatar"></span><span><b id="id-name"></b><small id="id-email"></small></span></div></div>
+<div class="grid">
+  <div class="card c6"><h3>Profile &amp; settings</h3>
+    <div class="row"><a class="btn" href="profile/">Edit Profile</a><a class="btn ghost" href="../">View Dashboard</a><button class="btn ghost" id="pw-toggle">Change Password</button></div>
+    <div id="pw-box" class="hidden"><label class="f">Current password</label><input type="password" id="pw-cur"><label class="f">New password (min 8)</label><input type="password" id="pw-new"><div class="row"><button class="btn" id="pw-save">Update password</button></div></div></div>
+  <div class="card c6"><h3>School ACU pool</h3><div class="sub" id="pool-sub">Shared wallet for your institution. Top up with ACU packs — credits land in this pool for all staff and students.</div>
+    <div class="wal" id="pool">0</div><div class="wal-k">ACUs available (school pool)</div><div class="row"><a class="btn" href="../plans/">Top up school ACUs</a><a class="btn ghost" href="../">Command Centre</a></div></div>
+  <div class="card c6"><h3>Growth Partner Programme</h3><div class="sub">Invite friends, tutors, or schools — earn 250 ACUs per paid referral.</div><div class="row"><button class="btn" id="ref-open">Open referral dashboard</button></div><div id="ref-box" class="hidden"><label class="f">Your referral code</label><div style="font-family:var(--serif);font-size:24px;color:var(--gold-300)" id="ref-code"></div></div></div>
+  <div class="card c6"><h3>Subscription</h3><div class="sub">School workspace ACUs power AI across your cohort. Top up with packs or subscribe to a school plan for monthly shared ACUs.</div>
+    <div style="font-size:18px;font-family:var(--serif)"><span id="sub-plan">–</span><span class="pill" id="sub-status">setup in progress</span></div>
+    <div class="note">Every paid plan stops automatically after 30 days — no auto-renewal, nothing to cancel.</div><div class="row"><a class="btn" href="../plans/">View plans</a></div></div>
+  <div class="card c12 danger-card"><h3>Danger Zone</h3><div class="sub">Irreversible actions for your account.</div>
+    <div class="row"><button class="btn danger" id="del-acct">Delete My Account</button><span class="note" style="margin-top:8px">Permanently delete your account and all associated data.</span></div>
+    <div id="del-box" class="hidden"><label class="f">Type DELETE to confirm</label><input type="text" id="del-confirm" placeholder="DELETE"><div class="row"><button class="btn danger" id="del-go">Permanently delete everything</button><button class="btn ghost" id="del-cancel">Cancel</button></div></div></div>
+</div>
+</div>
+<div id="toast"></div>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;var S=SY.session;
+function $(id){return document.getElementById(id)}var tt;function toast(t){var el=$('toast');el.textContent=t;el.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){el.style.opacity=0},2600)}
+function fmtDay(iso){try{return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}catch(e){return iso}}
+var profile=SY.get('profile',{});$('id-name').textContent=profile.name||S.name;$('id-email').textContent=S.email;
+if(profile.photo)$('avatar').innerHTML='<img src="'+profile.photo+'" alt="">';else $('avatar').textContent=((profile.name||S.name)[0]||'S').toUpperCase();
+if(profile.cover)$('cover').innerHTML='<img src="'+profile.cover+'" alt="">';
+var code=SY.get('schoolCode',null);if(!code){code=(Math.random().toString(36).slice(2,10)).toUpperCase();SY.set('schoolCode',code)}
+var pool=SY.schoolGet(code,'acu',{balance:0});$('pool').textContent=(pool.balance||0).toLocaleString();
+var LAB={child_free:'Child Free',school_small:'Small School',school_medium:'Medium School',school_large:'Large School'};
+var sub=SY.get('schoolSub',{plan:'child_free'});
+if(sub.plan!=='child_free'&&sub.expires&&Date.now()>new Date(sub.expires).getTime()){sub={plan:'child_free'};SY.set('schoolSub',sub)}
+$('sub-plan').textContent=LAB[sub.plan]||'Child Free';$('sub-status').textContent=sub.plan==='child_free'?'setup in progress':('ends '+fmtDay(sub.expires));
+var ref=SY.get('refCode',null);if(!ref){ref='SY-'+Array.from(crypto.getRandomValues(new Uint8Array(3))).map(function(b){return b.toString(16).padStart(2,'0')}).join('').toUpperCase();SY.set('refCode',ref)}$('ref-code').textContent=ref;$('ref-open').onclick=function(){$('ref-box').classList.toggle('hidden')};
+function hash(s,p){return crypto.subtle.digest('SHA-256',new TextEncoder().encode(s+'·'+p)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0')}).join('')})}
+$('pw-toggle').onclick=function(){$('pw-box').classList.toggle('hidden')};
+$('pw-save').onclick=function(){var cur=$('pw-cur').value,nw=$('pw-new').value;if(nw.length<8){toast('Min 8 characters');return}var us=[];try{us=JSON.parse(localStorage.getItem('sy-users'))||[]}catch(e){}var me=us.find(function(u){return u.email===S.email&&u.role==='school'});if(!me){toast('Record not found');return}hash(me.salt,cur).then(function(h){if(h!==me.hash){toast('Current password wrong');return}var salt=Array.from(crypto.getRandomValues(new Uint8Array(12))).map(function(b){return b.toString(16).padStart(2,'0')}).join('');hash(salt,nw).then(function(h2){me.salt=salt;me.hash=h2;localStorage.setItem('sy-users',JSON.stringify(us));$('pw-cur').value='';$('pw-new').value='';$('pw-box').classList.add('hidden');toast('Password updated')})})};
+$('del-acct').onclick=function(){$('del-box').classList.toggle('hidden')};$('del-cancel').onclick=function(){$('del-box').classList.add('hidden')};
+$('del-go').onclick=function(){if($('del-confirm').value!=='DELETE'){toast('Type DELETE to confirm');return}var us=[];try{us=JSON.parse(localStorage.getItem('sy-users'))||[]}catch(e){}us=us.filter(function(u){return !(u.email===S.email&&u.role==='school')});localStorage.setItem('sy-users',JSON.stringify(us));SY.keys().forEach(function(k){SY.remove(k)});localStorage.removeItem('sy-session');location.replace('../../')};
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+})();
+</script>
+</body>
+</html>

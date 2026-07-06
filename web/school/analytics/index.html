@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Progress Analytics</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--gold-300:#A9CFF2;--gold-500:#3D8FD1;--good:#5CBB7B;--warn:#c98500;--crit:#e66767;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#6B7A96;--line:rgba(77,157,224,.14);--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}body{background:radial-gradient(1200px 700px at 82% -12%,rgba(77,157,224,.13),transparent 60%),var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  .shell{display:flex;min-height:100vh;max-width:1440px;margin:0 auto}
+  aside{width:236px;flex:none;border-right:1px solid var(--line);padding:22px 14px 30px;position:sticky;top:0;align-self:flex-start;max-height:100vh;overflow-y:auto}
+  .slogo{font-family:var(--serif);font-size:19px;color:var(--ink);text-decoration:none;display:block;padding:4px 10px 14px}.slogo b{color:#4FA6E0;font-weight:600}
+  aside nav a{display:block;font-size:13px;color:var(--ink-2);text-decoration:none;padding:8px 10px;border-radius:8px;margin:1px 0}aside nav a:hover{color:var(--gold-300);background:rgba(77,157,224,.08)}aside nav a.on{color:var(--gold-300);background:rgba(77,157,224,.12)}
+  main{flex:1;padding:30px 30px 90px;min-width:0}@media(max-width:960px){.shell{flex-direction:column}aside{width:100%;position:static;max-height:none;border-right:none;border-bottom:1px solid var(--line)}aside nav{display:flex;flex-wrap:wrap;gap:2px}main{padding:22px 18px 70px}}
+  a{color:inherit}h1{font-family:var(--serif);font-weight:500;font-size:28px}p.lede{color:var(--ink-2);font-weight:300;margin-top:6px}
+  .tiles{display:flex;gap:14px;flex-wrap:wrap;margin-top:16px}.tile{border:1px solid var(--line);border-radius:12px;background:rgba(16,27,51,.5);padding:16px 22px}.tile .v{font-family:var(--serif);font-size:30px;color:var(--gold-300)}.tile .k{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:18px 20px;margin-top:18px}.card h3{font-family:var(--serif);font-weight:500;font-size:17px}.card .sub{font-size:12.5px;color:var(--ink-3);margin:5px 0 12px}
+  .heatrow{display:flex;align-items:center;gap:10px;margin:8px 0}.heatrow .hb{flex:1;height:11px;border-radius:5px;background:rgba(170,182,204,.12);overflow:hidden}.heatrow .hb i{display:block;height:100%}
+  .empty{color:var(--ink-3);font-style:italic;padding:14px 0}
+</style></head><body>
+<script src="../../guard.js" data-role="school" data-base="../../"></script>
+<div class="shell">
+<aside><a class="slogo" href="../../">⌂ Stud<b>Year</b></a><nav>
+  <a href="../">Command Centre</a><a href="../#risk">Risk intelligence</a><a href="../interventions/">Intervention war room</a><a href="../people/">People management</a><a href="./" class="on">Analytics</a><a href="../acu/">ACU command</a><a href="../assessments/">Assessments</a><a href="../reports/">Executive reports</a><a href="../resources/">Knowledge hub</a><a href="../plans/">Top up ACUs</a><a href="../settings/">Settings</a>
+</nav></aside>
+<main>
+  <h1>Progress Analytics</h1><p class="lede">Aggregated from linked student profiles and dashboard progress scores.</p>
+  <div class="tiles">
+    <div class="tile"><div class="v" id="t-students">0</div><div class="k">Students on roll</div></div>
+    <div class="tile"><div class="v" id="t-avg">0%</div><div class="k">School avg. progress</div></div>
+    <div class="tile"><div class="v" id="t-risk">0</div><div class="k">At-risk (HIGH/CRITICAL)</div></div>
+  </div>
+  <div class="card"><h3>Progress by year group</h3><div class="sub">Mean progress score per cohort label on student profiles.</div><div id="byyear"></div></div>
+  <div class="card"><h3>Subject / department pressure</h3><div class="sub">Weakest departments across the cohort.</div><div id="bysubj"></div></div>
+</main>
+</div>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;
+function $(id){return document.getElementById(id)}function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var code=SY.get('schoolCode',null);if(!code){code=(Math.random().toString(36).slice(2,10)).toUpperCase();SY.set('schoolCode',code)}
+var roster=SY.schoolGet(code,'roster',[]);
+function metrics(email){var qz=SY.readAccount(email,'quizzes',[]),diag=(SY.readAccount(email,'diagnostics',[])||[])[0];var by={};qz.forEach(function(q){(by[q.subj]=by[q.subj]||[]).push(q.pct)});var mast={};Object.keys(by).forEach(function(s){mast[s]=Math.round(by[s].reduce(function(a,b){return a+b},0)/by[s].length)});if(diag)diag.list.forEach(function(x){mast[x.s]=mast[x.s]!=null?Math.round((mast[x.s]+x.mastery)/2):x.mastery});var subs=Object.keys(mast);var overall=subs.length?Math.round(subs.reduce(function(a,s){return a+mast[s]},0)/subs.length):(diag?diag.avg:0);return {overall:overall,mast:mast,risk:diag?diag.risk:(overall<40?'HIGH':overall<60?'MEDIUM':'LOW'),year:SY.readAccount(email,'profile',{}).level||'—'}}
+var M=roster.map(function(r){return metrics(r.email)});
+$('t-students').textContent=M.length;
+$('t-avg').textContent=(M.length?Math.round(M.reduce(function(a,b){return a+b.overall},0)/M.length):0)+'%';
+$('t-risk').textContent=M.filter(function(m){return m.risk==='HIGH'||m.risk==='CRITICAL'}).length;
+if(!M.length){$('byyear').innerHTML='<div class="empty">No cohort data yet — link students with year groups on their profiles to populate this chart.</div>';$('bysubj').innerHTML='<div class="empty">No data yet.</div>';return}
+var byYear={};M.forEach(function(m){(byYear[m.year]=byYear[m.year]||[]).push(m.overall)});
+$('byyear').innerHTML=Object.keys(byYear).map(function(y){var a=Math.round(byYear[y].reduce(function(x,z){return x+z},0)/byYear[y].length);var col=a>=70?'var(--good)':a>=50?'var(--warn)':'var(--crit)';return '<div class="heatrow"><span style="width:130px;font-size:13px">'+esc(y)+'</span><div class="hb"><i style="width:'+a+'%;background:'+col+'"></i></div><span style="width:44px;text-align:right;font-size:12px;color:var(--ink-2)">'+a+'%</span></div>'}).join('');
+var subj={};M.forEach(function(m){Object.keys(m.mast).forEach(function(s){(subj[s]=subj[s]||[]).push(m.mast[s])})});
+var rows=Object.keys(subj).map(function(s){return {s:s,a:Math.round(subj[s].reduce(function(x,z){return x+z},0)/subj[s].length)}}).sort(function(a,b){return a.a-b.a});
+$('bysubj').innerHTML=rows.map(function(r){var col=r.a>=70?'var(--good)':r.a>=50?'var(--warn)':'var(--crit)';return '<div class="heatrow"><span style="width:150px;font-size:13px">'+esc(r.s)+'</span><div class="hb"><i style="width:'+r.a+'%;background:'+col+'"></i></div><span style="width:44px;text-align:right;font-size:12px;color:var(--ink-2)">'+r.a+'%</span></div>'}).join('');
+})();
+</script>
+</body></html>
