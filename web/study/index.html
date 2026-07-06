@@ -132,6 +132,26 @@
   /* planner */
   .plan-week{margin-top:18px}
   .plan-week h4{font-family:var(--serif);font-weight:500;font-size:18px;color:var(--gold-300);margin-bottom:8px}
+  .plan-summary{border:1px solid var(--line);border-radius:12px;background:rgba(77,157,224,.06);padding:15px 18px;margin-bottom:6px}
+  .plan-summary h4{font-family:var(--serif);font-weight:500;font-size:16px;color:var(--gold-300);margin-bottom:6px}
+  .plan-summary p{font-size:13px;color:var(--ink-2);margin:4px 0}
+  .plan-summary .phase{font-size:12.5px;color:var(--ink-3);font-style:italic;margin-top:8px}
+  .day-card{border:1px solid var(--line);border-radius:12px;background:rgba(16,27,51,.42);padding:14px 16px;margin-top:12px}
+  .day-card>h4{font-family:var(--serif);font-weight:500;font-size:15px;color:var(--gold-300);margin-bottom:2px}
+  .day-card .dow-lead{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px}
+  .slotrow{display:grid;grid-template-columns:88px 1fr auto;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid rgba(170,182,204,.08)}
+  .slotrow:first-of-type{border-top:none}
+  .slot-k{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-400);padding-top:2px}
+  .slot-k small{display:block;color:var(--ink-3);letter-spacing:0;text-transform:none;font-size:11px}
+  .sess-body b.topic{font-size:14px;color:var(--ink)}
+  .sess-body .act{font-size:12px;color:var(--ink-3)}
+  .sess-body .subjline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:2px}
+  .sess-body.done b.topic,.sess-body.done .act{text-decoration:line-through;color:var(--ink-3)}
+  .pri{font-size:9.5px;letter-spacing:.08em;font-weight:700;border-radius:20px;padding:2px 8px}
+  .pri.HIGH{background:rgba(230,103,103,.16);color:#f0a0a0;border:1px solid rgba(230,103,103,.4)}
+  .pri.MEDIUM{background:rgba(201,133,0,.14);color:#e0b566;border:1px solid rgba(201,133,0,.4)}
+  .pri.LOW{background:rgba(92,187,123,.14);color:#96d6ac;border:1px solid rgba(92,187,123,.4)}
+  .slot-acts{display:flex;flex-direction:column;gap:5px;align-items:flex-end}
   table.tt{width:100%;border-collapse:collapse;font-size:12.5px}
   table.tt th{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
   table.tt td{padding:7px 8px;border-bottom:1px solid rgba(170,182,204,.08);vertical-align:top}
@@ -1622,14 +1642,21 @@ PFORM_IDS.forEach(id=>document.getElementById(id).addEventListener("input",saveP
 
 /* live note: how the exam date shapes the schedule */
 function longDate(iso){const d=new Date(iso+"T00:00:00");return d.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}
+function isoOf(d){return d.toISOString().slice(0,10)}
 function updateExamNote(){
   const el=document.getElementById("p-exam-note"), v=document.getElementById("p-exam").value;
   if(!v){el.textContent="Pick your primary exam date to schedule around it.";return}
   const exam=new Date(v+"T00:00:00"), today=new Date();today.setHours(0,0,0,0);
   const days=Math.round((exam-today)/86400000);
   if(days<0){el.innerHTML="⚠ That date is in the past — pick your next exam date.";return}
-  if(days===0){el.innerHTML="The planner will schedule 1 calendar day ("+longDate(v)+"); your exam is also that day — expect a final revision push.";return}
-  el.innerHTML="<b>"+days+"</b> day"+(days>1?"s":"")+" until your exam ("+longDate(v)+"). Sessions spread across them, with the last 7 days switching to past papers.";
+  if(days===0){el.innerHTML="Your exam is today — there's no day left to schedule before it. Pick a later exam date, or revise from your saved plan.";return}
+  const dayBefore=new Date(exam);dayBefore.setDate(dayBefore.getDate()-1);
+  if(days<=10){
+    el.innerHTML="Exactly <b>"+days+"</b> study day"+(days>1?"s":"")+": "+isoOf(today)+" through "+isoOf(dayBefore)+
+      ". Exam ("+isoOf(exam)+") is not filled as revision — the plan stops the day before.";
+  }else{
+    el.innerHTML="<b>"+days+"</b> days until your exam ("+longDate(v)+"). Sessions spread across the weeks, the last 7 days switch to past papers, and the exam day itself is left free.";
+  }
 }
 document.getElementById("p-exam").addEventListener("input",updateExamNote);
 updateExamNote();
@@ -1687,54 +1714,118 @@ document.getElementById("gen-plan").onclick=()=>{
     const i=(topicCursor[subj]=(topicCursor[subj]||0)+1)-1;
     return topics[i%topics.length];
   }
-  const perWeek=Math.max(3,Math.min(14,Math.round(hours*60/40))); // 40-min sessions
-  const weeks=Math.min(8,Math.ceil(daysLeft/7));
-  const dayGap=7/perWeek;
-  const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-  const plan=[];let cursor=0;
-  for(let w=0;w<weeks;w++){
-    const wk={n:w+1,days:[]};
-    for(let k=0;k<perWeek;k++){
-      const offset=w*7+Math.min(6,Math.round(k*dayGap));
-      const date=new Date(today);date.setDate(date.getDate()+offset);
-      if(date>=exam)break;
-      const subj=bag[cursor%bag.length];cursor++;
-      const finalStretch=(exam-date)/86400000<=7;
-      const focus=matchArea(weakTxt,subj);
-      const isWknd=date.getDay()===0||date.getDay()===6;
-      const topic=sessionTopic(subj,focus);
-      wk.days.push({date:date.toISOString().slice(0,10),d:DOW[date.getDay()],subj,level:lvl,topic,time:isWknd?"10:00":"19:00",mins:40,
-        mode:finalStretch?"Past paper + mark-scheme review":pick(subj,cursor,style),
-        finalStretch});
-    }
-    if(wk.days.length)plan.push(wk);
+  /* priority per subject: weak/low-mastery → HIGH, strong → LOW */
+  const wmap={};weights.forEach(x=>wmap[x.s]=x.w);
+  const diagWeak=new Set(diag?diag.weak:[]);
+  function priorityFor(subj){
+    if(matchArea(weakTxt,subj)||diagWeak.has(subj))return "HIGH";
+    if(matchArea(strongTxt,subj))return "LOW";
+    return wmap[subj]>=1.8?"HIGH":"MEDIUM";
   }
-  store.set("plan",{made:today.toISOString().slice(0,10),hours,target,style,plan,done:store.get("plan",{done:{}}).done||{}});
+  /* richer activity phrasing, tuned to the learning style */
+  const ACTS={
+    "Visual":["Diagram Creation and Labeling","Mind Map from Memory","Watch and Annotate a Walkthrough","Flashcards and Diagram Labeling"],
+    "Auditory":["Teach-It-Back Aloud","Record and Replay a Summary","Discuss and Explain Key Concepts","Verbal Recall Drill"],
+    "Reading & writing":["Condense Notes to One Page","Written Practice Answers","Deconstructing Sample Essays","Rewrite Notes from Memory"],
+    "Kinaesthetic":["Practice Questions and Problem Solving","Timed Question Sprint","Card Sort and Match","Worked Examples and Conceptual Questions"],
+    "":["Practice Questions and Problem Solving","Worked Examples and Conceptual Questions","Flashcards and Active Recall","Notes and Diagram Review","Timeline Creation and Note Review"]};
+  function activityFor(subj,seed,finalStretch){
+    if(finalStretch)return "Past Paper and Mark-Scheme Review";
+    const list=ACTS[style]||ACTS[""];
+    return list[(subj.length+seed)%list.length];
+  }
+
+  /* how many days we schedule, and how many slots per day */
+  const SLOT_TIMES=["09:00","14:00","19:00"], SLOT_NAMES=["Morning","Afternoon","Evening"];
+  const sessionsPerWeek=Math.max(3,Math.round(hours*60/40));       // 40-min sessions
+  const shortWindow=daysLeft<=10;
+  const daysPerWeek=shortWindow?7:Math.max(3,Math.min(6,Math.ceil(sessionsPerWeek/3)));
+  const dailySessions=Math.max(1,Math.min(3,Math.round(sessionsPerWeek/daysPerWeek)));
+
+  /* build the list of study dates (today → day before the exam) */
+  const studyDates=[];
+  for(let off=0;;off++){
+    const date=new Date(today);date.setDate(date.getDate()+off);
+    if(date>=exam)break;                                           // exam day itself stays free
+    if(off>70)break;
+    const inWeekIdx=off%7;
+    if(shortWindow||inWeekIdx<daysPerWeek)studyDates.push(date);   // thin long windows to daysPerWeek/week
+  }
+
+  const DOW=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const plan=[];let cursor=0;
+  studyDates.forEach(date=>{
+    const off=Math.round((date-today)/86400000), wkN=Math.floor(off/7)+1;
+    let wk=plan.find(x=>x.n===wkN); if(!wk){wk={n:wkN,days:[]};plan.push(wk)}
+    const finalStretch=(exam-date)/86400000<=7 && !shortWindow;
+    for(let sIdx=0;sIdx<dailySessions;sIdx++){
+      const subj=bag[cursor%bag.length];cursor++;
+      const focus=matchArea(weakTxt,subj);
+      const topic=sessionTopic(subj,focus);
+      wk.days.push({date:date.toISOString().slice(0,10),d:DOW[date.getDay()].slice(0,3),dow:DOW[date.getDay()],
+        subj,level:lvl,topic,slot:sIdx,time:SLOT_TIMES[sIdx]||"19:00",mins:40,
+        priority:priorityFor(subj),
+        mode:activityFor(subj,cursor,finalStretch),finalStretch});
+    }
+  });
+
+  /* plan-level summary + phase, personalised */
+  const summary="This personalised exam-preparation plan breaks your revision into manageable daily goals so you "+
+    "systematically cover every subject and topic. Weak areas are prioritised, the last stretch switches to past "+
+    "papers, and the exam day is kept free. Stay consistent and you'll walk in confident"+(target?" and on track for your target of "+target:"")+".";
+  const phase=shortWindow
+    ? "Final push: consolidate the highest-priority topics, drill exam questions, and review your weakest areas first."
+    : "Phase 1 — establish a strong foundation in your core subjects, review fundamental concepts, and identify areas that need the most attention.";
+
+  store.set("plan",{made:today.toISOString().slice(0,10),hours,target,style,summary,phase,plan,done:store.get("plan",{done:{}}).done||{}});
   savePlanForm();
   renderPlan(); addPoints(20); touchStreak();
-  logEvent("plan","Study plan generated",subs.length+" subject"+(subs.length>1?"s":"")+" · "+hours+" hrs/week"+(target?" · target "+target:"")+" — sessions appear in your dashboard calendar by date.");
+  logEvent("plan","Study plan generated",subs.length+" subject"+(subs.length>1?"s":"")+" · "+hours+" hrs/week"+(target?" · target "+target:"")+" — "+studyDates.length+" study days scheduled by date.");
   document.getElementById("plan-sub").textContent=
-    `${subs.length} subject${subs.length>1?"s":""} · ${perWeek} sessions/week · ${daysLeft} days to your exam — weak areas weighted heaviest. Autosaved.`;
-  toast("Plan generated — tick sessions as you finish them (+20 pts)");
+    `${subs.length} subject${subs.length>1?"s":""} · ${studyDates.length} study day${studyDates.length!==1?"s":""} · ${dailySessions} session${dailySessions>1?"s":""}/day · weak areas prioritised. Autosaved.`;
+  toast("Plan generated — tap 📖 to open any session as a lesson (+20 pts)");
 };
 function fmtDate(iso){const d=new Date(iso+"T00:00:00");return d.getDate()+" "+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]}
+function longDay(iso){const d=new Date(iso+"T00:00:00");return d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
+const SLOT_NAMES=["Morning","Afternoon","Evening"];
 function renderPlan(){
   const saved=store.get("plan",null); const out=document.getElementById("plan-out");
   if(!saved||!saved.plan||!saved.plan.length){out.innerHTML='<div class="empty">Fill out the form to generate your personalized study plan!</div>';return}
   const done=saved.done||{};
-  out.innerHTML=saved.plan.map(wk=>`
-    <div class="plan-week"><h4>Week ${wk.n}</h4>
-    <table class="tt"><tr><th>Date</th><th>Subject</th><th>Lesson &amp; session</th><th>When</th><th>Study</th></tr>
-    ${wk.days.map((s,i)=>{const key=wk.n+"-"+i;const isDone=!!done[key];const topic=s.topic||s.subj;return `
-      <tr><td>${s.d}${s.date?" "+fmtDate(s.date):""}</td>
-      <td><span class="subj-pill" style="background:${SUBJ_COLOURS[s.subj]||"#3987e5"}"></span>${esc(s.subj)}</td>
-      <td><label class="sess ${isDone?"done":""}"><input type="checkbox" data-k="${key}" ${isDone?"checked":""}>
-        <span><b style="color:var(--ink)">${esc(topic)}</b><br><span style="font-size:11.5px;color:var(--ink-3)">${esc(s.mode)} · ${s.mins} min</span></span></label></td>
-      <td style="color:var(--ink-3)">${s.time}</td>
-      <td style="white-space:nowrap">
-        <button class="btn sm" data-lesson-topic="${esc(topic)}" data-lesson-subj="${esc(s.subj)}" data-lesson-level="${esc(s.level||'')}" title="Open as an Interactive Lesson">📖 Lesson</button>
-        <button class="btn ghost sm" data-find-subj="${esc(s.subj)}" data-find-topic="${esc(topic)}" title="Search matching resources">🔎</button></td></tr>`}).join("")}
-    </table></div>`).join("");
+  /* flatten every session (keep its stable completion key), then group by date */
+  const flat=[];
+  saved.plan.forEach(wk=>wk.days.forEach((s,i)=>flat.push(Object.assign({},s,{key:wk.n+"-"+i}))));
+  flat.sort((a,b)=>(a.date||"").localeCompare(b.date||"")|| (a.slot||0)-(b.slot||0));
+  const byDate={};const order=[];
+  flat.forEach(s=>{const d=s.date||"undated";if(!byDate[d]){byDate[d]=[];order.push(d)}byDate[d].push(s)});
+
+  let html="";
+  if(saved.summary){
+    html+=`<div class="plan-summary"><h4>Plan Summary</h4><p>${esc(saved.summary)}</p>`+
+      (saved.phase?`<div class="phase">${esc(saved.phase)}</div>`:"")+`</div>`;
+  }
+  order.forEach(d=>{
+    const sessions=byDate[d];
+    html+=`<div class="day-card"><h4>${d==="undated"?"Scheduled sessions":longDay(d)}</h4>`+
+      `<div class="dow-lead">${d==="undated"?"":(new Date(d+"T00:00:00").toLocaleDateString("en-GB",{weekday:"long"}))}</div>`+
+      sessions.map((s,i)=>{
+        const isDone=!!done[s.key], topic=s.topic||s.subj, slot=SLOT_NAMES[s.slot!=null?s.slot:i]||("Session "+(i+1)), pri=s.priority||"MEDIUM";
+        return `<div class="slotrow">
+          <div class="slot-k">${slot}<small>${s.time||""}</small></div>
+          <label class="sess-body ${isDone?"done":""}" style="cursor:pointer;display:block">
+            <div class="subjline"><input type="checkbox" data-k="${s.key}" ${isDone?"checked":""} style="accent-color:var(--gold-500)">
+              <span class="subj-pill" style="background:${SUBJ_COLOURS[s.subj]||"#3987e5"}"></span>
+              <b style="font-size:13px">${esc(s.subj)}</b><span class="pri ${pri}">${pri}</span></div>
+            <b class="topic">${esc(topic)}</b>
+            <div class="act">${esc(s.mode)} · ${s.mins} min</div>
+          </label>
+          <div class="slot-acts">
+            <button class="btn sm" data-lesson-topic="${esc(topic)}" data-lesson-subj="${esc(s.subj)}" data-lesson-level="${esc(s.level||'')}" title="Open as an Interactive Lesson">📖 Lesson</button>
+            <button class="btn ghost sm" data-find-subj="${esc(s.subj)}" data-find-topic="${esc(topic)}" title="Search matching resources">🔎 Resources</button>
+          </div></div>`;
+      }).join("")+`</div>`;
+  });
+  out.innerHTML=html;
   out.querySelectorAll("[data-lesson-topic]").forEach(b=>b.onclick=()=>
     openLessonFor(b.dataset.lessonTopic,b.dataset.lessonSubj,b.dataset.lessonLevel));
   out.querySelectorAll("[data-find-subj]").forEach(b=>b.onclick=()=>{
