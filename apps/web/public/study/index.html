@@ -466,13 +466,38 @@
       <h3>Visual Tools &amp; Graphs</h3><div class="sub">build a chart, a coordinate/function graph or a geometry diagram — great for maths, science and 11+</div>
       <label class="f">Title</label><input type="text" id="c-v-title" placeholder="e.g. Favourite sports survey">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-        <div><label class="f">Chart type</label><select id="c-v-kind"><option value="bar">Bar Graph</option><option value="pie">Pie Chart</option><option value="line">Line Graph</option><option value="scatter">Scatter Plot</option><option value="coordinate">Coordinate Graph</option><option value="function">Function Graph (y = mx + c)</option><option value="geometry">Geometry Diagram (triangle)</option></select></div>
+        <div><label class="f">Tool type</label><select id="c-v-kind">
+          <optgroup label="Data charts">
+            <option value="bar">Bar Graph</option><option value="pie">Pie Chart</option><option value="donut">Donut Chart</option>
+            <option value="line">Line Graph</option><option value="area">Area Graph</option><option value="scatter">Scatter Plot</option>
+            <option value="histogram">Histogram</option>
+          </optgroup>
+          <optgroup label="Maths graphs">
+            <option value="coordinate">Coordinate Graph</option><option value="function">Function Graph (y = mx + c)</option>
+            <option value="geometry">Geometry Diagram (triangle)</option>
+          </optgroup>
+          <optgroup label="Graph theory">
+            <option value="complete">Complete graph (Kₙ)</option><option value="cycle">Cycle graph</option>
+            <option value="star">Star graph</option><option value="wheel">Wheel graph</option><option value="path">Path graph</option>
+          </optgroup>
+          <optgroup label="Images">
+            <option value="image">Educational Image (from a prompt)</option>
+          </optgroup>
+        </select></div>
         <div><label class="f">Subject</label><select id="c-v-subj"></select></div>
         <div><label class="f">Level</label><select id="c-v-level"></select></div>
       </div>
       <div id="c-v-datawrap">
         <label class="f" style="margin-top:10px" id="c-v-datalabel">Data — one per line: label :: value</label>
         <textarea id="c-v-data" rows="5" placeholder="Maths :: 12&#10;English :: 9&#10;Science :: 15"></textarea>
+      </div>
+      <div id="c-v-nodewrap" style="display:none;margin-top:10px">
+        <label class="f">Number of nodes (3–12)</label><input type="number" id="c-v-nodes" value="6" min="3" max="12">
+      </div>
+      <div id="c-v-promptwrap" style="display:none;margin-top:10px">
+        <label class="f">Prompt — describe the image or diagram</label>
+        <textarea id="c-v-prompt" rows="3" placeholder="e.g. Labelled diagram of the human heart showing the four chambers and major vessels"></textarea>
+        <div class="note">✨ Premium tool — the photoreal, ultra-detailed render attaches when the AI image backend goes live; for now a labelled study placeholder is saved.</div>
       </div>
       <div id="c-v-fnwrap" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
         <div><label class="f">Gradient (m)</label><input type="number" id="c-v-m" value="2" step="0.5"></div>
@@ -1005,17 +1030,17 @@ const CH_COLORS=["#3987e5","#199e70","#c98500","#8b7cf6","#e66767","#3aa7c9","#5
 function viewChart(r,head){
   const c=r.chart, note=c.note?`<p style="font-size:13px;color:var(--ink-2);margin-top:12px">${esc(c.note)}</p>`:"";
   const W=560,H=340;let sv="";
-  if(c.kind==="bar"){
-    const P={l:40,r:14,t:16,b:46}, max=Math.max(...c.data.map(d=>d[1]))*1.15||1;
+  if(c.kind==="bar"||c.kind==="histogram"){
+    const P={l:40,r:14,t:16,b:46}, gap=c.kind==="histogram"?1:8, max=Math.max(...c.data.map(d=>d[1]))*1.15||1;
     const bw=(W-P.l-P.r)/c.data.length, Y=v=>H-P.b-(v/max)*(H-P.t-P.b);
     sv=`<svg viewBox="0 0 ${W} ${H}">`;
     for(let g=0;g<=4;g++){const y=P.t+g*(H-P.t-P.b)/4;sv+=`<line x1="${P.l}" x2="${W-P.r}" y1="${y}" y2="${y}" stroke="rgba(170,182,204,.14)"/><text x="${P.l-6}" y="${y+4}" text-anchor="end" fill="#6B7A96" font-size="10.5">${Math.round(max-g*max/4)}</text>`}
-    c.data.forEach((d,i)=>{const x=P.l+i*bw+4,y=Y(d[1]);
-      sv+=`<rect x="${x}" y="${y}" width="${bw-8}" height="${H-P.b-y}" rx="4" fill="${CH_COLORS[i%CH_COLORS.length]}"/>
-        <text x="${x+(bw-8)/2}" y="${y-6}" text-anchor="middle" fill="#EDF1F8" font-size="11" font-weight="600">${d[1]}</text>
-        <text x="${x+(bw-8)/2}" y="${H-P.b+16}" text-anchor="middle" fill="#6B7A96" font-size="10.5">${esc(String(d[0])).slice(0,8)}</text>`});
+    c.data.forEach((d,i)=>{const x=P.l+i*bw+gap/2,y=Y(d[1]);
+      sv+=`<rect x="${x}" y="${y}" width="${bw-gap}" height="${H-P.b-y}" ${c.kind==="histogram"?'':'rx="4"'} fill="${c.kind==="histogram"?CH_COLORS[0]:CH_COLORS[i%CH_COLORS.length]}" ${c.kind==="histogram"?'stroke="#0B1220"':''}/>
+        <text x="${x+(bw-gap)/2}" y="${y-6}" text-anchor="middle" fill="#EDF1F8" font-size="11" font-weight="600">${d[1]}</text>
+        <text x="${x+(bw-gap)/2}" y="${H-P.b+16}" text-anchor="middle" fill="#6B7A96" font-size="10">${esc(String(d[0])).slice(0,9)}</text>`});
     sv+="</svg>";
-  }else if(c.kind==="pie"){
+  }else if(c.kind==="pie"||c.kind==="donut"){
     const total=c.data.reduce((a,b)=>a+b[1],0)||1;let ang=-Math.PI/2;const cx=170,cy=H/2,rad=120;
     sv=`<svg viewBox="0 0 ${W} ${H}">`;
     c.data.forEach((d,i)=>{const a2=ang+2*Math.PI*d[1]/total;
@@ -1023,19 +1048,31 @@ function viewChart(r,head){
       const large=(a2-ang)>Math.PI?1:0;
       sv+=`<path d="M${cx},${cy} L${x1},${y1} A${rad},${rad} 0 ${large} 1 ${x2},${y2} Z" fill="${CH_COLORS[i%CH_COLORS.length]}" stroke="#0B1220" stroke-width="1.5"/>`;
       ang=a2;});
+    if(c.kind==="donut")sv+=`<circle cx="${cx}" cy="${cy}" r="${rad*0.55}" fill="#0B1220"/>`;
     c.data.forEach((d,i)=>{sv+=`<rect x="330" y="${70+i*26}" width="13" height="13" rx="3" fill="${CH_COLORS[i%CH_COLORS.length]}"/>
       <text x="350" y="${81+i*26}" fill="#AAB6CC" font-size="12.5">${esc(String(d[0]))} — ${Math.round(100*d[1]/total)}%</text>`});
     sv+="</svg>";
-  }else if(c.kind==="line"||c.kind==="scatter"){
+  }else if(c.kind==="line"||c.kind==="area"||c.kind==="scatter"){
     const pts=c.points||c.data.map((d,i)=>[i,d[1]]);
     const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
     const P={l:40,r:16,t:16,b:34},minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(0,...ys),maxY=Math.max(...ys)*1.1||1;
     const X=v=>P.l+(v-minX)/((maxX-minX)||1)*(W-P.l-P.r),Y=v=>H-P.b-(v-minY)/((maxY-minY)||1)*(H-P.t-P.b);
     sv=`<svg viewBox="0 0 ${W} ${H}">`;
     for(let g=0;g<=4;g++){const y=P.t+g*(H-P.t-P.b)/4;sv+=`<line x1="${P.l}" x2="${W-P.r}" y1="${y}" y2="${y}" stroke="rgba(170,182,204,.14)"/>`}
-    if(c.kind==="line")sv+=`<polyline fill="none" stroke="#3987e5" stroke-width="2.5" points="${pts.map(p=>X(p[0])+","+Y(p[1])).join(" ")}"/>`;
+    if(c.kind==="area")sv+=`<polygon fill="rgba(57,135,229,.22)" stroke="none" points="${X(pts[0][0])},${Y(minY)} ${pts.map(p=>X(p[0])+","+Y(p[1])).join(" ")} ${X(pts[pts.length-1][0])},${Y(minY)}"/>`;
+    if(c.kind!=="scatter")sv+=`<polyline fill="none" stroke="#3987e5" stroke-width="2.5" points="${pts.map(p=>X(p[0])+","+Y(p[1])).join(" ")}"/>`;
     pts.forEach(p=>sv+=`<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="4.5" fill="#A9CFF2"/>`);
     sv+="</svg>";
+  }else if(["complete","cycle","star","wheel","path"].includes(c.kind)){
+    sv=graphSvg(W,H,c.kind,c.nodes||6);
+  }else if(c.kind==="image"){
+    sv=`<svg viewBox="0 0 ${W} ${H}">
+      <defs><linearGradient id="ig" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#13294B"/><stop offset="1" stop-color="#0B1220"/></linearGradient></defs>
+      <rect width="${W}" height="${H}" rx="12" fill="url(#ig)" stroke="rgba(77,157,224,.4)"/>
+      <text x="${W/2}" y="46" text-anchor="middle" fill="#5FA8E0" font-size="12" letter-spacing="2">✨ PREMIUM · EDUCATIONAL IMAGE</text>
+      <text x="${W/2}" y="80" text-anchor="middle" fill="#6B7A96" font-size="44">🖼</text>
+      <foreignObject x="40" y="110" width="${W-80}" height="${H-150}"><div xmlns="http://www.w3.org/1999/xhtml" style="color:#EDF1F8;font:400 14px sans-serif;text-align:center;line-height:1.5">${esc(c.prompt||"")}</div></foreignObject>
+      <text x="${W/2}" y="${H-16}" text-anchor="middle" fill="#6B7A96" font-size="11">Photoreal render attaches with the AI image backend</text></svg>`;
   }else if(c.kind==="coordinate"){
     sv=coordSvg(W,H,c.points||[]);
   }else if(c.kind==="function"){
@@ -1065,6 +1102,28 @@ function coordSvg(W,H,points,line){
   if(line&&line.length)sv+=`<polyline fill="none" stroke="#199e70" stroke-width="2.5" points="${line.map(p=>(cx+p[0]*unit)+","+(cy-p[1]*unit)).join(" ")}"/>`;
   (points||[]).forEach(p=>{const px=cx+p[0]*unit,py=cy-p[1]*unit;
     sv+=`<circle cx="${px}" cy="${py}" r="5" fill="#3987e5"/><text x="${px+8}" y="${py-6}" fill="#A9CFF2" font-size="11">(${p[0]}, ${p[1]})</text>`});
+  return sv+"</svg>";
+}
+/* graph-theory diagrams: nodes on a circle, edges by structure */
+function graphSvg(W,H,kind,n){
+  const cx=W/2,cy=H/2,R=110;
+  const hub=(kind==="star"||kind==="wheel");
+  const rim=hub?n-1:n;                       // star/wheel: 1 hub + (n-1) on the rim
+  const pos=[];
+  for(let i=0;i<rim;i++){const a=-Math.PI/2+i*2*Math.PI/rim;pos.push([cx+R*Math.cos(a),cy+R*Math.sin(a)])}
+  if(hub)pos.push([cx,cy]);                  // hub is the last node
+  const edges=[];
+  const rimIdx=[...Array(rim).keys()], hubI=n-1;
+  if(kind==="complete"){for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)edges.push([i,j])}
+  else if(kind==="cycle"){for(let i=0;i<n;i++)edges.push([i,(i+1)%n])}
+  else if(kind==="path"){for(let i=0;i<n-1;i++)edges.push([i,i+1])}
+  else if(kind==="star"){rimIdx.forEach(i=>edges.push([i,hubI]))}
+  else if(kind==="wheel"){rimIdx.forEach(i=>edges.push([i,hubI]));for(let i=0;i<rim;i++)edges.push([i,(i+1)%rim])}
+  let sv=`<svg viewBox="0 0 ${W} ${H}">`;
+  edges.forEach(e=>sv+=`<line x1="${pos[e[0]][0]}" y1="${pos[e[0]][1]}" x2="${pos[e[1]][0]}" y2="${pos[e[1]][1]}" stroke="rgba(95,168,224,.5)" stroke-width="1.5"/>`);
+  pos.forEach((p,i)=>sv+=`<circle cx="${p[0]}" cy="${p[1]}" r="9" fill="#3987e5" stroke="#0B1220" stroke-width="2"/><text x="${p[0]}" y="${p[1]+4}" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">${i+1}</text>`);
+  const nm={complete:"Complete graph K"+n,cycle:"Cycle graph C"+n,path:"Path graph P"+n,star:"Star graph S"+(n-1),wheel:"Wheel graph W"+(n-1)};
+  sv+=`<text x="${cx}" y="${H-14}" text-anchor="middle" fill="#6B7A96" font-size="12">${nm[kind]} · ${n} nodes · ${edges.length} edges</text>`;
   return sv+"</svg>";
 }
 
@@ -1446,14 +1505,19 @@ document.getElementById("c-e-save").onclick=()=>{
 };
 
 /* visual tools & graphs */
-const VKIND_LABEL={bar:"Bar Graph",pie:"Pie Chart",line:"Line Graph",scatter:"Scatter Plot",coordinate:"Coordinate Graph",function:"Function Graph",geometry:"Geometry Diagram"};
+const VKIND_LABEL={bar:"Bar Graph",pie:"Pie Chart",donut:"Pie Chart",line:"Line Graph",area:"Line Graph",scatter:"Scatter Plot",histogram:"Histogram",coordinate:"Coordinate Graph",function:"Function Graph",geometry:"Geometry Diagram",complete:"Graph Theory Diagram",cycle:"Graph Theory Diagram",star:"Graph Theory Diagram",wheel:"Graph Theory Diagram",path:"Graph Theory Diagram",image:"Educational Image"};
+const V_GRAPHKINDS=["complete","cycle","star","wheel","path"];
 document.getElementById("c-v-kind").addEventListener("input",function(){
   const k=this.value;
-  document.getElementById("c-v-fnwrap").style.display=k==="function"?"grid":"none";
-  document.getElementById("c-v-datawrap").style.display=(k==="function"||k==="geometry")?"none":"block";
+  const isFn=k==="function", isGeo=k==="geometry", isGraph=V_GRAPHKINDS.includes(k), isImg=k==="image";
+  document.getElementById("c-v-fnwrap").style.display=isFn?"grid":"none";
+  document.getElementById("c-v-nodewrap").style.display=isGraph?"block":"none";
+  document.getElementById("c-v-promptwrap").style.display=isImg?"block":"none";
+  document.getElementById("c-v-datawrap").style.display=(isFn||isGeo||isGraph||isImg)?"none":"block";
   const lbl=document.getElementById("c-v-datalabel"), ta=document.getElementById("c-v-data");
   if(k==="coordinate"||k==="scatter"){lbl.textContent="Points — one per line: x, y";ta.placeholder="1, -4\n-2, 3\n0, -5\n5, 0";}
-  else if(k==="line"){lbl.textContent="Values — one per line: label :: value";ta.placeholder="Mon :: 3\nTue :: 5\nWed :: 4";}
+  else if(k==="line"||k==="area"){lbl.textContent="Values — one per line: label :: value";ta.placeholder="Mon :: 3\nTue :: 5\nWed :: 4";}
+  else if(k==="histogram"){lbl.textContent="Values — one per line: range :: frequency";ta.placeholder="0-10 :: 3\n10-20 :: 7\n20-30 :: 12";}
   else{lbl.textContent="Data — one per line: label :: value";ta.placeholder="Maths :: 12\nEnglish :: 9\nScience :: 15";}
 });
 document.getElementById("c-v-save").onclick=()=>{
@@ -1462,7 +1526,13 @@ document.getElementById("c-v-save").onclick=()=>{
   let chart={kind,note};
   if(kind==="function"){chart.m=+$v("c-v-m")||0;chart.c=+$v("c-v-c")||0;chart.fn=chart.m+"x+"+chart.c;}
   else if(kind==="geometry"){chart.shape="triangle";chart.labels=["a","b","c"];}
-  else if(kind==="coordinate"||kind==="scatter"){
+  else if(kind==="image"){
+    const prompt=$v("c-v-prompt").trim();
+    if(prompt.length<5){toast("Describe the image you want");return}
+    chart.prompt=prompt; chart.premium=true;
+  }else if(V_GRAPHKINDS.includes(kind)){
+    chart.nodes=Math.max(3,Math.min(12,+$v("c-v-nodes")||6));
+  }else if(kind==="coordinate"||kind==="scatter"){
     const pts=$v("c-v-data").split("\n").map(l=>l.split(",").map(s=>parseFloat(s.trim()))).filter(p=>p.length===2&&!isNaN(p[0])&&!isNaN(p[1]));
     if(!pts.length){toast("Add points as: x, y (one per line)");return}
     chart.points=pts;
@@ -1471,7 +1541,7 @@ document.getElementById("c-v-save").onclick=()=>{
     if(!data.length){toast("Add data as: label :: value (one per line)");return}
     chart.data=data;
   }
-  saveMine({type:VKIND_LABEL[kind],title,subj:$v("c-v-subj"),level:$v("c-v-level"),chart},"v","Visual saved",["c-v-title","c-v-data","c-v-note"]);
+  saveMine({type:VKIND_LABEL[kind],title,subj:$v("c-v-subj"),level:$v("c-v-level"),chart},"v","Visual saved",["c-v-title","c-v-data","c-v-note","c-v-prompt"]);
 };
 
 /* ============================ PLANNER ============================ */
