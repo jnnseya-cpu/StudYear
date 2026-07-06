@@ -581,10 +581,10 @@
 <section id="tab-diag">
   <div class="grid">
     <div class="card c5">
-      <h3>Academic diagnostic — all your subjects at once</h3>
-      <div class="sub">Every subject on your profile is loaded automatically and assessed together in one run.
-        Rate your confidence for each, add any others from the catalog or type a custom name, then answer a
-        short mixed quiz drawn from all of them.</div>
+      <h3>Academic diagnostic — your baseline</h3>
+      <div class="sub"><b style="color:var(--gold-300)">Start here.</b> This is your baseline — the point you build up
+        from. Every StudYear tool then personalises your path toward the top mark (100% · Grade 9). Every profile
+        subject is loaded and assessed together: rate your confidence, add any others, then answer a short mixed quiz.</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div><label class="f">Add from catalog</label><select id="dg-add"><option value="">Choose a subject to add…</option></select></div>
         <div><label class="f">Or add custom subject</label><input type="text" id="dg-custom" placeholder="e.g. Latin, Astronomy…"></div>
@@ -2217,11 +2217,13 @@ function dgGenerate(){
     (bySubj[q.subj]=bySubj[q.subj]||{ok:0,n:0});
     bySubj[q.subj].n++; if(dgAnswers[i]===q.a)bySubj[q.subj].ok++;
   });
-  const targets={};(PROFILE.subjects||[]).forEach(x=>targets[x.s]=x.target);
+  /* every student is personalised toward the top mark — target defaults to Grade 9 (100%) */
+  const TOP="9";
+  const targets={};(PROFILE.subjects||[]).forEach(x=>targets[x.s]=x.target||TOP);
   const list=dgSubs.map(r=>{
     const qs=bySubj[r.s];
     const m=qs?Math.round(r.conf*0.6+100*qs.ok/qs.n*0.4):r.conf;
-    return {s:r.s,conf:r.conf,mastery:m,pred:gradeFor(m),target:targets[r.s]||null,asked:qs?qs.n:0,ok:qs?qs.ok:0};
+    return {s:r.s,conf:r.conf,mastery:m,pred:gradeFor(m),target:targets[r.s]||TOP,asked:qs?qs.n:0,ok:qs?qs.ok:0};
   }).sort((a,b)=>a.mastery-b.mastery);
   const avg=Math.round(list.reduce((a,b)=>a+b.mastery,0)/list.length);
   const risk=riskFor(avg);
@@ -2229,27 +2231,50 @@ function dgGenerate(){
   const report={when:new Date().toISOString(),avg,risk,list,weak:weak.map(w=>w.s),
     asked:dgQs?dgQs.length:0,correct:dgQs?dgQs.filter((q,i)=>dgAnswers[i]===q.a).length:0};
   const hist=store.get("diagnostics",[]); hist.unshift(report); store.set("diagnostics",hist.slice(0,30));
-  store.set("diagnostic",{avg,pred:gradeFor(avg),weak:report.weak,weakest:list[0]?list[0].s:null,when:todayKey()});
+  /* the FIRST diagnostic is the baseline — the point every tool builds up from */
+  let baseline=store.get("baseline",null);
+  if(!baseline){
+    baseline={when:report.when,avg:report.avg,list:list.map(x=>({s:x.s,mastery:x.mastery}))};
+    store.set("baseline",baseline);
+    report.isBaseline=true;
+  }
+  store.set("diagnostic",{avg,pred:gradeFor(avg),weak:report.weak,weakest:list[0]?list[0].s:null,when:todayKey(),baselineAvg:baseline.avg});
   addPoints(25); touchStreak();
-  logEvent("diagnostic","Academic Diagnostic Completed","Your academic baseline report is ready.");
+  logEvent("diagnostic",report.isBaseline?"Baseline diagnostic set":"Academic Diagnostic Completed",
+    report.isBaseline?"Your baseline is set — every tool now personalises your path to 100%.":"Your academic baseline report is ready.");
   renderDgReport(report); renderDgHistory();
 }
 
 function renderDgReport(rep){
+  const baseline=store.get("baseline",null);
+  const isBase=rep.isBaseline||(baseline&&baseline.when===rep.when);
+  const growth=(baseline&&!isBase)?rep.avg-baseline.avg:0;
+  const toTop=Math.max(0,100-rep.avg);
   document.getElementById("dg-sub").innerHTML=
     `Taken on ${usDate(rep.when)} · Risk Level: <b style="color:${RISK_COLOR[rep.risk]}">${rep.risk}</b>`+
     (rep.asked?` · ${rep.correct}/${rep.asked} quick questions correct`:" · confidence-only run");
+  const baseSubj={};if(baseline)baseline.list.forEach(x=>baseSubj[x.s]=x.mastery);
   document.getElementById("dg-out").innerHTML=`
+    ${isBase?`<div style="border:1px solid rgba(95,168,224,.4);background:rgba(77,157,224,.08);border-radius:10px;padding:11px 14px;font-size:13px;color:var(--gold-300);margin-bottom:12px">
+      ✦ This is your <b>baseline</b>. From here, every StudYear tool personalises your path up to <b>100% (Grade 9)</b>. Come back any time to see how far you've climbed.</div>`
+      :growth?`<div style="border:1px solid rgba(92,187,123,.4);background:rgba(92,187,123,.08);border-radius:10px;padding:11px 14px;font-size:13px;color:#a9dfbc;margin-bottom:12px">
+      ▲ You've grown <b>${growth>=0?"+":""}${growth}%</b> since your baseline (${baseline.avg}% → ${rep.avg}%). Keep building toward 100%.</div>`:""}
     <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
-      <div class="tile"><div class="v">${rep.avg}%</div><div class="k">Overall mastery</div></div>
-      <div class="tile"><div class="v" style="color:${RISK_COLOR[rep.risk]}">${rep.risk}</div><div class="k">Risk level</div></div>
-      <div class="tile"><div class="v">${esc(rep.list[0]?rep.list[0].s:"–")}</div><div class="k">Weakest subject</div></div>
+      <div class="tile"><div class="v">${rep.avg}%</div><div class="k">${isBase?"Baseline mastery":"Mastery now"}</div></div>
+      <div class="tile"><div class="v" style="color:var(--gold-300)">${toTop}%</div><div class="k">To your 100% target</div></div>
+      <div class="tile"><div class="v">${esc(rep.list[0]?rep.list[0].s:"–")}</div><div class="k">Build here first</div></div>
     </div>
-    ${rep.list.map(x=>`<div class="mrow"><span>${esc(x.s)}</span>
+    <div style="margin:12px 0 4px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)">Baseline → now → 100%</div>
+    <div class="bar" style="height:12px;position:relative">
+      ${baseline?`<span style="position:absolute;left:${baseline.avg}%;top:-3px;bottom:-3px;width:2px;background:var(--ink-3)" title="baseline"></span>`:""}
+      <i style="width:${rep.avg}%;background:linear-gradient(90deg,var(--gold-500),var(--good))"></i></div>
+    <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink-3);margin-bottom:14px"><span>0%</span>${baseline?`<span>baseline ${baseline.avg}%</span>`:""}<span>100% · Grade 9</span></div>
+    ${rep.list.map(x=>{const b=baseSubj[x.s];const g=(b!=null&&!isBase)?x.mastery-b:null;
+      return `<div class="mrow"><span>${esc(x.s)}</span>
       <div class="bar"><i style="width:${x.mastery}%;background:${x.mastery<60?"var(--crit)":x.mastery<80?"var(--warn)":"var(--good)"}"></i></div>
-      <span class="pc">${x.mastery}% · G${x.pred}${x.target?" / target "+esc(String(x.target)):""}</span></div>`).join("")}
-    ${rep.weak.length?`<div style="margin-top:14px"><button class="btn" id="dg-recover">Generate my personal recovery plan →</button></div>`
-      :`<p class="note">No subject under 60% — keep momentum with past papers and the planner.</p>`}`;
+      <span class="pc">${x.mastery}%${g!=null?` <span style="color:${g>=0?"var(--good)":"var(--crit)"}">${g>=0?"▲+":"▼"}${Math.abs(g)}</span>`:""} · target ${esc(String(x.target||"9"))}</span></div>`}).join("")}
+    ${rep.weak.length?`<div style="margin-top:14px"><button class="btn" id="dg-recover">Build up my weak areas — recovery plan →</button></div>`
+      :`<p class="note">No subject under 60% — you're on track for the top. Keep momentum with past papers and the planner.</p>`}`;
   const btn=document.getElementById("dg-recover");
   if(btn)btn.onclick=()=>makeRecovery(rep);
   document.getElementById("tab-diag").scrollIntoView({behavior:"smooth",block:"start"});

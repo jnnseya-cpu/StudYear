@@ -257,11 +257,14 @@ function drawSubjects(){
     t.appendChild(tr);
   });
 }
+/* StudYear personalises every student toward the top mark — new subjects
+   default their target to the highest grade (Grade 9 / 100%). */
+var TOP_GRADE=GRADES[0]; // "9"
 $('subj-add').onchange=function(){
   var s=this.value;this.value='';
   if(!s)return;
   if(subjects.some(function(x){return x.s===s})){toast(s+' is already in your list');return}
-  subjects.push({s:s,current:'5',target:'7'});drawSubjects();
+  subjects.push({s:s,current:'4',target:TOP_GRADE});drawSubjects();
 };
 drawSubjects();
 
@@ -282,8 +285,10 @@ $('save').onclick=function(){
     S.name=name;localStorage.setItem('sy-session',JSON.stringify(S));
   }catch(e){}
   SY.log('profile','Profile updated','Personal and academic details saved.');
-  toast('Profile saved');
-  setTimeout(function(){location.href='../'},700);
+  var onboarding=new URLSearchParams(location.search).get('welcome')==='1'&&!SY.get('baseline',null);
+  toast(onboarding?'Profile saved — next, set your baseline with a quick diagnostic':'Profile saved');
+  // new students go straight to the Academic Diagnostic — their baseline to build from
+  setTimeout(function(){location.href=onboarding?'../../study/#diag':'../'},800);
 };
 
 $('signout').onclick=function(e){e.preventDefault();SY.signOut()};
