@@ -21,7 +21,7 @@
   aside nav a:hover{color:var(--gold-300);background:rgba(77,157,224,.08)}
   aside nav a.on{color:var(--gold-300);background:rgba(77,157,224,.12)}
   main{flex:1;padding:30px 30px 90px;min-width:0}
-  @media(max-width:960px){.shell{flex-direction:column}aside{width:100%;position:static;max-height:none;border-right:none;border-bottom:1px solid var(--line)}aside nav{display:flex;flex-wrap:wrap;gap:2px}main{padding:22px 18px 70px}}
+  @media(max-width:960px){.shell{flex-direction:column}aside{width:100%;position:sticky;top:0;z-index:60;max-height:46vh;overflow-y:auto;background:#060B18;border-right:none;border-bottom:1px solid var(--line)}aside nav{display:flex;flex-wrap:wrap;gap:2px}main{padding:22px 18px 70px}}
   a{color:inherit}
   .hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   .hd .live{font-size:11px;color:var(--good);border:1px solid rgba(92,187,123,.4);border-radius:20px;padding:3px 10px}

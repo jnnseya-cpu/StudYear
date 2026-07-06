@@ -35,7 +35,7 @@
   aside.side nav a i{font-style:normal;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--warn);border:1px solid rgba(201,133,0,.5);border-radius:8px;padding:1px 6px;margin-left:6px;vertical-align:1px}
   .sgroup{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);padding:16px 10px 5px}
   main.content{flex:1;padding:40px 36px 90px;min-width:0}
-  @media(max-width:900px){.shell{flex-direction:column}aside.side{width:100%;position:static;max-height:none;border-right:none;border-bottom:1px solid var(--line);padding-bottom:12px}
+  @media(max-width:900px){.shell{flex-direction:column}aside.side{width:100%;position:sticky;top:0;z-index:60;max-height:46vh;overflow-y:auto;background:#060B18;border-right:none;border-bottom:1px solid var(--line);padding-bottom:12px}
     aside.side nav{display:flex;flex-wrap:wrap;gap:2px}aside.side nav a{font-size:12px}.sgroup{width:100%}main.content{padding:26px 20px 70px}}
 
   header.page h1{font-family:var(--serif);font-weight:500;font-size:36px;letter-spacing:-.01em}
