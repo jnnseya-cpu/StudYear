@@ -134,6 +134,8 @@
     </div>
   </div>
 
+  <div class="card c12" id="cert-card" style="margin-top:16px;display:none"></div>
+
   <div class="sec-title">School Leadership Command Centre</div>
   <div class="grid">
     <div class="card c3"><h3>Academic Health Score</h3><div class="gauge" style="margin-top:10px"><div class="ring" id="g-health"><b id="g-health-v">—</b></div><div><div class="note" style="font-style:normal;margin-top:4px" id="health-note">whole-school index</div></div></div></div>
@@ -170,6 +172,15 @@
       <div id="ofsted-state" style="margin-top:8px"></div>
       <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="ofsted-up">Upload Ofsted report</button></div>
       <div class="note" style="font-style:normal" id="ofsted-note"></div>
+    </div>
+  </div>
+
+  <div class="sec-title">🌍 Global School Benchmark™</div>
+  <div class="grid">
+    <div class="card c12">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Where your school ranks</h3><div class="sub" style="margin:0;flex:1">Benchmarked against comparable schools</div>
+        <select id="bm-scope" style="width:auto;min-width:180px"><option value="local">Local schools</option><option value="regional">Regional schools</option><option value="national" selected>National average</option><option value="international">International schools</option><option value="top">Top-performing worldwide</option></select></div>
+      <div id="benchmark" style="margin-top:12px"></div>
     </div>
   </div>
 
@@ -505,6 +516,65 @@ $('ofsted-up').onclick=function(){
   inp.click();
 };
 renderImprovement();renderOfsted();
+
+/* ============ Global School Benchmark ============ */
+var BM_REF={
+  local:{label:'local schools',teach:68,growth:60,attend:92,exam:63,progress:58,wellbeing:70,dest:62,skills:60,innov:55},
+  regional:{label:'regional schools',teach:70,growth:62,attend:93,exam:65,progress:60,wellbeing:71,dest:64,skills:62,innov:58},
+  national:{label:'the national average',teach:72,growth:63,attend:94,exam:66,progress:61,wellbeing:72,dest:66,skills:63,innov:60},
+  international:{label:'international schools',teach:76,growth:68,attend:95,exam:71,progress:66,wellbeing:75,dest:72,skills:70,innov:68},
+  top:{label:'top-performing schools worldwide',teach:88,growth:82,attend:97,exam:85,progress:80,wellbeing:84,dest:88,skills:85,innov:84}
+};
+function yourScores(){
+  var sig=computeSignals();
+  var gifted=M.filter(function(m){return m.gifted||m.overall>=85}).length;
+  var uni=Math.round(100*M.filter(function(m){return (m.destination==='University')||m.overall>=72}).length/Math.max(1,M.length));
+  var teachQ=staff.length&&staff.some(function(s){return s.perf!=null})?Math.round(avg(staff.map(function(s){return s.perf!=null?s.perf:70}))):Math.round(clamp(cohort+6,40,96));
+  var progress=Math.round(clamp(50+avg(M.map(function(m){return fld(m,'progress',Math.max(0,m.overall-55))}))*0.6,0,100));
+  return {teach:teachQ,growth:progress,attend:sig.attendance,exam:cohort,progress:progress,wellbeing:Math.round(clamp((sig.attendance+sig.behaviour)/2,0,100)),dest:uni,skills:Math.round(clamp(cohort+gifted,0,100)),innov:Math.round(clamp(cohort-4+gifted,0,100))};
+}
+var BM_DIMS=[['teach','Teaching'],['growth','Student growth'],['attend','Attendance'],['exam','Exam performance'],['progress','Progress'],['wellbeing','Wellbeing'],['dest','University destinations'],['skills','Skills'],['innov','Innovation']];
+function renderBenchmark(){
+  var wrap=$('benchmark');if(!M.length){wrap.innerHTML='<div class="empty">Load the demo school or link students to benchmark against comparable schools.</div>';return}
+  var scope=$('bm-scope').value;var ref=BM_REF[scope];var you=yourScores();
+  var wins=0;BM_DIMS.forEach(function(d){if(you[d[0]]>=ref[d[0]])wins++});
+  wrap.innerHTML='<div class="note" style="font-style:normal;margin-bottom:8px">You lead on <b style="color:var(--good)">'+wins+' of '+BM_DIMS.length+'</b> dimensions vs '+ref.label+'.</div>'+
+    BM_DIMS.map(function(d){var yv=you[d[0]],rv=ref[d[0]];var ahead=yv>=rv;var c=ahead?'var(--good)':'var(--warn)';
+      return '<div class="rank"><span style="width:150px;font-size:12.5px">'+d[1]+'</span>'+
+        '<span class="bar" style="position:relative"><i style="width:'+clamp(yv,0,100)+'%;background:'+c+'"></i>'+
+        '<span style="position:absolute;top:-3px;bottom:-3px;left:'+clamp(rv,0,100)+'%;width:2px;background:var(--gold-300)" title="benchmark"></span></span>'+
+        '<span class="val" style="width:66px">'+yv+' <span style="color:var(--ink-3)">/'+rv+'</span></span></div>';
+    }).join('')+
+    '<div class="note" style="margin-top:8px">Gold marker = '+esc(ref.label)+' benchmark · bar = your school. Aim the bar past the marker on every dimension.</div>';
+}
+$('bm-scope').onchange=renderBenchmark;renderBenchmark();
+
+/* ============ World-Class School Certification ============ */
+var CERT_LEVELS=[
+  {k:'Diamond',min:88,c:'#9fd6e6',d:'Among the highest-performing StudYear schools globally — academic excellence, innovation, wellbeing &amp; future readiness.'},
+  {k:'Platinum',min:80,c:'#c7d0dd',d:'International benchmark performance with exceptional continuous improvement.'},
+  {k:'Gold',min:72,c:'#e6c766',d:'Outstanding teaching quality, academic outcomes and parental engagement.'},
+  {k:'Silver',min:62,c:'#c0c8d4',d:'Consistent student progress and data-driven interventions.'},
+  {k:'Bronze',min:50,c:'#d69b6b',d:'Strong foundations in AI-assisted teaching and student support.'}
+];
+function renderCertification(){
+  var card=$('cert-card');if(!M.length){card.style.display='none';return}
+  var you=yourScores();var sig=computeSignals();
+  var inclusion=Math.round(clamp(70+(M.filter(function(m){return m.gifted}).length?6:0)-(atRisk.length*2),0,100));
+  var composite=Math.round(0.22*you.teach+0.2*you.growth+0.14*you.attend+0.14*you.wellbeing+0.12*inclusion+0.18*you.dest);
+  var level=CERT_LEVELS.find(function(l){return composite>=l.min});
+  var next=null;for(var i=CERT_LEVELS.length-1;i>=0;i--){if(CERT_LEVELS[i].min>composite){next=CERT_LEVELS[i];break}}
+  card.style.display='block';
+  card.innerHTML='<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">'+
+    '<div style="width:70px;height:70px;border-radius:16px;flex:none;display:grid;place-items:center;background:'+(level?'rgba(255,255,255,.04)':'rgba(170,182,204,.06)')+';border:1.5px solid '+(level?level.c:'var(--line)')+';font-size:30px">'+(level?'🏆':'🎯')+'</div>'+
+    '<div style="flex:1;min-width:200px"><div style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-3)">StudYear World-Class School Certification™</div>'+
+      '<div style="font-family:var(--serif);font-size:24px;color:'+(level?level.c:'var(--ink-2)')+';margin-top:2px">'+(level?level.k+' certified':'Working towards Bronze')+'</div>'+
+      '<div class="note" style="font-style:normal;margin-top:3px;max-width:60ch">'+(level?level.d:'Build the foundations — verified teaching quality, student growth and support unlock Bronze.')+'</div></div>'+
+    '<div style="text-align:right;min-width:120px"><div class="stat"><div class="v" style="color:'+(level?level.c:'var(--gold-300)')+'">'+composite+'</div><div class="k">certification index</div></div></div></div>'+
+    (next?'<div style="margin-top:12px"><div class="rank"><span style="width:150px;font-size:12px">Progress to '+next.k+'</span><span class="bar"><i style="width:'+clamp(Math.round(100*composite/next.min),0,100)+'%;background:'+next.c+'"></i></span><span class="val">'+Math.max(0,next.min-composite)+' pts</span></div></div>':'<div class="note" style="margin-top:10px;color:#9fd6e6">Highest certification achieved — Diamond. Exceptional.</div>')+
+    '<div class="note" style="margin-top:8px">Certification is earned from verified metrics — student growth, teaching quality, attendance, wellbeing, inclusion and university/career destinations — not reputation.</div>';
+}
+renderCertification();
 
 /* demo banner */
 if(DEMO){var db=$('demobar');db.style.display='flex';db.innerHTML='🎓 <b style="color:#e0b566">Demo school loaded</b> — '+M.length+' students, '+staff.length+' staff, fully populated with sample data. <b>No AI credits are used</b> — explore every dashboard freely. <button class="btn sm" id="clear-demo" style="margin-left:auto;padding:5px 11px">Clear demo</button>';
