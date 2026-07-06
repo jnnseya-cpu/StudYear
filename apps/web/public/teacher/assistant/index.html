@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — AI Teaching Assistant</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  .tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.tools .t{font-size:12.5px;color:var(--ink-2);border:1px solid var(--line);border-radius:20px;padding:7px 14px;cursor:pointer}.tools .t.on{color:var(--gold-300);border-color:var(--gold-500);background:rgba(77,157,224,.1)}
+  .out{border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin-top:14px;background:rgba(6,11,24,.32);white-space:pre-wrap;font-size:13.5px;color:var(--ink-2);line-height:1.7}.out h4{font-family:var(--serif);color:var(--ink);font-size:15px;margin:2px 0 8px}
+  .sugg{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.sugg button{font-size:12px;color:var(--ink-2);border:1px solid var(--line);background:rgba(6,11,24,.3);border-radius:20px;padding:7px 12px;cursor:pointer}
+</style></head><body>
+<script src="../../guard.js" data-role="teacher" data-base="../../"></script>
+<div class="shell"><main>
+  <div class="k">Institutional staff</div><h1>AI Teaching Assistant</h1>
+  <p class="lede">Your AI teaching partner — lesson plans, differentiated work, homework, quizzes, marking, feedback, parent emails and more, in seconds.</p>
+  <div class="card">
+    <div class="two"><div><label class="f">Subject</label><input id="subj" placeholder="Mathematics"></div><div><label class="f">Level</label><input id="level" placeholder="GCSE"></div></div>
+    <label class="f">Topic / question</label><input id="topic" placeholder="e.g. Quadratic equations">
+    <div class="sugg"><button data-s="Explain photosynthesis like I'm 10">Explain like I'm 10</button><button data-s="Give me a step-by-step plan to solve a quadratic equation">Step-by-step plan</button><button data-s="Ask me 3 warm-up questions about World War 2">3 warm-up questions</button></div>
+    <div class="tools" id="tools"><span class="t on" data-t="plan">Lesson plan</span><span class="t" data-t="diff">Differentiated work</span><span class="t" data-t="quiz">Quiz</span><span class="t" data-t="homework">Homework</span><span class="t" data-t="explain">Explain</span><span class="t" data-t="mark">Marking &amp; feedback</span><span class="t" data-t="parent">Parent email</span><span class="t" data-t="behaviour">Behaviour strategy</span></div>
+    <div style="margin-top:12px"><button class="btn solid" id="go">Generate</button></div>
+  </div>
+  <div class="out" id="out" style="display:none"></div>
+  <div class="note">Preview generates from structured templates on-device (no AI credits). Live models adapt to each student's Academic Twin with the backend.</div>
+</main></div>
+<script src="../nav.js" data-base="../" data-cur="assistant/"></script>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;
+function $(id){return document.getElementById(id)}
+var mode='plan';
+$('tools').querySelectorAll('.t').forEach(function(el){el.onclick=function(){$('tools').querySelectorAll('.t').forEach(function(x){x.classList.remove('on')});el.classList.add('on');mode=el.dataset.t}});
+document.querySelectorAll('.sugg button').forEach(function(b){b.onclick=function(){$('topic').value=b.dataset.s;mode='explain';$('tools').querySelectorAll('.t').forEach(function(x){x.classList.toggle('on',x.dataset.t==='explain')});gen()}});
+function gen(){
+  var s=$('subj').value.trim()||'the subject',l=$('level').value.trim()||'this level',t=$('topic').value.trim()||'the topic';var o='';
+  if(mode==='plan')o='<h4>Lesson plan · '+t+'</h4>Objectives: define, apply and reason about '+t+'.\nStarter (5m): retrieval.\nMain (25m): I do → we do → you do.\nDifferentiation: scaffold + stretch.\nCheck: 4-question mini-quiz.\nPlenary: summary + homework.';
+  else if(mode==='diff')o='<h4>Differentiated tasks · '+t+'</h4>Support: partially-worked example + sentence starters.\nCore: standard practice set.\nStretch: multi-step exam question + "explain why".\nSEND/EAL: visual scaffold, key vocabulary list.';
+  else if(mode==='quiz')o='<h4>Quiz · '+t+'</h4>1. Recall\n2. One-step apply\n3. Two-step apply\n4. Spot-the-error\n5. Exam-style stretch (auto-marked in the live build).';
+  else if(mode==='homework')o='<h4>Homework · '+t+'</h4>5 questions rising in difficulty + one reasoning task (~25 min, auto-marked).';
+  else if(mode==='explain')o='<h4>Explaining '+t+'</h4>Hook → plain-language idea → worked example → common misconception → student explains it back. Analogy included.';
+  else if(mode==='mark')o='<h4>Marking &amp; feedback · '+t+'</h4>Strengths: … \nTargets: … \nNext step: one specific action. WWW/EBI format, exam-board aligned.';
+  else if(mode==='parent')o='<h4>Parent email</h4>Dear parent, this week your child worked on '+t+' in '+s+'. They showed good progress; next step is short practice at home. Best wishes.';
+  else if(mode==='behaviour')o='<h4>Behaviour strategy · '+t+'</h4>Positive framing, clear routine, seating plan tweak, 2-minute check-ins, and a reward milestone. Log incidents to the pastoral team.';
+  $('out').style.display='block';$('out').innerHTML=o;
+}
+$('go').onclick=gen;
+})();
+</script>
+</body></html>
