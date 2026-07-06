@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Teacher Registration</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--gold-300:#A9CFF2;--gold-500:#3D8FD1;--good:#5CBB7B;--warn:#c98500;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#6B7A96;--line:rgba(77,157,224,.14);--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}body{background:radial-gradient(1200px 700px at 82% -12%,rgba(77,157,224,.13),transparent 60%),var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  .shell{display:flex;min-height:100vh;max-width:1440px;margin:0 auto}
+  aside{width:236px;flex:none;border-right:1px solid var(--line);padding:22px 14px 30px;position:sticky;top:0;align-self:flex-start;max-height:100vh;overflow-y:auto}
+  .slogo{font-family:var(--serif);font-size:19px;color:var(--ink);text-decoration:none;display:block;padding:4px 10px 14px}.slogo b{color:#4FA6E0;font-weight:600}
+  aside nav a{display:block;font-size:13px;color:var(--ink-2);text-decoration:none;padding:8px 10px;border-radius:8px;margin:1px 0}aside nav a:hover{color:var(--gold-300);background:rgba(77,157,224,.08)}aside nav a.on{color:var(--gold-300);background:rgba(77,157,224,.12)}
+  main{flex:1;padding:30px 30px 90px;min-width:0;max-width:920px}@media(max-width:960px){.shell{flex-direction:column}aside{width:100%;position:sticky;top:0;z-index:60;max-height:46vh;overflow-y:auto;background:#060B18;border-right:none;border-bottom:1px solid var(--line)}aside nav{display:flex;flex-wrap:wrap;gap:2px}main{padding:22px 18px 70px}}
+  a{color:inherit}h1{font-family:var(--serif);font-weight:500;font-size:28px}p.lede{color:var(--ink-2);font-weight:300;margin-top:6px;max-width:80ch}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:20px 22px;margin-top:18px;scroll-margin-top:16px}
+  .card h3{font-family:var(--serif);font-weight:500;font-size:17px;display:flex;align-items:center;gap:9px}.card h3 .ix{width:24px;height:24px;border-radius:7px;background:rgba(77,157,224,.16);color:var(--gold-300);display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
+  .card .sub{font-size:12.5px;color:var(--ink-3);margin:5px 0 12px}
+  label.f{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:12px 0 5px}
+  input,select,textarea{width:100%;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:var(--gold-500)}select option{background:#101B33}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:640px){.two{grid-template-columns:1fr}}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12px var(--sans);border-radius:9px;padding:9px 15px;cursor:pointer;text-decoration:none;display:inline-block}.btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}.btn.sm{padding:6px 11px;font-size:11.5px}.btn.ghost{border-color:rgba(170,182,204,.3);background:transparent;color:var(--ink-2)}
+  .verify{border:1px solid rgba(201,133,0,.4);background:rgba(201,133,0,.08);border-radius:12px;padding:11px 15px;font-size:12.5px;color:#e0b566;margin-top:8px}.verify.ok{border-color:rgba(92,187,123,.4);background:rgba(92,187,123,.08);color:#89d3a2}
+  .prog{height:8px;border-radius:5px;background:rgba(170,182,204,.12);overflow:hidden;margin-top:8px}.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-500),var(--good));transition:width .3s}
+  .note{font-size:11.5px;color:var(--ink-3);margin-top:8px}
+  .rail{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+  .rail a{font-size:11px;color:var(--ink-2);text-decoration:none;padding:5px 9px;border:1px solid var(--line);border-radius:20px;background:rgba(6,11,24,.4)}.rail a:hover{color:var(--gold-300);border-color:var(--gold-500)}.rail a.done{color:#89d3a2;border-color:rgba(92,187,123,.35)}
+  .avatar{width:76px;height:76px;border-radius:16px;flex:none;display:grid;place-items:center;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff;font-weight:700;font-size:26px;overflow:hidden}.avatar img{width:100%;height:100%;object-fit:cover}
+  .banner{width:100%;height:120px;border-radius:12px;border:1px dashed rgba(170,182,204,.3);display:grid;place-items:center;color:var(--ink-3);font-size:12.5px;overflow:hidden;background:rgba(6,11,24,.4)}.banner img{width:100%;height:100%;object-fit:cover}
+  .photo-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  .togs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}@media(max-width:640px){.togs{grid-template-columns:1fr}}
+  .tog{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:10px;padding:10px 13px;background:rgba(6,11,24,.32);font-size:13px;color:var(--ink)}
+  .tog small{display:block;color:var(--ink-3);font-size:11px;margin-top:1px}
+  .sw{position:relative;width:40px;height:22px;flex:none}.sw input{opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+  .sw span{position:absolute;inset:0;border-radius:20px;background:rgba(170,182,204,.2);transition:.2s;pointer-events:none}.sw span::before{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s}
+  .sw input:checked+span{background:linear-gradient(135deg,#4FA6E0,#2E6BC4)}.sw input:checked+span::before{transform:translateX(18px)}
+  .docs{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:6px}@media(max-width:640px){.docs{grid-template-columns:1fr}}
+  .doc{border:1px solid var(--line);border-radius:11px;padding:12px;background:rgba(6,11,24,.32)}
+  .doc .dn{font-size:12.5px;color:var(--ink);font-weight:600}.doc .ds{font-size:11px;color:var(--ink-3);margin:3px 0 8px}
+  .doc .state{font-size:11.5px;color:var(--good);margin-top:7px;word-break:break-all}.doc .state.none{color:var(--ink-3)}
+  .chip{display:inline-block;font-size:10.5px;color:#89d3a2;border:1px solid rgba(92,187,123,.35);border-radius:20px;padding:2px 9px;margin-left:8px;vertical-align:middle}
+  .agrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-top:6px}@media(max-width:820px){.agrid{grid-template-columns:1fr 1fr}}@media(max-width:560px){.agrid{grid-template-columns:1fr}}
+  .agent{border:1px solid var(--line);border-radius:12px;padding:12px 13px;background:linear-gradient(180deg,rgba(16,27,51,.5),rgba(11,18,32,.7))}
+  .agent .ai-ic{font-size:22px;line-height:1}.agent .an{font-size:13px;font-weight:600;color:var(--ink);margin-top:6px}.agent .ad{font-size:11px;color:var(--ink-3);margin-top:2px}
+  .agent .stat{display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;margin-top:8px;padding:2px 8px;border-radius:20px}
+  .agent .stat.on{color:#89d3a2;border:1px solid rgba(92,187,123,.35);background:rgba(92,187,123,.08)}.agent .stat.off{color:#e0b566;border:1px solid rgba(201,133,0,.35);background:rgba(201,133,0,.08)}
+  .agent .dot{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 6px currentColor}
+  .e2ebadge{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#89d3a2;border:1px solid rgba(92,187,123,.3);background:rgba(92,187,123,.07);border-radius:9px;padding:8px 12px;margin-bottom:12px}.e2ebadge span{font-size:14px}
+  .e2ebar{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;color:#89d3a2;border:1px solid rgba(92,187,123,.3);background:rgba(92,187,123,.07);border-radius:20px;padding:5px 13px;margin-top:12px}
+  .linkstate{border:1px solid var(--line);border-radius:11px;padding:14px;background:rgba(6,11,24,.32);margin-top:6px}
+  .linkstate.on{border-color:rgba(92,187,123,.35);background:rgba(92,187,123,.06)}
+  .linkstate .big{font-size:15px;font-weight:600;color:var(--ink)}.linkstate .small{font-size:12px;color:var(--ink-3);margin-top:2px}
+  .invite{border:1px solid rgba(77,157,224,.35);background:rgba(77,157,224,.08);border-radius:11px;padding:12px 14px;margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .stu-row{display:flex;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .acu-note{border:1px solid rgba(77,157,224,.3);background:rgba(77,157,224,.07);border-radius:10px;padding:11px 14px;font-size:12.5px;color:var(--gold-300);margin-top:6px}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+  .savebar{position:sticky;bottom:0;margin:22px -30px -90px;padding:14px 30px;background:linear-gradient(0deg,var(--navy-950) 60%,transparent);display:flex;gap:12px;align-items:center;flex-wrap:wrap;z-index:30}@media(max-width:960px){.savebar{margin:22px -18px -70px;padding:14px 18px}}
+</style></head><body>
+<script src="../../guard.js" data-role="teacher" data-base="../../"></script>
+<div class="shell">
+<aside><a class="slogo" href="../../">⌂ Stud<b>Year</b></a><nav>
+  <a href="../../dashboards/teacher/">Command Centre</a><a href="./" class="on">Registration &amp; profile</a><a href="#sec-school">My school &amp; students</a><a href="#sec-agents">My AI team</a><a href="../../study/">Teaching studio</a><a href="#" id="signout">Sign out</a>
+</nav></aside>
+<main>
+  <h1>Teacher registration</h1><p class="lede">Build your complete professional identity. It powers your AI teaching team, personalises every learner in your classes, routes safeguarding, and lets your school deploy you instantly. Sensitive documents are encrypted on-device.</p>
+  <div class="e2ebar">🔒 End-to-end encrypted OS — your identity documents are encrypted on this device</div>
+
+  <div class="card"><h3><span class="ix">✓</span> Registration progress</h3><div class="prog"><i id="setup-bar" style="width:0%"></i></div><div class="note" id="setup-note"></div>
+    <div class="rail" id="rail"></div>
+    <div class="verify" id="verify"></div></div>
+
+  <div id="form"></div>
+
+  <div class="savebar"><button class="btn solid" id="save">Save registration</button> <a class="btn ghost" href="../../dashboards/teacher/">Command Centre →</a><span class="note" id="saved-at"></span></div>
+</main>
+</div>
+<div id="toast"></div>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;var S=SY.session;
+function $(id){return document.getElementById(id)}function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var e=$('toast');e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2600)}
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+
+var data=SY.get('teacherProfile',{});
+if(!data.email)data.email=S.email;
+
+var TITLES=['Mr','Mrs','Ms','Miss','Mx','Dr','Prof'];
+var GENDERS=['Female','Male','Non-binary','Prefer not to say'];
+var CONTRACTS=['Full Time','Part Time','Supply'];
+var EMPTYPES=['Permanent','Fixed-term','Temporary','Agency','Trainee'];
+var TEACHER_AGENTS=[
+  {k:'ta',i:'🧑‍🏫',l:'AI Teaching Assistant',d:'In-lesson support & Q&A'},
+  {k:'marker',i:'✅',l:'AI Marker',d:'Marks work to your rubric',gate:'aiMarking'},
+  {k:'planner',i:'🧠',l:'AI Lesson Planner',d:'Plans & schemes of work',gate:'aiLessonPlans'},
+  {k:'quiz',i:'❓',l:'AI Quiz Builder',d:'Quizzes & retrieval practice',gate:'aiQuiz'},
+  {k:'res',i:'🧩',l:'AI Resource Creator',d:'Worksheets & materials',gate:'aiWorksheet'},
+  {k:'beh',i:'⚖️',l:'AI Behaviour Assistant',d:'Behaviour logs & reports',gate:'aiBehaviourReports'},
+  {k:'parent',i:'👪',l:'AI Parent Communicator',d:'Drafts parent emails',gate:'aiParentEmails'},
+  {k:'prog',i:'📊',l:'AI Progress Analyst',d:'Tracks & forecasts progress',gate:'aiProgressReports'},
+  {k:'send',i:'🧷',l:'AI SEND Assistant',d:'Personalised support plans'},
+  {k:'coach',i:'🏅',l:'AI Classroom Coach',d:'CPD & practice feedback'}
+];
+
+var SECTIONS=[
+ {id:'personal',n:1,t:'Personal information',s:'Your identity as it appears across the platform.',fields:[
+   {k:'title',l:'Title',t:'select',opts:TITLES},
+   {k:'firstName',l:'First name',t:'text',req:1},
+   {k:'middleName',l:'Middle name',t:'text'},
+   {k:'lastName',l:'Last name',t:'text',req:1},
+   {k:'preferredName',l:'Preferred name',t:'text'},
+   {k:'gender',l:'Gender',t:'select',opts:GENDERS},
+   {k:'dob',l:'Date of birth',t:'date'},
+   {k:'nationality',l:'Nationality',t:'text'},
+   {k:'photo',l:'Photo',t:'photo',shape:'avatar'},
+   {k:'biography',l:'Biography',t:'textarea',w:1},
+   {k:'languagesSpoken',l:'Languages spoken',t:'text',ph:'Comma separated',w:1}
+ ]},
+ {id:'contact',n:2,t:'Contact',s:'How your school and families reach you.',fields:[
+   {k:'email',l:'Email',t:'text',req:1},
+   {k:'phone',l:'Phone',t:'text'},
+   {k:'emergencyContact',l:'Emergency contact',t:'text'},
+   {k:'address',l:'Address',t:'text',w:1}
+ ]},
+ {id:'employment',n:3,t:'Employment',s:'Your professional registration and role.',fields:[
+   {k:'employeeId',l:'Employee ID',t:'text'},
+   {k:'teacherNumber',l:'Teacher number',t:'text'},
+   {k:'teachingLicenceNumber',l:'Teaching licence number',t:'text'},
+   {k:'empSchool',l:'School',t:'text'},
+   {k:'department',l:'Department',t:'text'},
+   {k:'position',l:'Position',t:'text'},
+   {k:'employmentType',l:'Employment type',t:'select',opts:EMPTYPES},
+   {k:'startDate',l:'Start date',t:'date'},
+   {k:'contractType',l:'Contract type',t:'select',opts:CONTRACTS}
+ ]},
+ {id:'teaching',n:4,t:'Teaching',s:'What you teach and to whom.',fields:[
+   {k:'subjects',l:'Subjects',t:'text',ph:'Comma separated',w:1},
+   {k:'teachYearGroups',l:'Year groups',t:'text',ph:'e.g. Year 9 – Year 13'},
+   {k:'examBoards',l:'Exam boards',t:'text',ph:'AQA, Edexcel, OCR…'},
+   {k:'classCapacity',l:'Class capacity',t:'text'},
+   {k:'teachingExperience',l:'Teaching experience',t:'text',ph:'e.g. 8 years'},
+   {k:'teachingStyle',l:'Teaching style',t:'text'},
+   {k:'specialisms',l:'Specialisms',t:'text',w:1},
+   {k:'onlineTeaching',l:'Online teaching experience',t:'text'}
+ ]},
+ {id:'qualifications',n:5,t:'Qualifications',s:'Your academic and professional qualifications. Upload certificates — encrypted at rest.',fields:[
+   {k:'degree',l:'Degree',t:'text'},
+   {k:'masters',l:'Masters',t:'text'},
+   {k:'phd',l:'PhD',t:'text'},
+   {k:'pgce',l:'PGCE',t:'text'},
+   {k:'qts',l:'QTS',t:'text'},
+   {k:'teachingCertificates',l:'Teaching certificates',t:'text',w:1},
+   {k:'safeguardingCertificate',l:'Safeguarding certificate',t:'text'},
+   {k:'cpdRecords',l:'CPD records',t:'text'},
+   {k:'certDocs',l:'Upload certificates',t:'docs-inline'}
+ ]},
+ {id:'skills',n:6,t:'Skills',s:'Your professional strengths — used to match you to classes and interventions.',type:'toggles',toggles:[
+   {k:'skBehaviour',l:'Behaviour management'},{k:'skDifferentiation',l:'Differentiation'},
+   {k:'skSend',l:'SEND'},{k:'skStem',l:'STEM'},{k:'skCoding',l:'Coding'},
+   {k:'skLanguages',l:'Languages'},{k:'skMusic',l:'Music'},{k:'skSports',l:'Sports'},
+   {k:'skLeadership',l:'Leadership'},{k:'skPastoral',l:'Pastoral care'}
+ ]},
+ {id:'availability',n:7,t:'Availability',s:'Your working pattern — powers timetabling and AI planning.',fields:[
+   {k:'workingDays',l:'Working days',t:'text',ph:'e.g. Mon–Fri'},
+   {k:'workingHours',l:'Working hours',t:'text',ph:'e.g. 08:00–16:00'},
+   {k:'lunch',l:'Lunch',t:'text'},
+   {k:'planningTime',l:'Planning time',t:'text'},
+   {k:'meetingAvailability',l:'Meeting availability',t:'text'},
+   {k:'parentsEvening',l:'Parents evening availability',t:'text'}
+ ]},
+ {id:'technology',n:8,t:'Technology',s:'Platforms you use — informs integrations and rollout.',type:'toggles',toggles:[
+   {k:'tGoogleClassroom',l:'Google Classroom'},{k:'tTeams',l:'Teams'},{k:'tZoom',l:'Zoom'},
+   {k:'tWhiteboard',l:'Whiteboard'},{k:'tCanvas',l:'Canvas'},{k:'tMoodle',l:'Moodle'},
+   {k:'tAiExperience',l:'AI experience'}
+ ]},
+ {id:'prefs',n:9,t:'Teaching preferences',s:'How you like to run your classroom.',fields:[
+   {k:'homeworkFrequency',l:'Homework frequency',t:'text'},
+   {k:'assessmentStyle',l:'Assessment style',t:'text'},
+   {k:'markingStyle',l:'Marking style',t:'text'},
+   {k:'communicationPreference',l:'Communication preference',t:'text'},
+   {k:'parentContactMethod',l:'Parent contact method',t:'text'}
+ ]},
+ {id:'ai',n:10,t:'AI configuration',s:'You decide exactly what your AI teaching team may do. Off by default until you enable.',type:'toggles',toggles:[
+   {k:'aiLessonPlans',l:'Allow AI lesson plans'},{k:'aiWorksheet',l:'Allow AI worksheet generator'},
+   {k:'aiQuiz',l:'Allow AI quiz generator'},{k:'aiExamCreator',l:'Allow AI exam creator'},
+   {k:'aiMarking',l:'Allow AI marking'},{k:'aiBehaviourReports',l:'Allow AI behaviour reports'},
+   {k:'aiProgressReports',l:'Allow AI progress reports'},{k:'aiParentEmails',l:'Allow AI parent emails'},
+   {k:'aiInterventionSuggestions',l:'Allow AI intervention suggestions'}
+ ]},
+ {id:'verification',n:11,t:'Verification',s:'Upload official documents. Encrypted on-device; shared with our verification team only when you submit for review.',type:'docs',docs:[
+   {k:'docPassport',l:'Passport'},{k:'docDriving',l:'Driving licence'},
+   {k:'docTeachingLicence',l:'Teaching licence'},{k:'docDBS',l:'Enhanced DBS'},
+   {k:'docSafeguard',l:'Safeguarding'},{k:'docDegree',l:'Degree'},
+   {k:'docMembership',l:'Professional membership'}
+ ]},
+ {id:'metrics',n:12,t:'Performance metrics',s:'Your track record — surfaced to leadership and used by your AI Progress Analyst.',fields:[
+   {k:'yearsExperience',l:'Years experience',t:'text'},
+   {k:'studentPassRate',l:'Student pass rate (%)',t:'text'},
+   {k:'avgGradeImprovement',l:'Average grade improvement',t:'text'},
+   {k:'attendanceRate',l:'Attendance rate (%)',t:'text'},
+   {k:'studentFeedback',l:'Student feedback',t:'text'},
+   {k:'parentFeedback',l:'Parent feedback',t:'text'},
+   {k:'cpdHours',l:'Professional development hours',t:'text'}
+ ]},
+ {id:'school',n:13,t:'My school & students',s:'Link to your school and build your class roster.',type:'schoollink'},
+ {id:'agents',n:14,t:'My AI teaching team',s:'StudYear provisions a personal AI team for every teacher, each operating strictly within the permissions you set in section 10.',type:'agents'}
+];
+
+/* ---------- pickers ---------- */
+function pick(max,cb){var input=document.createElement('input');input.type='file';input.accept='image/jpeg,image/png,image/webp,image/gif';input.onchange=function(){var f=input.files[0];if(!f)return;if(f.size>6*1024*1024){toast('Max 6 MB');return}if(!/^image\//.test(f.type)){toast('Image files only');return}var img=new Image();img.onload=function(){var sc=Math.min(1,max/Math.max(img.width,img.height));var cv=document.createElement('canvas');cv.width=Math.round(img.width*sc);cv.height=Math.round(img.height*sc);cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);cb(cv.toDataURL('image/jpeg',.85));URL.revokeObjectURL(img.src)};img.src=URL.createObjectURL(f)};input.click()}
+function pickDoc(cb){var input=document.createElement('input');input.type='file';input.accept='application/pdf,image/*';input.onchange=function(){var f=input.files[0];if(!f)return;if(f.size>6*1024*1024){toast('Max 6 MB per document');return}var r=new FileReader();r.onload=function(){cb({name:f.name,type:f.type,data:r.result})};r.readAsDataURL(f)};input.click()}
+
+/* ---------- school link helpers ---------- */
+function myEmail(){return (data.email||S.email||'').trim().toLowerCase()}
+/* scan same-device schools for a code (preview model) */
+function schoolNameFor(code){return SY.schoolGet(code,'name','')||('School '+code)}
+/* find pending invites addressed to this teacher across schools on this device */
+function findInvites(){
+  var out=[],seen={};
+  try{for(var i=0;i<localStorage.length;i++){var key=localStorage.key(i);var m=key&&key.match(/^sy-school:([^:]+):pending$/);if(!m)continue;var code=m[1];if(seen[code])continue;seen[code]=1;var pend=SY.schoolGet(code,'pending',[]);(pend||[]).forEach(function(p){if(p&&(p.email||'').trim().toLowerCase()===myEmail())out.push({code:code,name:schoolNameFor(code)})})}}catch(e){}
+  return out;
+}
+function linkToSchool(code){
+  code=(code||'').trim().toUpperCase();if(!code){toast('Enter a school join code');return false}
+  var name=SY.schoolGet(code,'name',null);
+  /* add to school staff roster if not already there */
+  var staff=SY.schoolGet(code,'staff',[]);
+  if(!staff.some(function(t){return (t.email||'').toLowerCase()===myEmail()})){
+    staff.push({email:myEmail(),name:teacherName(),cohorts:[],students:[]});SY.schoolSet(code,'staff',staff);
+  }
+  /* remove any pending invite for me */
+  var pend=SY.schoolGet(code,'pending',[]);var np=pend.filter(function(p){return (p.email||'').toLowerCase()!==myEmail()});if(np.length!==pend.length)SY.schoolSet(code,'pending',np);
+  data.schoolCode=code;data.schoolName=name||data.schoolName||('School '+code);
+  SY.log('school','Linked to school',data.schoolName);
+  return true;
+}
+function teacherName(){return ((data.title?data.title+' ':'')+(data.firstName||'')+' '+(data.lastName||'')).trim()||S.name||myEmail()}
+function myClassCode(){if(!data.classCode)data.classCode='T'+(myEmail().replace(/[^a-z0-9]/g,'').slice(0,4)||'CLS').toUpperCase()+(''+(Math.abs(hash(myEmail()))%9000+1000));return data.classCode}
+function hash(s){var h=0;for(var i=0;i<s.length;i++){h=((h<<5)-h+s.charCodeAt(i))|0}return h}
+function myStudents(){return data.students=data.students||[]}
+function addStudentEmail(email){
+  email=(email||'').trim().toLowerCase();if(!/^\S+@\S+\.\S+$/.test(email)){toast('Enter a valid student email');return false}
+  var list=myStudents();if(list.some(function(s){return s.email===email})){toast('Already in your class');return false}
+  list.push({email:email,added:new Date().toISOString()});
+  /* mirror into school roster if linked */
+  if(data.schoolCode){var r=SY.schoolGet(data.schoolCode,'roster',[]);if(!r.some(function(x){return (x.email||'').toLowerCase()===email})){r.push({email:email,name:SY.accountName(email)||email});SY.schoolSet(data.schoolCode,'roster',r)}}
+  SY.log('roster','Student added to class',email);return true;
+}
+
+/* ---------- render ---------- */
+var form=$('form'),rail=$('rail');
+function initial(s){return((s||'?').trim()[0]||'?').toUpperCase()}
+SECTIONS.forEach(function(sec){
+  var card=el('div','card');card.id='sec-'+sec.id;
+  card.appendChild(el('h3',null,'<span class="ix">'+sec.n+'</span>'+sec.t));
+  card.appendChild(el('div','sub',sec.s));
+
+  if(sec.type==='toggles'){
+    var wrap=el('div','togs');
+    sec.toggles.forEach(function(tg){
+      var t=el('div','tog');t.appendChild(el('div',null,tg.l+(tg.d?'<small>'+tg.d+'</small>':'')));
+      var sw=el('label','sw');var cb=el('input');cb.type='checkbox';cb.checked=!!data[tg.k];cb.onchange=function(){data[tg.k]=cb.checked;refresh()};
+      sw.appendChild(cb);sw.appendChild(el('span'));t.appendChild(sw);wrap.appendChild(t);
+    });
+    card.appendChild(wrap);form.appendChild(card);return;
+  }
+  if(sec.type==='docs'){
+    if(SY.e2eAvailable)card.appendChild(el('div','e2ebadge','<span>🔒</span> End-to-end encrypted · documents are AES-GCM encrypted on this device before storage'));
+    var dg=el('div','docs');
+    sec.docs.forEach(function(dc){
+      var d=el('div','doc');d.appendChild(el('div','dn',dc.l));d.appendChild(el('div','ds','PDF or image · max 6 MB · encrypted at rest'));
+      var btn=el('button','btn sm ghost','Upload');var st=el('div','state none','No file');
+      var cur=data[dc.k];if(cur&&cur.name){st.className='state';st.innerHTML='🔒 '+esc(cur.name)+(cur.e2e?' <span class="chip">encrypted</span>':'')}
+      btn.onclick=function(){pickDoc(function(res){st.className='state';st.textContent='Encrypting…';SY.encrypt(res.data).then(function(p){data[dc.k]={name:res.name,type:res.type,enc:p,e2e:!!(p&&p.e2e)};st.innerHTML='🔒 '+esc(res.name)+(data[dc.k].e2e?' <span class="chip">encrypted</span>':'');refresh()})})};
+      var rm=el('button','btn sm ghost','Remove');rm.style.marginLeft='7px';rm.onclick=function(){delete data[dc.k];st.className='state none';st.textContent='No file';refresh()};
+      d.appendChild(btn);d.appendChild(rm);d.appendChild(st);dg.appendChild(d);
+    });
+    card.appendChild(dg);form.appendChild(card);return;
+  }
+  if(sec.type==='agents'){
+    var ag=el('div','agrid');
+    TEACHER_AGENTS.forEach(function(a){
+      var c=el('div','agent');c.appendChild(el('div','ai-ic',a.i));c.appendChild(el('div','an',a.l));c.appendChild(el('div','ad',a.d));
+      var on=!a.gate||!!data[a.gate];var stt=el('span','stat '+(on?'on':'off'));stt.innerHTML='<span class="dot"></span>'+(on?'Active':'Standby');stt.dataset.gate=a.gate||'';c.appendChild(stt);ag.appendChild(c);
+    });
+    card.appendChild(ag);card.appendChild(el('div','note','Standby agents activate instantly when you enable the matching permission in section 10.'));form.appendChild(card);return;
+  }
+  if(sec.type==='schoollink'){
+    card.appendChild(el('div','acu-note','💳 Teachers don’t buy ACUs — every AI action you run draws from your school’s shared ACU pool. Your school manages the balance in ACU command.'));
+    var lsWrap=el('div');card.appendChild(lsWrap);
+    var studWrap=el('div');studWrap.style.marginTop='16px';card.appendChild(studWrap);
+    renderSchool(lsWrap,studWrap);
+    form.appendChild(card);return;
+  }
+
+  /* standard field grid */
+  var grid=el('div','two');
+  sec.fields.forEach(function(fl){
+    if(fl.t==='photo'){
+      var box=el('div');if(fl.w)box.style.gridColumn='1/-1';box.appendChild(el('label','f',fl.l));
+      var pr=el('div','photo-row');var view=el('span','avatar');var val=data[fl.k];
+      if(val)view.innerHTML='<img src="'+val+'">';else view.textContent=initial((data.firstName||S.name||'T'));
+      var up=el('button','btn sm ghost','Upload');up.onclick=function(){pick(512,function(d){data[fl.k]=d;view.innerHTML='<img src="'+d+'">';refresh()})};
+      var rm=el('button','btn sm ghost','Remove');rm.onclick=function(){delete data[fl.k];view.innerHTML='';view.textContent=initial((data.firstName||S.name||'T'))};
+      var btns=el('div');btns.appendChild(up);btns.appendChild(document.createTextNode(' '));btns.appendChild(rm);
+      pr.appendChild(view);pr.appendChild(btns);box.appendChild(pr);grid.appendChild(box);return;
+    }
+    if(fl.t==='docs-inline'){
+      var box=el('div');box.style.gridColumn='1/-1';box.appendChild(el('label','f',fl.l));
+      var list=data[fl.k]=data[fl.k]||[];
+      var holder=el('div');
+      function drawDocs(){holder.innerHTML='';list.forEach(function(dd,i){var r=el('div','stu-row');r.innerHTML='<span style="flex:1">🔒 '+esc(dd.name)+(dd.e2e?' <span class="chip">encrypted</span>':'')+'</span>';var x=el('button','btn sm ghost','Remove');x.onclick=function(){list.splice(i,1);drawDocs();refresh()};r.appendChild(x);holder.appendChild(r)})}
+      drawDocs();
+      var add=el('button','btn sm ghost','Upload certificate');add.onclick=function(){pickDoc(function(res){SY.encrypt(res.data).then(function(p){list.push({name:res.name,type:res.type,enc:p,e2e:!!(p&&p.e2e)});drawDocs();refresh()})})};
+      box.appendChild(holder);box.appendChild(add);grid.appendChild(box);return;
+    }
+    var box=el('div');if(fl.w)box.style.gridColumn='1/-1';box.appendChild(el('label','f',fl.l+(fl.req?' *':'')));
+    var input;
+    if(fl.t==='textarea'){input=el('textarea');input.rows=3}
+    else if(fl.t==='select'){input=el('select');var o0=el('option',null,'Select…');o0.value='';input.appendChild(o0);fl.opts.forEach(function(o){var op=el('option',null,o);op.value=o;input.appendChild(op)})}
+    else{input=el('input');input.type=(fl.t==='date'?'date':'text')}
+    if(fl.ph)input.placeholder=fl.ph;if(data[fl.k]!=null)input.value=data[fl.k];
+    input.oninput=function(){data[fl.k]=input.value;refresh()};input.onchange=function(){data[fl.k]=input.value;refresh()};
+    box.appendChild(input);grid.appendChild(box);
+  });
+  card.appendChild(grid);form.appendChild(card);
+});
+
+/* school link section renderer */
+function renderSchool(lsWrap,studWrap){
+  lsWrap.innerHTML='';studWrap.innerHTML='';
+  if(data.schoolCode){
+    var ls=el('div','linkstate on');ls.innerHTML='<div class="big">✓ Linked to '+esc(data.schoolName||schoolNameFor(data.schoolCode))+'</div><div class="small">Join code '+esc(data.schoolCode)+' · your school manages your ACU pool and cohorts.</div>';
+    var un=el('button','btn sm ghost','Unlink');un.style.marginTop='10px';un.onclick=function(){if(!confirm('Unlink from this school?'))return;delete data.schoolCode;delete data.schoolName;SY.set('teacherProfile',data);renderSchool(lsWrap,studWrap);refresh()};
+    ls.appendChild(un);lsWrap.appendChild(ls);
+  }else{
+    var ls=el('div','linkstate');ls.innerHTML='<div class="big">Not linked to a school yet</div><div class="small">Accept an invitation from your school, or enter the school join code.</div>';lsWrap.appendChild(ls);
+    var invites=findInvites();
+    invites.forEach(function(iv){var b=el('div','invite');b.innerHTML='<span style="flex:1"><b>'+esc(iv.name)+'</b> invited you to join.</span>';var acc=el('button','btn solid sm','Accept invitation');acc.onclick=function(){if(linkToSchool(iv.code)){SY.set('teacherProfile',data);toast('Joined '+data.schoolName);renderSchool(lsWrap,studWrap);refresh()}};b.appendChild(acc);lsWrap.appendChild(b)});
+    var row=el('div');row.style.cssText='display:flex;gap:8px;margin-top:10px;flex-wrap:wrap';
+    var inp=el('input');inp.placeholder='School join code';inp.style.maxWidth='220px';
+    var go=el('button','btn solid sm','Link to school');go.onclick=function(){if(linkToSchool(inp.value)){SY.set('teacherProfile',data);toast('Linked to '+data.schoolName);renderSchool(lsWrap,studWrap);refresh()}};
+    row.appendChild(inp);row.appendChild(go);lsWrap.appendChild(row);
+  }
+  /* students — multiple ways */
+  studWrap.appendChild(el('label','f','Add students to your class — three ways'));
+  var ways=el('div');ways.style.cssText='display:grid;gap:10px;margin-top:6px';
+  /* 1 by email */
+  var w1=el('div','linkstate');w1.innerHTML='<div class="big" style="font-size:13px">1 · By email</div><div class="small">Add a student who already has a StudYear account.</div>';
+  var r1=el('div');r1.style.cssText='display:flex;gap:8px;margin-top:8px;flex-wrap:wrap';var e1=el('input');e1.placeholder='student@email.com';e1.style.maxWidth='240px';var g1=el('button','btn sm','Add');g1.onclick=function(){if(addStudentEmail(e1.value)){e1.value='';SY.set('teacherProfile',data);renderSchool(lsWrap,studWrap);refresh();toast('Student added')}};r1.appendChild(e1);r1.appendChild(g1);w1.appendChild(r1);ways.appendChild(w1);
+  /* 2 by class code */
+  var w2=el('div','linkstate');w2.innerHTML='<div class="big" style="font-size:13px">2 · By class code</div><div class="small">Students self-join by entering this code — StudYear’s current join model.</div><div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="chip" style="font-size:15px;letter-spacing:.12em;padding:5px 12px">'+esc(myClassCode())+'</span></div>';ways.appendChild(w2);
+  /* 3 bulk */
+  var w3=el('div','linkstate');w3.innerHTML='<div class="big" style="font-size:13px">3 · Bulk import</div><div class="small">Paste one student email per line (or from your school roster).</div>';
+  var ta=el('textarea');ta.rows=3;ta.placeholder='a@school.com\nb@school.com';ta.style.marginTop='8px';var g3=el('button','btn sm','Import list');g3.style.marginTop='8px';g3.onclick=function(){var n=0;ta.value.split(/[\n,]/).forEach(function(x){if(addStudentEmail(x.trim()))n++});ta.value='';SY.set('teacherProfile',data);renderSchool(lsWrap,studWrap);refresh();toast(n+' student'+(n===1?'':'s')+' imported')};w3.appendChild(ta);w3.appendChild(g3);ways.appendChild(w3);
+  studWrap.appendChild(ways);
+  /* current roster */
+  var roster=myStudents();
+  var rc=el('div');rc.style.marginTop='12px';
+  rc.appendChild(el('label','f','My class ('+roster.length+' student'+(roster.length===1?'':'s')+')'));
+  if(roster.length){roster.forEach(function(st,i){var r=el('div','stu-row');r.innerHTML='<span style="flex:1">'+esc(SY.accountName(st.email)||st.email)+' <span style="color:var(--ink-3)">'+esc(st.email)+'</span></span>';var x=el('button','btn sm ghost','Remove');x.onclick=function(){roster.splice(i,1);SY.set('teacherProfile',data);renderSchool(lsWrap,studWrap);refresh()};r.appendChild(x);rc.appendChild(r)})}
+  else rc.appendChild(el('div','note','No students yet — add them above.'));
+  studWrap.appendChild(rc);
+}
+
+/* rail */
+SECTIONS.forEach(function(sec){var a=el('a',null,sec.n+'. '+sec.t);a.href='#sec-'+sec.id;a.id='rail-'+sec.id;a.onclick=function(e){e.preventDefault();$('sec-'+sec.id).scrollIntoView({behavior:'smooth',block:'start'})};rail.appendChild(a)});
+
+/* progress */
+var REQUIRED=[['firstName'],['lastName'],['email']];
+function has(v){return typeof v==='string'?v.trim():v}
+function sectionDone(sec){
+  if(sec.type==='toggles')return sec.toggles.some(function(t){return data[t.k]});
+  if(sec.type==='docs')return sec.docs.some(function(d){return data[d.k]&&data[d.k].name});
+  if(sec.type==='agents')return true;
+  if(sec.type==='schoollink')return !!data.schoolCode||(data.students&&data.students.length);
+  return (sec.fields||[]).some(function(f){return has(data[f.k])});
+}
+function refresh(){
+  var filled=0;REQUIRED.forEach(function(r){if(has(data[r[0]]))filled++});
+  var pct=Math.round(100*filled/REQUIRED.length);
+  $('setup-bar').style.width=pct+'%';
+  var doneCount=SECTIONS.filter(sectionDone).length;
+  $('setup-note').textContent=(pct===100?'Core registration complete. ':filled+' of '+REQUIRED.length+' required fields complete. ')+doneCount+' of '+SECTIONS.length+' sections started.';
+  SECTIONS.forEach(function(sec){var a=$('rail-'+sec.id);if(a)a.className=sectionDone(sec)?'done':''});
+  document.querySelectorAll('.agent .stat').forEach(function(st){var g=st.dataset.gate;var on=!g||!!data[g];st.className='stat '+(on?'on':'off');st.innerHTML='<span class="dot"></span>'+(on?'Active':'Standby')});
+  var v=$('verify');
+  if(pct===100){v.className='verify ok';v.innerHTML='✓ Core details recorded. Submit your Verification documents (section 11) when ready — our team confirms your professional status. You can use every feature meanwhile.';}
+  else{v.className='verify';v.innerHTML='⚠ Your profile shows as <b>incomplete</b> until name and email are saved.';}
+}
+refresh();
+
+/* save */
+$('save').onclick=function(){
+  var fn=(data.firstName||'').trim(),ln=(data.lastName||'').trim();
+  if(!fn||!ln){toast('Enter your first and last name');$('sec-personal').scrollIntoView({behavior:'smooth'});return}
+  var name=teacherName();data.name=name;data.updatedAt=new Date().toISOString();data.verified=($('setup-bar').style.width==='100%');
+  try{SY.set('teacherProfile',data)}catch(e){toast('Storage full — remove a large upload and retry');return}
+  var profile=SY.get('profile',{});profile.name=name;if(data.photo)profile.photo=data.photo;SY.set('profile',profile);
+  try{var us=JSON.parse(localStorage.getItem('sy-users'))||[];var me=us.find(function(u){return u.email===S.email&&u.role==='teacher'});if(me){me.name=name;localStorage.setItem('sy-users',JSON.stringify(us))}S.name=name;localStorage.setItem('sy-session',JSON.stringify(S))}catch(e){}
+  if(data.schoolCode){var staff=SY.schoolGet(data.schoolCode,'staff',[]);var mine=staff.find(function(t){return (t.email||'').toLowerCase()===myEmail()});if(mine)mine.name=name;SY.schoolSet(data.schoolCode,'staff',staff)}
+  SY.log('profile','Teacher registration saved',name+(data.schoolName?' · '+data.schoolName:''));
+  $('saved-at').textContent='Saved '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  toast('Registration saved');refresh();
+};
+})();
+</script>
+</body></html>
