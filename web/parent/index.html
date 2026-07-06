@@ -112,10 +112,12 @@
 
 <div class="top">
   <a class="logo" href="../">⌂ Stud<b>Year</b></a>
-  <div class="sp">
-    <a class="chip" href="../dashboards/parent/">Analytics dashboard</a>
-    <a class="chip" href="../app/parent/">Parent console</a>
+  <div class="sp" style="align-items:center">
+    <a class="chip" href="../dashboards/parent/">Analytics</a>
+    <a class="chip" href="account/">My Account</a>
+    <a class="chip" href="account/profile/">Edit profile</a>
     <a class="chip" href="#" id="signout">Sign out</a>
+    <a href="account/" title="My Account" style="display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff;font-weight:700;font-size:14px;text-decoration:none" id="topavatar"></a>
   </div>
 </div>
 
@@ -240,6 +242,15 @@ var plan=PARENT_PLANS[planId];
 $('hero-plan').textContent=plan.label; $('sub-name').textContent=plan.label;
 $('sub-feats').innerHTML=plan.feats.map(function(f){return '<div class="feat"><b>✓</b> '+esc(f)+'</div>'}).join('');
 $('foot-note').textContent='Plan: '+plan.label+' · StudYear protects outcomes, not just displays data';
+
+/* parent identity: avatar in the bar + cover behind the hero */
+var _prof=SY.get('profile',{});
+var _ta=$('topavatar');
+if(_prof.photo)_ta.innerHTML='<img src="'+_prof.photo+'" style="width:100%;height:100%;object-fit:cover" alt="">';
+else _ta.textContent=((_prof.name||SY.session.name)[0]||'?').toUpperCase();
+if(_prof.cover){var _h=document.querySelector('.hero');
+  _h.style.backgroundImage='linear-gradient(160deg,rgba(8,13,26,.82),rgba(8,13,26,.93)),url('+JSON.stringify(_prof.cover)+')';
+  _h.style.backgroundSize='cover';_h.style.backgroundPosition='center';}
 
 /* ---- compute live metrics for a linked child ---- */
 function metrics(email){
