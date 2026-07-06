@@ -2,7 +2,7 @@ name: Deploy StudYear OS
 
 on:
   push:
-    branches: [claude/studyear-ecosystem-architecture-f4lu5m, main]
+    branches: [claude/studyear-ecosystem-architecture-f4lu5m, main, claude/continue-from-here-y37pvu]
   workflow_dispatch:
 
 permissions:
