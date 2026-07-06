@@ -222,6 +222,35 @@
   .rv{opacity:0;transform:translateY(28px);transition:opacity .9s cubic-bezier(.2,.65,.25,1),transform .9s cubic-bezier(.2,.65,.25,1)}
   .rv.in{opacity:1;transform:none}
 
+  /* AI systems showcase */
+  .brain-wrap{margin-top:60px;display:grid;grid-template-columns:1fr 1.15fr;gap:40px;align-items:center}
+  @media(max-width:900px){.brain-wrap{grid-template-columns:1fr}}
+  .brain-viz{position:relative;aspect-ratio:1;max-width:440px;margin:0 auto;width:100%}
+  .brain-core{position:absolute;top:50%;left:50%;width:130px;height:130px;transform:translate(-50%,-50%);
+    border-radius:50%;background:radial-gradient(circle at 40% 35%,rgba(95,168,224,.9),rgba(43,108,176,.35));
+    box-shadow:0 0 60px rgba(77,157,224,.6),0 0 0 1px rgba(255,255,255,.1) inset;display:grid;place-items:center;
+    font-family:var(--serif);font-size:34px;animation:pulseCore 3.4s ease-in-out infinite}
+  @keyframes pulseCore{50%{box-shadow:0 0 90px rgba(77,157,224,.85),0 0 0 1px rgba(255,255,255,.14) inset;transform:translate(-50%,-50%) scale(1.04)}}
+  .orbit{position:absolute;inset:0;border-radius:50%;animation:spin 26s linear infinite}
+  .orbit.two{animation-duration:38s;animation-direction:reverse}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .node{position:absolute;top:50%;left:50%;font-size:11px;letter-spacing:.05em;color:var(--gold-300);
+    background:rgba(11,18,32,.9);border:1px solid var(--line);border-radius:999px;padding:6px 11px;
+    transform:translate(-50%,-50%);white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+  .ring{position:absolute;inset:8%;border:1px dashed rgba(77,157,224,.16);border-radius:50%}
+  .ring.b{inset:26%;border-color:rgba(77,157,224,.12)}
+  .sys-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:56px}
+  @media(max-width:820px){.sys-grid{grid-template-columns:1fr 1fr}}@media(max-width:520px){.sys-grid{grid-template-columns:1fr}}
+  .sys{border:1px solid var(--line);border-radius:14px;padding:18px 18px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.85));transition:transform .3s,border-color .3s}
+  .sys:hover{transform:translateY(-4px);border-color:rgba(77,157,224,.4)}
+  .sys .si{font-size:22px}.sys h4{font-family:var(--serif);font-weight:500;font-size:17px;margin:8px 0 5px}
+  .sys p{font-size:13px;color:var(--ink-2);font-weight:300}
+  .agent-band{margin-top:48px;border:1px solid var(--line);border-radius:16px;padding:26px 30px;
+    background:linear-gradient(120deg,rgba(77,157,224,.08),rgba(11,18,32,.6));display:flex;gap:26px;align-items:center;flex-wrap:wrap}
+  .agent-band .big-num{font-family:var(--serif);font-size:54px;color:var(--gold-300);line-height:1}
+  .agent-band .t{flex:1;min-width:240px}
+  .agent-band .t h4{font-family:var(--serif);font-size:22px;font-weight:500;margin-bottom:6px}
+  .agent-band .t p{color:var(--ink-2);font-weight:300;font-size:14.5px}
   @media(max-width:960px){
     .loop-grid,.price-grid{grid-template-columns:repeat(2,1fr)}
     .aud-grid,.dash-body{grid-template-columns:1fr}
@@ -258,11 +287,12 @@
   <div class="beam" style="width:460px;height:460px;top:30%;left:55%;background:rgba(46,107,196,.22);animation-delay:-4s"></div>
   <img class="hero-mark" src="logo.svg" alt="" aria-hidden="true">
   <div class="wrap">
-    <div class="kicker">The UK's AI-Powered Education OS</div>
-    <h1>The command centre that turns academic chaos into <em>measurable progress.</em></h1>
-    <p class="lede">Where the last generation gave students a library and a calendar, StudYear gives every
-      student <b>a personal examiner, tutor and strategist</b> — and gives every parent, teacher, school and
-      local authority <b>a live window into exactly what each child knows, forgets and needs next.</b></p>
+    <div class="kicker">The World's First AI Academic Operating System</div>
+    <h1>One platform.<br>Every student, teacher, parent and school — <em>running on AI.</em></h1>
+    <p class="lede">StudYear doesn't help students study. It <b>redesigns how education understands, supports and
+      develops every child</b> — a personal examiner, tutor and strategist for every learner, a full AI teaching
+      team for every teacher, and a live <b>AI School Brain</b> that turns a whole institution into a world-class
+      one. <b>Every lesson. Every result. Every decision — powered by AI.</b></p>
     <div class="hero-cta">
       <a class="btn btn-gold" href="app/">Start My Free Assessment →</a>
       <a class="btn btn-ghost" href="#schools">Talk to our team</a>
@@ -360,9 +390,9 @@
 <section id="students">
   <div class="wrap">
     <div class="sec-kicker rv">Built for every seat at the table</div>
-    <h2 class="rv">One platform. Four command centres.</h2>
-    <p class="sub rv">Students improve. Parents understand. Teachers intervene earlier. Schools manage
-      performance. Local authorities see evidence — all reading the same live truth.</p>
+    <h2 class="rv">One platform. Six command centres.</h2>
+    <p class="sub rv">Students improve. Parents understand. Teachers get their time back. Tutors run a business.
+      Schools become world-class. Local authorities see evidence — all reading the same live truth.</p>
 
     <div class="aud-grid">
       <div class="aud rv" id="aud-student"><div class="glyph">Σ</div>
@@ -394,6 +424,36 @@
         <div class="chips"><span class="chip">Multi-child dashboard</span><span class="chip">Burnout indicator</span><span class="chip">English · Français</span></div>
       </div>
 
+      <div class="aud rv" id="teachers"><div class="glyph">✎</div>
+        <div class="who">Teachers</div>
+        <h3>A full AI teaching team.</h3>
+        <p>Every teacher gets a personal AI workforce that plans lessons, differentiates work, marks to the
+          mark scheme, writes parent emails and drafts interventions — and a continuous coaching programme that
+          grows their practice. Hours back, every week.</p>
+        <ul>
+          <li>AI lesson &amp; course builder, quizzes, homework and exam questions</li>
+          <li>Auto-marking and examiner-style feedback to your rubric</li>
+          <li>Live cohort command centre — spot who's slipping before mocks</li>
+          <li>Teacher Excellence Programme: CPD, strengths and leadership pathway</li>
+        </ul>
+        <div class="chips"><span class="chip">10-agent AI team</span><span class="chip">School-linked</span><span class="chip">Jitsi classroom</span></div>
+      </div>
+
+      <div class="aud rv" id="tutors" style="transition-delay:.08s"><div class="glyph">★</div>
+        <div class="who">Private Tutors</div>
+        <h3>Run your whole tutoring business.</h3>
+        <p>Get discovered on the marketplace, then run everything from one command centre: bookings, a student
+          pipeline, live video lessons, earnings and a 15-agent AI workforce that handles planning, marking,
+          invoicing and marketing.</p>
+        <ul>
+          <li>Verified marketplace profile with real reviews and ratings</li>
+          <li>Calendar, CRM pipeline, earnings, churn &amp; peak-time analytics</li>
+          <li>Jitsi live classroom with AI-prepared lessons</li>
+          <li>15-agent AI workforce — from lesson planning to lead generation</li>
+        </ul>
+        <div class="chips"><span class="chip">Marketplace</span><span class="chip">Reviews &amp; ratings</span><span class="chip">15-agent workforce</span></div>
+      </div>
+
       <div class="aud rv" id="schools"><div class="glyph">⌂</div>
         <div class="who">Schools &amp; Trusts</div>
         <h3>Executive academic operations.</h3>
@@ -421,6 +481,58 @@
         </ul>
         <div class="chips"><span class="chip">Verified impact</span><span class="chip">GDPR &amp; AADC</span><span class="chip">Area-wide licensing</span></div>
       </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ================= AI SCHOOL BRAIN ================= -->
+<section id="brain">
+  <div class="wrap">
+    <div class="sec-kicker rv">The intelligence layer</div>
+    <h2 class="rv">Meet the AI School Brain.<br>It never sleeps.</h2>
+    <p class="sub rv">Above every classroom sits an intelligence layer that analyses attendance, homework,
+      assessments, engagement, behaviour, wellbeing, predicted grades and curriculum progress — every minute.
+      It predicts failure <b style="color:var(--ink)">months before it happens</b>, and drives every child,
+      teacher and department toward their best.</p>
+
+    <div class="brain-wrap">
+      <div class="brain-viz rv" aria-hidden="true">
+        <div class="ring"></div><div class="ring b"></div>
+        <div class="brain-core">🧠</div>
+        <div class="orbit">
+          <span class="node" style="top:6%;left:50%">Attendance</span>
+          <span class="node" style="top:50%;left:96%">Homework</span>
+          <span class="node" style="top:94%;left:50%">Behaviour</span>
+          <span class="node" style="top:50%;left:4%">Wellbeing</span>
+        </div>
+        <div class="orbit two">
+          <span class="node" style="top:18%;left:84%">Predicted grades</span>
+          <span class="node" style="top:82%;left:82%">Curriculum</span>
+          <span class="node" style="top:82%;left:16%">Interventions</span>
+          <span class="node" style="top:18%;left:16%">Assessments</span>
+        </div>
+      </div>
+      <div class="rv">
+        <div class="sys-grid" style="margin-top:0">
+          <div class="sys"><div class="si">🚀</div><h4>Improvement Engine</h4><p>Auto-builds a school improvement plan — upload your Ofsted report and it tracks every action to done.</p></div>
+          <div class="sys"><div class="si">⚖️</div><h4>Equity Engine</h4><p>Monitors 15 groups — SEND, PP, EAL and more — and targets the widest gaps first.</p></div>
+          <div class="sys"><div class="si">🌍</div><h4>Global Benchmark</h4><p>Ranks you against local, national and top schools worldwide across nine dimensions.</p></div>
+          <div class="sys"><div class="si">🎓</div><h4>Career Pathway AI</h4><p>Apprenticeship-first pathways matched to ability, interests and local jobs — from Year 5.</p></div>
+          <div class="sys"><div class="si">🧩</div><h4>Curriculum Intelligence</h4><p>Every curriculum mapped — GCSE, A-Level, IB, Cambridge and more — localised to your community.</p></div>
+          <div class="sys"><div class="si">🏆</div><h4>World-Class Certification</h4><p>Bronze to Diamond, earned from verified outcomes — not reputation.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="agent-band rv">
+      <div class="big-num">40+</div>
+      <div class="t"><h4>An AI workforce, auto-provisioned.</h4>
+        <p>The moment an institution goes live, StudYear creates a full AI leadership team — from AI Principal and
+          Safeguarding Assistant to Cybersecurity and Data agents — plus a personal AI team for every teacher and a
+          15-agent workforce for every tutor. Each operates strictly within the permissions you set.</p></div>
+      <a class="btn btn-ghost" href="app/school/">See the school OS →</a>
     </div>
   </div>
 </section>
