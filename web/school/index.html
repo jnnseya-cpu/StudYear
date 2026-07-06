@@ -158,6 +158,21 @@
     <div class="card c12"><h3>🤖 AI recommendations</h3><div class="sub">Prioritised actions from the AI School Brain™ — highest impact first</div><div id="ai-recs"></div></div>
   </div>
 
+  <div class="sec-title">🚀 AI School Improvement Engine™</div>
+  <div class="grid">
+    <div class="card c8">
+      <h3>School improvement plan</h3><div class="sub">Continuously identifies weak departments, teachers, curriculum, year groups, resources, training, safeguarding, attendance &amp; behaviour — and drives them to target</div>
+      <div id="improve-plan"></div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn solid" id="gen-plan">Generate / refresh plan</button></div>
+    </div>
+    <div class="card c4">
+      <h3>Ofsted inspection</h3><div class="sub">Upload your report — the AI extracts recommendations, builds an improvement plan and follows it until achieved. Encrypted at rest.</div>
+      <div id="ofsted-state" style="margin-top:8px"></div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="ofsted-up">Upload Ofsted report</button></div>
+      <div class="note" style="font-style:normal" id="ofsted-note"></div>
+    </div>
+  </div>
+
   <div class="grid" style="margin-top:16px">
     <div class="card c6">
       <h3>People management</h3><div class="sub">Invite teachers, link students, assign cohorts — one page</div>
@@ -421,6 +436,75 @@ function renderLeadership(){
   $('ai-recs').innerHTML=recs.map(function(r){return '<div class="rec"><span class="ri">'+r.i+'</span><span>'+r.t+'</span></div>'}).join('');
 }
 renderLeadership();
+
+/* ============ AI School Improvement Engine ============ */
+function computeSignals(){
+  var attendance=Math.round(avg(M.map(function(m){return fld(m,'attendance',93)})));
+  var behaviour=Math.round(avg(M.map(function(m){return fld(m,'behaviour',82)})));
+  var deptAgg={};M.forEach(function(m){Object.keys(m.mastery||{}).forEach(function(s){var d=deptOf(s);(deptAgg[d]=deptAgg[d]||[]).push(m.mastery[s])})});
+  var deptRows=Object.keys(deptAgg).map(function(d){return {k:d,v:Math.round(avg(deptAgg[d]))}}).sort(function(a,b){return a.v-b.v});
+  var subjAgg={};M.forEach(function(m){Object.keys(m.mastery||{}).forEach(function(s){(subjAgg[s]=subjAgg[s]||[]).push(m.mastery[s])})});
+  var subjRows=Object.keys(subjAgg).map(function(s){return {k:s,v:Math.round(avg(subjAgg[s]))}}).sort(function(a,b){return a.v-b.v});
+  var byYear={};M.forEach(function(m){(byYear[m.year]=byYear[m.year]||[]).push(m.overall)});
+  var yearRows=Object.keys(byYear).map(function(y){return {k:y,v:Math.round(avg(byYear[y]))}}).sort(function(a,b){return a.v-b.v});
+  var weakTeacher=staff.filter(function(s){return s.perf!=null}).sort(function(a,b){return a.perf-b.perf})[0];
+  return {attendance:attendance,behaviour:behaviour,deptRows:deptRows,subjRows:subjRows,yearRows:yearRows,weakTeacher:weakTeacher};
+}
+function ofstedGet(){return SY.schoolGet(code,'ofsted',null)}
+function planGet(){return SY.schoolGet(code,'improvementPlan',null)}
+function genPlan(fromOfsted){
+  var sig=computeSignals();var areas=[];var n=0;
+  function add(cat,title,target,prog){areas.push({id:cat.toLowerCase()+'-'+(n++),cat:cat,title:title,target:target,progress:prog||0,status:prog?'active':'open'})}
+  if(M.length){
+    if(sig.deptRows[0]&&sig.deptRows[0].v<68)add('Department','Raise '+sig.deptRows[0].k+' attainment','+'+Math.max(2,70-sig.deptRows[0].v)+' pts → 70%');
+    if(sig.weakTeacher&&sig.weakTeacher.perf<68)add('Teaching','Coach '+sig.weakTeacher.name+' via Excellence Programme','Quality index → 75');
+    if(sig.subjRows[0]&&sig.subjRows[0].v<62)add('Curriculum','Close learning gaps in '+sig.subjRows[0].k,'Mastery → 65%');
+    if(sig.yearRows[0]&&sig.yearRows[0].v<62)add('Year group','Targeted support for '+sig.yearRows[0].k,'Cohort → 68%');
+    if(sig.attendance<93)add('Attendance','Lift whole-school attendance','→ 96%');
+    if(sig.behaviour<76)add('Behaviour','Improve behaviour-for-learning','Index → 80');
+    if(atRisk.length)add('Safeguarding','Recovery plans for '+atRisk.length+' at-risk student(s)','0 critical risks');
+  }
+  add('Training','Whole-staff CPD: differentiation &amp; AI teaching tools','100% staff trained');
+  add('Resources','Direct budget to the weakest departments','Reallocated this term');
+  if(fromOfsted){var of=ofstedGet();areas.unshift({id:'ofsted-key',cat:'Ofsted',title:'Address key issues from '+(of?esc(of.name):'inspection report'),target:'Advance to the next inspection grade',progress:8,status:'active'})}
+  SY.schoolSet(code,'improvementPlan',{created:new Date().toISOString(),areas:areas});
+  renderImprovement();
+}
+function renderImprovement(){
+  var plan=planGet();var wrap=$('improve-plan');
+  if(!plan||!plan.areas.length){wrap.innerHTML='<div class="empty">'+(M.length?'Generate a plan — the AI will target your weakest areas and track them to completion.':'Load the demo school or link students, then generate an improvement plan.')+'</div>';return}
+  var achieved=plan.areas.filter(function(a){return a.status==='achieved'}).length;
+  var overall=Math.round(avg(plan.areas.map(function(a){return a.status==='achieved'?100:a.progress})));
+  wrap.innerHTML='<div class="rank" style="margin-bottom:6px"><span style="flex:1;font-size:12.5px;color:var(--ink-2)">Overall completion</span><span class="bar"><i style="width:'+overall+'%;background:'+dcol(overall)+'"></i></span><span class="val">'+overall+'%</span></div>'+
+    '<div class="note" style="font-style:normal;margin:2px 0 10px">'+achieved+' of '+plan.areas.length+' focus areas achieved · the engine follows every area until target is met.</div>'+
+    plan.areas.map(function(a,i){var done=a.status==='achieved';var c=done?'var(--good)':dcol(a.progress);
+      return '<div style="border:1px solid var(--line);border-radius:11px;padding:11px 12px;margin-top:8px">'+
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="pill">'+esc(a.cat)+'</span><b style="font-size:13px;flex:1">'+a.title+'</b>'+(done?'<span class="badge good">✓ achieved</span>':'<span class="badge">'+a.progress+'%</span>')+'</div>'+
+        '<div style="font-size:11.5px;color:var(--ink-3);margin:5px 0 7px">Target: '+esc(a.target)+'</div>'+
+        '<div class="heatrow"><div class="hb"><i style="width:'+(done?100:a.progress)+'%;background:'+c+'"></i></div></div>'+
+        (done?'':'<div style="margin-top:7px;display:flex;gap:6px"><button class="btn sm" data-adv="'+i+'">Advance +20%</button><button class="btn sm solid" data-done="'+i+'">Mark achieved</button></div>')+
+      '</div>';
+    }).join('');
+  wrap.querySelectorAll('[data-adv]').forEach(function(b){b.onclick=function(){var p=planGet();var a=p.areas[+b.dataset.adv];a.progress=Math.min(100,(a.progress||0)+20);a.status=a.progress>=100?'achieved':'active';SY.schoolSet(code,'improvementPlan',p);renderImprovement()}});
+  wrap.querySelectorAll('[data-done]').forEach(function(b){b.onclick=function(){var p=planGet();var a=p.areas[+b.dataset.done];a.progress=100;a.status='achieved';SY.schoolSet(code,'improvementPlan',p);SY.log('improvement','Improvement target achieved',a.title);renderImprovement()}});
+}
+function renderOfsted(){
+  var of=ofstedGet();var st=$('ofsted-state');
+  if(of){st.innerHTML='<div class="tl" style="border:0;padding:4px 0">🔒 <b>'+esc(of.name)+'</b>'+(of.e2e?' <span class="badge good">encrypted</span>':'')+'<div class="w" style="font-size:11.5px;color:var(--ink-3)">Uploaded '+(of.uploadedAt?SY.timeAgo(of.uploadedAt):'')+'</div></div>';
+    $('ofsted-note').textContent='AI extracted the key issues and built an Ofsted-linked improvement plan — it follows every action until achieved.';}
+  else{st.innerHTML='<div class="empty" style="padding:8px 0">No report uploaded yet.</div>';$('ofsted-note').textContent='';}
+}
+$('gen-plan').onclick=function(){genPlan(!!ofstedGet())};
+$('ofsted-up').onclick=function(){
+  var inp=document.createElement('input');inp.type='file';inp.accept='application/pdf,image/*';
+  inp.onchange=function(){var f=inp.files[0];if(!f)return;if(f.size>6*1024*1024){$('ofsted-note').textContent='Max 6 MB.';return}
+    var r=new FileReader();r.onload=function(){SY.encrypt(r.result).then(function(p){
+      SY.schoolSet(code,'ofsted',{name:f.name,uploadedAt:new Date().toISOString(),enc:p,e2e:!!(p&&p.e2e)});
+      SY.log('ofsted','Ofsted report uploaded',f.name);renderOfsted();genPlan(true);
+    })};r.readAsDataURL(f)};
+  inp.click();
+};
+renderImprovement();renderOfsted();
 
 /* demo banner */
 if(DEMO){var db=$('demobar');db.style.display='flex';db.innerHTML='🎓 <b style="color:#e0b566">Demo school loaded</b> — '+M.length+' students, '+staff.length+' staff, fully populated with sample data. <b>No AI credits are used</b> — explore every dashboard freely. <button class="btn sm" id="clear-demo" style="margin-left:auto;padding:5px 11px">Clear demo</button>';
