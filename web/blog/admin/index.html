@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — AI Blog Studio</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--gold-300:#A9CFF2;--gold-400:#5FA8E0;--gold-500:#3D8FD1;--good:#5CBB7B;--warn:#c98500;--crit:#e66767;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#6B7A96;--line:rgba(77,157,224,.14);--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}body{background:radial-gradient(1200px 700px at 82% -12%,rgba(77,157,224,.13),transparent 60%),var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  .wrap{max-width:1080px;margin:0 auto;padding:26px 24px 90px}
+  a{color:inherit}.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}.top .logo{font-family:var(--serif);font-size:18px;text-decoration:none}.top .logo b{color:#4FA6E0}.top .sp{margin-left:auto;display:flex;gap:8px}
+  .chip{font-size:12px;color:var(--ink-2);border:1px solid rgba(170,182,204,.25);border-radius:20px;padding:6px 12px;text-decoration:none}
+  h1{font-family:var(--serif);font-weight:500;font-size:28px;margin-top:6px}.k{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-400)}p.lede{color:var(--ink-2);font-weight:300;margin-top:4px;max-width:75ch}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}@media(max-width:640px){.kpis{grid-template-columns:1fr 1fr}}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:18px 20px;margin-top:16px}
+  .card h3{font-family:var(--serif);font-weight:500;font-size:17px}.card .sub{font-size:12.5px;color:var(--ink-3);margin:4px 0 12px}
+  .stat .v{font-family:var(--serif);font-size:30px;color:var(--gold-300);line-height:1}.stat .k2{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}
+  label.f{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:12px 0 5px}
+  input,select,textarea{width:100%;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}input:focus,select:focus,textarea:focus{border-color:var(--gold-500)}select option{background:#101B33}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:640px){.two{grid-template-columns:1fr}}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12px var(--sans);border-radius:9px;padding:9px 15px;cursor:pointer;text-decoration:none;display:inline-block}.btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}.btn.sm{padding:6px 11px;font-size:11.5px}.btn.ghost{border-color:rgba(170,182,204,.3);background:transparent;color:var(--ink-2)}
+  .row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:13px}.row b{color:var(--ink)}
+  .badge{font-size:10px;border-radius:20px;padding:3px 9px;border:1px solid rgba(170,182,204,.25);color:var(--ink-2)}.badge.good{border-color:rgba(92,187,123,.45);color:var(--good)}.badge.warn{border-color:rgba(201,133,0,.45);color:#e0b566}
+  .seo{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .ring{--p:0;--c:var(--good);width:64px;height:64px;border-radius:50%;flex:none;background:conic-gradient(var(--c) calc(var(--p)*1%),rgba(170,182,204,.12) 0);display:grid;place-items:center;position:relative}
+  .ring::before{content:"";width:48px;height:48px;border-radius:50%;background:var(--navy-950);position:absolute}.ring b{position:relative;font-family:var(--serif);font-size:16px}
+  .checks div{font-size:12px;padding:3px 0;color:var(--ink-2)}.checks .ok{color:#89d3a2}.checks .no{color:var(--ink-3)}
+  .snippet{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px;background:rgba(6,11,24,.4);font-size:12.5px;color:var(--ink-2);white-space:pre-wrap}
+  .note{font-size:11.5px;color:var(--ink-3);margin-top:8px}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+</style></head><body>
+<script src="../../guard.js" data-role="school" data-base="../../"></script>
+<div class="wrap">
+  <div class="top"><a class="logo" href="../../">⌂ Stud<b>Year</b></a><div class="sp"><a class="chip" href="../">View blog</a><a class="chip" href="#" id="signout">Sign out</a></div></div>
+  <div class="k">Content operations · AI agents</div>
+  <h1>AI Blog Studio</h1>
+  <p class="lede">Two agents keep your blog alive and ranking: the <b>AI Writer</b> drafts and publishes posts, and the <b>AI SEO agent</b> optimises every one for search engines and social — titles, meta, keywords, structured data and social snippets.</p>
+
+  <div class="kpis">
+    <div class="card stat"><div class="v" id="k-pub">0</div><div class="k2">Published</div></div>
+    <div class="card stat"><div class="v" id="k-draft">0</div><div class="k2">Drafts</div></div>
+    <div class="card stat"><div class="v" id="k-total">0</div><div class="k2">Total posts</div></div>
+    <div class="card stat"><div class="v" id="k-seo">0</div><div class="k2">Avg SEO score</div></div>
+  </div>
+
+  <div class="card"><h3>✍ AI Writer</h3><div class="sub">Give a topic — the agent writes a full, structured post.</div>
+    <div class="two"><div><label class="f">Topic</label><input id="topic" placeholder="e.g. How spaced repetition boosts GCSE results"></div>
+      <div><label class="f">Category</label><select id="cat"><option>Study science</option><option>Product</option><option>Parents</option><option>Schools</option><option>Teachers</option><option>Exam prep</option><option>Careers</option></select></div></div>
+    <label class="f">Focus keyword (SEO)</label><input id="kw" placeholder="e.g. spaced repetition">
+    <div style="margin-top:12px"><button class="btn solid" id="write">Write draft</button></div>
+    <div id="editor" style="display:none;margin-top:14px">
+      <label class="f">Title</label><input id="e-title">
+      <label class="f">Meta description</label><textarea id="e-meta" rows="2"></textarea>
+      <label class="f">Body</label><textarea id="e-body" rows="9"></textarea>
+      <label class="f">Tags (comma-separated)</label><input id="e-tags">
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="seo-run">Run SEO agent</button><button class="btn solid" id="publish">Publish</button><button class="btn ghost" id="savedraft">Save draft</button></div>
+    </div>
+  </div>
+
+  <div class="card" id="seo-card" style="display:none"><h3>🔍 AI SEO agent</h3><div class="sub">Optimised for first-page ranking and social sharing</div>
+    <div class="seo"><div class="ring" id="seo-ring"><b id="seo-val">0</b></div>
+      <div style="flex:1;min-width:220px"><div class="checks" id="seo-checks"></div></div></div>
+    <div class="two" style="margin-top:12px">
+      <div><label class="f">SEO title</label><input id="s-title" readonly></div>
+      <div><label class="f">URL slug</label><input id="s-slug" readonly></div>
+    </div>
+    <label class="f">Suggested keywords</label><div id="s-keywords"></div>
+    <label class="f">Social snippets</label>
+    <div class="snippet" id="s-x"></div><div class="snippet" id="s-li"></div>
+    <div class="note">The SEO agent re-reviews published posts on a schedule to keep them fresh and ranking (freshness signal + updated structured data).</div>
+  </div>
+
+  <div class="card"><h3>Published &amp; drafts</h3><div id="list"></div></div>
+</div>
+<div id="toast"></div>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;
+function $(id){return document.getElementById(id)}function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var e=$('toast');e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2400)}
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+function load(){try{return JSON.parse(localStorage.getItem('sy-blog'))||[]}catch(e){return[]}}
+function save(a){try{localStorage.setItem('sy-blog',JSON.stringify(a))}catch(e){toast('Storage full')}}
+var current=null;
+
+function slugify(s){return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').slice(0,60)}
+function words(s){return (s||'').trim().split(/\s+/).filter(Boolean).length}
+function readTime(body){return Math.max(1,Math.round(words(body)/200))}
+
+/* ---- AI Writer (template-based, no AI cost) ---- */
+$('write').onclick=function(){
+  var topic=$('topic').value.trim();if(!topic){toast('Enter a topic');return}
+  var cat=$('cat').value;var kw=$('kw').value.trim()||topic.split(' ').slice(0,2).join(' ');
+  var title=topic.replace(/^\w/,function(c){return c.toUpperCase()});
+  var meta='Discover '+kw.toLowerCase()+' — practical, evidence-based guidance from StudYear on '+topic.toLowerCase()+' to help students, parents and teachers get results.';
+  var body='## Why '+kw+' matters\n'+kw.charAt(0).toUpperCase()+kw.slice(1)+' is one of the highest-impact things you can focus on. Here is what the data shows and how StudYear puts it to work.\n\n'+
+    '## The evidence\nStudents who apply '+kw.toLowerCase()+' consistently outperform those who don\'t. It works because it targets how memory and motivation actually function — not how we wish they did.\n\n'+
+    '## How to apply it this week\n1. Start small and specific.\n2. Space it out across several short sessions.\n3. Test yourself instead of re-reading.\n4. Track progress so you can see it working.\n\n## How StudYear helps\nStudYear automates '+kw.toLowerCase()+' inside every study plan — so students do the right thing at the right time, and parents and teachers can see it happening live.\n\n## The bottom line\n'+title+' is not about working harder. It is about working the way learning actually works. Start your free assessment and let the plan build itself.';
+  $('editor').style.display='block';
+  $('e-title').value=title;$('e-meta').value=meta;$('e-body').value=body;
+  $('e-tags').value=[kw,cat,'StudYear','study tips','revision'].join(', ');
+  current={id:'p'+Date.now(),keyword:kw,category:cat};
+  toast('Draft written — review, then run SEO');runSeo();
+  $('seo-card').scrollIntoView({behavior:'smooth',block:'nearest'});
+};
+
+/* ---- AI SEO agent ---- */
+function analyse(){
+  var title=$('e-title').value.trim(),meta=$('e-meta').value.trim(),body=$('e-body').value,kw=(current&&current.keyword||'').toLowerCase();
+  var tags=$('e-tags').value.split(',').map(function(t){return t.trim()}).filter(Boolean);
+  var checks=[
+    {ok:title.length>=30&&title.length<=62,t:'Title length 30–62 chars ('+title.length+')'},
+    {ok:kw&&title.toLowerCase().indexOf(kw)>=0,t:'Focus keyword in title'},
+    {ok:meta.length>=120&&meta.length<=160,t:'Meta description 120–160 ('+meta.length+')'},
+    {ok:kw&&meta.toLowerCase().indexOf(kw)>=0,t:'Keyword in meta description'},
+    {ok:words(body)>=300,t:'Body ≥ 300 words ('+words(body)+')'},
+    {ok:(body.match(/##/g)||[]).length>=3,t:'Has 3+ subheadings'},
+    {ok:tags.length>=3,t:'3+ tags'},
+    {ok:/studyear|assessment|plan/i.test(body),t:'Internal link / CTA present'}
+  ];
+  var per=Math.round(100/checks.length);var score=Math.min(100,checks.filter(function(c){return c.ok}).length*per);
+  return {checks:checks,score:score,title:title,meta:meta,kw:kw,tags:tags,body:body};
+}
+function runSeo(){
+  var a=analyse();$('seo-card').style.display='block';
+  var ring=$('seo-ring');ring.style.setProperty('--p',a.score);ring.style.setProperty('--c',a.score>=75?'var(--good)':a.score>=50?'var(--warn)':'var(--crit)');$('seo-val').textContent=a.score;
+  $('seo-checks').innerHTML=a.checks.map(function(c){return '<div class="'+(c.ok?'ok':'no')+'">'+(c.ok?'✓ ':'○ ')+esc(c.t)+'</div>'}).join('');
+  $('s-title').value=a.title.length>60?a.title.slice(0,57)+'…':a.title;
+  $('s-slug').value='/blog/'+slugify(a.title);
+  var kws=[a.kw,a.kw+' tips','best '+a.kw,a.kw+' GCSE','how to '+a.kw].filter(Boolean);
+  $('s-keywords').innerHTML=kws.map(function(k){return '<span class="badge" style="margin:2px 4px 0 0">'+esc(k)+'</span>'}).join('');
+  $('s-x').textContent='𝕏 / X:\n'+a.title+'\n\n'+(a.meta.slice(0,120))+'\n#StudYear #'+(a.kw||'study').replace(/\s/g,'')+' #revision';
+  $('s-li').textContent='LinkedIn:\n'+a.title+'\n\n'+a.meta+'\n\nRead more on the StudYear blog.';
+  if(current){current.seoScore=a.score}
+}
+$('seo-run').onclick=runSeo;
+['e-title','e-meta','e-body','e-tags'].forEach(function(id){$(id).addEventListener('input',function(){if($('seo-card').style.display!=='none')runSeo()})});
+
+function collect(pub){
+  var a=analyse();
+  return {id:current?current.id:'p'+Date.now(),title:a.title,slug:slugify(a.title),category:(current&&current.category)||$('cat').value,
+    excerpt:a.meta.slice(0,150),metaDesc:a.meta,body:a.body,tags:a.tags,keyword:a.kw,readTime:readTime(a.body),
+    seoScore:a.score,published:pub,date:new Date().toISOString(),reviewed:new Date().toISOString()};
+}
+function upsert(post){var all=load();var i=all.findIndex(function(p){return p.id===post.id});if(i>=0)all[i]=post;else all.unshift(post);save(all);draw()}
+$('publish').onclick=function(){if(!$('e-title').value.trim()){toast('Write a draft first');return}var p=collect(true);upsert(p);SY.log('blog','Post published',p.title+' · SEO '+p.seoScore);toast('Published — live on the blog');$('editor').style.display='none';$('seo-card').style.display='none';current=null};
+$('savedraft').onclick=function(){if(!$('e-title').value.trim()){toast('Write a draft first');return}var p=collect(false);upsert(p);toast('Draft saved');};
+
+function draw(){
+  var all=load();var pub=all.filter(function(p){return p.published});
+  $('k-pub').textContent=pub.length;$('k-draft').textContent=all.length-pub.length;$('k-total').textContent=all.length;
+  $('k-seo').textContent=all.length?Math.round(all.reduce(function(a,p){return a+(p.seoScore||0)},0)/all.length):0;
+  $('list').innerHTML=all.length?all.map(function(p,i){return '<div class="row"><b>'+esc(p.title)+'</b> <span class="badge '+(p.published?'good':'warn')+'">'+(p.published?'live':'draft')+'</span> <span class="badge">SEO '+(p.seoScore||0)+'</span><span style="margin-left:auto;display:flex;gap:6px"><button class="btn sm ghost" data-toggle="'+p.id+'">'+(p.published?'Unpublish':'Publish')+'</button><button class="btn sm ghost" data-del="'+p.id+'">Delete</button></span></div>'}).join(''):'<div class="note">No posts yet — write your first with the AI Writer above.</div>';
+  $('list').querySelectorAll('[data-toggle]').forEach(function(b){b.onclick=function(){var all=load();var p=all.find(function(x){return x.id===b.dataset.toggle});if(p){p.published=!p.published;p.reviewed=new Date().toISOString();save(all);draw();toast(p.published?'Published':'Unpublished')}}});
+  $('list').querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){if(!confirm('Delete this post?'))return;save(load().filter(function(x){return x.id!==b.dataset.del}));draw()}});
+}
+/* seed a couple of AI posts on first run so the blog isn't empty */
+if(!load().length){
+  save([
+    {id:'seed1',title:'Spaced repetition: the highest-ROI revision habit',slug:'spaced-repetition-highest-roi-revision',category:'Study science',excerpt:'Why spacing your revision beats cramming every time — and how StudYear automates it.',metaDesc:'Spaced repetition is the highest-ROI revision habit for GCSE and A-Level. Learn how it works and how StudYear schedules it for you automatically.',body:'## Why it works\nSpacing beats cramming.\n## How to apply it\nShort sessions, spaced out.\n## StudYear\nWe automate it in every plan.',tags:['spaced repetition','revision','GCSE','StudYear'],keyword:'spaced repetition',readTime:3,seoScore:88,published:true,date:new Date(Date.now()-3*86400000).toISOString(),reviewed:new Date().toISOString()},
+    {id:'seed2',title:'How the AI School Brain predicts results months early',slug:'ai-school-brain-predicts-results',category:'Schools',excerpt:'Inside the intelligence layer that spots risk before it becomes a grade shock.',metaDesc:'The StudYear AI School Brain analyses attendance, homework and assessments every minute to predict outcomes months before exams. Here is how.',body:'## The intelligence layer\nIt never sleeps.\n## What it predicts\nRisk, months early.\n## Act early\nInterventions before failure.',tags:['AI School Brain','school improvement','analytics','StudYear'],keyword:'AI School Brain',readTime:4,seoScore:82,published:true,date:new Date(Date.now()-86400000).toISOString(),reviewed:new Date().toISOString()}
+  ]);
+}
+draw();
+})();
+</script>
+</body></html>
