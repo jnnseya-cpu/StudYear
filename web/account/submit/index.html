@@ -141,7 +141,10 @@ var SUBJECTS=["Accounting","Biology","Business Studies","Chemistry","Computer Sc
 var LEVELS=["Primary School","Years 7-9 (KS3)","GCSE","IGCSE","National 5","BTEC National","AS","A2/A-level","Scottish Highers","Scottish Advanced Highers","International Baccalaureate","University","11+ Exam","Fun","Other"];
 SUBJECTS.forEach(function(s){var o=document.createElement('option');o.textContent=s;$('s-subj').appendChild(o)});
 LEVELS.forEach(function(s){var o=document.createElement('option');o.textContent=s;$('s-level').appendChild(o)});
-if(SY.get('profile',{}).level)$('s-level').value=SY.get('profile',{}).level;
+var _prof=SY.get('profile',{});
+if(_prof.level)$('s-level').value=_prof.level;
+if(_prof.subjects&&_prof.subjects[0]&&SUBJECTS.indexOf(_prof.subjects[0].s)>-1)$('s-subj').value=_prof.subjects[0].s;
+if(_prof.board){var _b=document.getElementById('s-board');if([].some.call(_b.options,function(o){return o.textContent===_prof.board}))_b.value=_prof.board;}
 
 $('s-type').onchange=function(){
   var v=$('s-type').value;

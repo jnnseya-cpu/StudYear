@@ -193,6 +193,26 @@
      an always-on tutor, and live progress tracking. Everything below is interactive.</p>
 </header>
 
+<div id="profile-nudge" style="display:none;border:1px solid rgba(95,168,224,.4);background:rgba(77,157,224,.08);border-radius:12px;padding:14px 18px;margin-top:18px;font-size:13.5px;color:var(--gold-300)">
+  <b id="pn-msg"></b>
+  <a href="../account/profile/" style="color:var(--gold-300);text-decoration:underline;margin-left:6px">Complete your profile →</a>
+</div>
+<script>
+(function(){
+  try{
+    var p=(window.SY?window.SY.get('profile',{}):{});
+    var el=document.getElementById('profile-nudge');
+    if(!p||!p.subjects||!p.subjects.length){
+      document.getElementById('pn-msg').textContent='Personalise StudYear — add your study level, subjects and target grades and every tool auto-fills for you.';
+      el.style.display='block';
+    }else{
+      var name=(window.SY&&window.SY.session&&window.SY.session.name)||'';
+      document.querySelector('header.page h1').textContent=(name?name.split(' ')[0]+' — ':'')+'search it, plan it, practise it, track it.';
+    }
+  }catch(e){}
+})();
+</script>
+
 <nav class="tabs" id="tabs">
   <button data-t="search" class="on">🔎 Find resources</button>
   <button data-t="planner">🗓 Study planner</button>
@@ -539,17 +559,19 @@
 <section id="tab-diag">
   <div class="grid">
     <div class="card c5">
-      <h3>Academic diagnostic</h3>
-      <div class="sub">Rate your confidence for each subject you want assessed — your profile subjects appear
-        automatically when available, and you can add any others from the catalog or type a custom name.</div>
+      <h3>Academic diagnostic — all your subjects at once</h3>
+      <div class="sub">Every subject on your profile is loaded automatically and assessed together in one run.
+        Rate your confidence for each, add any others from the catalog or type a custom name, then answer a
+        short mixed quiz drawn from all of them.</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div><label class="f">Add from catalog</label><select id="dg-add"><option value="">Choose a subject to add…</option></select></div>
         <div><label class="f">Or add custom subject</label><input type="text" id="dg-custom" placeholder="e.g. Latin, Astronomy…"></div>
       </div>
+      <div style="margin-top:10px"><button class="btn ghost sm" id="dg-all">＋ Add all my profile subjects</button></div>
       <div class="note" id="dg-count"></div>
       <div id="dg-rows"></div>
       <div style="margin-top:14px">
-        <button class="btn" id="dg-quiz">Continue → 10 quick questions</button>
+        <button class="btn" id="dg-quiz">Continue → quick quiz across all subjects</button>
         <button class="btn ghost" id="dg-skip">Skip questions</button>
       </div>
       <div class="note">Rules-based preview — the AI diagnostic (SY-A04) attaches here when the backend is live.</div>
@@ -971,6 +993,25 @@ fillSelect(document.getElementById("f-type"),TYPES);
 fillSelect(document.getElementById("f-topic"),TOPICS);
 ["c-f-subj","c-n-subj","c-q-subj","c-t-subj","c-x-subj","c-b-subj","c-s-subj","c-m-subj","c-l-subj","c-v-subj","c-e-subj","c-sm-subj","g-fc-subj","g-qz-subj","g-mm-subj","pp-subj"].forEach(id=>fillSelect(document.getElementById(id),SUBJECTS));
 ["c-f-level","c-n-level","c-q-level","c-t-level","c-x-level","c-b-level","c-s-level","c-m-level","c-l-level","c-v-level","c-e-level","c-sm-level","g-fc-level","g-qz-level","g-fm-level","g-mm-level"].forEach(id=>fillSelect(document.getElementById(id),LEVELS));
+
+/* ---- personalisation: auto-fill every subject/level/board control from the profile ---- */
+function setSelect(id,val){
+  const el=document.getElementById(id); if(!el||val==null||val==="") return false;
+  if([...el.options].some(o=>o.value===val||o.textContent===val)){el.value=val;return true}
+  return false;
+}
+function applyProfileDefaults(){
+  const subs=(PROFILE.subjects||[]).map(x=>x.s);
+  const primary=subs[0]||null, level=PROFILE.level||null, board=PROFILE.board||null;
+  /* level everywhere it's offered */
+  ["c-f-level","c-n-level","c-q-level","c-t-level","c-x-level","c-b-level","c-s-level","c-m-level","c-l-level","c-v-level","c-e-level","c-sm-level","g-fc-level","g-qz-level","g-fm-level","g-mm-level","pp-level","dd-level","il-level","cg-level","ar-level"].forEach(id=>setSelect(id,level));
+  /* board everywhere */
+  ["pp-board","dd-board","ar-board"].forEach(id=>setSelect(id,board));
+  /* spread the student's subjects across the creators so they aren't all locked to one */
+  const subjIds=["c-f-subj","c-n-subj","c-q-subj","c-t-subj","c-x-subj","c-b-subj","c-s-subj","c-m-subj","c-l-subj","c-v-subj","c-e-subj","c-sm-subj","g-fc-subj","g-qz-subj","g-mm-subj","pp-subj","ar-subj","dd-subj"];
+  subjIds.forEach((id,i)=>setSelect(id, subs.length?subs[i%subs.length]:primary));
+}
+applyProfileDefaults();
 
 const TYPE_ICON={Flashcards:"🃏",Quiz:"❓","Revision Notes":"📓",Mindmap:"🧠","Revision Cards":"🗂",Crossword:"🧩",Timeline:"🕰",Video:"🎬",Audio:"🎧",Image:"🖼",Presentation:"📊",Document:"📄",Spreadsheet:"📑","Web Page":"🌐","Character analysis":"🎭","SWOT analysis":"🧭",Grid:"▦","Multi-tool":"🛠",Quizsearch:"🔍","Advantages and disadvantages table":"⚖️","Causes and effects table":"↔️","Compare and contrast table":"🆚","Non-Verbal Reasoning":"🧩","Bar Graph":"📊","Pie Chart":"🥧","Line Graph":"📈","Scatter Plot":"⚬","Coordinate Graph":"📐","Function Graph":"📈","Geometry Diagram":"📐",Other:"📚"};
 function renderResults(){
@@ -1986,18 +2027,35 @@ function dgAddSubject(s){
 document.getElementById("dg-add").addEventListener("input",function(){dgAddSubject(this.value);this.value=""});
 document.getElementById("dg-custom").addEventListener("keydown",function(e){
   if(e.key==="Enter"){dgAddSubject(this.value);this.value=""}});
+document.getElementById("dg-all").onclick=()=>{
+  const subs=(PROFILE.subjects||[]).map(x=>x.s);
+  if(!subs.length){toast("Add subjects to your profile first — Edit Profile");return}
+  let added=0;
+  subs.forEach(s=>{ if(dgSubs.length<24&&!dgSubs.some(x=>x.s.toLowerCase()===s.toLowerCase())){dgSubs.push({s,conf:50});added++} });
+  drawDgRows();
+  toast(added?("Added "+added+" subject"+(added>1?"s":"")+" — all your subjects are in this run"):"All your profile subjects are already in this run");
+};
 drawDgRows();
 
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function dgQuestionPool(){
   const chosen=dgSubs.map(x=>x.s);
-  let pool=[];
-  LIB.forEach(r=>{ if(r.qs&&chosen.includes(r.subj)) r.qs.forEach(q=>pool.push({q:q.q,o:q.o,a:q.a,subj:r.subj})) });
-  chosen.forEach(s=>{(DG_QBANK[s]||[]).forEach(q=>pool.push({...q,subj:s}))});
-  if(pool.length<10){ // pad with general questions from the whole bank
-    Object.keys(DG_QBANK).forEach(s=>{ if(!chosen.includes(s)) DG_QBANK[s].forEach(q=>pool.push({...q,subj:s})) });
+  /* group the bank by subject so every subject in the run gets covered */
+  const bySubj={};
+  LIB.forEach(r=>{ if(r.qs&&chosen.includes(r.subj))(bySubj[r.subj]=bySubj[r.subj]||[]).push(...r.qs.map(q=>({q:q.q,o:q.o,a:q.a,subj:r.subj}))) });
+  chosen.forEach(s=>{ if(DG_QBANK[s])(bySubj[s]=bySubj[s]||[]).push(...DG_QBANK[s].map(q=>({...q,subj:s}))) });
+  const covered=Object.keys(bySubj);
+  /* assess all subjects at once: ≥1 question per subject, then fill up to a sensible cap */
+  const target=Math.min(Math.max(10,covered.length),16);
+  const picks=[], used=new Set();
+  covered.forEach(s=>{const q=shuffle(bySubj[s].slice())[0];if(q){picks.push(q);used.add(q.q)}});
+  const rest=shuffle(covered.flatMap(s=>bySubj[s]).filter(q=>!used.has(q.q)));
+  for(const q of rest){ if(picks.length>=target)break; if(!used.has(q.q)){picks.push(q);used.add(q.q)} }
+  if(picks.length<10){ // pad from the whole bank if the run is tiny
+    const extra=shuffle(Object.keys(DG_QBANK).flatMap(s=>DG_QBANK[s].map(q=>({...q,subj:s}))).filter(q=>!used.has(q.q)));
+    for(const q of extra){ if(picks.length>=10)break; picks.push(q);used.add(q.q) }
   }
-  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}
-  return pool.slice(0,10);
+  return shuffle(picks);
 }
 document.getElementById("dg-quiz").onclick=()=>{
   if(!dgSubs.length){toast("Add at least one subject");return}
@@ -2377,6 +2435,7 @@ document.getElementById("cg-go").onclick=()=>{
 let toastTimer;
 function toast(t){const el=document.getElementById("toast");el.textContent=t;el.style.opacity=1;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.style.opacity=0,2600)}
 
+applyProfileDefaults(); /* re-run now every section's selects exist */
 renderResults();renderPapers();renderProgress();applyHash();
 </script>
 </body>

@@ -171,6 +171,8 @@ $('f').addEventListener('submit',async function(e){
     users.push({name:name,email:email,role:role,salt:salt,hash:await hash(salt,pw)});
     save('sy-users',users);
     save('sy-session',{name:name,email:email,role:role,ts:new Date().toISOString()});
+    // new students onboard by building their personalised profile first
+    if(role==='student'&&!next){location.replace('../account/profile/?welcome=1');return}
     location.replace(destination(role));
   }else{
     var matches=users.filter(function(u){return u.email===email});

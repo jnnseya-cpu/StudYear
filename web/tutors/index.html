@@ -195,6 +195,9 @@ var TUTORS=[
 
 var SUBJECTS=[];TUTORS.forEach(function(t){t.subs.forEach(function(s){if(SUBJECTS.indexOf(s)<0)SUBJECTS.push(s)})});
 SUBJECTS.sort().forEach(function(s){var o=document.createElement('option');o.textContent=s;$('ft-subj').appendChild(o)});
+/* default the subject filter to a subject the student studies, if any tutor covers it */
+(function(){var subs=(SY.get('profile',{}).subjects||[]).map(function(x){return x.s});
+  var m=subs.find(function(s){return SUBJECTS.indexOf(s)>-1}); if(m)$('ft-subj').value=m;})();
 
 function draw(){
   var q=$('ft-q').value.trim().toLowerCase(), subj=$('ft-subj').value, max=+$('ft-max').value||Infinity;
