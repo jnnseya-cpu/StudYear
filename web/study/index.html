@@ -273,10 +273,13 @@
   <div class="grid">
     <div class="card c5">
       <h3>AI Study Planner</h3>
-      <div class="sub">Take the stress out of homework and exams. Tell the AI about your goals — you can plan for
-        all profile subjects or one subject (e.g. before a single exam). Everything autosaves.</div>
+      <div class="sub">Take the stress out of homework and exams. Tell the AI about your goals — plan for all your
+        profile subjects, or choose a specific set (add as many as you like, remove any you don't). Everything autosaves.</div>
       <label class="f">Subjects in this plan</label>
-      <select id="p-scope"><option value="all">All my profile subjects</option></select>
+      <select id="p-scope"><option value="all">All my profile subjects</option><option value="selected">Choose specific subjects</option></select>
+      <div id="p-picker" style="display:none;margin-top:8px">
+        <select id="p-add"><option value="">＋ Add a subject to this plan…</option></select>
+      </div>
       <div id="p-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
         <div><label class="f">Primary Exam Date</label><input type="date" id="p-exam"><div class="note" id="p-exam-note" style="margin-top:5px"></div></div>
@@ -1621,30 +1624,49 @@ document.getElementById("c-v-save").onclick=()=>{
 /* AI Study Planner: all profile subjects or one subject, hours/week, target,
    weak/strong areas, learning style. Sessions get real DATES (the dashboard
    calendar places them) and the whole form autosaves. */
-const pScope=document.getElementById("p-scope");
-(PROFILE.subjects&&PROFILE.subjects.length?PROFILE.subjects.map(x=>x.s):SUBJECTS).forEach(s=>{
-  const o=document.createElement("option");o.textContent=s;pScope.appendChild(o)});
+const pScope=document.getElementById("p-scope"), pAdd=document.getElementById("p-add"), pPicker=document.getElementById("p-picker");
+const profileSubs=()=>PROFILE.subjects&&PROFILE.subjects.length?PROFILE.subjects.map(x=>x.s):["Mathematics","English","Science"];
+/* the custom multi-subject selection (add/remove as many as you like) — seeded from the profile */
+let selectedSubs=profileSubs().slice();
+/* fill the "add a subject" dropdown with the full catalogue */
+SUBJECTS.forEach(s=>{const o=document.createElement("option");o.textContent=s;pAdd.appendChild(o)});
 function planSubjects(){
-  if(pScope.value!=="all") return [pScope.value];
-  return PROFILE.subjects&&PROFILE.subjects.length?PROFILE.subjects.map(x=>x.s):["Mathematics","English","Science"];
+  if(pScope.value==="selected") return selectedSubs.slice();
+  return profileSubs();
 }
 function drawChips(){
   const tg={};(PROFILE.subjects||[]).forEach(x=>tg[x.s]=x.target);
-  document.getElementById("p-chips").innerHTML=planSubjects().map(s=>
-    `<span class="badge">${esc(s)}${tg[s]?" · target "+esc(String(tg[s])):""}</span>`).join("");
+  const custom=pScope.value==="selected";
+  pPicker.style.display=custom?"block":"none";
+  const list=planSubjects();
+  document.getElementById("p-chips").innerHTML=(list.length?list:["— none selected, add at least one —"]).map((s,i)=>{
+    if(!list.length)return `<span class="badge" style="color:var(--ink-3)">${esc(s)}</span>`;
+    return `<span class="badge"${custom?' style="padding-right:4px"':''}>${esc(s)}${tg[s]?" · target "+esc(String(tg[s])):""}`+
+      (custom?` <button type="button" data-rmsub="${i}" style="border:none;background:none;color:var(--ink-3);cursor:pointer;font-size:14px;line-height:1;padding:0 2px">×</button>`:"")+`</span>`;
+  }).join("");
+  if(custom)document.getElementById("p-chips").querySelectorAll("[data-rmsub]").forEach(b=>b.onclick=()=>{
+    selectedSubs.splice(+b.dataset.rmsub,1);drawChips();savePlanForm();
+  });
 }
-pScope.addEventListener("input",()=>{drawChips();savePlanForm()});
+pScope.addEventListener("input",()=>{ if(pScope.value==="selected"&&!selectedSubs.length)selectedSubs=profileSubs().slice(); drawChips();savePlanForm(); });
+pAdd.addEventListener("input",function(){
+  const s=this.value;this.value="";
+  if(!s)return;
+  if(selectedSubs.some(x=>x.toLowerCase()===s.toLowerCase())){toast(s+" is already in this plan");return}
+  selectedSubs.push(s);drawChips();savePlanForm();
+});
 (function(){const d=new Date();d.setDate(d.getDate()+35);document.getElementById("p-exam").value=d.toISOString().slice(0,10)})();
 
 /* autosave the form */
 const PFORM_IDS=["p-exam","p-hours","p-target","p-style","p-weak","p-strong"];
 function savePlanForm(){
-  const f={scope:pScope.value};PFORM_IDS.forEach(id=>f[id]=document.getElementById(id).value);
+  const f={scope:pScope.value,selected:selectedSubs};PFORM_IDS.forEach(id=>f[id]=document.getElementById(id).value);
   store.set("planform",f);
 }
 (function(){
   const f=store.get("planform",null);
-  if(f){ if(f.scope&&[...pScope.options].some(o=>o.value===f.scope||o.textContent===f.scope))pScope.value=f.scope;
+  if(f){ if(f.scope&&[...pScope.options].some(o=>o.value===f.scope))pScope.value=f.scope;
+    if(Array.isArray(f.selected)&&f.selected.length)selectedSubs=f.selected.slice();
     PFORM_IDS.forEach(id=>{if(f[id])document.getElementById(id).value=f[id]}) }
   drawChips();
 })();
@@ -1691,7 +1713,7 @@ function matchArea(text,subj){
 
 document.getElementById("gen-plan").onclick=()=>{
   const subs=planSubjects();
-  if(!subs.length){toast("Add subjects to your profile first, or pick one subject");return}
+  if(!subs.length){toast("Add at least one subject to this plan (or switch to All my profile subjects)");return}
   const hours=+document.getElementById("p-hours").value;
   if(!hours){toast("How many hours per week can you study? (e.g. 15)");return}
   const exam=new Date(document.getElementById("p-exam").value+"T00:00:00");
