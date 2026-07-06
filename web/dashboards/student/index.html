@@ -235,7 +235,7 @@ function drawCal(){
     var iso=yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(dnum).padStart(2,'0');
     var ss=sessByDate[iso]||[];
     html+='<div class="day'+(iso===todayStr?' today':'')+'"><div class="n">'+dnum+'</div>'+
-      ss.slice(0,2).map(function(s){return '<div class="sess"><span class="subj">'+esc(s.subj)+'</span><br>'+esc((s.time||'')+' '+(s.mode||'')).slice(0,42)+'</div>'}).join('')+
+      ss.slice(0,2).map(function(s){return '<div class="sess"><span class="subj">'+esc(s.subj)+'</span><br>'+esc((s.time||'')+' '+(s.topic||s.mode||'')).slice(0,44)+'</div>'}).join('')+
       (ss.length>2?'<div class="sess">+'+(ss.length-2)+' more</div>':'')+'</div>';
   }
   $('cal').innerHTML=html;

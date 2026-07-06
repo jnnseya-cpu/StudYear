@@ -52,6 +52,8 @@
   .btn:hover{background:rgba(77,157,224,.22)}
   .btn.ghost{border-color:rgba(170,182,204,.25);background:none;color:var(--ink-2)}
   .btn.sm{padding:6px 12px;font-size:12px}
+  .btn.pulse{animation:btnpulse 1.6s ease}
+  @keyframes btnpulse{0%,100%{box-shadow:0 0 0 0 rgba(95,168,224,0)}30%{box-shadow:0 0 0 5px rgba(95,168,224,.35)}}
 
   .rgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
   .res{border:1px solid var(--line);border-radius:12px;background:rgba(16,27,51,.5);padding:16px 18px;cursor:pointer;transition:border-color .12s}
@@ -256,7 +258,7 @@
       <select id="p-scope"><option value="all">All my profile subjects</option></select>
       <div id="p-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
-        <div><label class="f">Primary Exam Date</label><input type="date" id="p-exam"></div>
+        <div><label class="f">Primary Exam Date</label><input type="date" id="p-exam"><div class="note" id="p-exam-note" style="margin-top:5px"></div></div>
         <div><label class="f">Study hours per week</label><input type="number" id="p-hours" min="1" max="40" placeholder="e.g. 15"></div>
         <div><label class="f">Overall Target Grade</label><select id="p-target"><option value="">Select a grade</option><option>9</option><option>8</option><option>7</option><option>6</option><option>5</option><option>4</option><option>A*</option><option>A</option><option>B</option><option>C</option></select></div>
         <div><label class="f">Preferred Learning Style <span style="text-transform:none;letter-spacing:0">(optional)</span></label><select id="p-style"><option value="">Select a style</option><option>Visual</option><option>Auditory</option><option>Reading &amp; writing</option><option>Kinaesthetic</option></select></div>
@@ -271,7 +273,7 @@
     </div>
     <div class="card c7">
       <h3>Your AI-Generated Study Plan</h3>
-      <div class="sub" id="plan-sub">Your personalized schedule appears below by date. Tap 🔎 on a session to search matching resources.</div>
+      <div class="sub" id="plan-sub">Your personalized schedule appears below by date. Each session names a subject and a lesson — tap 📖 to open it as an Interactive Lesson, or 🔎 to search matching resources.</div>
       <div id="plan-out"></div>
     </div>
   </div>
@@ -1618,6 +1620,20 @@ function savePlanForm(){
 })();
 PFORM_IDS.forEach(id=>document.getElementById(id).addEventListener("input",savePlanForm));
 
+/* live note: how the exam date shapes the schedule */
+function longDate(iso){const d=new Date(iso+"T00:00:00");return d.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}
+function updateExamNote(){
+  const el=document.getElementById("p-exam-note"), v=document.getElementById("p-exam").value;
+  if(!v){el.textContent="Pick your primary exam date to schedule around it.";return}
+  const exam=new Date(v+"T00:00:00"), today=new Date();today.setHours(0,0,0,0);
+  const days=Math.round((exam-today)/86400000);
+  if(days<0){el.innerHTML="⚠ That date is in the past — pick your next exam date.";return}
+  if(days===0){el.innerHTML="The planner will schedule 1 calendar day ("+longDate(v)+"); your exam is also that day — expect a final revision push.";return}
+  el.innerHTML="<b>"+days+"</b> day"+(days>1?"s":"")+" until your exam ("+longDate(v)+"). Sessions spread across them, with the last 7 days switching to past papers.";
+}
+document.getElementById("p-exam").addEventListener("input",updateExamNote);
+updateExamNote();
+
 const STYLE_MODES={
   "Visual":["Mindmap from memory","Diagram + label drill","Flashcards + recall test"],
   "Auditory":["Teach-it-back aloud","Record & replay a 2-min summary","Quiz + talk through every answer"],
@@ -1662,6 +1678,15 @@ document.getElementById("gen-plan").onclick=()=>{
   });
   const bag=[];weights.forEach(x=>{for(let k=0;k<Math.max(1,Math.round(x.w*2));k++)bag.push(x.s)});
 
+  const lvl=(PROFILE.level&&PROFILE.level!=="Other")?PROFILE.level:"GCSE";
+  /* per-subject rotating spec topic, so every session names a concrete lesson */
+  const topicCursor={};
+  function sessionTopic(subj,focus){
+    if(focus)return focus;                                   // weak area named by the student
+    const topics=(typeof DIAG_TOPICS!=="undefined"&&DIAG_TOPICS[subj])||["Core concepts","Key skills","Exam technique","Past-paper practice"];
+    const i=(topicCursor[subj]=(topicCursor[subj]||0)+1)-1;
+    return topics[i%topics.length];
+  }
   const perWeek=Math.max(3,Math.min(14,Math.round(hours*60/40))); // 40-min sessions
   const weeks=Math.min(8,Math.ceil(daysLeft/7));
   const dayGap=7/perWeek;
@@ -1677,8 +1702,10 @@ document.getElementById("gen-plan").onclick=()=>{
       const finalStretch=(exam-date)/86400000<=7;
       const focus=matchArea(weakTxt,subj);
       const isWknd=date.getDay()===0||date.getDay()===6;
-      wk.days.push({date:date.toISOString().slice(0,10),d:DOW[date.getDay()],subj,time:isWknd?"10:00":"19:00",mins:40,
-        mode:(finalStretch?"Past paper + mark-scheme review":pick(subj,cursor,style))+(focus?" · focus: "+focus:"")});
+      const topic=sessionTopic(subj,focus);
+      wk.days.push({date:date.toISOString().slice(0,10),d:DOW[date.getDay()],subj,level:lvl,topic,time:isWknd?"10:00":"19:00",mins:40,
+        mode:finalStretch?"Past paper + mark-scheme review":pick(subj,cursor,style),
+        finalStretch});
     }
     if(wk.days.length)plan.push(wk);
   }
@@ -1697,20 +1724,25 @@ function renderPlan(){
   const done=saved.done||{};
   out.innerHTML=saved.plan.map(wk=>`
     <div class="plan-week"><h4>Week ${wk.n}</h4>
-    <table class="tt"><tr><th>Date</th><th>Subject</th><th>Session</th><th>When</th><th></th></tr>
-    ${wk.days.map((s,i)=>{const key=wk.n+"-"+i;const isDone=!!done[key];return `
+    <table class="tt"><tr><th>Date</th><th>Subject</th><th>Lesson &amp; session</th><th>When</th><th>Study</th></tr>
+    ${wk.days.map((s,i)=>{const key=wk.n+"-"+i;const isDone=!!done[key];const topic=s.topic||s.subj;return `
       <tr><td>${s.d}${s.date?" "+fmtDate(s.date):""}</td>
-      <td><span class="subj-pill" style="background:${SUBJ_COLOURS[s.subj]||"#3987e5"}"></span>${s.subj}</td>
-      <td><label class="sess ${isDone?"done":""}"><input type="checkbox" data-k="${key}" ${isDone?"checked":""}><span>${s.mode} · ${s.mins} min</span></label></td>
+      <td><span class="subj-pill" style="background:${SUBJ_COLOURS[s.subj]||"#3987e5"}"></span>${esc(s.subj)}</td>
+      <td><label class="sess ${isDone?"done":""}"><input type="checkbox" data-k="${key}" ${isDone?"checked":""}>
+        <span><b style="color:var(--ink)">${esc(topic)}</b><br><span style="font-size:11.5px;color:var(--ink-3)">${esc(s.mode)} · ${s.mins} min</span></span></label></td>
       <td style="color:var(--ink-3)">${s.time}</td>
-      <td><button class="btn ghost sm" data-find="${esc(s.subj)}" title="Search matching resources">🔎</button></td></tr>`}).join("")}
+      <td style="white-space:nowrap">
+        <button class="btn sm" data-lesson-topic="${esc(topic)}" data-lesson-subj="${esc(s.subj)}" data-lesson-level="${esc(s.level||'')}" title="Open as an Interactive Lesson">📖 Lesson</button>
+        <button class="btn ghost sm" data-find-subj="${esc(s.subj)}" data-find-topic="${esc(topic)}" title="Search matching resources">🔎</button></td></tr>`}).join("")}
     </table></div>`).join("");
-  out.querySelectorAll("[data-find]").forEach(b=>b.onclick=()=>{
+  out.querySelectorAll("[data-lesson-topic]").forEach(b=>b.onclick=()=>
+    openLessonFor(b.dataset.lessonTopic,b.dataset.lessonSubj,b.dataset.lessonLevel));
+  out.querySelectorAll("[data-find-subj]").forEach(b=>b.onclick=()=>{
     showTab("search");
-    document.getElementById("q").value=b.dataset.find;
-    document.getElementById("f-subj").value=SUBJECTS.includes(b.dataset.find)?b.dataset.find:"";
+    document.getElementById("q").value=b.dataset.findTopic||b.dataset.findSubj;
+    document.getElementById("f-subj").value=SUBJECTS.includes(b.dataset.findSubj)?b.dataset.findSubj:"";
     renderResults();
-    toast("Matching resources for "+b.dataset.find);
+    toast("Matching resources for "+(b.dataset.findTopic||b.dataset.findSubj));
   });
   out.querySelectorAll("input[type=checkbox]").forEach(cb=>cb.onchange=()=>{
     const saved=store.get("plan",null); saved.done=saved.done||{};
@@ -2402,6 +2434,19 @@ document.getElementById("il-go").onclick=()=>{
 };
 /* reuse the modal quiz viewer for generated quizzes */
 function openInlineQuiz(r){ r.id=r.id||("gen"+Date.now()); LIB.push(r); openRes(r.id); }
+
+/* open a planner session as an Interactive Lesson — pre-fills topic/subject/level */
+function openLessonFor(topic,subj,level){
+  showTab("lesson");
+  const label=subj&&topic&&!topic.toLowerCase().includes(subj.toLowerCase())?(topic+" ("+subj+")"):topic;
+  document.getElementById("il-topic").value=label||subj||"";
+  if(subj)setSelect("il-subj",subj);
+  if(level)setSelect("il-level",level);
+  const go=document.getElementById("il-go");
+  go.scrollIntoView({behavior:"smooth",block:"center"});
+  go.classList.add("pulse"); setTimeout(()=>go.classList.remove("pulse"),1600);
+  toast("Lesson loaded: "+(label||subj)+" — press Generate Lesson ("+IL_PRICE+" ACUs)");
+}
 
 /* ============================ AI COURSE ============================ */
 document.getElementById("cg-go").onclick=()=>{
