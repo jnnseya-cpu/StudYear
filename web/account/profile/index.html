@@ -163,6 +163,36 @@
   </div>
 </div>
 
+<div class="card">
+  <h3>Learning Profile — how you learn best</h3>
+  <div class="sub" style="font-size:13px;color:var(--ink-2);margin:6px 0 4px;font-weight:300">
+    Everyone learns differently — pace, focus, and how text feels on the page. StudYear adapts to <b>you</b>: these
+    settings change how the whole app looks and how your plan is built. A teacher can't tune this for every student — StudYear can.</div>
+
+  <label class="f">Accessibility &amp; learning needs (optional)</label>
+  <div id="needs" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+
+  <div class="two" style="margin-top:6px">
+    <div><label class="f">Text size</label><select id="l-textscale"><option value="">Default</option><option value="large">Large</option><option value="xlarge">Extra large</option></select></div>
+    <div><label class="f">Colour overlay (visual stress)</label><select id="l-overlay"><option value="">None</option><option value="cream">Cream</option><option value="blue">Blue</option><option value="green">Green</option><option value="rose">Rose</option><option value="grey">Grey</option></select></div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:18px;margin-top:12px">
+    <label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink-2)"><input type="checkbox" id="l-dyslexia" style="width:auto;accent-color:var(--gold-500)">Dyslexia-friendly text &amp; spacing</label>
+    <label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink-2)"><input type="checkbox" id="l-spacing" style="width:auto;accent-color:var(--gold-500)">Extra line spacing</label>
+    <label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink-2)"><input type="checkbox" id="l-motion" style="width:auto;accent-color:var(--gold-500)">Reduce motion &amp; animations</label>
+  </div>
+
+  <div class="two" style="margin-top:12px">
+    <div><label class="f">Preferred learning style</label><select id="l-style"><option value="">No preference</option><option>Visual</option><option>Auditory</option><option>Reading &amp; writing</option><option>Kinaesthetic</option></select></div>
+    <div><label class="f">Your pace / capacity</label><select id="l-pace"><option value="steady">Steady — standard</option><option value="gentle">Gentle — I need more time and repetition</option><option value="fast">Fast — I pick things up quickly</option></select></div>
+  </div>
+  <div class="two" style="margin-top:0">
+    <div><label class="f">Comfortable session length</label><select id="l-session"><option value="20">20 min — short bursts</option><option value="30">30 min</option><option value="40" selected>40 min</option><option value="60">60 min — long focus</option></select></div>
+    <div><label class="f">Best focus time</label><select id="l-focus"><option>After school</option><option>Evening</option><option>Morning</option><option>Weekends</option></select></div>
+  </div>
+  <div class="note" id="l-preview" style="margin-top:10px">Changes apply instantly across StudYear when you save.</div>
+</div>
+
 <div class="row" style="margin-top:22px">
   <button class="btn" id="save">Save changes</button>
   <a class="btn ghost" href="../">Cancel</a>
@@ -268,6 +298,46 @@ $('subj-add').onchange=function(){
 };
 drawSubjects();
 
+/* ---------- learning profile ---------- */
+var learning=SY.get('learning',{});
+var NEEDS=[['dyslexia','Dyslexia'],['adhd','ADHD / focus'],['dyscalculia','Dyscalculia'],['visual','Visual stress'],['processing','Processing / autism'],['eal','English as additional language'],['hearing','Hearing'],['none','No specific need']];
+var pickedNeeds=(learning.needs||[]).slice();
+function drawNeeds(){
+  $('needs').innerHTML=NEEDS.map(function(n){var on=pickedNeeds.indexOf(n[0])>-1;
+    return '<button type="button" data-need="'+n[0]+'" style="border:1px solid '+(on?'var(--gold-500)':'rgba(170,182,204,.25)')+';border-radius:20px;background:'+(on?'rgba(77,157,224,.14)':'none')+';color:'+(on?'var(--gold-300)':'var(--ink-2)')+';font:600 12px var(--sans);padding:6px 13px;cursor:pointer">'+n[1]+'</button>';
+  }).join('');
+  $('needs').querySelectorAll('[data-need]').forEach(function(b){b.onclick=function(){
+    var k=b.dataset.need;
+    if(k==='none'){pickedNeeds=['none']}
+    else{pickedNeeds=pickedNeeds.filter(function(x){return x!=='none'});var i=pickedNeeds.indexOf(k);if(i>-1)pickedNeeds.splice(i,1);else pickedNeeds.push(k)}
+    drawNeeds();autoSuggest();
+  }});
+}
+/* choosing dyslexia/visual gently pre-suggests the matching display aids */
+function autoSuggest(){
+  if(pickedNeeds.indexOf('dyslexia')>-1){$('l-dyslexia').checked=true;$('l-spacing').checked=true;if(!$('l-overlay').value)$('l-overlay').value='cream';}
+  if(pickedNeeds.indexOf('visual')>-1&&!$('l-overlay').value)$('l-overlay').value='blue';
+  if(pickedNeeds.indexOf('adhd')>-1){$('l-motion').checked=true;$('l-session').value='20';}
+  livePreview();
+}
+$('l-dyslexia').checked=!!learning.dyslexiaFont; $('l-spacing').checked=!!learning.spacing; $('l-motion').checked=!!learning.reduceMotion;
+if(learning.textScale)$('l-textscale').value=learning.textScale;
+if(learning.overlay)$('l-overlay').value=learning.overlay;
+if(learning.style)$('l-style').value=learning.style;
+if(learning.pace)$('l-pace').value=learning.pace;
+if(learning.session)$('l-session').value=String(learning.session);
+if(learning.focus)$('l-focus').value=learning.focus;
+drawNeeds();
+function collectLearning(){
+  return {needs:pickedNeeds,dyslexiaFont:$('l-dyslexia').checked,spacing:$('l-spacing').checked,reduceMotion:$('l-motion').checked,
+    textScale:$('l-textscale').value,overlay:$('l-overlay').value,style:$('l-style').value,pace:$('l-pace').value,
+    session:+$('l-session').value,focus:$('l-focus').value};
+}
+function livePreview(){ /* apply immediately so the student sees the effect */
+  SY.set('learning',collectLearning()); if(SY.applyLearning)SY.applyLearning();
+}
+['l-dyslexia','l-spacing','l-motion','l-textscale','l-overlay','l-style','l-pace','l-session','l-focus'].forEach(function(id){$(id).addEventListener('input',livePreview)});
+
 /* ---------- save ---------- */
 $('save').onclick=function(){
   var name=$('p-name').value.trim();
@@ -276,7 +346,8 @@ $('save').onclick=function(){
   if(!subjects.length){toast('Add at least one subject you are studying');return}
   profile={name:name,dob:$('p-dob').value,photo:photo,cover:cover,
     level:$('p-level').value,board:$('p-board').value,subjects:subjects};
-  try{SY.set('profile',profile)}catch(e){toast('Storage is full — try smaller photos');return}
+  try{SY.set('profile',profile);SY.set('learning',collectLearning())}catch(e){toast('Storage is full — try smaller photos');return}
+  if(SY.applyLearning)SY.applyLearning();
   /* name flows to the account record + live session */
   try{
     var users=JSON.parse(localStorage.getItem('sy-users'))||[];

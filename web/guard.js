@@ -113,6 +113,39 @@
       try { var v = JSON.parse(localStorage.getItem('sy-school:' + code + ':' + k)); return v === null || v === undefined ? d : v; }
       catch (e) { return d; }
     },
-    schoolSet: function (code, k, v) { try { localStorage.setItem('sy-school:' + code + ':' + k, JSON.stringify(v)); } catch (e) {} }
+    schoolSet: function (code, k, v) { try { localStorage.setItem('sy-school:' + code + ':' + k, JSON.stringify(v)); } catch (e) {} },
+
+    // ---- adaptive accessibility: every person renders to their own needs ----
+    // Applies the account's Learning Profile (dyslexia-friendly type, text size,
+    // spacing, colour overlay for visual stress, reduced motion) to ANY page
+    // that includes guard.js. No human could tune this per student; StudYear does.
+    applyLearning: function () {
+      var L = window.SY.get('learning', {}) || {};
+      var de = document.documentElement;
+      de.classList.toggle('sy-dyslexia', !!L.dyslexiaFont);
+      de.classList.toggle('sy-large', L.textScale === 'large');
+      de.classList.toggle('sy-xlarge', L.textScale === 'xlarge');
+      de.classList.toggle('sy-spacing', !!L.spacing);
+      de.classList.toggle('sy-reduce-motion', !!L.reduceMotion);
+      if (!document.getElementById('sy-a11y-style')) {
+        var st = document.createElement('style'); st.id = 'sy-a11y-style';
+        st.textContent = [
+          'html.sy-dyslexia, html.sy-dyslexia *{font-family:"Trebuchet MS",Verdana,Tahoma,"Segoe UI",sans-serif !important;letter-spacing:.02em}',
+          'html.sy-dyslexia p,html.sy-dyslexia li,html.sy-dyslexia .notes-body,html.sy-dyslexia textarea{line-height:1.8 !important;word-spacing:.09em}',
+          'html.sy-large{zoom:1.12}', 'html.sy-xlarge{zoom:1.25}',
+          'html.sy-spacing p,html.sy-spacing li{line-height:1.9 !important;letter-spacing:.03em}',
+          'html.sy-reduce-motion *{animation:none !important;transition:none !important}',
+          '#sy-overlay{position:fixed;inset:0;pointer-events:none;z-index:2147483646;mix-blend-mode:multiply}'
+        ].join('\n');
+        de.appendChild(st);
+      }
+      var ov = document.getElementById('sy-overlay');
+      var tints = { cream: '#fff2cc', blue: '#cfe1ff', green: '#d3f2dd', rose: '#ffd6e1', grey: '#d7dce5' };
+      if (L.overlay && tints[L.overlay]) {
+        if (!ov) { ov = document.createElement('div'); ov.id = 'sy-overlay'; (document.body || de).appendChild(ov); }
+        ov.style.background = tints[L.overlay];
+      } else if (ov) { ov.parentNode.removeChild(ov); }
+    }
   };
+  try { window.SY.applyLearning(); } catch (e) {}
 })();

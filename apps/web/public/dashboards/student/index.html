@@ -149,6 +149,26 @@
 
 <div class="grid">
   <div class="card c8">
+    <h3>How are you feeling today?</h3>
+    <div class="sub">A quick check-in — StudYear adapts today's plan to your energy and stress. No one else sees this.</div>
+    <div id="mood-row" style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end">
+      <div><div style="font-size:11px;color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">Mood</div>
+        <div id="mood-faces" style="display:flex;gap:8px"></div></div>
+      <div style="flex:1;min-width:150px"><div style="font-size:11px;color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">Energy</div>
+        <input type="range" id="mood-energy" min="1" max="5" step="1" value="3" style="width:100%;accent-color:var(--gold-500)"></div>
+      <div style="flex:1;min-width:150px"><div style="font-size:11px;color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">Stress</div>
+        <input type="range" id="mood-stress" min="1" max="5" step="1" value="2" style="width:100%;accent-color:var(--gold-500)"></div>
+      <button class="btn ghost" id="mood-save">Save check-in</button>
+    </div>
+    <div class="note" id="mood-note" style="font-style:normal;margin-top:8px"></div>
+  </div>
+  <div class="card c4">
+    <h3>Adapted to you</h3>
+    <div class="sub">Your Learning Profile shapes the whole app.</div>
+    <div id="adapt-list"></div>
+    <div style="margin-top:8px"><a class="btn ghost" href="../../account/profile/#learning">Edit learning profile</a></div>
+  </div>
+  <div class="card c8">
     <h3>Study Calendar</h3>
     <div class="sub">Sessions from your latest AI study plan appear here by date. Generate or refresh a plan in AI Study Planner.</div>
     <div class="calbar"><b id="cal-title"></b>
@@ -269,6 +289,44 @@ $('feed').innerHTML=activity.length?activity.slice(0,40).map(function(a){
   return '<div class="fev"><span class="ic">'+(ICON[a.k]||'•')+'</span><span><b>'+esc(a.t)+'</b>'+
     (a.d?'<span class="d">'+esc(a.d)+'</span>':'')+'<div class="t">'+SY.timeAgo(a.when)+'</div></span></div>';
 }).join(''):'<div class="empty">No activity yet — generate a plan, run a diagnostic or take a quiz and it logs here.</div>';
+
+/* ---------- mood check-in (feeds the planner's adaptation) ---------- */
+var FACES=[['great','😀'],['ok','🙂'],['meh','😐'],['low','😟'],['stressed','😣']];
+var moodPick='ok';
+function drawFaces(){
+  $('mood-faces').innerHTML=FACES.map(function(f){var on=f[0]===moodPick;
+    return '<button type="button" data-m="'+f[0]+'" style="font-size:22px;border:1px solid '+(on?'var(--gold-500)':'rgba(170,182,204,.25)')+';border-radius:10px;background:'+(on?'rgba(77,157,224,.14)':'none')+';padding:5px 9px;cursor:pointer">'+f[1]+'</button>';
+  }).join('');
+  $('mood-faces').querySelectorAll('[data-m]').forEach(function(b){b.onclick=function(){moodPick=b.dataset.m;drawFaces()}});
+}
+drawFaces();
+var lastMood=SY.get('moods',[])[0]||null;
+if(lastMood&&lastMood.when&&lastMood.when.slice(0,10)===new Date().toISOString().slice(0,10)){
+  moodPick=lastMood.mood||'ok';$('mood-energy').value=lastMood.energy||3;$('mood-stress').value=lastMood.stress||2;drawFaces();
+  $('mood-note').textContent='Checked in today — your plan is adapting to how you feel.';
+}
+$('mood-save').onclick=function(){
+  var m={mood:moodPick,energy:+$('mood-energy').value,stress:+$('mood-stress').value,when:new Date().toISOString()};
+  var arr=SY.get('moods',[]);arr.unshift(m);SY.set('moods',arr.slice(0,60));
+  var low=m.energy<=2||m.stress>=4;
+  $('mood-note').textContent=low?'Thanks — StudYear will keep today lighter and shorter. Be kind to yourself.':'Thanks — logged. Your planner factors this in.';
+  SY.log('account','Daily check-in saved','Mood: '+m.mood+' · energy '+m.energy+'/5 · stress '+m.stress+'/5.');
+};
+
+/* ---------- learning adaptations panel ---------- */
+var L=SY.get('learning',{})||{};
+var chips=[];
+if(L.dyslexiaFont)chips.push('Dyslexia-friendly text');
+if(L.textScale==='large')chips.push('Large text');if(L.textScale==='xlarge')chips.push('Extra-large text');
+if(L.spacing)chips.push('Extra spacing');
+if(L.overlay)chips.push(L.overlay.charAt(0).toUpperCase()+L.overlay.slice(1)+' overlay');
+if(L.reduceMotion)chips.push('Reduced motion');
+if(L.style)chips.push(L.style+' activities');
+if(L.pace&&L.pace!=='steady')chips.push(L.pace==='gentle'?'Gentle pace + recap':'Faster pace');
+if(L.session&&L.session!==40)chips.push(L.session+'-min sessions');
+(L.needs||[]).filter(function(n){return n!=='none'}).forEach(function(n){var lab={dyslexia:'Dyslexia',adhd:'ADHD support',dyscalculia:'Dyscalculia',visual:'Visual-stress',processing:'Processing',eal:'EAL',hearing:'Hearing'}[n];if(lab)chips.push(lab)});
+$('adapt-list').innerHTML=chips.length?('<div style="display:flex;flex-wrap:wrap;gap:7px">'+chips.map(function(c){return '<span class="badge" style="font-size:11px;border:1px solid rgba(95,168,224,.4);color:var(--gold-300);border-radius:20px;padding:3px 10px">'+esc(c)+'</span>'}).join('')+'</div>')
+  :'<div class="note" style="font-style:normal">No adaptations set yet — tell StudYear how you learn best and it tailors everything to you.</div>';
 
 $('signout').onclick=function(e){e.preventDefault();SY.signOut()};
 })();

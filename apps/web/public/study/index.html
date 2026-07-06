@@ -965,7 +965,9 @@ const store = {
   set(k,v){ if(SY){SY.set(k,v);return} localStorage.setItem("sy-"+k,JSON.stringify(v)) }
 };
 const PROFILE=store.get("profile",{});
+const LEARN=store.get("learning",{}); /* accessibility + pace + style + session length */
 function logEvent(k,t,d){ if(SY&&SY.log) SY.log(k,t,d) }
+function latestMood(){ const m=store.get("moods",[]); return m.length?m[0]:null }
 function allResources(){ return LIB.concat(store.get("mine",[])) }
 
 /* ---------- ACU wallet (shared with the account pages) ----------
@@ -1646,6 +1648,8 @@ function savePlanForm(){
   drawChips();
 })();
 PFORM_IDS.forEach(id=>document.getElementById(id).addEventListener("input",savePlanForm));
+/* seed the planner style from the learning profile when not already chosen */
+(function(){const ps=document.getElementById("p-style");if(ps&&!ps.value&&LEARN.style&&[...ps.options].some(o=>o.value===LEARN.style))ps.value=LEARN.style;})();
 
 /* live note: how the exam date shapes the schedule */
 function longDate(iso){const d=new Date(iso+"T00:00:00");return d.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}
@@ -1693,9 +1697,14 @@ document.getElementById("gen-plan").onclick=()=>{
   const today=new Date(); today.setHours(0,0,0,0);
   if(!(exam>today)){toast("Pick your primary exam date");return}
   const target=document.getElementById("p-target").value;
-  const style=document.getElementById("p-style").value;
+  const style=document.getElementById("p-style").value||LEARN.style||"";
   const weakTxt=document.getElementById("p-weak").value, strongTxt=document.getElementById("p-strong").value;
   const daysLeft=Math.max(7,Math.round((exam-today)/86400000));
+  /* adapt to the learning profile + today's mood */
+  const sessionMins=[20,25,30,40,60].includes(LEARN.session)?LEARN.session:40;
+  const pace=LEARN.pace||"steady";
+  const mood=latestMood();
+  const lowEnergy=mood&&(mood.energy<=2||mood.stress>=4);
 
   /* weights: diagnostic mastery + weak/strong areas + profile grade gap */
   const diag=store.get("diagnostics",[])[0]||null;
@@ -1742,12 +1751,18 @@ document.getElementById("gen-plan").onclick=()=>{
     return list[(subj.length+seed)%list.length];
   }
 
-  /* how many days we schedule, and how many slots per day */
+  /* how many days we schedule, and how many slots per day (from the student's own session length) */
   const SLOT_TIMES=["09:00","14:00","19:00"], SLOT_NAMES=["Morning","Afternoon","Evening"];
-  const sessionsPerWeek=Math.max(3,Math.round(hours*60/40));       // 40-min sessions
+  let sessionsPerWeek=Math.max(3,Math.round(hours*60/sessionMins));
   const shortWindow=daysLeft<=10;
-  const daysPerWeek=shortWindow?7:Math.max(3,Math.min(6,Math.ceil(sessionsPerWeek/3)));
-  const dailySessions=Math.max(1,Math.min(3,Math.round(sessionsPerWeek/daysPerWeek)));
+  /* gentle pace or low energy → fewer, calmer sessions with more recap; fast pace → a touch more */
+  let capPerDay=3;
+  if(pace==="gentle"||lowEnergy)capPerDay=2;
+  if(pace==="fast")sessionsPerWeek=Math.round(sessionsPerWeek*1.1);
+  const daysPerWeek=shortWindow?7:Math.max(3,Math.min(6,Math.ceil(sessionsPerWeek/capPerDay)));
+  const dailySessions=Math.max(1,Math.min(capPerDay,Math.round(sessionsPerWeek/daysPerWeek)));
+  /* gentle pace → weave in a recap/consolidation session so material sticks */
+  const recap=pace==="gentle";
 
   /* build the list of study dates (today → day before the exam) */
   const studyDates=[];
@@ -1769,17 +1784,24 @@ document.getElementById("gen-plan").onclick=()=>{
       const subj=bag[cursor%bag.length];cursor++;
       const focus=matchArea(weakTxt,subj);
       const topic=sessionTopic(subj,focus);
+      const isRecap=recap&&sIdx===dailySessions-1;
       wk.days.push({date:date.toISOString().slice(0,10),d:DOW[date.getDay()].slice(0,3),dow:DOW[date.getDay()],
-        subj,level:lvl,topic,slot:sIdx,time:SLOT_TIMES[sIdx]||"19:00",mins:40,
+        subj,level:lvl,topic,slot:sIdx,time:SLOT_TIMES[sIdx]||"19:00",mins:sessionMins,
         priority:priorityFor(subj),
-        mode:activityFor(subj,cursor,finalStretch),finalStretch});
+        mode:isRecap?("Recap & consolidate · "+topic):activityFor(subj,cursor,finalStretch),finalStretch});
     }
   });
 
   /* plan-level summary + phase, personalised */
-  const summary="This personalised exam-preparation plan breaks your revision into manageable daily goals so you "+
-    "systematically cover every subject and topic. Weak areas are prioritised, the last stretch switches to past "+
-    "papers, and the exam day is kept free. Stay consistent and you'll walk in confident"+(target?" and on track for your target of "+target:"")+".";
+  const adapt=[];
+  if(sessionMins!==40)adapt.push(sessionMins+"-minute sessions to match your focus");
+  if(pace==="gentle")adapt.push("a gentler pace with built-in recap");
+  if(pace==="fast")adapt.push("a faster pace");
+  if(lowEnergy)adapt.push("a lighter load today based on your check-in");
+  if(style)adapt.push(style.toLowerCase()+"-style activities");
+  const summary="This plan is personalised to you"+(adapt.length?" — "+adapt.join(", ")+" — ":" — ")+
+    "breaking revision into manageable daily goals across every subject. Weak areas are prioritised, the last stretch "+
+    "switches to past papers, and the exam day is kept free. Stay consistent and you'll walk in confident"+(target?" and on track for your target of "+target:"")+".";
   const phase=shortWindow
     ? "Final push: consolidate the highest-priority topics, drill exam questions, and review your weakest areas first."
     : "Phase 1 — establish a strong foundation in your core subjects, review fundamental concepts, and identify areas that need the most attention.";
