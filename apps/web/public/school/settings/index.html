@@ -23,6 +23,10 @@
   .verify.ok{border-color:rgba(92,187,123,.4);background:rgba(92,187,123,.08);color:#89d3a2}
   .prog{height:8px;border-radius:5px;background:rgba(170,182,204,.12);overflow:hidden;margin-top:8px}.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-500),var(--good));transition:width .3s}
   .note{font-size:11.5px;color:var(--ink-3);margin-top:8px}
+  .tier{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;margin-left:10px;vertical-align:middle}
+  .tier.bronze{color:#d69b6b;background:rgba(214,155,107,.12);border:1px solid rgba(214,155,107,.4)}.tier.silver{color:#c7d0dd;background:rgba(199,208,221,.12);border:1px solid rgba(199,208,221,.4)}.tier.gold{color:#e6c766;background:rgba(230,199,102,.12);border:1px solid rgba(230,199,102,.4)}.tier.platinum{color:#9fd6e6;background:rgba(159,214,230,.14);border:1px solid rgba(159,214,230,.45)}.tier.start{color:var(--ink-3);background:rgba(170,182,204,.08);border:1px solid var(--line)}
+  .badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+  .tbadge{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid;background:rgba(6,11,24,.3)}.tbadge.on{color:#89d3a2;border-color:rgba(92,187,123,.4)}.tbadge.off{color:var(--ink-3);border-color:var(--line);opacity:.6}
   /* section rail */
   .rail{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
   .rail a{font-size:11px;color:var(--ink-2);text-decoration:none;padding:5px 9px;border:1px solid var(--line);border-radius:20px;background:rgba(6,11,24,.4)}.rail a:hover{color:var(--gold-300);border-color:var(--gold-500)}.rail a.done{color:#89d3a2;border-color:rgba(92,187,123,.35)}
@@ -65,10 +69,11 @@
   <a href="../">Command Centre</a><a href="../#risk">Risk intelligence</a><a href="../interventions/">Intervention war room</a><a href="../people/">People management</a><a href="../analytics/">Analytics</a><a href="../acu/">ACU command</a><a href="../assessments/">Assessments</a><a href="../reports/">Executive reports</a><a href="../resources/">Knowledge hub</a><a href="../plans/">Top up ACUs</a><a href="../gateway/">AI Gateway</a><a href="./" class="on">Registration &amp; settings</a>
 </nav></aside>
 <main>
-  <h1>School registration</h1><p class="lede">Build your institution's complete digital identity. Everything here powers personalised learning, safeguarding routing, AI governance, credential verification and executive analytics. Fields save locally to your workspace; full verification completes when our team confirms your institution — you can use the platform throughout.</p>
+  <h1>School registration <span class="tier start" id="tier">Getting started</span></h1><p class="lede">Build your institution's complete digital identity. Everything here powers personalised learning, safeguarding routing, AI governance, credential verification and executive analytics. Fields save locally to your workspace; full verification completes when our team confirms your institution — you can use the platform throughout.</p>
   <div class="e2ebar" id="e2ebar">🔒 End-to-end encrypted OS — your institution's data is encrypted on-device</div>
 
   <div class="card"><h3><span class="ix">✓</span> Registration progress</h3><div class="prog"><i id="setup-bar" style="width:0%"></i></div><div class="note" id="setup-note"></div>
+    <div class="badges" id="badges"></div>
     <div class="rail" id="rail"></div>
     <div class="verify" id="verify"></div></div>
 
@@ -441,6 +446,13 @@ function refresh(){
   var v=$('verify');
   if(pct===100){v.className='verify ok';v.innerHTML='✓ Core details recorded — your institution is active. Submit your Verification documents (section 13) when ready and our team will confirm full accreditation. You can use every feature meanwhile.';}
   else{v.className='verify';v.innerHTML='⚠ Your institution shows as <b>pending</b> until the required fields are saved (school name, type, country, current students). You can use the Command Centre, onboarding and ACU tools while registration is in progress.';}
+  /* completeness tier + trust badges */
+  var allKeys=[];SECTIONS.forEach(function(s){(s.fields||[]).forEach(function(f){allKeys.push(f.k)});(s.toggles||[]).forEach(function(t){allKeys.push(t.k)});(s.docs||[]).forEach(function(d){allKeys.push(d.k)})});
+  var fillN=0;allKeys.forEach(function(k){var vv=data[k];if(vv&&(vv.name||(''+vv).trim()))fillN++});var ratio=allKeys.length?fillN/allKeys.length:0;
+  var bs={'Verified School':!!(data.verified||data.docSchoolReg),'Safeguarding':!!(data.docSafeguardCert||data.dsl),'Insured':!!data.docInsurance,'Accredited':!!(data.docGovLicence||data.ofsted),'Signed':!!data.signature};
+  var vc=Object.keys(bs).filter(function(k){return bs[k]}).length;
+  var tEl=$('tier');if(tEl){var tier=(data.verified&&ratio>=.8&&vc>=4)?['platinum','Platinum']:(ratio>=.65&&vc>=2)?['gold','Gold']:(ratio>=.4)?['silver','Silver']:(ratio>=.18)?['bronze','Bronze']:['start','Getting started'];tEl.className='tier '+tier[0];tEl.textContent=tier[1];}
+  var bEl=$('badges');if(bEl)bEl.innerHTML=Object.keys(bs).map(function(k){return '<span class="tbadge '+(bs[k]?'on':'off')+'">'+(bs[k]?'✓ ':'○ ')+k+'</span>'}).join('');
 }
 refresh();
 

@@ -51,6 +51,11 @@
   .invite{border:1px solid rgba(77,157,224,.35);background:rgba(77,157,224,.08);border-radius:11px;padding:12px 14px;margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   .stu-row{display:flex;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
   .acu-note{border:1px solid rgba(77,157,224,.3);background:rgba(77,157,224,.07);border-radius:10px;padding:11px 14px;font-size:12.5px;color:var(--gold-300);margin-top:6px}
+  .tier{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;margin-left:10px;vertical-align:middle}
+  .tier.bronze{color:#d69b6b;background:rgba(214,155,107,.12);border:1px solid rgba(214,155,107,.4)}.tier.silver{color:#c7d0dd;background:rgba(199,208,221,.12);border:1px solid rgba(199,208,221,.4)}.tier.gold{color:#e6c766;background:rgba(230,199,102,.12);border:1px solid rgba(230,199,102,.4)}.tier.platinum{color:#9fd6e6;background:rgba(159,214,230,.14);border:1px solid rgba(159,214,230,.45)}.tier.start{color:var(--ink-3);background:rgba(170,182,204,.08);border:1px solid var(--line)}
+  .badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+  .tbadge{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid;background:rgba(6,11,24,.3)}.tbadge.on{color:#89d3a2;border-color:rgba(92,187,123,.4)}.tbadge.off{color:var(--ink-3);border-color:var(--line);opacity:.6}
+  .concierge{border:1px solid rgba(77,157,224,.3);background:linear-gradient(180deg,rgba(77,157,224,.09),rgba(77,157,224,.04));border-radius:12px;padding:12px 15px;margin-top:12px;font-size:12.5px;color:var(--ink-2)}.concierge b{color:var(--gold-300)}
   .ex-col{border:1px solid var(--line);border-radius:11px;padding:12px 13px;background:rgba(6,11,24,.32)}
   .ex-h{font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:8px}
   .ex-pill{display:inline-block;font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--line);color:var(--ink-2);margin:3px 4px 0 0}.ex-pill.on{color:#89d3a2;border-color:rgba(92,187,123,.4)}
@@ -65,10 +70,12 @@
   <a href="../">Command Centre</a><a href="./" class="on">Registration &amp; profile</a><a href="#sec-school">My school &amp; students</a><a href="#sec-agents">My AI team</a><a href="../../study/">Teaching studio</a><a href="#" id="signout">Sign out</a>
 </nav></aside>
 <main>
-  <h1>Teacher registration</h1><p class="lede">Build your complete professional identity. It powers your AI teaching team, personalises every learner in your classes, routes safeguarding, and lets your school deploy you instantly. Sensitive documents are encrypted on-device.</p>
+  <h1>Teacher registration <span class="tier start" id="tier">Getting started</span></h1><p class="lede">Build your complete professional identity. It powers your AI teaching team, personalises every learner in your classes, routes safeguarding, and lets your school deploy you instantly. Sensitive documents are encrypted on-device.</p>
   <div class="e2ebar">🔒 End-to-end encrypted OS — your identity documents are encrypted on this device</div>
 
   <div class="card"><h3><span class="ix">✓</span> Registration progress</h3><div class="prog"><i id="setup-bar" style="width:0%"></i></div><div class="note" id="setup-note"></div>
+    <div class="badges" id="badges"></div>
+    <div class="concierge" id="concierge"></div>
     <div class="rail" id="rail"></div>
     <div class="verify" id="verify"></div></div>
 
@@ -422,6 +429,17 @@ function refresh(){
   var v=$('verify');
   if(pct===100){v.className='verify ok';v.innerHTML='✓ Core details recorded. Submit your Verification documents (section 11) when ready — our team confirms your professional status. You can use every feature meanwhile.';}
   else{v.className='verify';v.innerHTML='⚠ Your profile shows as <b>incomplete</b> until name and email are saved.';}
+  /* completeness tier + trust badges + concierge */
+  var allKeys=[];SECTIONS.forEach(function(s){(s.fields||[]).forEach(function(f){allKeys.push(f.k)});(s.toggles||[]).forEach(function(t){allKeys.push(t.k)});(s.docs||[]).forEach(function(d){allKeys.push(d.k)})});
+  var fillN=0;allKeys.forEach(function(k){if(has(data[k]))fillN++});var ratio=allKeys.length?fillN/allKeys.length:0;
+  var bs={'Verified Teacher':!!(data.verified||(data.docPassport||data.docDriving)),'DBS Checked':!!data.docDBS,'QTS Verified':!!(data.qts||data.docTeachingLicence),'Safeguarding':!!(data.docSafeguard||data.safeguardingCertificate),'Qualified':!!(data.degree||data.pgce)};
+  var vc=Object.keys(bs).filter(function(k){return bs[k]}).length;
+  var tier=(data.verified&&ratio>=.85&&vc>=4)?['platinum','Platinum']:(ratio>=.7&&vc>=2)?['gold','Gold']:(ratio>=.45)?['silver','Silver']:(ratio>=.2)?['bronze','Bronze']:['start','Getting started'];
+  var tEl=$('tier');tEl.className='tier '+tier[0];tEl.textContent=tier[1];
+  $('badges').innerHTML=Object.keys(bs).map(function(k){return '<span class="tbadge '+(bs[k]?'on':'off')+'">'+(bs[k]?'✓ ':'○ ')+k+'</span>'}).join('');
+  var next=!has(data.firstName)||!has(data.lastName)?'Add your name to activate your profile':!data.schoolCode&&!(data.students&&data.students.length)?'Link your school or add students (section 13)':!(data.docPassport||data.docDriving)?'Verify your identity to earn the Verified Teacher badge':!data.docDBS?'Add your Enhanced DBS':null;
+  var active=TEACHER_AGENTS.filter(function(a){return !a.gate||data[a.gate]}).length;
+  $('concierge').innerHTML='🧭 <b>Next best step:</b> '+(next||'Your profile is complete and verified — outstanding.')+' · AI team: <b>'+active+' of '+TEACHER_AGENTS.length+'</b> active.';
 }
 refresh();
 
