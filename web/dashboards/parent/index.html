@@ -89,9 +89,24 @@ if(h.indexOf('../')===0&&h.indexOf('app/')===-1&&h!=='../'+s.role+'/')a.remove()
 </script>
 </header>
 
-<!-- ============================== PARENT ============================== -->
+<!-- ============================== LIVE: LINK A CHILD ============================== -->
+<section id="family-live">
+  <div class="sec-head"><span class="who">Command Centre</span><h2>Your children — live.</h2><span class="tag">“Support, don't micromanage”</span></div>
+  <div class="card c12" style="margin-bottom:18px">
+    <h3>Link a child</h3>
+    <div class="sub">Ask your child for their Parent Link Code (My Account → Connect a parent) and enter it here.
+      You see exactly what they choose to share; if their school allows it and they consent, you also see their school work.</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+      <input id="link-code" type="text" placeholder="8-digit link code" style="flex:1;min-width:180px;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px">
+      <button class="btn" id="link-go" style="border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 13px var(--sans);border-radius:9px;padding:10px 18px;cursor:pointer">Link a child</button>
+    </div>
+  </div>
+  <div id="children"></div>
+</section>
+
+<!-- ============================== PARENT (sample analytics) ============================== -->
 <section id="parent">
-  <div class="sec-head"><span class="who">02 · Parent</span><h2>Momentum and risk, early.</h2><span class="tag">“Clarity without micromanaging”</span></div>
+  <div class="sec-head"><span class="who">02 · Parent</span><h2>Momentum and risk, early.</h2><span class="tag">Sample analytics · preview</span></div>
   <div class="tiles">
     <div class="tile"><div class="v">3</div><div class="k">Children linked</div><div class="d">2 on track · 1 watch</div></div>
     <div class="tile"><div class="v">1</div><div class="k">Open risk alert</div><div class="d down">History · missed 3 deadlines</div></div>
@@ -232,6 +247,115 @@ lineChart('ch-par-trend',['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W1
 barChart('ch-par-alerts',['W7','W8','W9','W10','W11','W12'],[0,1,0,2,1,1],
   {color:S3,tipName:'alerts',dlabels:true,h:170,
    tips:['—','missed deadline','—','deadline + quiz fail','confidence drop','deadline pattern']});
+</script>
+
+<script>
+/* ============ LIVE family command centre (consent-gated cross-account reads) ============ */
+(function(){
+'use strict';
+var SY=window.SY; if(!SY) return;
+function el(id){return document.getElementById(id)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function gradeFor(m){return Math.max(1,Math.min(9,Math.round(1+8*m/100)))}
+
+function childData(email){
+  var profile=SY.readAccount(email,'profile',{});
+  var quizzes=SY.readAccount(email,'quizzes',[]);
+  var diag=(SY.readAccount(email,'diagnostics',[])||[])[0]||null;
+  var plan=SY.readAccount(email,'plan',null);
+  var activity=SY.readAccount(email,'activity',[]);
+  var consent=SY.readAccount(email,'consent',{parent:true,schoolToParent:true});
+  var school=SY.readAccount(email,'schoolLink',null);
+  /* mastery blend */
+  var by={};quizzes.forEach(function(q){(by[q.subj]=by[q.subj]||[]).push(q.pct)});
+  var mastery={};Object.keys(by).forEach(function(s){mastery[s]=Math.round(by[s].reduce(function(a,b){return a+b},0)/by[s].length)});
+  if(diag)diag.list.forEach(function(x){mastery[x.s]=mastery[x.s]!=null?Math.round((mastery[x.s]+x.mastery)/2):x.mastery});
+  var subs=Object.keys(mastery);
+  var overall=subs.length?Math.round(subs.reduce(function(a,s){return a+mastery[s]},0)/subs.length):null;
+  var weakest=subs.length?subs.reduce(function(a,b){return mastery[a]<mastery[b]?a:b}):null;
+  /* streak */
+  var st=SY.readAccount(email,'streak',{days:[]}),set={};(st.days||[]).forEach(function(d){set[d]=1});
+  var streak=0,dd=new Date();while(set[dd.toISOString().slice(0,10)]){streak++;dd.setDate(dd.getDate()-1)}
+  return {profile:profile,mastery:mastery,overall:overall,weakest:weakest,streak:streak,
+    lessons:activity.filter(function(a){return a.k==='lesson'||a.k==='course'}).length,
+    activity:activity,diag:diag,plan:plan,consent:consent,school:school};
+}
+
+function render(){
+  var kids=SY.get('children',[]);
+  if(!kids.length){el('children').innerHTML='<div class="card c12"><div class="note" style="font-style:normal">No children linked yet. Enter your child\'s Parent Link Code above to see their live progress.</div></div>';return}
+  el('children').innerHTML=kids.map(function(kid,ki){
+    var name=SY.accountName(kid.email)||kid.name||kid.email;
+    var d=childData(kid.email);
+    if(d.consent.parent===false){
+      return '<div class="card c12" style="margin-bottom:14px"><h3>'+esc(name)+'</h3>'+
+        '<div class="note" style="font-style:normal">'+esc(name)+' has paused progress sharing. Ask them to re-enable it in My Account → Family &amp; school.</div>'+
+        '<div style="margin-top:10px"><button class="btn" data-unlink="'+ki+'" style="border:1px solid rgba(170,182,204,.25);background:none;color:var(--ink-2);font:600 12px var(--sans);border-radius:8px;padding:7px 13px;cursor:pointer">Unlink</button></div></div>';
+    }
+    var subjRows=Object.keys(d.mastery).sort(function(a,b){return d.mastery[a]-d.mastery[b]}).map(function(s){
+      var m=d.mastery[s];var tgt=(d.profile.subjects||[]).find(function(x){return x.s===s});
+      return '<div style="display:grid;grid-template-columns:150px 1fr 90px;gap:12px;align-items:center;margin:7px 0;font-size:13px">'+
+        '<span>'+esc(s)+'</span><div class="bar" style="height:8px;border-radius:5px;background:rgba(170,182,204,.12);overflow:hidden">'+
+        '<i style="display:block;height:100%;width:'+m+'%;background:'+(m<60?'var(--crit)':m<80?'var(--warn)':'var(--good)')+'"></i></div>'+
+        '<span style="text-align:right;color:var(--ink-2);font-size:12px">'+m+'% · G'+gradeFor(m)+(tgt&&tgt.target?' /'+esc(String(tgt.target)):'')+'</span></div>';
+    }).join('')||'<div class="note">No recorded activity yet.</div>';
+    var acts=d.activity.slice(0,5).map(function(a){return '<div style="font-size:12.5px;color:var(--ink-2);padding:4px 0"><b style="color:var(--ink)">'+esc(a.t)+'</b> · <span style="color:var(--ink-3)">'+SY.timeAgo(a.when)+'</span></div>'}).join('')||'<div class="note">No recent activity.</div>';
+    /* school block, only if the child linked a school AND consents to share it */
+    var schoolBlock='';
+    if(d.school){
+      if(d.consent.schoolToParent!==false){
+        var board=SY.schoolGet(d.school.code,'board',[]);
+        schoolBlock='<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">'+
+          '<div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-400)">School · '+esc(d.school.name||d.school.code)+'</div>'+
+          (board.length?board.slice(0,4).map(function(it){return '<div style="font-size:12.5px;color:var(--ink-2);padding:4px 0">📌 <b style="color:var(--ink)">'+esc(it.title)+'</b>'+(it.detail?' — '+esc(it.detail):'')+(it.subj?' <span style="color:var(--ink-3)">('+esc(it.subj)+')</span>':'')+'</div>'}).join('')
+            :'<div class="note" style="font-style:normal">No class work posted yet.</div>')+'</div>';
+      }else{
+        schoolBlock='<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px"><div class="note" style="font-style:normal">'+esc(name)+' is linked to '+esc(d.school.name||d.school.code)+' but has not shared school data with you.</div></div>';
+      }
+    }
+    return '<div class="card c12" style="margin-bottom:14px">'+
+      '<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><h3 style="font-size:18px;font-family:var(--serif)">'+esc(name)+'</h3>'+
+      '<span class="note" style="margin:0;font-style:normal">'+esc(d.profile.level||'—')+(d.profile.board?' · '+esc(d.profile.board):'')+'</span>'+
+      '<button class="btn" data-unlink="'+ki+'" style="margin-left:auto;border:1px solid rgba(170,182,204,.25);background:none;color:var(--ink-2);font:600 12px var(--sans);border-radius:8px;padding:6px 12px;cursor:pointer">Unlink</button></div>'+
+      '<div class="tiles" style="margin:14px 0">'+
+        '<div class="tile"><div class="v">'+(d.overall!=null?'Grade '+gradeFor(d.overall):'–')+'</div><div class="k">Predicted overall</div></div>'+
+        '<div class="tile"><div class="v">'+d.streak+' <small>days</small></div><div class="k">Study streak</div></div>'+
+        '<div class="tile"><div class="v">'+d.lessons+'</div><div class="k">Lessons &amp; courses</div></div>'+
+        '<div class="tile"><div class="v" style="font-size:20px">'+esc(d.weakest||'–')+'</div><div class="k">Weakest subject</div></div>'+
+      '</div>'+
+      '<div class="grid"><div class="card c7" style="background:none;border:none;padding:0"><h3 style="font-family:var(--serif);font-size:15px;color:var(--gold-300)">Subject progress</h3>'+subjRows+
+        (d.diag?'<div class="note" style="font-style:normal;margin-top:8px">Latest diagnostic risk: <b style="color:'+(d.diag.risk==='CRITICAL'?'var(--crit)':d.diag.risk==='HIGH'?'var(--warn)':'var(--good)')+'">'+esc(d.diag.risk)+'</b></div>':'')+'</div>'+
+      '<div class="card c5" style="background:none;border:none;padding:0"><h3 style="font-family:var(--serif);font-size:15px;color:var(--gold-300)">Recent activity</h3>'+acts+'</div></div>'+
+      schoolBlock+
+      '<div style="margin-top:12px"><a class="btn" href="../../app/parent/" style="border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12px var(--sans);border-radius:8px;padding:7px 13px;text-decoration:none">Book support for '+esc(name.split(' ')[0])+'</a></div>'+
+      '</div>';
+  }).join('');
+  el('children').querySelectorAll('[data-unlink]').forEach(function(b){b.onclick=function(){
+    var kids=SY.get('children',[]);kids.splice(+b.dataset.unlink,1);SY.set('children',kids);render();
+  }});
+}
+
+el('link-go').onclick=function(){
+  var code=el('link-code').value.trim();
+  if(!/^\d{4,}$/.test(code)){alert('Enter the numeric link code from your child\'s account.');return}
+  var email=SY.resolveCode(code);
+  if(!email){alert('No account found for that code. Check the code in your child\'s My Account → Connect a parent.');return}
+  var kids=SY.get('children',[]);
+  if(kids.some(function(k){return k.email===email})){alert('That child is already linked.');el('link-code').value='';return}
+  kids.push({email:email,name:SY.accountName(email),when:new Date().toISOString()});
+  SY.set('children',kids);
+  /* record the link on the child's side so they can see who's linked */
+  try{
+    var pl=JSON.parse(localStorage.getItem('sy-u:'+email+':parentLinks'))||[];
+    if(!pl.some(function(p){return p.email===SY.session.email})){pl.push({email:SY.session.email,name:SY.session.name,when:new Date().toISOString()});
+      localStorage.setItem('sy-u:'+email+':parentLinks',JSON.stringify(pl))}
+  }catch(e){}
+  SY.log('family','Linked child: '+SY.accountName(email),'You can now see their shared progress.');
+  el('link-code').value='';
+  render();
+};
+render();
+})();
 </script>
 </body>
 </html>

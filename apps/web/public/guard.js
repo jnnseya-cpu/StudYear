@@ -83,6 +83,36 @@
       var d = h / 24; if (d < 45) return Math.round(d) + ' days ago';
       var mo = d / 30.4; if (mo < 18) return 'about ' + Math.round(mo) + ' month' + (Math.round(mo) > 1 ? 's' : '') + ' ago';
       return Math.round(mo / 12) + ' years ago';
-    }
+    },
+
+    // ---- cross-account sharing (preview build: same-device consented reads) ----
+    // A student publishes a link code that resolves to their account so a parent
+    // can find it; parents/schools read the student's namespace read-only, gated
+    // by the student's own consent flags. Production swaps this for Firestore
+    // documents with security rules enforcing the same consent contract.
+
+    /** map a share code -> this account's email so a linker can resolve it */
+    publishCode: function (code) { try { localStorage.setItem('sy-code:' + code, s.email); } catch (e) {} },
+    /** resolve a share code to an account email (or null) */
+    resolveCode: function (code) { try { return localStorage.getItem('sy-code:' + String(code).trim()); } catch (e) { return null; } },
+    /** name registered against an account email (from sy-users) */
+    accountName: function (email) {
+      try {
+        var us = JSON.parse(localStorage.getItem('sy-users')) || [];
+        var u = us.find(function (x) { return x.email === email; });
+        return u ? u.name : email;
+      } catch (e) { return email; }
+    },
+    /** read another account's namespaced key (read-only) */
+    readAccount: function (email, k, d) {
+      try { var v = JSON.parse(localStorage.getItem('sy-u:' + email + ':' + k)); return v === null || v === undefined ? d : v; }
+      catch (e) { return d; }
+    },
+    /** shared school data store, keyed by the school join code */
+    schoolGet: function (code, k, d) {
+      try { var v = JSON.parse(localStorage.getItem('sy-school:' + code + ':' + k)); return v === null || v === undefined ? d : v; }
+      catch (e) { return d; }
+    },
+    schoolSet: function (code, k, v) { try { localStorage.setItem('sy-school:' + code + ':' + k, JSON.stringify(v)); } catch (e) {} }
   };
 })();
