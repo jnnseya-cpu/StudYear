@@ -193,6 +193,20 @@ var TUTORS=[
   subs:["Economics","Business Studies"],bio:"City analyst turned tutor. Charts, chains of reasoning and 25-markers.",
   avail:"Evenings + Sat"}];
 
+/* merge real tutors published from tutor registrations (sy-tutors registry) */
+function tutorReviews(id){try{return JSON.parse(localStorage.getItem('sy-tutor-reviews:'+id))||[]}catch(e){return[]}}
+(function(){
+  var reg;try{reg=JSON.parse(localStorage.getItem('sy-tutors'))||[]}catch(e){reg=[]}
+  reg.filter(function(t){return t&&t.published}).forEach(function(t){
+    if(TUTORS.some(function(x){return x.id===t.id}))return;
+    var rv=tutorReviews(t.id);var rating=rv.length?(rv.reduce(function(a,x){return a+(+x.stars||0)},0)/rv.length):0;
+    TUTORS.unshift({id:t.id,name:t.name||'Tutor',head:t.head||'Tutor',rate:t.rate||0,
+      rating:rating,reviews:rv.length,ai:!!t.ai,exam:!!t.exam,dbs:!!t.dbs,
+      subs:(t.subs&&t.subs.length)?t.subs:['General'],bio:t.bio||'',avail:t.avail||'Flexible',
+      photo:t.photo||null,verified:!!t.verified,real:true});
+  });
+})();
+
 var SUBJECTS=[];TUTORS.forEach(function(t){t.subs.forEach(function(s){if(SUBJECTS.indexOf(s)<0)SUBJECTS.push(s)})});
 SUBJECTS.sort().forEach(function(s){var o=document.createElement('option');o.textContent=s;$('ft-subj').appendChild(o)});
 /* default the subject filter to a subject the student studies, if any tutor covers it */
@@ -209,9 +223,9 @@ function draw(){
   });
   $('tlist').innerHTML=hits.map(function(t){return '\
     <div class="tut">\
-      <div class="thead"><span class="tava">'+esc(t.name[0])+'</span>\
-        <span><b>'+esc(t.name)+'</b><small>'+esc(t.head)+'</small></span>\
-        <span class="trate"><span class="r">★ '+t.rating.toFixed(1)+' ('+t.reviews+')</span><div class="p">£'+t.rate+'/hr</div></span></div>\
+      <div class="thead"><span class="tava">'+(t.photo?'<img src="'+t.photo+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">':esc(t.name[0]))+'</span>\
+        <span><b>'+esc(t.name)+(t.verified?' <span class="tag dbs" style="font-size:9px">✓ Verified</span>':'')+'</b><small>'+esc(t.head)+'</small></span>\
+        <span class="trate"><span class="r">'+(t.reviews?'★ '+t.rating.toFixed(1)+' ('+t.reviews+')':'New')+'</span><div class="p">£'+t.rate+'/hr</div></span></div>\
       <div class="tbio">'+esc(t.bio)+'</div>\
       <div class="tags">'+t.subs.map(function(s){return '<span class="tag">'+esc(s)+'</span>'}).join('')+
         (t.ai?'<span class="tag ai">AI Teaching</span>':'')+(t.exam?'<span class="tag">Exam Specialist</span>':'')+
@@ -232,14 +246,17 @@ document.body.addEventListener('click',function(e){
   if(b.dataset.view){
     t=TUTORS.find(function(x){return x.id===b.dataset.view});
     modal.classList.add('on');
-    mbody.innerHTML='<h2>'+esc(t.name)+'</h2><div class="mmeta">'+esc(t.head)+' · ★ '+t.rating.toFixed(1)+' ('+t.reviews+' reviews) · £'+t.rate+'/hr</div>'+
-      '<p style="font-size:14px;color:var(--ink-2)">'+esc(t.bio)+'</p>'+
-      '<div class="tags" style="margin-top:12px">'+t.subs.map(function(s){return '<span class="tag">'+esc(s)+'</span>'}).join('')+
-      (t.ai?'<span class="tag ai">AI Teaching</span>':'')+(t.exam?'<span class="tag">Exam Specialist</span>':'')+
-      (t.dbs?'<span class="tag dbs">DBS verified</span>':'')+'</div>'+
-      '<p style="font-size:13px;color:var(--ink-3);margin-top:12px">Availability: '+esc(t.avail)+'</p>'+
-      '<div style="margin-top:16px"><button class="btn solid" data-book="'+t.id+'">Book session →</button></div>'+
-      '<p class="note">AI-enabled tutors use StudYear session prep (SY-A15): they arrive knowing exactly what you got wrong last week.</p>';
+    renderView(t);
+  }
+  if(b.dataset.rev){
+    var id=b.dataset.rev;var tt=TUTORS.find(function(x){return x.id===id});
+    var stars=+($('rv-stars')?$('rv-stars').value:5),text=($('rv-text')?$('rv-text').value.trim():'');
+    var rv=tutorReviews(id);rv.unshift({student:SY.accountName(SY.session.email)||'Student',stars:stars,text:text,when:new Date().toISOString()});
+    try{localStorage.setItem('sy-tutor-reviews:'+id,JSON.stringify(rv.slice(0,50)))}catch(e){}
+    /* refresh cached rating on the tutor object + card list */
+    tt.reviews=rv.length;tt.rating=rv.reduce(function(a,x){return a+(+x.stars||0)},0)/rv.length;
+    SY.log('review','Reviewed '+tt.name,stars+'★'+(text?' — '+text:''));
+    toast('Thanks — your review is live');renderView(tt);draw();
   }
   if(b.dataset.book){
     t=TUTORS.find(function(x){return x.id===b.dataset.book});
@@ -259,6 +276,27 @@ document.body.addEventListener('click',function(e){
     };
   }
 });
+function renderView(t){
+  var rv=tutorReviews(t.id);
+  var ratingTxt=t.reviews?('★ '+t.rating.toFixed(1)+' ('+t.reviews+' reviews)'):'New tutor';
+  var revHtml=rv.length?rv.slice(0,8).map(function(r){
+    return '<div style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px">'+
+      '<div style="color:#e6c766;letter-spacing:.05em">'+('★★★★★'.slice(0,r.stars||0))+'<span style="color:var(--ink-3)">'+('☆☆☆☆☆'.slice(0,5-(r.stars||0)))+'</span> <b style="color:var(--ink);font-size:12.5px">'+esc(r.student||'Student')+'</b></div>'+
+      (r.text?'<div style="font-size:12.5px;color:var(--ink-2);margin-top:4px">'+esc(r.text)+'</div>':'')+'</div>';
+  }).join(''):'<p class="note">No reviews yet — be the first after your session.</p>';
+  mbody.innerHTML='<h2>'+esc(t.name)+(t.verified?' <span class="tag dbs">✓ Verified</span>':'')+'</h2><div class="mmeta">'+esc(t.head)+' · '+ratingTxt+' · £'+t.rate+'/hr</div>'+
+    '<p style="font-size:14px;color:var(--ink-2)">'+esc(t.bio)+'</p>'+
+    '<div class="tags" style="margin-top:12px">'+t.subs.map(function(s){return '<span class="tag">'+esc(s)+'</span>'}).join('')+
+    (t.ai?'<span class="tag ai">AI Teaching</span>':'')+(t.exam?'<span class="tag">Exam Specialist</span>':'')+
+    (t.dbs?'<span class="tag dbs">DBS verified</span>':'')+'</div>'+
+    '<p style="font-size:13px;color:var(--ink-3);margin-top:12px">Availability: '+esc(t.avail)+'</p>'+
+    '<div style="margin-top:16px"><button class="btn solid" data-book="'+t.id+'">Book session →</button></div>'+
+    '<h3 style="font-family:var(--serif);font-weight:500;font-size:16px;margin-top:22px;border-top:1px solid var(--line);padding-top:16px">Reviews &amp; ratings</h3>'+revHtml+
+    '<div style="border:1px solid var(--line);border-radius:11px;padding:12px;margin-top:12px">'+
+      '<div style="font-size:12.5px;color:var(--ink-2);margin-bottom:8px">Leave a review</div>'+
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select id="rv-stars" style="max-width:130px"><option value="5">★★★★★ 5</option><option value="4">★★★★ 4</option><option value="3">★★★ 3</option><option value="2">★★ 2</option><option value="1">★ 1</option></select>'+
+      '<input type="text" id="rv-text" placeholder="How was your session?" style="flex:1;min-width:180px"><button class="btn solid sm" data-rev="'+t.id+'">Post review</button></div></div>';
+}
 draw();
 $('signout').onclick=function(e){e.preventDefault();SY.signOut()};
 })();
