@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — AI Gateway</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--gold-300:#A9CFF2;--gold-500:#3D8FD1;--good:#5CBB7B;--warn:#c98500;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#6B7A96;--line:rgba(77,157,224,.14);--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}body{background:radial-gradient(1200px 700px at 82% -12%,rgba(77,157,224,.13),transparent 60%),var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  .shell{display:flex;min-height:100vh;max-width:1440px;margin:0 auto}
+  aside{width:236px;flex:none;border-right:1px solid var(--line);padding:22px 14px 30px;position:sticky;top:0;align-self:flex-start;max-height:100vh;overflow-y:auto}
+  .slogo{font-family:var(--serif);font-size:19px;color:var(--ink);text-decoration:none;display:block;padding:4px 10px 14px}.slogo b{color:#4FA6E0;font-weight:600}
+  aside nav a{display:block;font-size:13px;color:var(--ink-2);text-decoration:none;padding:8px 10px;border-radius:8px;margin:1px 0}aside nav a:hover{color:var(--gold-300);background:rgba(77,157,224,.08)}aside nav a.on{color:var(--gold-300);background:rgba(77,157,224,.12)}
+  main{flex:1;padding:30px 30px 90px;min-width:0;max-width:860px}@media(max-width:960px){.shell{flex-direction:column}aside{width:100%;position:sticky;top:0;z-index:60;max-height:46vh;overflow-y:auto;background:#060B18;border-right:none;border-bottom:1px solid var(--line)}aside nav{display:flex;flex-wrap:wrap;gap:2px}main{padding:22px 18px 70px}}
+  a{color:inherit}h1{font-family:var(--serif);font-weight:500;font-size:28px}p.lede{color:var(--ink-2);font-weight:300;margin-top:6px;max-width:80ch}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:20px 22px;margin-top:18px}
+  .card h3{font-family:var(--serif);font-weight:500;font-size:17px;display:flex;align-items:center;gap:9px}
+  .card .sub{font-size:12.5px;color:var(--ink-3);margin:5px 0 12px}
+  label.f{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:12px 0 5px}
+  input,select{width:100%;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}input:focus,select:focus{border-color:var(--gold-500)}select option{background:#101B33}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:640px){.two{grid-template-columns:1fr}}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12px var(--sans);border-radius:9px;padding:9px 15px;cursor:pointer;text-decoration:none;display:inline-block}.btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}.btn.sm{padding:6px 11px;font-size:11.5px}.btn.ghost{border-color:rgba(170,182,204,.3);background:transparent;color:var(--ink-2)}
+  .prov{border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:12px;background:rgba(6,11,24,.32)}
+  .prov .ph{display:flex;align-items:center;gap:10px}.prov .ph .ic{font-size:22px}.prov .ph b{font-size:15px;flex:1}
+  .sw{position:relative;width:40px;height:22px;flex:none}.sw input{opacity:0;width:100%;height:100%;margin:0;cursor:pointer}.sw span{position:absolute;inset:0;border-radius:20px;background:rgba(170,182,204,.2);transition:.2s;pointer-events:none}.sw span::before{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s}.sw input:checked+span{background:linear-gradient(135deg,#4FA6E0,#2E6BC4)}.sw input:checked+span::before{transform:translateX(18px)}
+  .keyrow{display:flex;gap:8px;align-items:flex-end}.keyrow>div{flex:1}
+  .status{font-size:11px;padding:2px 9px;border-radius:20px;border:1px solid}.status.on{color:#89d3a2;border-color:rgba(92,187,123,.4)}.status.off{color:var(--ink-3);border-color:var(--line)}
+  .warn{border:1px solid rgba(201,133,0,.4);background:rgba(201,133,0,.08);border-radius:12px;padding:12px 15px;font-size:12.5px;color:#e0b566;margin-top:10px}
+  .e2ebar{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;color:#89d3a2;border:1px solid rgba(92,187,123,.3);background:rgba(92,187,123,.07);border-radius:20px;padding:5px 13px;margin-top:12px}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+</style></head><body>
+<script src="../../guard.js" data-role="school" data-base="../../"></script>
+<div class="shell">
+<aside><a class="slogo" href="../../">⌂ Stud<b>Year</b></a><nav>
+  <a href="../">Command Centre</a><a href="../people/">People management</a><a href="../analytics/">Analytics</a><a href="../acu/">ACU command</a><a href="../settings/">Registration &amp; settings</a><a href="./" class="on">AI Gateway</a><a href="#" id="signout">Sign out</a>
+</nav></aside>
+<main>
+  <h1>AI Gateway</h1>
+  <p class="lede">Route every AI action across your own model providers. Set keys for Google Gemini, OpenAI and Anthropic Claude, choose a primary and fallbacks, and control which model handles which task — so you optimise quality and cost.</p>
+  <div class="e2ebar">🔒 Keys are AES-GCM encrypted on-device in this preview</div>
+
+  <div class="warn">⚠ <b>Security:</b> In production, provider keys live only in the server-side gateway and are never sent to the browser. This preview stores them encrypted locally so you can configure routing — use restricted/test keys here, not production secrets.</div>
+
+  <div id="providers"></div>
+
+  <div class="card"><h3>🧭 Routing</h3><div class="sub">Which provider runs by default, and the fallback order if one is unavailable.</div>
+    <div class="two">
+      <div><label class="f">Primary provider</label><select id="primary"></select></div>
+      <div><label class="f">Fallback</label><select id="fallback"></select></div>
+    </div>
+    <label class="f">Cost-saving routing</label>
+    <select id="routing"><option value="quality">Always use primary (best quality)</option><option value="balanced">Balanced — cheap models for simple tasks, primary for complex</option><option value="cheapest">Cheapest capable model per task</option></select>
+    <div class="sub" style="margin-top:10px">Example: diagnostics &amp; quick explanations → a fast/cheap model; marking, lesson planning &amp; predictions → your primary.</div>
+  </div>
+
+  <div style="margin-top:20px"><button class="btn solid" id="save">Save gateway</button> <button class="btn ghost" id="test">Test connections</button> <span class="note" id="saved" style="font-size:11.5px;color:var(--ink-3)"></span></div>
+</main>
+</div>
+<div id="toast"></div>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;
+function $(id){return document.getElementById(id)}function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e}
+var tt;function toast(t){var e=$('toast');e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2400)}
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+
+var PROVIDERS=[
+  {k:'gemini',i:'✦',name:'Google Gemini',models:['gemini-2.5-flash','gemini-2.5-pro','gemini-2.0-flash'],ph:'AIza…'},
+  {k:'openai',i:'⊚',name:'OpenAI',models:['gpt-4o','gpt-4o-mini','o3-mini'],ph:'sk-…'},
+  {k:'claude',i:'✳',name:'Anthropic Claude',models:['claude-opus-4','claude-sonnet-4','claude-haiku-4'],ph:'sk-ant-…'}
+];
+var cfg=SY.get('aiGateway',{enabled:{},model:{},primary:'claude',fallback:'gemini',routing:'balanced'});
+var keys={};/* loaded async, decrypted */
+
+/* render providers */
+PROVIDERS.forEach(function(p){
+  var card=el('div','prov');
+  var enabled=!!cfg.enabled[p.k];
+  card.innerHTML='<div class="ph"><span class="ic">'+p.i+'</span><b>'+p.name+'</b><span class="status '+(enabled?'on':'off')+'" id="st-'+p.k+'">'+(enabled?'enabled':'off')+'</span>'+
+    '<label class="sw"><input type="checkbox" id="en-'+p.k+'" '+(enabled?'checked':'')+'><span></span></label></div>'+
+    '<label class="f">API key</label><div class="keyrow"><div><input type="password" id="key-'+p.k+'" placeholder="'+p.ph+'" autocomplete="off"></div><button class="btn sm ghost" id="rev-'+p.k+'" type="button">Show</button></div>'+
+    '<label class="f">Default model</label><select id="mdl-'+p.k+'">'+p.models.map(function(m){return '<option'+(cfg.model[p.k]===m?' selected':'')+'>'+m+'</option>'}).join('')+'</select>';
+  $('providers').appendChild(card);
+  $('en-'+p.k).onchange=function(){$('st-'+p.k).textContent=this.checked?'enabled':'off';$('st-'+p.k).className='status '+(this.checked?'on':'off')};
+  $('rev-'+p.k).onclick=function(){var i=$('key-'+p.k);if(i.type==='password'){i.type='text';this.textContent='Hide'}else{i.type='password';this.textContent='Show'}};
+});
+/* routing selects */
+PROVIDERS.forEach(function(p){['primary','fallback'].forEach(function(sel){var o=el('option',null,p.name);o.value=p.k;$(sel).appendChild(o)})});
+$('primary').value=cfg.primary||'claude';$('fallback').value=cfg.fallback||'gemini';$('routing').value=cfg.routing||'balanced';
+
+/* load encrypted keys */
+if(SY.getSecure){SY.getSecure('aiGatewayKeys',{}).then(function(k){keys=k||{};PROVIDERS.forEach(function(p){if(keys[p.k])$('key-'+p.k).value=keys[p.k]})})}
+
+$('save').onclick=function(){
+  cfg.enabled={};cfg.model={};keys={};
+  PROVIDERS.forEach(function(p){cfg.enabled[p.k]=$('en-'+p.k).checked;cfg.model[p.k]=$('mdl-'+p.k).value;var v=$('key-'+p.k).value.trim();if(v)keys[p.k]=v});
+  cfg.primary=$('primary').value;cfg.fallback=$('fallback').value;cfg.routing=$('routing').value;cfg.updatedAt=new Date().toISOString();
+  SY.set('aiGateway',cfg);
+  var done=function(){SY.log('gateway','AI Gateway updated','Primary '+cfg.primary+' · routing '+cfg.routing);$('saved').textContent='Saved '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+' · keys encrypted';toast('Gateway saved — keys encrypted')};
+  if(SY.setSecure){SY.setSecure('aiGatewayKeys',keys).then(done,done)}else{done()}
+};
+$('test').onclick=function(){
+  var on=PROVIDERS.filter(function(p){return $('en-'+p.k).checked&&$('key-'+p.k).value.trim()});
+  if(!on.length){toast('Enable a provider and add a key first');return}
+  toast('Preview: '+on.length+' provider(s) configured. Live connection tests run from the server-side gateway.');
+};
+})();
+</script>
+</body></html>

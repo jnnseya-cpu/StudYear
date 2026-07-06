@@ -62,7 +62,7 @@
 <script src="../../guard.js" data-role="school" data-base="../../"></script>
 <div class="shell">
 <aside><a class="slogo" href="../../">⌂ Stud<b>Year</b></a><nav>
-  <a href="../">Command Centre</a><a href="../#risk">Risk intelligence</a><a href="../interventions/">Intervention war room</a><a href="../people/">People management</a><a href="../analytics/">Analytics</a><a href="../acu/">ACU command</a><a href="../assessments/">Assessments</a><a href="../reports/">Executive reports</a><a href="../resources/">Knowledge hub</a><a href="../plans/">Top up ACUs</a><a href="./" class="on">Registration &amp; settings</a>
+  <a href="../">Command Centre</a><a href="../#risk">Risk intelligence</a><a href="../interventions/">Intervention war room</a><a href="../people/">People management</a><a href="../analytics/">Analytics</a><a href="../acu/">ACU command</a><a href="../assessments/">Assessments</a><a href="../reports/">Executive reports</a><a href="../resources/">Knowledge hub</a><a href="../plans/">Top up ACUs</a><a href="../gateway/">AI Gateway</a><a href="./" class="on">Registration &amp; settings</a>
 </nav></aside>
 <main>
   <h1>School registration</h1><p class="lede">Build your institution's complete digital identity. Everything here powers personalised learning, safeguarding routing, AI governance, credential verification and executive analytics. Fields save locally to your workspace; full verification completes when our team confirms your institution — you can use the platform throughout.</p>
@@ -76,6 +76,11 @@
     <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span class="code" id="join-code">------</span><button class="btn sm" id="copy-code">Copy</button><button class="btn sm ghost" id="regen">Regenerate</button></div></div>
 
   <div id="form"></div>
+
+  <div class="card"><h3><span class="ix">📍</span> Location map</h3><div class="sub">Your school on Google Maps — set from your address above (or paste a Maps link in section 4). Shown on your public profile.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="btn sm" id="map-show">Show on map</button><a class="btn sm ghost" id="map-open" target="_blank" rel="noopener" style="display:none">Open in Google Maps ↗</a></div>
+    <div id="mapwrap" style="border:1px solid var(--line);border-radius:12px;overflow:hidden;background:rgba(6,11,24,.4);min-height:80px;display:grid;place-items:center;color:var(--ink-3);font-size:12.5px">Enter your address and click “Show on map”.</div>
+  </div>
 
   <div class="savebar"><button class="btn solid" id="save">Save registration</button> <a class="btn ghost" href="../people/">People management →</a><span class="note" id="saved-at"></span></div>
 </main>
@@ -452,6 +457,24 @@ $('save').onclick=function(){
   $('saved-at').textContent='Saved '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
   toast('School registration saved');refresh();
 };
+
+/* ---- Google Maps location space ---- */
+function mapQuery(){
+  if(data.mapsLink&&/https?:\/\//.test(data.mapsLink))return null; /* use link directly */
+  var parts=[data.addr1,data.addr2,data.city,data.county,data.postcode,data.country].filter(function(x){return x&&(''+x).trim()});
+  if(data.gps&&/\d/.test(data.gps))return data.gps.trim();
+  return parts.length?parts.join(', '):(data.name||'');
+}
+function showMap(){
+  var wrap=$('mapwrap');var link=(data.mapsLink||'').trim();
+  var src,openUrl;
+  if(link&&/https?:\/\//.test(link)){openUrl=link;src=link.indexOf('output=embed')>=0?link:(link+(link.indexOf('?')>=0?'&':'?')+'output=embed')}
+  else{var q=mapQuery();if(!q){wrap.textContent='Add your address (section 4) first.';return}var enc=encodeURIComponent(q);src='https://www.google.com/maps?q='+enc+'&output=embed';openUrl='https://www.google.com/maps?q='+enc}
+  wrap.innerHTML='<iframe title="School location" style="width:100%;height:320px;border:0" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="'+src+'"></iframe>';
+  var o=$('map-open');o.href=openUrl;o.style.display='inline-block';
+}
+$('map-show').onclick=showMap;
+if(mapQuery()||(data.mapsLink||'').trim())showMap();
 })();
 </script>
 </body></html>
