@@ -20,3 +20,13 @@
   `STATIC_EXPORT=1 PAGES_BASE_PATH=/StudYear npm run build --workspace apps/web`.
 - Public pages must not expose internal commercial mechanics (e.g. the margin
   band / top-up / referral fine-print was removed from the plans section on request).
+
+## Standing owner directives (2026-07)
+
+- **Preserve & enhance**: anything the owner adds or specifies for the OS must never
+  be removed — it may only be improved and enhanced (mirrors docs/REQUIREMENTS-MANDATE.md).
+- **Admin console mirrors production as-is**: the owner streams real admin screens
+  (dashboard, users, tutors, blog, content, billing, AI costs, analytics) — replicate
+  them faithfully, but MASK real customer emails/PII in the public static bundle;
+  full PII belongs only in the secure backend admin.
+- Admin preview accounts are created via invite code (owner has it; hash-gated in auth).

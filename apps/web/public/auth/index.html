@@ -75,6 +75,10 @@
       <label>Account type</label>
       <div class="roles" id="roles"></div>
     </div>
+    <div id="row-invite" style="display:none">
+      <label>Admin invite code</label>
+      <input id="invite" type="password" autocomplete="off" placeholder="provided by platform ops">
+    </div>
     <button class="cta" id="go" type="submit">Sign in →</button>
   </form>
   <div class="alt">
@@ -120,9 +124,11 @@ PUBLIC_ROLES.forEach(function(r){
 
 function setMode(m){
   mode=m;
+  var adminFlow=wantRole==='admin';
   $('t-in').classList.toggle('on',m==='in');$('t-up').classList.toggle('on',m==='up');
   $('row-name').style.display=m==='up'?'block':'none';
-  $('row-role').style.display=m==='up'?'block':'none';
+  $('row-role').style.display=m==='up'&&!adminFlow?'block':'none';
+  $('row-invite').style.display=m==='up'&&adminFlow?'block':'none';
   $('go').textContent=m==='up'?'Create my account →':'Sign in →';
   $('pw').autocomplete=m==='up'?'new-password':'current-password';
 }
@@ -136,7 +142,7 @@ if(mismatch&&wantRole){
       '</b> accounts only. <a href="../app/'+mismatch+'/">Go to my console</a> or sign in below with a '+
       (LABELS[wantRole]||wantRole)+' account.','info');
 }else if(wantRole&&LABELS[wantRole]){
-  if(wantRole==='admin'){say('Admin consoles are restricted. Sign in with a provisioned admin account.','info')}
+  if(wantRole==='admin'){say('Admin consoles are restricted. Sign in with a provisioned admin account, or create one with your ops invite code.','info')}
   else{$('title').textContent='Sign in — '+LABELS[wantRole]+' console';
        $('subtitle').textContent='This area is for '+LABELS[wantRole].toLowerCase()+' accounts. Sign in, or create a '+LABELS[wantRole].toLowerCase()+' account.'}
 }else if(session){
@@ -152,14 +158,20 @@ $('f').addEventListener('submit',async function(e){
   if(mode==='up'){
     var name=$('name').value.trim();
     if(name.length<2){say('Enter your name.','err');return}
-    if(wantRole==='admin'||pickedRole==='admin'){say('Admin accounts are provisioned internally.','err');return}
-    if(users.some(function(u){return u.email===email&&u.role===pickedRole})){
+    var role=pickedRole;
+    if(wantRole==='admin'){
+      var inv=$('invite').value.trim();
+      if(await hash('sy-admin',inv)!=='57ba23d68fd51c7b48591af30294de529b640652b192a78def879af29ab69572'){
+        say('Invalid invite code — admin accounts are provisioned internally.','err');return}
+      role='admin';
+    }else if(pickedRole==='admin'){say('Admin accounts are provisioned internally.','err');return}
+    if(users.some(function(u){return u.email===email&&u.role===role})){
       say('An account with this email already exists for that category — use Sign in.','err');return}
     var salt=Array.from(crypto.getRandomValues(new Uint8Array(12))).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
-    users.push({name:name,email:email,role:pickedRole,salt:salt,hash:await hash(salt,pw)});
+    users.push({name:name,email:email,role:role,salt:salt,hash:await hash(salt,pw)});
     save('sy-users',users);
-    save('sy-session',{name:name,email:email,role:pickedRole,ts:new Date().toISOString()});
-    location.replace(destination(pickedRole));
+    save('sy-session',{name:name,email:email,role:role,ts:new Date().toISOString()});
+    location.replace(destination(role));
   }else{
     var matches=users.filter(function(u){return u.email===email});
     if(!matches.length){say('No account found for that email. Create one with the tab above.','err');return}

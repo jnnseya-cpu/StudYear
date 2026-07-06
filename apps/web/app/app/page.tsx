@@ -23,7 +23,16 @@ export default function AccountChooser() {
     }
     try {
       const s = JSON.parse(localStorage.getItem('sy-session') ?? 'null');
-      if (s?.role) setSession(s);
+      if (s?.role) {
+        // signed-in users go straight to THEIR console — the full category
+        // list only shows to guests, or on an explicit ?switch=1
+        const switching = new URLSearchParams(window.location.search).get('switch') === '1';
+        if (!switching && PERSONAS.some((p) => p.slug === s.role)) {
+          window.location.replace(`${BASE}/app/${s.role}/`);
+          return;
+        }
+        setSession(s);
+      }
     } catch {}
   }, []);
 

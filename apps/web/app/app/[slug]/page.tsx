@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import AdminConsole from '../AdminConsole';
 import PersonaConsole from '../PersonaConsole';
 import { PERSONAS } from '../personas';
 
@@ -16,5 +17,6 @@ export function generateMetadata({ params }: { params: { slug: string } }) {
 export default function ConsolePage({ params }: { params: { slug: string } }) {
   const persona = PERSONAS.find((p) => p.slug === params.slug);
   if (!persona) notFound();
+  if (persona.slug === 'admin') return <AdminConsole />;
   return <PersonaConsole persona={persona} />;
 }

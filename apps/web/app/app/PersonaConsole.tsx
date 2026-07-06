@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { ACU_PER_POUND, ACU_TARIFF, FREE_TIER } from '@studyear/shared';
-import { PERSONAS, type Persona } from './personas';
+import { type Persona } from './personas';
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 
@@ -76,7 +76,7 @@ export default function PersonaConsole({ persona: p }: { persona: Persona }) {
         <div className="wallet" title={`£1 = ${ACU_PER_POUND} ACUs · hard stop at zero — no surprise bills`}>
           <span className="dot" /> {walletAcus} ACUs <small>≈ {deepSessions} deep sessions</small>
         </div>
-        <a className="switch-acct" href={`${BASE}/app/`}>Switch account</a>
+        <a className="switch-acct" href={`${BASE}/app/?switch=1`}>Switch account</a>
         <button className="switch-acct signout" onClick={signOut}>Sign out</button>
       </header>
 
@@ -131,10 +131,8 @@ export default function PersonaConsole({ persona: p }: { persona: Persona }) {
 
       <footer className="os-foot">
         <a href={`${BASE}/`}>Home</a>
-        <a href={`${BASE}/app/`}>All consoles</a>
-        {PERSONAS.filter((x) => x.slug !== p.slug).map((x) => (
-          <a key={x.slug} href={`${BASE}/app/${x.slug}/`}>{x.label}</a>
-        ))}
+        <a href={p.dashboard ? `${BASE}/dashboards/${p.dashboard}/` : `${BASE}/dashboards/`}>My dashboard</a>
+        {p.slug === 'student' && <a href={`${BASE}/study/`}>Study workspace</a>}
         <span>© StudYear — the AI Academic Operating System</span>
       </footer>
     </main>

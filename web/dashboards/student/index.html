@@ -79,7 +79,14 @@
   <div class="k"><a href="../../" style="color:inherit;text-decoration:none">⌂ StudYear</a> · Command Centre Analytics · <a href="../../app/student/" style="color:inherit;text-decoration:none">Open the OS →</a></div>
   <h1>Student dashboard.</h1>
   <p>My grades, moving — live trajectory, mastery and plan adherence. All charts read the live mastery record — hover any mark.</p>
-  <nav class="dnav"><a href="../student/" class="on">Student</a><a href="../parent/" class="">Parent</a><a href="../teacher/" class="">Teacher</a><a href="../school/" class="">School & Trust</a><a href="../tutor/" class="">Tutor</a><a href="../../app/">Switch account</a><a href="#" onclick="localStorage.removeItem('sy-session');location.href='../../';return false">Sign out</a></nav>
+  <nav class="dnav"><a href="../student/" class="on">Student</a><a href="../parent/" class="">Parent</a><a href="../teacher/" class="">Teacher</a><a href="../school/" class="">School & Trust</a><a href="../tutor/" class="">Tutor</a><a href="../../app/?switch=1">Switch account</a><a href="#" onclick="localStorage.removeItem('sy-session');location.href='../../';return false">Sign out</a></nav>
+<script>
+// a signed-in user sees only THEIR dashboard link, not the whole list
+(function(){try{var s=JSON.parse(localStorage.getItem('sy-session'));
+if(s&&s.role){document.querySelectorAll('.dnav a').forEach(function(a){
+var h=a.getAttribute('href')||'';
+if(h.indexOf('../')===0&&h.indexOf('app/')===-1&&h!=='../'+s.role+'/')a.remove();});}}catch(e){}})();
+</script>
 </header>
 
 <!-- ============================== STUDENT ============================== -->
