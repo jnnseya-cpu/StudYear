@@ -50,6 +50,30 @@
   .tl{font-size:13px;color:var(--ink-2);padding:7px 0;border-bottom:1px solid rgba(170,182,204,.08)}
   .tl b{color:var(--ink)}.tl .w{color:var(--ink-3);font-size:11.5px}
   .note{font-size:11.5px;color:var(--ink-3);font-style:italic;margin-top:8px}
+  /* AI School Brain + leadership intelligence */
+  .brain{border:1px solid rgba(77,157,224,.3);border-radius:16px;background:radial-gradient(600px 200px at 10% -20%,rgba(77,157,224,.16),transparent),linear-gradient(180deg,rgba(16,27,51,.8),rgba(11,18,32,.95));padding:18px 20px;margin-top:6px}
+  .brain .bt{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .brain .bt h3{font-family:var(--serif);font-size:19px;font-weight:500}
+  .brain .tm{margin-left:auto;font-size:11px;color:var(--good);border:1px solid rgba(92,187,123,.4);border-radius:20px;padding:3px 10px}
+  .signals{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-top:14px}
+  @media(max-width:900px){.signals{grid-template-columns:repeat(3,1fr)}}@media(max-width:560px){.signals{grid-template-columns:repeat(2,1fr)}}
+  .sig{border:1px solid var(--line);border-radius:11px;padding:10px 11px;background:rgba(6,11,24,.4)}
+  .sig .sv{font-family:var(--serif);font-size:20px;color:var(--gold-300);line-height:1}.sig .sv small{font-size:12px;color:var(--ink-2)}
+  .sig .sk{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-top:5px}
+  .sig .sd{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:5px;box-shadow:0 0 6px currentColor}
+  .idx{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}@media(max-width:900px){.idx{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.idx{grid-template-columns:1fr}}
+  .gauge{display:flex;align-items:center;gap:12px}
+  .ring{--p:0;--c:var(--good);width:58px;height:58px;border-radius:50%;flex:none;background:conic-gradient(var(--c) calc(var(--p)*1%),rgba(170,182,204,.12) 0);display:grid;place-items:center}
+  .ring::before{content:"";width:44px;height:44px;border-radius:50%;background:var(--navy-950);position:absolute}
+  .ring b{position:relative;font-family:var(--serif);font-size:15px;color:var(--ink)}
+  .rank{display:flex;align-items:center;gap:9px;margin:6px 0;font-size:12.5px}
+  .rank .n{width:20px;color:var(--ink-3);font-family:var(--serif)}.rank .bar{flex:1;height:9px;border-radius:5px;background:rgba(170,182,204,.12);overflow:hidden}.rank .bar i{display:block;height:100%}
+  .rank .val{width:42px;text-align:right;color:var(--ink-2);font-size:12px}
+  .pill{display:inline-block;font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid var(--line);color:var(--ink-2);margin:3px 4px 0 0}
+  .rec{display:flex;gap:9px;padding:9px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:12.5px;color:var(--ink-2)}.rec .ri{color:var(--gold-300)}
+  .caps{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+  .cap{font-size:11px;color:var(--gold-300);border:1px solid rgba(77,157,224,.3);background:rgba(77,157,224,.07);border-radius:20px;padding:4px 11px}
+  .demobar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid rgba(201,133,0,.35);background:rgba(201,133,0,.07);border-radius:12px;padding:11px 15px;margin-top:14px;font-size:12.5px;color:#e0b566}
 </style>
 </head>
 <body>
@@ -76,14 +100,16 @@
     <span class="live">● Live</span>
     <span class="badge warn" id="verif">setup in progress</span>
     <div class="sp">
+      <button class="btn" id="demo-btn">Load demo school</button>
       <a class="chip" href="people/">People</a>
       <a class="chip" href="plans/">Top up</a>
-      <a class="chip" href="account/">Settings</a>
       <a class="avatar" href="account/" id="topavatar"></a>
     </div>
   </div>
+  <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold-400);margin-top:10px">StudYear Schools™ · AI Academic Operating System</div>
   <h1>AI Academic Operations Centre</h1>
-  <p class="lede" id="lede">Executive visibility across your institution.</p>
+  <p class="lede" id="lede">One platform. Every teacher, student, parent, lesson and result — connected through your school's AI Academic Intelligence layer.</p>
+  <div class="demobar" id="demobar" style="display:none"></div>
 
   <div class="sec-title">Mission-critical intelligence</div>
   <div class="grid">
@@ -95,6 +121,41 @@
     <div class="card stat c3"><div class="v" id="m-staff">0</div><div class="k">Staff deployed</div></div>
     <div class="card stat c3"><div class="v" id="m-parents">0</div><div class="k">Parent links</div></div>
     <div class="card stat c3"><div class="v" id="m-acu">0</div><div class="k">ACU balance (pool)</div></div>
+  </div>
+
+  <!-- AI School Brain -->
+  <div class="brain" id="brain" style="margin-top:20px">
+    <div class="bt"><h3>🧠 AI School Brain™</h3><span class="tm" id="brain-tm">● analysing live</span></div>
+    <div class="sub" style="font-size:12px;color:var(--ink-3);margin-top:4px">The school's digital brain — analysing every signal, every minute. It never sleeps.</div>
+    <div class="signals" id="signals"></div>
+    <div class="caps">
+      <span class="cap">AI Adaptive Learning™</span><span class="cap">Personal Academic Twin™</span><span class="cap">Curriculum Intelligence™</span>
+      <span class="cap">Learning Gap Detection™</span><span class="cap">Lesson Quality Analysis™</span><span class="cap">Intervention Engine™</span>
+    </div>
+  </div>
+
+  <div class="sec-title">School Leadership Command Centre</div>
+  <div class="grid">
+    <div class="card c3"><h3>Academic Health Score</h3><div class="gauge" style="margin-top:10px"><div class="ring" id="g-health"><b id="g-health-v">—</b></div><div><div class="note" style="font-style:normal;margin-top:4px" id="health-note">whole-school index</div></div></div></div>
+    <div class="card c3"><h3>Teaching Quality Index</h3><div class="gauge" style="margin-top:10px"><div class="ring" id="g-teach"><b id="g-teach-v">—</b></div><div class="note" style="font-style:normal" id="teach-note">AI Lesson Quality Analysis™</div></div></div>
+    <div class="card c3"><h3>Student Progress Index</h3><div class="gauge" style="margin-top:10px"><div class="ring" id="g-prog"><b id="g-prog-v">—</b></div><div class="note" style="font-style:normal" id="prog-note">vs baseline diagnostic</div></div></div>
+    <div class="card c3"><h3>Exam &amp; university readiness</h3><div style="margin-top:10px"><div class="stat"><div class="v" id="m-examready">—</div><div class="k">exam-ready cohort</div></div><div class="stat" style="margin-top:8px"><div class="v" id="m-uniready">—</div><div class="k">university-ready</div></div></div></div>
+  </div>
+
+  <div class="grid" style="margin-top:14px">
+    <div class="card stat c3"><div class="v" id="m-gifted">0</div><div class="k">Gifted students</div></div>
+    <div class="card stat c3"><div class="v" id="m-attend">0%</div><div class="k">Attendance</div></div>
+    <div class="card stat c3"><div class="v" id="m-behav">0</div><div class="k">Behaviour index</div></div>
+    <div class="card stat c3"><div class="v" id="m-safeguard">0</div><div class="k">Safeguarding alerts</div></div>
+  </div>
+
+  <div class="grid" style="margin-top:14px">
+    <div class="card c4"><h3>Department ranking</h3><div class="sub">By attainment</div><div id="rank-dept"></div></div>
+    <div class="card c4"><h3>Year group ranking</h3><div class="sub">By cohort progress</div><div id="rank-year"></div></div>
+    <div class="card c4"><h3>Subject ranking</h3><div class="sub">Strongest → weakest</div><div id="rank-subj"></div></div>
+    <div class="card c8"><h3>Teacher performance</h3><div class="sub">AI Lesson Quality Analysis™ — engagement, outcomes, differentiation</div><div id="teacher-perf"></div></div>
+    <div class="card c4"><h3>Destination prediction</h3><div class="sub">Predicted student destinations</div><div id="destinations"></div></div>
+    <div class="card c12"><h3>🤖 AI recommendations</h3><div class="sub">Prioritised actions from the AI School Brain™ — highest impact first</div><div id="ai-recs"></div></div>
   </div>
 
   <div class="grid" style="margin-top:16px">
@@ -194,7 +255,11 @@ function metrics(email){
   var parentLinks=(SY.readAccount(email,'parentLinks',[])||[]).length;
   return {email:email,profile:pf,mastery:mast,overall:overall,risk:diag?diag.risk:(overall<40?'HIGH':overall<60?'MEDIUM':'LOW'),hw:hw,parentLinks:parentLinks,year:pf.level||'—'};
 }
-var M=roster.map(function(r){return metrics(r.email)});
+var M=roster.map(function(r){
+  if(r.m){return Object.assign({email:r.email,name:r.name,year:r.year,profile:{level:r.year},parentLinks:r.m.parentLinks||0},r.m)}
+  return metrics(r.email);
+});
+var DEMO=roster.some(function(r){return r.demo});
 var atRisk=M.filter(function(m){return m.risk==='HIGH'||m.risk==='CRITICAL'});
 var cohort=M.length?Math.round(M.reduce(function(a,b){return a+b.overall},0)/M.length):0;
 var hwAvg=M.length?Math.round(M.reduce(function(a,b){return a+b.hw},0)/M.length):0;
@@ -263,6 +328,153 @@ $('gen-report').onclick=function(e){e.preventDefault();
     '<div class="tl">Cohort attainment '+cohort+'% · '+atRisk.length+' at-risk · homework completion '+hwAvg+'% · '+staff.length+' staff · '+M.length+' students.</div>'+
     '<div class="tl">Recommended focus: '+(atRisk.length?'the '+atRisk.length+' at-risk students and the weakest department.':'sustain momentum; no critical risks.')+'</div>';
 };
+
+/* ============ AI School Brain + Leadership Command Centre ============ */
+var DEPTS={Mathematics:'Mathematics',Physics:'Science',Chemistry:'Science',Biology:'Science',Science:'Science','English Literature':'English','English Language':'English',English:'English',History:'Humanities',Geography:'Humanities','Government & Politics':'Humanities','Computer Science':'Computing',ICT:'Computing',Spanish:'Languages',French:'Languages',Psychology:'Social Sciences',Sociology:'Social Sciences',Economics:'Business',"Business Studies":'Business'};
+function deptOf(s){return DEPTS[s]||'Other'}
+function col(v){return v>=70?'var(--good)':v>=50?'var(--warn)':'var(--crit)'}
+function dcol(v){return v>=70?'#5CBB7B':v>=50?'#c98500':'#e66767'}
+function ring(id,val,color){var e=$(id);if(!e)return;e.style.position='relative';e.style.setProperty('--p',Math.round(val));e.style.setProperty('--c',color);var b=$(id+'-v');if(b)b.textContent=Math.round(val)}
+function fld(m,k,d){return m[k]!=null?m[k]:d}
+function avg(a){return a.length?a.reduce(function(x,y){return x+y},0)/a.length:0}
+
+function renderLeadership(){
+  var brainWrap=$('signals');
+  if(!M.length){
+    if(brainWrap)brainWrap.innerHTML='<div class="empty" style="grid-column:1/-1">Load the demo school or link students to activate the AI School Brain™.</div>';
+    ['rank-dept','rank-year','rank-subj','teacher-perf','destinations','ai-recs'].forEach(function(id){var e=$(id);if(e)e.innerHTML='<div class="empty">No data yet.</div>'});
+    return;
+  }
+  /* derived per-student fields */
+  var atts=M.map(function(m){return fld(m,'attendance',93)});
+  var behs=M.map(function(m){return fld(m,'behaviour',82)});
+  var progs=M.map(function(m){return fld(m,'progress', Math.max(0,m.overall-55))});
+  var gifted=M.filter(function(m){return m.gifted||m.overall>=85});
+  var attendance=Math.round(avg(atts)),behaviour=Math.round(avg(behs)),progress=Math.round(avg(progs));
+  var riskRatio=M.length?atRisk.length/M.length:0;
+  var health=Math.round(0.42*cohort+0.25*attendance+0.18*hwAvg+0.15*(100-riskRatio*100));
+  var teachQ=staff.length&&staff.some(function(s){return s.perf!=null})?Math.round(avg(staff.map(function(s){return s.perf!=null?s.perf:70}))):Math.round(clamp(cohort+6,40,96));
+  var progIdx=Math.round(clamp(50+progress*0.6,0,100));
+  var examReady=Math.round(100*M.filter(function(m){return m.overall>=60}).length/M.length);
+  var uniPool=M.filter(function(m){return /12|13|Sixth|Year 12|Year 13/.test(''+m.year)});
+  var uniReady=uniPool.length?Math.round(100*uniPool.filter(function(m){return m.overall>=70||m.destination==='University'}).length/uniPool.length):Math.round(100*gifted.length/M.length);
+
+  ring('g-health',health,dcol(health));ring('g-teach',teachQ,dcol(teachQ));ring('g-prog',progIdx,dcol(progIdx));
+  $('health-note').textContent=health>=70?'Strong — world-class trajectory':health>=55?'Stable — targeted focus needed':'Needs leadership attention';
+  $('m-examready').textContent=examReady+'%';$('m-uniready').textContent=uniReady+'%';
+  $('m-gifted').textContent=gifted.length;$('m-attend').textContent=attendance+'%';$('m-behav').textContent=behaviour;
+  var safeguard=SY.schoolGet(code,'safeguard',[]).length||M.filter(function(m){return m.risk==='CRITICAL'}).length;
+  $('m-safeguard').textContent=safeguard;
+
+  /* AI School Brain signals */
+  var activeInterv=interventions.filter(function(i){return i.status==='active'||i.status==='identified'}).length;
+  var wellbeing=Math.round(clamp((behaviour+attendance)/2,0,100));
+  var predAvg=Math.round(avg(M.map(function(m){return fld(m,'predicted',gradeFor(m.overall))})));
+  var workload=staff.length?Math.round(clamp(M.length/staff.length*4,0,100)):0;
+  var curriculum=Math.round(avg(M.map(function(m){return fld(m,'curriculum', clamp(m.overall+8,0,100))})));
+  var signals=[
+    {k:'Attendance',v:attendance+'%',s:attendance>=92?1:attendance>=88?0:-1},
+    {k:'Homework',v:hwAvg+'%',s:hwAvg>=75?1:hwAvg>=55?0:-1},
+    {k:'Assessments',v:cohort+'%',s:cohort>=70?1:cohort>=55?0:-1},
+    {k:'Engagement',v:Math.round(avg(behs.map(function(b){return clamp(b+4,0,100)})))+'%',s:behaviour>=75?1:0},
+    {k:'Behaviour',v:behaviour,s:behaviour>=78?1:behaviour>=65?0:-1},
+    {k:'Interventions',v:activeInterv,s:activeInterv?0:1},
+    {k:'Wellbeing',v:wellbeing,s:wellbeing>=75?1:wellbeing>=60?0:-1},
+    {k:'Predicted grades',v:'≈'+predAvg,s:predAvg>=6?1:predAvg>=5?0:-1},
+    {k:'Teacher workload',v:workload+'%',s:workload<=70?1:workload<=85?0:-1},
+    {k:'Curriculum',v:curriculum+'%',s:curriculum>=75?1:curriculum>=55?0:-1}
+  ];
+  brainWrap.innerHTML=signals.map(function(g){var c=g.s>0?'#5CBB7B':g.s<0?'#e66767':'#c98500';
+    return '<div class="sig"><div class="sv">'+esc(''+g.v)+'</div><div class="sk"><span class="sd" style="color:'+c+'"></span>'+esc(g.k)+'</div></div>';
+  }).join('');
+
+  /* rankings */
+  function bar(rows,unit){return rows.map(function(r,i){var c=col(r.v);return '<div class="rank"><span class="n">'+(i+1)+'</span><span style="width:112px;font-size:12px">'+esc(r.k)+'</span><span class="bar"><i style="width:'+r.v+'%;background:'+c+'"></i></span><span class="val">'+r.v+(unit||'%')+'</span></div>'}).join('')}
+  var deptAgg={};M.forEach(function(m){Object.keys(m.mastery||{}).forEach(function(s){var d=deptOf(s);(deptAgg[d]=deptAgg[d]||[]).push(m.mastery[s])})});
+  var deptRows=Object.keys(deptAgg).map(function(d){return {k:d,v:Math.round(avg(deptAgg[d]))}}).sort(function(a,b){return b.v-a.v});
+  $('rank-dept').innerHTML=deptRows.length?bar(deptRows):'<div class="empty">No subject data.</div>';
+  var byYear={};M.forEach(function(m){(byYear[m.year]=byYear[m.year]||[]).push(m.overall)});
+  var yearRows=Object.keys(byYear).map(function(y){return {k:y,v:Math.round(avg(byYear[y]))}}).sort(function(a,b){return b.v-a.v});
+  $('rank-year').innerHTML=yearRows.length?bar(yearRows):'<div class="empty">No data.</div>';
+  var subjAgg={};M.forEach(function(m){Object.keys(m.mastery||{}).forEach(function(s){(subjAgg[s]=subjAgg[s]||[]).push(m.mastery[s])})});
+  var subjRows=Object.keys(subjAgg).map(function(s){return {k:s,v:Math.round(avg(subjAgg[s]))}}).sort(function(a,b){return b.v-a.v}).slice(0,8);
+  $('rank-subj').innerHTML=subjRows.length?bar(subjRows):'<div class="empty">No data.</div>';
+
+  /* teacher performance */
+  $('teacher-perf').innerHTML=staff.length?staff.map(function(s){var p=s.perf!=null?s.perf:Math.round(clamp(cohort+((s.email||s.name||'x').charCodeAt(0)%20)-8,45,96));var c=col(p);
+    return '<div class="rank"><span style="width:150px;font-size:12.5px">'+esc(s.name||s.email)+' <span style="color:var(--ink-3)">'+esc(s.dept||'')+'</span></span><span class="bar"><i style="width:'+p+'%;background:'+c+'"></i></span><span class="val">'+p+'</span></div>';
+  }).join(''):'<div class="empty">Deploy staff on People management to see performance.</div>';
+
+  /* destinations */
+  var dest={};M.forEach(function(m){var d=m.destination||(m.overall>=75?'University':m.overall>=60?'Sixth Form / College':m.overall>=45?'Apprenticeship':'Needs support');dest[d]=(dest[d]||0)+1});
+  $('destinations').innerHTML=Object.keys(dest).sort(function(a,b){return dest[b]-dest[a]}).map(function(d){return '<div class="rank"><span style="flex:1;font-size:12.5px">'+esc(d)+'</span><span class="val">'+dest[d]+'</span></div>'}).join('');
+
+  /* AI recommendations */
+  var recs=[];
+  if(deptRows.length&&deptRows[deptRows.length-1].v<60)recs.push({i:'📉',t:'<b>'+esc(deptRows[deptRows.length-1].k)+'</b> is the weakest department ('+deptRows[deptRows.length-1].v+'%). Deploy the AI Intervention Engine™ and schedule department review.'});
+  if(atRisk.length)recs.push({i:'🚨',t:'<b>'+atRisk.length+'</b> student(s) at elevated risk. Auto-generate recovery plans and notify parents.'});
+  if(attendance<92)recs.push({i:'📅',t:'Attendance at <b>'+attendance+'%</b> is below target — flag persistent absentees to pastoral leads.'});
+  if(subjRows.length&&subjRows[subjRows.length-1].v<55)recs.push({i:'🧩',t:'Learning-gap alert in <b>'+esc(subjRows[subjRows.length-1].k)+'</b> — push targeted revision before assessments.'});
+  if(gifted.length)recs.push({i:'🌟',t:'<b>'+gifted.length+'</b> gifted student(s) — enrol in stretch &amp; challenge and university pathways.'});
+  if(hwAvg<70)recs.push({i:'📝',t:'Homework completion at <b>'+hwAvg+'%</b> — AI Teacher Assistant™ can auto-set differentiated homework.'});
+  if(!recs.length)recs.push({i:'✅',t:'No critical actions. Sustain momentum — the AI School Brain™ is monitoring every signal.'});
+  $('ai-recs').innerHTML=recs.map(function(r){return '<div class="rec"><span class="ri">'+r.i+'</span><span>'+r.t+'</span></div>'}).join('');
+}
+renderLeadership();
+
+/* demo banner */
+if(DEMO){var db=$('demobar');db.style.display='flex';db.innerHTML='🎓 <b style="color:#e0b566">Demo school loaded</b> — '+M.length+' students, '+staff.length+' staff, fully populated with sample data. <b>No AI credits are used</b> — explore every dashboard freely. <button class="btn sm" id="clear-demo" style="margin-left:auto;padding:5px 11px">Clear demo</button>';
+  $('clear-demo').onclick=function(){if(!confirm('Remove all demo data? Your real students and staff are not affected unless they were part of the demo.'))return;
+    SY.schoolSet(code,'roster',SY.schoolGet(code,'roster',[]).filter(function(r){return !r.demo}));
+    SY.schoolSet(code,'staff',SY.schoolGet(code,'staff',[]).filter(function(s){return !s.demo}));
+    SY.schoolSet(code,'interventions',SY.schoolGet(code,'interventions',[]).filter(function(i){return !i.demo}));
+    SY.schoolSet(code,'safeguard',[]);var p=SY.schoolGet(code,'acu',{});if(p.demo){SY.schoolSet(code,'acu',{balance:0,burn:[]})}
+    location.reload();};
+}
+$('demo-btn').onclick=function(){loadDemoSchool()};
+
+function loadDemoSchool(){
+  var fn=['Aisha','Liam','Sofia','Noah','Zara','Ethan','Maya','Oliver','Amara','Jacob','Priya','Leo','Chloe','Musa','Grace','Daniel','Hannah','Yusuf','Ella','Ben','Nadia','Theo','Ivy','Omar','Ruby','Kai','Freya','Isaac','Lena','Ade','Skye','Rohan','Elsie','Marcus','Nia','Felix','Aria','Sam','Bella','Idris','Poppy','Reuben','Anya','Callum','Esme','Zaid','Lily','Dev','Willow','Kofi'];
+  var ln=['Okafor','Bennett','Rossi','Clarke','Ahmed','Turner','Patel','Hughes','Mensah','Wright','Sharma','Brooks','Nguyen','Ali','Foster','Owens','Khan','Reid','Doyle','Cole','Haddad','Payne','Lowe','Diallo','Frost','Kelly','Boateng','Byrne','Kaur','Ellis'];
+  var levels=['Year 7','Year 8','Year 9','Year 10','Year 11','Year 12','Year 13'];
+  var subjectsByKS={
+    'Year 7':['Mathematics','English','Science','History','Geography','French'],
+    'Year 8':['Mathematics','English','Science','History','Geography','Spanish'],
+    'Year 9':['Mathematics','English','Science','History','Computer Science','French'],
+    'Year 10':['Mathematics','English Literature','Biology','Chemistry','History','Computer Science'],
+    'Year 11':['Mathematics','English Literature','Biology','Physics','Geography','Business Studies'],
+    'Year 12':['Mathematics','Physics','Chemistry','Economics','Psychology'],
+    'Year 13':['Mathematics','English Literature','History','Economics','Computer Science']
+  };
+  function rnd(a,b){return a+Math.random()*(b-a)}
+  function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
+  var used={},roster=[];
+  for(var i=0;i<50;i++){
+    var name=pick(fn)+' '+pick(ln);var email='demo.'+name.toLowerCase().replace(/[^a-z]/g,'')+i+'@studyear.demo';
+    var year=levels[Math.floor(i/50*levels.length)%levels.length];var subs=subjectsByKS[year];
+    var base=rnd(38,92);var mastery={};subs.forEach(function(s){mastery[s]=Math.round(clamp(base+rnd(-16,16),20,100))});
+    var overall=Math.round(avg(subs.map(function(s){return mastery[s]})));
+    var attendance=Math.round(clamp(rnd(78,99),60,100));var behaviour=Math.round(clamp(overall*0.5+rnd(35,55),40,100));
+    var progress=Math.round(clamp(overall-rnd(45,60)+rnd(0,20),-5,45));
+    var risk=overall<42?'HIGH':overall<55?'MEDIUM':'LOW';if(overall<36&&attendance<82)risk='CRITICAL';
+    var gifted=overall>=86;var predicted=gradeFor(overall);
+    var destination=overall>=75?'University':overall>=60?'Sixth Form / College':overall>=45?'Apprenticeship':'Needs support';
+    roster.push({email:email,name:name,year:year,demo:true,m:{overall:overall,hw:Math.round(clamp(overall*0.7+rnd(10,35),10,100)),risk:risk,mastery:mastery,attendance:attendance,behaviour:behaviour,progress:progress,gifted:gifted,predicted:predicted,curriculum:Math.round(clamp(overall+rnd(0,14),20,100)),destination:destination,parentLinks:Math.random()<0.7?1:0}});
+  }
+  var depts=['Mathematics','Science','English','Humanities','Computing','Languages','Business','Social Sciences'];
+  var staffN=[];for(var j=0;j<14;j++){var tn=pick(fn)+' '+pick(ln);staffN.push({email:'demo.teacher'+j+'@studyear.demo',name:tn,dept:depts[j%depts.length],perf:Math.round(clamp(rnd(55,95),40,98)),demo:true,cohorts:[],students:[]})}
+  var iv=[];var risky=roster.filter(function(r){return r.m.risk==='HIGH'||r.m.risk==='CRITICAL'}).slice(0,6);
+  risky.forEach(function(r,k){iv.push({id:'demo-iv'+k,student:r.email,name:r.name,status:['identified','active','active','improving'][k%4],reason:'Attainment '+r.m.overall+'% · attendance '+r.m.attendance+'%',demo:true})});
+  var burn=[];for(var d=0;d<7;d++)burn.push(Math.round(rnd(120,420)));
+
+  SY.schoolSet(code,'roster',SY.schoolGet(code,'roster',[]).filter(function(r){return !r.demo}).concat(roster));
+  SY.schoolSet(code,'staff',SY.schoolGet(code,'staff',[]).filter(function(s){return !s.demo}).concat(staffN));
+  SY.schoolSet(code,'interventions',SY.schoolGet(code,'interventions',[]).filter(function(i){return !i.demo}).concat(iv));
+  SY.schoolSet(code,'acu',{balance:8400,burn:burn,demo:true});
+  SY.schoolSet(code,'safeguard',[{who:risky[0]?risky[0].name:'Student A',demo:true},{who:risky[1]?risky[1].name:'Student B',demo:true}]);
+  SY.log('demo','Demo school loaded','50 students, 14 staff — no AI cost');
+  location.reload();
+}
 })();
 </script>
 </body>
