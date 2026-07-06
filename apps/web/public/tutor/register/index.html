@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Private Tutor Registration</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--gold-300:#A9CFF2;--gold-500:#3D8FD1;--good:#5CBB7B;--warn:#c98500;--crit:#e66767;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#6B7A96;--line:rgba(77,157,224,.14);--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}body{background:radial-gradient(1200px 700px at 82% -12%,rgba(77,157,224,.13),transparent 60%),var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  .shell{display:flex;min-height:100vh;max-width:1440px;margin:0 auto}
+  aside{width:236px;flex:none;border-right:1px solid var(--line);padding:22px 14px 30px;position:sticky;top:0;align-self:flex-start;max-height:100vh;overflow-y:auto}
+  .slogo{font-family:var(--serif);font-size:19px;color:var(--ink);text-decoration:none;display:block;padding:4px 10px 14px}.slogo b{color:#4FA6E0;font-weight:600}
+  aside nav a{display:block;font-size:13px;color:var(--ink-2);text-decoration:none;padding:8px 10px;border-radius:8px;margin:1px 0}aside nav a:hover{color:var(--gold-300);background:rgba(77,157,224,.08)}aside nav a.on{color:var(--gold-300);background:rgba(77,157,224,.12)}
+  main{flex:1;padding:30px 30px 90px;min-width:0;max-width:920px}@media(max-width:960px){.shell{flex-direction:column}aside{width:100%;position:sticky;top:0;z-index:60;max-height:46vh;overflow-y:auto;background:#060B18;border-right:none;border-bottom:1px solid var(--line)}aside nav{display:flex;flex-wrap:wrap;gap:2px}main{padding:22px 18px 70px}}
+  a{color:inherit}h1{font-family:var(--serif);font-weight:500;font-size:28px}p.lede{color:var(--ink-2);font-weight:300;margin-top:6px;max-width:80ch}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:20px 22px;margin-top:18px;scroll-margin-top:16px}
+  .card h3{font-family:var(--serif);font-weight:500;font-size:17px;display:flex;align-items:center;gap:9px}.card h3 .ix{width:24px;height:24px;border-radius:7px;background:rgba(77,157,224,.16);color:var(--gold-300);display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
+  .card .sub{font-size:12.5px;color:var(--ink-3);margin:5px 0 12px}
+  label.f{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:12px 0 5px}
+  input,select,textarea{width:100%;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:var(--gold-500)}select option{background:#101B33}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:640px){.two{grid-template-columns:1fr}}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12px var(--sans);border-radius:9px;padding:9px 15px;cursor:pointer;text-decoration:none;display:inline-block}.btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}.btn.sm{padding:6px 11px;font-size:11.5px}.btn.ghost{border-color:rgba(170,182,204,.3);background:transparent;color:var(--ink-2)}
+  .verify{border:1px solid rgba(201,133,0,.4);background:rgba(201,133,0,.08);border-radius:12px;padding:11px 15px;font-size:12.5px;color:#e0b566;margin-top:8px}.verify.ok{border-color:rgba(92,187,123,.4);background:rgba(92,187,123,.08);color:#89d3a2}
+  .prog{height:8px;border-radius:5px;background:rgba(170,182,204,.12);overflow:hidden;margin-top:8px}.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-500),var(--good));transition:width .3s}
+  .note{font-size:11.5px;color:var(--ink-3);margin-top:8px}
+  .rail{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+  .rail a{font-size:11px;color:var(--ink-2);text-decoration:none;padding:5px 9px;border:1px solid var(--line);border-radius:20px;background:rgba(6,11,24,.4)}.rail a:hover{color:var(--gold-300);border-color:var(--gold-500)}.rail a.done{color:#89d3a2;border-color:rgba(92,187,123,.35)}.rail a.ess{border-style:dashed}
+  .avatar{width:76px;height:76px;border-radius:16px;flex:none;display:grid;place-items:center;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff;font-weight:700;font-size:26px;overflow:hidden}.avatar img{width:100%;height:100%;object-fit:cover}
+  .photo-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  .togs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}@media(max-width:640px){.togs{grid-template-columns:1fr}}
+  .tog{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:10px;padding:10px 13px;background:rgba(6,11,24,.32);font-size:13px;color:var(--ink)}
+  .tog small{display:block;color:var(--ink-3);font-size:11px;margin-top:1px}
+  .sw{position:relative;width:40px;height:22px;flex:none}.sw input{opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+  .sw span{position:absolute;inset:0;border-radius:20px;background:rgba(170,182,204,.2);transition:.2s;pointer-events:none}.sw span::before{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s}
+  .sw input:checked+span{background:linear-gradient(135deg,#4FA6E0,#2E6BC4)}.sw input:checked+span::before{transform:translateX(18px)}
+  .docs{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:6px}@media(max-width:640px){.docs{grid-template-columns:1fr}}
+  .doc{border:1px solid var(--line);border-radius:11px;padding:12px;background:rgba(6,11,24,.32)}
+  .doc .dn{font-size:12.5px;color:var(--ink);font-weight:600}.doc .ds{font-size:11px;color:var(--ink-3);margin:3px 0 8px}
+  .doc .state{font-size:11.5px;color:var(--good);margin-top:7px;word-break:break-all}.doc .state.none{color:var(--ink-3)}
+  .doc .exp{margin-top:8px}.doc .exp input{font-size:12px;padding:6px 8px}
+  .chip{display:inline-block;font-size:10.5px;color:#89d3a2;border:1px solid rgba(92,187,123,.35);border-radius:20px;padding:2px 9px;margin-left:8px;vertical-align:middle}
+  .agrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-top:6px}@media(max-width:820px){.agrid{grid-template-columns:1fr 1fr}}@media(max-width:560px){.agrid{grid-template-columns:1fr}}
+  .agent{border:1px solid var(--line);border-radius:12px;padding:12px 13px;background:linear-gradient(180deg,rgba(16,27,51,.5),rgba(11,18,32,.7))}
+  .agent .ai-ic{font-size:22px;line-height:1}.agent .an{font-size:13px;font-weight:600;color:var(--ink);margin-top:6px}.agent .ad{font-size:11px;color:var(--ink-3);margin-top:2px}
+  .agent .stat{display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;margin-top:8px;padding:2px 8px;border-radius:20px}
+  .agent .stat.on{color:#89d3a2;border:1px solid rgba(92,187,123,.35);background:rgba(92,187,123,.08)}.agent .stat.off{color:#e0b566;border:1px solid rgba(201,133,0,.35);background:rgba(201,133,0,.08)}
+  .agent .dot{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 6px currentColor}
+  .e2ebadge{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#89d3a2;border:1px solid rgba(92,187,123,.3);background:rgba(92,187,123,.07);border-radius:9px;padding:8px 12px;margin-bottom:12px}.e2ebadge span{font-size:14px}
+  .e2ebar{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;color:#89d3a2;border:1px solid rgba(92,187,123,.3);background:rgba(92,187,123,.07);border-radius:20px;padding:5px 13px;margin-top:12px}
+  /* tier + badges */
+  .tier{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;margin-left:10px;vertical-align:middle}
+  .tier.bronze{color:#d69b6b;background:rgba(214,155,107,.12);border:1px solid rgba(214,155,107,.4)}
+  .tier.silver{color:#c7d0dd;background:rgba(199,208,221,.12);border:1px solid rgba(199,208,221,.4)}
+  .tier.gold{color:#e6c766;background:rgba(230,199,102,.12);border:1px solid rgba(230,199,102,.4)}
+  .tier.platinum{color:#9fd6e6;background:rgba(159,214,230,.14);border:1px solid rgba(159,214,230,.45)}
+  .tier.start{color:var(--ink-3);background:rgba(170,182,204,.08);border:1px solid var(--line)}
+  .badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+  .tbadge{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid;background:rgba(6,11,24,.3)}
+  .tbadge.on{color:#89d3a2;border-color:rgba(92,187,123,.4)}.tbadge.off{color:var(--ink-3);border-color:var(--line);opacity:.6}
+  .concierge{border:1px solid rgba(77,157,224,.3);background:linear-gradient(180deg,rgba(77,157,224,.09),rgba(77,157,224,.04));border-radius:12px;padding:14px 16px;margin-top:14px}
+  .concierge .ch{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:var(--gold-300)}
+  .concierge .cbody{font-size:12.5px;color:var(--ink-2);margin-top:6px}
+  .concierge .cact{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+  .compliance-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12.5px;flex-wrap:wrap}
+  .cstat{font-size:10.5px;padding:2px 9px;border-radius:20px}.cstat.ok{color:#89d3a2;border:1px solid rgba(92,187,123,.4)}.cstat.soon{color:#e0b566;border:1px solid rgba(201,133,0,.4)}.cstat.exp{color:#e66767;border:1px solid rgba(230,103,103,.4)}.cstat.none{color:var(--ink-3);border:1px solid var(--line)}
+  .review{border:1px solid var(--line);border-radius:11px;padding:12px;background:rgba(6,11,24,.32);margin-top:8px}
+  .stars{color:#e6c766;letter-spacing:.05em}
+  .mkt-prev{border:1px solid var(--line);border-radius:12px;padding:14px;background:rgba(6,11,24,.35);margin-top:10px}
+  .tag{display:inline-block;font-size:10.5px;color:var(--gold-300);border:1px solid var(--line);border-radius:20px;padding:2px 8px;margin:2px 3px 0 0}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+  .savebar{position:sticky;bottom:0;margin:22px -30px -90px;padding:14px 30px;background:linear-gradient(0deg,var(--navy-950) 60%,transparent);display:flex;gap:12px;align-items:center;flex-wrap:wrap;z-index:30}@media(max-width:960px){.savebar{margin:22px -18px -70px;padding:14px 18px}}
+</style></head><body>
+<script src="../../guard.js" data-role="tutor" data-base="../../"></script>
+<div class="shell">
+<aside><a class="slogo" href="../../">⌂ Stud<b>Year</b></a><nav>
+  <a href="../../dashboards/tutor/">Command Centre</a><a href="./" class="on">Registration &amp; profile</a><a href="#sec-marketplace">Marketplace &amp; reviews</a><a href="#sec-agents">My AI workforce</a><a href="../../tutors/">Preview marketplace</a><a href="#" id="signout">Sign out</a>
+</nav></aside>
+<main>
+  <h1>Private tutor registration <span class="tier start" id="tier">Getting started</span></h1>
+  <p class="lede">Create your Academic Digital Identity. It publishes your marketplace profile, powers your 15-agent AI workforce, verifies your credentials, and runs your tutoring business end-to-end. Sensitive documents are encrypted on-device.</p>
+  <div class="e2ebar">🔒 End-to-end encrypted OS — your identity &amp; background documents are encrypted on this device</div>
+
+  <div class="card"><h3><span class="ix">✓</span> Registration progress</h3><div class="prog"><i id="setup-bar" style="width:0%"></i></div><div class="note" id="setup-note"></div>
+    <div class="badges" id="badges"></div>
+    <div class="concierge" id="concierge"></div>
+    <div class="rail" id="rail"></div>
+    <div class="verify" id="verify"></div></div>
+
+  <div id="form"></div>
+
+  <div class="savebar"><button class="btn solid" id="save">Save registration</button> <a class="btn ghost" href="../../tutors/">View marketplace →</a><span class="note" id="saved-at"></span></div>
+</main>
+</div>
+<div id="toast"></div>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;var S=SY.session;
+function $(id){return document.getElementById(id)}function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var e=$('toast');e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2600)}
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+
+var data=SY.get('tutorProfile',{});if(!data.email)data.email=S.email;
+
+var TITLES=['Mr','Mrs','Ms','Miss','Mx','Dr','Prof'];
+var GENDERS=['Female','Male','Non-binary','Prefer not to say'];
+var TUTOR_TYPES=['Independent','Agency','University Student','Retired Teacher','Current Teacher'];
+var CURRENCIES=['GBP £','EUR €','USD $','AED د.إ','NGN ₦','Other'];
+var TUTOR_AGENTS=[
+  {k:'assistant',i:'🤖',l:'AI Personal Assistant',d:'Runs your day, inbox & tasks'},
+  {k:'scheduler',i:'🗓️',l:'AI Scheduler',d:'Bookings & calendar',gate:'aiScheduling'},
+  {k:'planner',i:'🧠',l:'AI Lesson Planner',d:'Plans every session',gate:'aiLessonPlanning'},
+  {k:'curriculum',i:'📚',l:'AI Curriculum Designer',d:'Personalised learning paths'},
+  {k:'homework',i:'📝',l:'AI Homework Generator',d:'Sets & tailors homework',gate:'aiHomework'},
+  {k:'exam',i:'📄',l:'AI Exam Creator',d:'Mock papers & practice'},
+  {k:'marker',i:'✅',l:'AI Marker',d:'Marks to exam-board rubric'},
+  {k:'progress',i:'📊',l:'AI Progress Tracker',d:'Tracks & forecasts',gate:'aiProgress'},
+  {k:'parent',i:'👪',l:'AI Parent Communication',d:'Updates & reports',gate:'aiParentReports'},
+  {k:'success',i:'🏅',l:'AI Student Success Coach',d:'Keeps students on track'},
+  {k:'finance',i:'💷',l:'AI Finance & Invoicing',d:'Invoices & payments',gate:'aiInvoice'},
+  {k:'marketing',i:'📣',l:'AI Marketing & Lead Gen',d:'Fills your calendar',gate:'aiMarketing'},
+  {k:'reviews',i:'⭐',l:'AI Review & Reputation',d:'Grows your ratings'},
+  {k:'content',i:'🎬',l:'AI Content Creator',d:'Posts, clips & materials'},
+  {k:'growth',i:'📈',l:'AI Business Growth Advisor',d:'Scales your tutoring business'}
+];
+
+var SECTIONS=[
+ {id:'identity',n:1,t:'Identity',ess:1,s:'Your public tutor identity.',fields:[
+   {k:'title',l:'Title',t:'select',opts:TITLES},{k:'name',l:'Name',t:'text',req:1},
+   {k:'photo',l:'Photo',t:'photo'},{k:'gender',l:'Gender',t:'select',opts:GENDERS},
+   {k:'dob',l:'Date of birth',t:'date'},{k:'nationality',l:'Nationality',t:'text'},
+   {k:'biography',l:'Biography',t:'textarea',w:1},{k:'languages',l:'Languages',t:'text',ph:'Comma separated',w:1}
+ ]},
+ {id:'contact',n:2,t:'Contact',ess:1,s:'How students and StudYear reach you.',fields:[
+   {k:'email',l:'Email',t:'text',req:1,verify:'email'},{k:'phone',l:'Phone',t:'text',verify:'phone'},
+   {k:'address',l:'Address',t:'text',w:1},{k:'country',l:'Country',t:'text'},
+   {k:'timezone',l:'Timezone',t:'text',ph:'Europe/London'},{k:'website',l:'Website',t:'text'},
+   {k:'socialLinks',l:'Social links',t:'text',w:1,ph:'LinkedIn, Instagram, YouTube…'}
+ ]},
+ {id:'professional',n:3,t:'Professional information',ess:1,s:'Your tutoring practice.',fields:[
+   {k:'tutorType',l:'Tutor type',t:'select',opts:TUTOR_TYPES,req:1},
+   {k:'teachingExperience',l:'Teaching experience',t:'text'},
+   {k:'yearsExperience',l:'Years experience',t:'text'},
+   {k:'hourlyRate',l:'Hourly rate',t:'text',ph:'e.g. 45'},
+   {k:'currency',l:'Currency',t:'select',opts:CURRENCIES},
+   {k:'subjects',l:'Subjects',t:'text',ph:'Comma separated',w:1},
+   {k:'yearGroups',l:'Year groups',t:'text'},{k:'examBoards',l:'Exam boards',t:'text'},
+   {k:'teachingStyle',l:'Teaching style',t:'text',w:1},
+   {k:'teachingPhilosophy',l:'Teaching philosophy',t:'textarea',w:1}
+ ]},
+ {id:'delivery',n:4,t:'Delivery',s:'How and where you teach.',type:'toggles',toggles:[
+   {k:'dOnline',l:'Online'},{k:'dHomeVisit',l:'Home visit'},{k:'dStudentHome',l:'Student home'},
+   {k:'dTutorOffice',l:'Tutor office'},{k:'dGroup',l:'Group classes'},{k:'d1to1',l:'1-to-1'},{k:'dHybrid',l:'Hybrid'}
+ ],fields:[
+   {k:'maxTravel',l:'Maximum travel distance',t:'text',ph:'e.g. 10 miles'},
+   {k:'onlinePlatforms',l:'Available online platforms',t:'text',ph:'Zoom, Meet, Teams…'}
+ ]},
+ {id:'qualifications',n:5,t:'Qualifications',s:'Your academic credentials. Uploads are encrypted at rest.',fields:[
+   {k:'degree',l:'Degree',t:'text'},{k:'masters',l:'Masters',t:'text'},{k:'doctorate',l:'Doctorate',t:'text'},
+   {k:'teachingQualification',l:'Teaching qualification',t:'text'},{k:'qts',l:'QTS',t:'text'},
+   {k:'certificates',l:'Certificates',t:'text',w:1},{k:'memberships',l:'Professional memberships',t:'text',w:1},
+   {k:'qualDocs',l:'Upload documents',t:'docs-inline'}
+ ]},
+ {id:'checks',n:6,t:'Background checks',s:'Safety credentials — build parent trust and unlock verified badges.',type:'docs',docs:[
+   {k:'chkDBS',l:'Enhanced DBS',exp:1},{k:'chkPolice',l:'Police clearance',exp:1},
+   {k:'chkIdentity',l:'Identity verification'},{k:'chkAddress',l:'Address verification'},
+   {k:'chkReferences',l:'Reference letters'},{k:'chkSafeguarding',l:'Safeguarding',exp:1},
+   {k:'chkInsurance',l:'Insurance',exp:1}
+ ]},
+ {id:'business',n:7,t:'Business information',s:'Your tutoring business details.',fields:[
+   {k:'businessName',l:'Business name',t:'text'},{k:'companyRegistration',l:'Company registration',t:'text'},
+   {k:'vatNumber',l:'VAT number',t:'text'},{k:'bizInsurance',l:'Insurance',t:'text'},
+   {k:'invoiceDetails',l:'Invoice details',t:'textarea',w:1},{k:'taxNumber',l:'Tax number',t:'text'}
+ ]},
+ {id:'pricing',n:8,t:'Pricing',s:'What you charge and your policies.',fields:[
+   {k:'pHourlyRate',l:'Hourly rate',t:'text'},{k:'packagePricing',l:'Package pricing',t:'textarea',w:1},
+   {k:'discounts',l:'Discounts',t:'text'},{k:'freeTrial',l:'Free trial',t:'text',ph:'e.g. First 30 min free'},
+   {k:'cancellationPolicy',l:'Cancellation policy',t:'textarea',w:1},{k:'travelCharges',l:'Travel charges',t:'text'}
+ ]},
+ {id:'availability',n:9,t:'Availability',s:'When you teach.',fields:[
+   {k:'weeklyCalendar',l:'Weekly calendar',t:'textarea',w:1,ph:'e.g. Mon 16:00–20:00, Sat 09:00–13:00'},
+   {k:'holidayDates',l:'Holiday dates',t:'text'},{k:'maxWeeklyHours',l:'Maximum weekly hours',t:'text'},
+   {k:'preferredAge',l:'Preferred student age',t:'text'},{k:'teachingTimes',l:'Teaching times',t:'text'},
+   {k:'weekendAvailability',l:'Weekend availability',t:'text'}
+ ]},
+ {id:'studentprefs',n:10,t:'Student preferences',s:'Who you teach best.',type:'toggles',toggles:[
+   {k:'spPrimary',l:'Primary'},{k:'spSecondary',l:'Secondary'},{k:'spGCSE',l:'GCSE'},{k:'spALevel',l:'A-Level'},
+   {k:'spUniversity',l:'University'},{k:'spSEND',l:'SEND'},{k:'spAdult',l:'Adult learning'},
+   {k:'spExamPrep',l:'Exam preparation'},{k:'spHomework',l:'Homework support'},{k:'spRevision',l:'Revision'}
+ ]},
+ {id:'technology',n:11,t:'Technology',s:'Your teaching kit.',type:'toggles',toggles:[
+   {k:'tWhiteboard',l:'Digital whiteboard'},{k:'tZoom',l:'Zoom'},{k:'tMeet',l:'Google Meet'},{k:'tTeams',l:'Teams'},
+   {k:'tAiExperience',l:'AI experience'},{k:'tGraphicsTablet',l:'Graphics tablet'},{k:'tDocCamera',l:'Document camera'}
+ ]},
+ {id:'ai',n:12,t:'AI configuration',s:'Choose what your AI workforce may do. Off by default until you enable.',type:'toggles',toggles:[
+   {k:'aiLessonPlanning',l:'AI lesson planning'},{k:'aiHomework',l:'AI homework generator'},
+   {k:'aiProgress',l:'AI progress tracking'},{k:'aiParentReports',l:'AI parent reports'},
+   {k:'aiInvoice',l:'AI invoice generator'},{k:'aiTimetable',l:'AI timetable assistant'},
+   {k:'aiRisk',l:'AI student risk detection'},{k:'aiMarketing',l:'AI marketing assistant'},
+   {k:'aiScheduling',l:'AI scheduling assistant'}
+ ]},
+ {id:'portfolio',n:13,t:'Portfolio',s:'Show students why to choose you.',fields:[
+   {k:'introVideo',l:'Introduction video (URL)',t:'text',w:1},
+   {k:'sampleLessons',l:'Sample lessons',t:'textarea',w:1},
+   {k:'successStories',l:'Success stories',t:'textarea',w:1},
+   {k:'testimonials',l:'Testimonials',t:'textarea',w:1},
+   {k:'caseStudies',l:'Case studies',t:'textarea',w:1},
+   {k:'awards',l:'Awards',t:'text',w:1},
+   {k:'portfolioDocs',l:'Teaching materials',t:'docs-inline'}
+ ]},
+ {id:'performance',n:14,t:'Performance dashboard',s:'Your track record — rating and reviews update live from the marketplace.',type:'performance',fields:[
+   {k:'perfTotalStudents',l:'Total students',t:'text'},{k:'perfHoursTaught',l:'Hours taught',t:'text'},
+   {k:'perfRepeat',l:'Repeat students',t:'text'},{k:'perfCompletion',l:'Completion rate (%)',t:'text'},
+   {k:'perfPassRate',l:'Pass rate (%)',t:'text'},{k:'perfParentSat',l:'Parent satisfaction',t:'text'},
+   {k:'perfResponse',l:'Response time',t:'text'},{k:'perfImprovement',l:'Average improvement',t:'text'}
+ ]},
+ {id:'verification',n:15,t:'Verification',s:'Confirm your identity. Encrypted on-device; submitted to our team for the Verified Tutor badge.',type:'docs',docs:[
+   {k:'vPassport',l:'Passport'},{k:'vDriving',l:'Driving licence'},{k:'vAddress',l:'Proof of address'},
+   {k:'vTeachingQual',l:'Teaching qualification'},{k:'vDBS',l:'Enhanced DBS',exp:1},{k:'vInsurance',l:'Professional insurance',exp:1}
+ ],signature:1},
+ {id:'compliance',n:16,t:'Compliance monitoring',s:'StudYear tracks your mandatory documents and reminds you before anything expires.',type:'compliance'},
+ {id:'marketplace',n:17,t:'Marketplace & reviews',s:'Publish your profile to the student marketplace and see your reviews.',type:'marketplace'},
+ {id:'agents',n:18,t:'My AI workforce',s:'Every tutor receives a 15-agent AI workforce, each operating within the permissions you set in section 12.',type:'agents'}
+];
+
+/* pickers */
+function pick(max,cb){var input=document.createElement('input');input.type='file';input.accept='image/jpeg,image/png,image/webp,image/gif';input.onchange=function(){var f=input.files[0];if(!f)return;if(f.size>6*1024*1024){toast('Max 6 MB');return}if(!/^image\//.test(f.type)){toast('Image files only');return}var img=new Image();img.onload=function(){var sc=Math.min(1,max/Math.max(img.width,img.height));var cv=document.createElement('canvas');cv.width=Math.round(img.width*sc);cv.height=Math.round(img.height*sc);cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);cb(cv.toDataURL('image/jpeg',.85));URL.revokeObjectURL(img.src)};img.src=URL.createObjectURL(f)};input.click()}
+function pickDoc(cb){var input=document.createElement('input');input.type='file';input.accept='application/pdf,image/*';input.onchange=function(){var f=input.files[0];if(!f)return;if(f.size>6*1024*1024){toast('Max 6 MB per document');return}var r=new FileReader();r.onload=function(){cb({name:f.name,type:f.type,data:r.result})};r.readAsDataURL(f)};input.click()}
+
+/* tutor id + marketplace */
+function hash(s){var h=0;for(var i=0;i<s.length;i++){h=((h<<5)-h+s.charCodeAt(i))|0}return h}
+function tutorId(){if(!data.tutorId)data.tutorId='TUT-'+Math.abs(hash((data.email||S.email||'t')+'|'+(data.name||''))).toString(36).toUpperCase();return data.tutorId}
+function reviewsFor(id){try{return JSON.parse(localStorage.getItem('sy-tutor-reviews:'+id))||[]}catch(e){return[]}}
+function avgRating(id){var r=reviewsFor(id);if(!r.length)return null;return r.reduce(function(a,x){return a+(+x.stars||0)},0)/r.length}
+function deliveryList(){var m=[];[['dOnline','Online'],['d1to1','1-to-1'],['dGroup','Group'],['dHomeVisit','Home visit'],['dHybrid','Hybrid']].forEach(function(p){if(data[p[0]])m.push(p[1])});return m}
+function publishTutor(pub){
+  var reg;try{reg=JSON.parse(localStorage.getItem('sy-tutors'))||[]}catch(e){reg=[]}
+  var id=tutorId();reg=reg.filter(function(x){return x.id!==id});
+  if(pub){
+    reg.push({id:id,email:data.email,name:data.name||'Tutor',photo:data.photo||null,
+      head:(data.tutorType||'Tutor')+(data.subjects?' · '+data.subjects.split(',')[0].trim():''),
+      bio:data.biography||data.teachingPhilosophy||'',
+      subs:(data.subjects||'').split(',').map(function(x){return x.trim()}).filter(Boolean),
+      rate:parseFloat(data.hourlyRate||data.pHourlyRate)||0,currency:data.currency||'GBP £',
+      ai:!!(data.aiLessonPlanning||data.tAiExperience),exam:!!(data.spExamPrep||data.examBoards),
+      dbs:!!(data.vDBS||data.chkDBS),avail:data.teachingTimes||data.weeklyCalendar||'Flexible',
+      delivery:deliveryList(),verified:!!data.verified,published:true});
+  }
+  try{localStorage.setItem('sy-tutors',JSON.stringify(reg))}catch(e){}
+  SY.publishCode(id);
+}
+
+/* compliance data (declared before render so section 16 can use it) */
+var COMPLIANCE=[{k:'vDBS',l:'Enhanced DBS'},{k:'chkDBS',l:'DBS (background)'},{k:'vInsurance',l:'Professional insurance'},{k:'chkInsurance',l:'Insurance'},{k:'chkSafeguarding',l:'Safeguarding'},{k:'chkPolice',l:'Police clearance'}];
+function daysUntil(d){if(!d)return null;var t=new Date(d).getTime();if(isNaN(t))return null;return Math.round((t-Date.now())/86400000)}
+
+/* render */
+var form=$('form'),rail=$('rail');
+function initial(s){return((s||'?').trim()[0]||'?').toUpperCase()}
+function renderToggles(card,list){var wrap=el('div','togs');list.forEach(function(tg){var t=el('div','tog');t.appendChild(el('div',null,tg.l+(tg.d?'<small>'+tg.d+'</small>':'')));var sw=el('label','sw');var cb=el('input');cb.type='checkbox';cb.checked=!!data[tg.k];cb.onchange=function(){data[tg.k]=cb.checked;refresh()};sw.appendChild(cb);sw.appendChild(el('span'));t.appendChild(sw);wrap.appendChild(t)});card.appendChild(wrap)}
+function renderFields(card,fields){
+  var grid=el('div','two');
+  fields.forEach(function(fl){
+    if(fl.t==='photo'){var box=el('div');if(fl.w)box.style.gridColumn='1/-1';box.appendChild(el('label','f',fl.l));var pr=el('div','photo-row');var view=el('span','avatar');var val=data[fl.k];if(val)view.innerHTML='<img src="'+val+'">';else view.textContent=initial(data.name||S.name||'T');var up=el('button','btn sm ghost','Upload');up.onclick=function(){pick(512,function(d){data[fl.k]=d;view.innerHTML='<img src="'+d+'">';refresh()})};var rm=el('button','btn sm ghost','Remove');rm.onclick=function(){delete data[fl.k];view.innerHTML='';view.textContent=initial(data.name||S.name||'T')};var btns=el('div');btns.appendChild(up);btns.appendChild(document.createTextNode(' '));btns.appendChild(rm);pr.appendChild(view);pr.appendChild(btns);box.appendChild(pr);grid.appendChild(box);return}
+    if(fl.t==='docs-inline'){var box=el('div');box.style.gridColumn='1/-1';box.appendChild(el('label','f',fl.l));var list=data[fl.k]=data[fl.k]||[];var holder=el('div');function drawDocs(){holder.innerHTML='';list.forEach(function(dd,i){var r=el('div','compliance-row');r.innerHTML='<span style="flex:1">🔒 '+esc(dd.name)+(dd.e2e?' <span class="chip">encrypted</span>':'')+'</span>';var x=el('button','btn sm ghost','Remove');x.onclick=function(){list.splice(i,1);drawDocs();refresh()};r.appendChild(x);holder.appendChild(r)})}drawDocs();var add=el('button','btn sm ghost','Upload document');add.onclick=function(){pickDoc(function(res){SY.encrypt(res.data).then(function(p){list.push({name:res.name,type:res.type,enc:p,e2e:!!(p&&p.e2e)});drawDocs();refresh()})})};box.appendChild(holder);box.appendChild(add);grid.appendChild(box);return}
+    var box=el('div');if(fl.w)box.style.gridColumn='1/-1';var lab=el('label','f',fl.l+(fl.req?' *':''));box.appendChild(lab);var input;
+    if(fl.t==='textarea'){input=el('textarea');input.rows=3}
+    else if(fl.t==='select'){input=el('select');var o0=el('option',null,'Select…');o0.value='';input.appendChild(o0);fl.opts.forEach(function(o){var op=el('option',null,o);op.value=o;input.appendChild(op)})}
+    else{input=el('input');input.type=(fl.t==='date'?'date':'text')}
+    if(fl.ph)input.placeholder=fl.ph;if(data[fl.k]!=null)input.value=data[fl.k];
+    input.oninput=function(){data[fl.k]=input.value;refresh()};input.onchange=function(){data[fl.k]=input.value;refresh()};
+    box.appendChild(input);
+    if(fl.verify){var vwrap=el('div');vwrap.style.marginTop='6px';var vb=el('button','btn sm ghost',(data['verified_'+fl.verify]?'✓ '+fl.verify+' verified':'Verify '+fl.verify));if(data['verified_'+fl.verify])vb.style.color='#89d3a2';vb.onclick=function(){data['verified_'+fl.verify]=true;vb.textContent='✓ '+fl.verify+' verified';vb.style.color='#89d3a2';toast('Verification code sent — auto-confirmed in preview');refresh()};vwrap.appendChild(vb);box.appendChild(vwrap)}
+    grid.appendChild(box);
+  });
+  card.appendChild(grid);
+}
+function renderDocs(card,docs){
+  if(SY.e2eAvailable)card.appendChild(el('div','e2ebadge','<span>🔒</span> End-to-end encrypted · documents are AES-GCM encrypted on this device before storage'));
+  var dg=el('div','docs');
+  docs.forEach(function(dc){
+    var d=el('div','doc');d.appendChild(el('div','dn',dc.l));d.appendChild(el('div','ds','PDF or image · max 6 MB · encrypted at rest'));
+    var btn=el('button','btn sm ghost','Upload');var st=el('div','state none','No file');var cur=data[dc.k];if(cur&&cur.name){st.className='state';st.innerHTML='🔒 '+esc(cur.name)+(cur.e2e?' <span class="chip">encrypted</span>':'')}
+    btn.onclick=function(){pickDoc(function(res){st.className='state';st.textContent='Encrypting…';SY.encrypt(res.data).then(function(p){data[dc.k]={name:res.name,type:res.type,enc:p,e2e:!!(p&&p.e2e),exp:data[dc.k]?data[dc.k].exp:''};st.innerHTML='🔒 '+esc(res.name)+(data[dc.k].e2e?' <span class="chip">encrypted</span>':'');refresh()})})};
+    var rm=el('button','btn sm ghost','Remove');rm.style.marginLeft='7px';rm.onclick=function(){delete data[dc.k];st.className='state none';st.textContent='No file';refresh()};
+    d.appendChild(btn);d.appendChild(rm);d.appendChild(st);
+    if(dc.exp){var exp=el('div','exp');exp.appendChild(el('label','f','Expiry date'));var ei=el('input');ei.type='date';ei.value=(data[dc.k]&&data[dc.k].exp)||'';ei.onchange=function(){data[dc.k]=data[dc.k]||{};data[dc.k].expiryOnly=!data[dc.k].name;data[dc.k].exp=ei.value;refresh()};exp.appendChild(ei);d.appendChild(exp)}
+    dg.appendChild(d);
+  });
+  card.appendChild(dg);
+}
+SECTIONS.forEach(function(sec){
+  var card=el('div','card');card.id='sec-'+sec.id;
+  card.appendChild(el('h3',null,'<span class="ix">'+sec.n+'</span>'+sec.t+(sec.ess?' <span class="chip" style="color:var(--gold-300);border-color:var(--line)">essential</span>':'')));
+  card.appendChild(el('div','sub',sec.s));
+  if(sec.type==='toggles'){renderToggles(card,sec.toggles);if(sec.fields)renderFields(card,sec.fields);form.appendChild(card);return}
+  if(sec.type==='docs'){renderDocs(card,sec.docs);if(sec.signature){var sign=el('div');sign.style.marginTop='14px';sign.appendChild(el('label','f','Digital signature — type your full name to sign'));var si=el('input');si.style.cssText='font-family:var(--serif);font-size:20px';si.placeholder='e.g. Jordan Ellis';si.value=data.signature||'';si.oninput=function(){data.signature=si.value;refresh()};sign.appendChild(si);card.appendChild(sign)}form.appendChild(card);return}
+  if(sec.type==='performance'){
+    var live=el('div','mkt-prev');var ar=avgRating(tutorId());live.innerHTML='<div style="font-size:13px;color:var(--ink-2)">Live from marketplace</div><div style="margin-top:6px"><span class="stars">★</span> <b>'+(ar?ar.toFixed(1):'New')+'</b> <span style="color:var(--ink-3)">· '+reviewsFor(tutorId()).length+' review(s)</span></div>';
+    card.appendChild(live);renderFields(card,sec.fields);form.appendChild(card);return;
+  }
+  if(sec.type==='compliance'){renderCompliance(card);form.appendChild(card);return}
+  if(sec.type==='marketplace'){renderMarketplace(card);form.appendChild(card);return}
+  if(sec.type==='agents'){
+    var ag=el('div','agrid');
+    TUTOR_AGENTS.forEach(function(a){var c=el('div','agent');c.appendChild(el('div','ai-ic',a.i));c.appendChild(el('div','an',a.l));c.appendChild(el('div','ad',a.d));var on=!a.gate||!!data[a.gate];var stt=el('span','stat '+(on?'on':'off'));stt.innerHTML='<span class="dot"></span>'+(on?'Active':'Standby');stt.dataset.gate=a.gate||'';c.appendChild(stt);ag.appendChild(c)});
+    card.appendChild(ag);card.appendChild(el('div','note','Standby agents activate the instant you enable the matching permission in section 12.'));form.appendChild(card);return;
+  }
+  renderFields(card,sec.fields);form.appendChild(card);
+});
+
+/* compliance monitoring */
+function renderCompliance(card){
+  var any=false;
+  COMPLIANCE.forEach(function(c){
+    var doc=data[c.k];if(!doc)return;any=true;
+    var row=el('div','compliance-row');var du=daysUntil(doc.exp);
+    var status,cls;
+    if(!doc.exp){status='no expiry set';cls='none'}
+    else if(du<0){status='EXPIRED '+(-du)+'d ago';cls='exp'}
+    else if(du<=90){status='renew in '+du+'d';cls='soon'}
+    else{status='valid · '+du+'d';cls='ok'}
+    row.innerHTML='<span style="flex:1">'+esc(c.l)+(doc.name?' <span class="chip">on file</span>':'')+'</span><span class="cstat '+cls+'">'+status+'</span>';
+    card.appendChild(row);
+  });
+  if(!any)card.appendChild(el('div','note','Upload background-check and insurance documents (with expiry dates) in sections 6 and 15 — StudYear will monitor them here and remind you before they lapse.'));
+  else card.appendChild(el('div','note','Your AI Compliance monitor reminds you automatically 90 days before any document expires.'));
+}
+/* marketplace + reviews */
+function renderMarketplace(card){
+  var pubWrap=el('div','tog');pubWrap.innerHTML='<div>Publish my profile to the student marketplace<small>Students can find, review and book you at /tutors</small></div>';
+  var sw=el('label','sw');var cb=el('input');cb.type='checkbox';cb.checked=!!data.published;cb.onchange=function(){data.published=cb.checked;publishTutor(cb.checked);SY.set('tutorProfile',data);toast(cb.checked?'Published to marketplace':'Removed from marketplace');renderAll()};sw.appendChild(cb);sw.appendChild(el('span'));pubWrap.appendChild(sw);card.appendChild(pubWrap);
+  /* preview card */
+  var prev=el('div','mkt-prev');var ar=avgRating(tutorId());
+  prev.innerHTML='<div style="display:flex;gap:12px;align-items:center"><span class="avatar" style="width:52px;height:52px;font-size:18px">'+(data.photo?'<img src="'+data.photo+'">':esc(initial(data.name||'T')))+'</span><div><div style="font-weight:600">'+esc(data.name||'Your name')+(data.verified?' <span class="chip">Verified</span>':'')+'</div><div style="font-size:12px;color:var(--ink-3)">'+esc((data.tutorType||'Tutor'))+' · '+(data.currency||'£').replace(/[A-Z]{3}/,'').trim()+esc(data.hourlyRate||data.pHourlyRate||'—')+'/hr · <span class="stars">★</span> '+(ar?ar.toFixed(1):'New')+'</div></div></div>'+
+    '<div style="margin-top:8px;font-size:12.5px;color:var(--ink-2)">'+esc((data.biography||data.teachingPhilosophy||'Add a biography to attract students.').slice(0,140))+'</div>'+
+    '<div style="margin-top:6px">'+(data.subjects||'').split(',').map(function(x){x=x.trim();return x?'<span class="tag">'+esc(x)+'</span>':''}).join('')+deliveryList().map(function(x){return '<span class="tag">'+esc(x)+'</span>'}).join('')+'</div>';
+  card.appendChild(prev);
+  /* reviews */
+  card.appendChild(el('label','f','Reviews'));
+  var rv=reviewsFor(tutorId());
+  if(rv.length){rv.slice(0,6).forEach(function(r){var b=el('div','review');b.innerHTML='<div><span class="stars">'+('★★★★★'.slice(0,r.stars||0))+'</span><span style="color:var(--ink-3)">'+('☆☆☆☆☆'.slice(0,5-(r.stars||0)))+'</span> <b style="font-size:12.5px">'+esc(r.student||'Student')+'</b></div><div style="font-size:12.5px;color:var(--ink-2);margin-top:4px">'+esc(r.text||'')+'</div>';card.appendChild(b)})}
+  else card.appendChild(el('div','note','No reviews yet. Students leave a star rating and review after their sessions — your AI Review & Reputation Manager helps you grow them.'));
+}
+
+/* rail */
+SECTIONS.forEach(function(sec){var a=el('a',sec.ess?'ess':'',sec.n+'. '+sec.t);a.href='#sec-'+sec.id;a.id='rail-'+sec.id;a.onclick=function(e){e.preventDefault();$('sec-'+sec.id).scrollIntoView({behavior:'smooth',block:'start'})};rail.appendChild(a)});
+
+/* completeness tier + badges + concierge */
+function has(v){return typeof v==='string'?v.trim():(v&&v.name?true:v)}
+function allFieldKeys(){var ks=[];SECTIONS.forEach(function(s){(s.fields||[]).forEach(function(f){ks.push(f.k)});(s.toggles||[]).forEach(function(t){ks.push(t.k)});(s.docs||[]).forEach(function(d){ks.push(d.k)})});return ks}
+function fillRatio(){var ks=allFieldKeys();var n=0;ks.forEach(function(k){if(has(data[k]))n++});return ks.length?n/ks.length:0}
+function badgeState(){
+  return {
+    'Verified Tutor':!!(data.verified||(data.signature&&(data.vPassport||data.vDriving))),
+    'Enhanced DBS Verified':!!(data.vDBS||data.chkDBS),
+    'QTS Verified':!!(data.qts||data.vTeachingQual||data.teachingQualification),
+    'Identity Verified':!!(data.vPassport||data.vDriving||data.chkIdentity),
+    'Insured':!!(data.vInsurance||data.bizInsurance||data.chkInsurance)
+  };
+}
+function tierFor(){
+  var r=fillRatio();var bs=badgeState();var verifiedCount=Object.keys(bs).filter(function(k){return bs[k]}).length;
+  if(data.verified&&r>=.85&&verifiedCount>=4)return['platinum','Platinum'];
+  if(r>=.7&&verifiedCount>=2)return['gold','Gold'];
+  if(r>=.45)return['silver','Silver'];
+  if(r>=.2)return['bronze','Bronze'];
+  return['start','Getting started'];
+}
+function nextStep(){
+  var essMissing=null;
+  SECTIONS.forEach(function(s){if(essMissing)return;if(s.ess){var incomplete=(s.fields||[]).some(function(f){return f.req&&!has(data[f.k])});if(incomplete||!(s.fields||[]).some(function(f){return has(data[f.k])}))essMissing=s}});
+  if(essMissing)return{sec:essMissing,why:'Complete your essential details'};
+  if(!(data.vPassport||data.vDriving))return{sec:SECTIONS.find(function(s){return s.id==='verification'}),why:'Verify your identity to earn the Verified Tutor badge'};
+  if(!(data.vDBS||data.chkDBS))return{sec:SECTIONS.find(function(s){return s.id==='checks'}),why:'Add your Enhanced DBS to reassure parents'};
+  if(!data.published)return{sec:SECTIONS.find(function(s){return s.id==='marketplace'}),why:'Publish to the marketplace so students can book you'};
+  return null;
+}
+
+/* progress */
+var REQUIRED=[['name'],['email'],['tutorType']];
+function sectionDone(sec){
+  if(sec.type==='toggles')return sec.toggles.some(function(t){return data[t.k]})||(sec.fields&&sec.fields.some(function(f){return has(data[f.k])}));
+  if(sec.type==='docs')return sec.docs.some(function(d){return data[d.k]&&data[d.k].name});
+  if(sec.type==='agents')return true;
+  if(sec.type==='compliance')return COMPLIANCE.some(function(c){return data[c.k]});
+  if(sec.type==='marketplace')return !!data.published;
+  if(sec.type==='performance')return (sec.fields||[]).some(function(f){return has(data[f.k])});
+  return (sec.fields||[]).some(function(f){return has(data[f.k])});
+}
+function renderBadges(){
+  var bs=badgeState();var wrap=$('badges');wrap.innerHTML='';
+  Object.keys(bs).forEach(function(k){var b=el('span','tbadge '+(bs[k]?'on':'off'),(bs[k]?'✓ ':'○ ')+k);wrap.appendChild(b)});
+}
+function renderConcierge(){
+  var c=$('concierge');var ns=nextStep();var activeAgents=TUTOR_AGENTS.filter(function(a){return !a.gate||data[a.gate]}).length;
+  c.innerHTML='<div class="ch">🧭 AI onboarding concierge</div>'+
+    '<div class="cbody">'+(ns?('<b>Next best step:</b> '+esc(ns.why)+' — <i>'+esc(ns.sec.t)+'</i>.'):'Your Academic Digital Identity is complete and verified — outstanding.')+
+    ' Your AI workforce: <b>'+activeAgents+' of 15</b> active'+(activeAgents<15?' (enable more in AI configuration).':'.')+'</div>'+
+    (ns?'<div class="cact"><button class="btn sm" id="cgo">Take me there</button></div>':'');
+  if(ns){var g=$('cgo');if(g)g.onclick=function(){$('sec-'+ns.sec.id).scrollIntoView({behavior:'smooth',block:'start'})}}
+}
+function refresh(){
+  var filled=0;REQUIRED.forEach(function(r){if(has(data[r[0]]))filled++});
+  var pct=Math.round(100*fillRatio());
+  $('setup-bar').style.width=Math.max(pct,Math.round(100*filled/REQUIRED.length*0.3))+'%';
+  var doneCount=SECTIONS.filter(sectionDone).length;
+  $('setup-note').textContent=pct+'% complete · '+doneCount+' of '+SECTIONS.length+' sections started.';
+  var tr=tierFor();var tEl=$('tier');tEl.className='tier '+tr[0];tEl.textContent=tr[1];
+  SECTIONS.forEach(function(sec){var a=$('rail-'+sec.id);if(a)a.className=(sectionDone(sec)?'done':'')+(sec.ess?' ess':'')});
+  document.querySelectorAll('.agent .stat').forEach(function(st){var g=st.dataset.gate;var on=!g||!!data[g];st.className='stat '+(on?'on':'off');st.innerHTML='<span class="dot"></span>'+(on?'Active':'Standby')});
+  renderBadges();renderConcierge();
+  var v=$('verify');var allReq=REQUIRED.every(function(r){return has(data[r[0]])});
+  if(allReq){v.className='verify ok';v.innerHTML='✓ Core details recorded. Complete verification and publish to start receiving bookings. You can use every feature meanwhile.';}
+  else{v.className='verify';v.innerHTML='⚠ Add your name, email and tutor type to activate your profile.';}
+}
+function renderAll(){/* re-render marketplace preview after publish toggle */refresh();}
+refresh();
+
+/* save */
+$('save').onclick=function(){
+  var name=(data.name||'').trim();if(name.length<2){toast('Enter your name');$('sec-identity').scrollIntoView({behavior:'smooth'});return}
+  if(!data.tutorType){toast('Select your tutor type');$('sec-professional').scrollIntoView({behavior:'smooth'});return}
+  data.name=name;data.updatedAt=new Date().toISOString();
+  var tr=tierFor();data.tier=tr[1];data.verified=!!(data.signature&&(data.vPassport||data.vDriving));
+  tutorId();
+  try{SY.set('tutorProfile',data)}catch(e){toast('Storage full — remove a large upload and retry');return}
+  var profile=SY.get('profile',{});profile.name=name;if(data.photo)profile.photo=data.photo;SY.set('profile',profile);
+  try{var us=JSON.parse(localStorage.getItem('sy-users'))||[];var me=us.find(function(u){return u.email===S.email&&u.role==='tutor'});if(me){me.name=name;localStorage.setItem('sy-users',JSON.stringify(us))}S.name=name;localStorage.setItem('sy-session',JSON.stringify(S))}catch(e){}
+  if(data.published)publishTutor(true);
+  SY.log('profile','Tutor registration saved',name+' · '+tr[1]+' tier');
+  $('saved-at').textContent='Saved '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  toast('Registration saved · '+tr[1]+' tier');refresh();
+};
+})();
+</script>
+</body></html>
