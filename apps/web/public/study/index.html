@@ -128,7 +128,7 @@
   .chatline{display:flex;gap:10px;margin-top:12px}
 
   /* progress */
-  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:16px}
   .tile{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:rgba(16,27,51,.5)}
   .tile .v{font-family:var(--serif);font-size:30px;color:var(--gold-300);line-height:1.1}
   .tile .v small{font-size:14px;color:var(--ink-2);font-family:var(--sans)}
@@ -166,6 +166,7 @@
   <button data-t="papers">📄 Past papers</button>
   <button data-t="create">✍️ Create your own</button>
   <button data-t="tutor">🤖 Tutor bot</button>
+  <button data-t="diag">🩺 Diagnostic</button>
   <button data-t="progress">📈 My progress</button>
 </nav>
 
@@ -247,6 +248,29 @@
   </div>
 </section>
 
+<!-- ============================ DIAGNOSTIC ============================ -->
+<section id="tab-diag">
+  <div class="grid">
+    <div class="card c5">
+      <h3>Academic diagnostic</h3><div class="sub">find exactly what you know, forget and need next — then turn it into a recovery plan</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label class="f">Subject</label><select id="dg-subj"></select></div>
+        <div><label class="f">Level</label><select id="dg-level"></select></div>
+        <div><label class="f">Target grade</label><select id="dg-target"><option>9</option><option>8</option><option selected>7</option><option>6</option><option>5</option><option>4</option></select></div>
+        <div><label class="f">Exam board</label><select id="dg-board"><option>AQA</option><option>CCEA</option><option>CIE</option><option>Edexcel</option><option>OCR</option><option>SQA</option><option>WJEC</option><option>Other</option></select></div>
+      </div>
+      <label class="f" style="margin-top:14px">Rate each topic honestly</label>
+      <div id="dg-topics"></div>
+      <div style="margin-top:14px"><button class="btn" id="dg-run">Run diagnostic →</button></div>
+      <div class="note">Rules-based preview — the AI diagnostic (SY-A04) attaches here when the backend is live.</div>
+    </div>
+    <div class="card c7">
+      <h3>Results &amp; recovery plan</h3><div class="sub" id="dg-sub">complete the panel on the left to see your mastery map, predicted grade and recovery plan</div>
+      <div id="dg-out"></div>
+    </div>
+  </div>
+</section>
+
 <!-- ============================ TUTOR ============================ -->
 <section id="tab-tutor">
   <div class="grid">
@@ -280,6 +304,7 @@
     <div class="tile"><div class="v" id="pt-points">0</div><div class="k">Points earned</div></div>
     <div class="tile"><div class="v" id="pt-quizzes">0</div><div class="k">Quizzes taken</div></div>
     <div class="tile"><div class="v" id="pt-adhere">–</div><div class="k">Plan adherence</div></div>
+    <div class="tile"><div class="v" id="pt-grade">–</div><div class="k">Predicted grade</div></div>
   </div>
   <div class="grid">
     <div class="card c7"><h3>Quiz scores over time</h3><div class="sub">every quiz you finish lands here</div><div id="score-chart"><div class="empty">Take a quiz in 🔎 Find resources to start the chart.</div></div></div>
@@ -678,6 +703,12 @@ function renderProgress(){
   document.getElementById("pt-points").textContent=store.get("points",0).toLocaleString();
   const qz=store.get("quizzes",[]);
   document.getElementById("pt-quizzes").textContent=qz.length;
+  const dg=store.get("diagnostic",null);
+  if(qz.length||dg){
+    const qavg=qz.length?qz.reduce((a,b)=>a+b.pct,0)/qz.length:null;
+    const m=qavg!==null&&dg?Math.round((qavg+dg.avg)/2):Math.round(qavg!==null?qavg:dg.avg);
+    document.getElementById("pt-grade").textContent="Grade "+Math.max(1,Math.min(9,Math.round(1+8*m/100)));
+  }
   const plan=store.get("plan",null);
   if(plan&&plan.plan){
     const total=plan.plan.reduce((a,w)=>a+w.days.length,0);
@@ -704,6 +735,81 @@ function renderProgress(){
     <div class="mrow"><span>${s}</span><div class="bar"><i style="width:${m}%;background:${SUBJ_COLOURS[s]||"#3D8FD1"}"></i></div><span class="pc">${m}%</span></div>`).join("")
     :'<div class="empty">Finish a quiz to see mastery per subject.</div>';
 }
+
+/* ============================ DIAGNOSTIC ============================ */
+const DIAG_TOPICS = {
+ "Mathematics":["Number & proportion","Algebra & quadratics","Geometry & trigonometry","Probability & statistics","Graphs & functions","Problem-solving / exam technique"],
+ "Chemistry":["Atomic structure","Bonding & structure","Quantitative chemistry (moles)","Chemical changes","Energy changes","Organic chemistry"],
+ "Biology":["Cells, tissues and organs","Cellular processes & photosynthesis","DNA, genetics and evolution","Human physiology","Ecology","Required practicals"],
+ "Physics":["Energy","Forces & motion","Electricity","Waves","Magnetism & electromagnetism","Equations & maths skills"],
+ "English Literature":["An Inspector Calls / set text 1","Macbeth / Shakespeare","Poetry anthology","Unseen poetry","Context & themes","Essay technique"],
+ "History":["Medicine through time","Modern Britain","America - 19th/20th century","The Cold War","WWII and Nazi Germany","Source analysis technique"],
+ "Geography":["Natural hazards","Rivers & coasts","Urban issues","Resource management","Fieldwork skills","Case studies"],
+ "Psychology":["Approaches","Memory","Attachment","Psychopathology","Research methods","Issues & debates"],
+ "Computer Science":["Algorithms","Programming","Data representation","Networks","Security","Theory exam technique"],
+ "Economics":["Markets & elasticities","Market failure","Macro objectives","Fiscal & monetary policy","Trade","Data-response technique"]};
+const DIAG_FALLBACK = ["Core concepts","Applying knowledge","Analysis & evaluation","Recall speed","Past-paper fluency","Exam technique"];
+const DG_LABELS = ["No idea","Shaky","OK","Strong"];
+
+fillSelect(document.getElementById("dg-subj"), SUBJECTS);
+fillSelect(document.getElementById("dg-level"), LEVELS);
+document.getElementById("dg-subj").value = "Mathematics";
+document.getElementById("dg-level").value = "GCSE";
+
+function dgTopics(){ return DIAG_TOPICS[document.getElementById("dg-subj").value] || DIAG_FALLBACK }
+function drawDgTopics(){
+  const el = document.getElementById("dg-topics");
+  el.innerHTML = dgTopics().map((t,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;margin:7px 0;flex-wrap:wrap">
+      <span style="flex:1;font-size:13px;min-width:150px">${t}</span>
+      <span class="conf" data-i="${i}">${DG_LABELS.map((l,j)=>`<button data-v="${j}" title="${l}" style="width:auto;padding:0 9px;font-size:11px">${l}</button>`).join("")}</span>
+    </div>`).join("");
+  el.querySelectorAll(".conf").forEach(c=>c.addEventListener("click",e=>{
+    const b=e.target.closest("button"); if(!b) return;
+    c.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+  }));
+}
+drawDgTopics();
+document.getElementById("dg-subj").addEventListener("input", drawDgTopics);
+
+function gradeFor(m){ return Math.max(1, Math.min(9, Math.round(1 + 8*m/100))) }
+
+document.getElementById("dg-run").onclick = () => {
+  const topics = dgTopics();
+  const ratings = [...document.querySelectorAll("#dg-topics .conf")].map(c=>{
+    const on = c.querySelector("button.on"); return on ? +on.dataset.v : null;
+  });
+  if (ratings.some(r=>r===null)) { toast("Rate every topic first"); return; }
+  const subj = document.getElementById("dg-subj").value, target = +document.getElementById("dg-target").value;
+  const mastery = ratings.map(r=>Math.round(100*r/3));
+  const avg = Math.round(mastery.reduce((a,b)=>a+b,0)/mastery.length);
+  const pred = gradeFor(avg);
+  const weak = topics.map((t,i)=>({t,m:mastery[i]})).filter(x=>x.m<60).sort((a,b)=>a.m-b.m);
+  store.set("diagnostic",{subj,target,avg,pred,weak:weak.map(w=>w.t),when:todayKey()});
+  addPoints(25); touchStreak();
+  document.getElementById("dg-sub").textContent = subj+" · predicted vs target · recovery plan built from your weakest topics";
+  document.getElementById("dg-out").innerHTML = `
+    <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
+      <div class="tile"><div class="v">${avg}%</div><div class="k">Overall mastery</div></div>
+      <div class="tile"><div class="v">Grade ${pred}</div><div class="k">Predicted now</div></div>
+      <div class="tile"><div class="v" style="color:${pred>=target?"var(--good)":"var(--warn)"}">${pred>=target?"On target":"Gap: "+(target-pred)}</div><div class="k">Target · Grade ${target}</div></div>
+    </div>
+    ${topics.map((t,i)=>`<div class="mrow"><span>${t}</span><div class="bar"><i style="width:${mastery[i]}%;background:${mastery[i]<60?"var(--crit)":mastery[i]<80?"var(--warn)":"var(--good)"}"></i></div><span class="pc">${mastery[i]}%</span></div>`).join("")}
+    ${weak.length?`<h3 style="color:var(--gold-300);font-family:var(--serif);font-weight:500;font-size:17px;margin:16px 0 6px">Recovery plan — ${weak.length} weak topic${weak.length>1?"s":""}</h3>
+      ${weak.map((w,i)=>`<div style="font-size:13.5px;color:var(--ink-2);padding:5px 0">${i+1}. <b style="color:var(--ink)">${w.t}</b> — 15-min rescue lesson + flashcards + retest (${w.m}% → aim 70%+)</div>`).join("")}
+      <div style="margin-top:12px"><button class="btn" id="dg-plan">Add recovery week to my study plan →</button></div>`
+      :`<p class="note">No topics under 60% — you're exam-ready. Keep the streak going with past papers.</p>`}`;
+  const btn=document.getElementById("dg-plan");
+  if(btn) btn.onclick=()=>{
+    const saved = store.get("plan",{plan:[],done:{}});
+    const week = { n:(saved.plan&&saved.plan.length?saved.plan[saved.plan.length-1].n+1:1), days:
+      weak.slice(0,7).concat(weak.slice(0, Math.max(0,5-weak.length))).slice(0,5).map((w,i)=>(
+        {d:["Mon","Tue","Wed","Thu","Fri"][i], subj:subj, time:"19:00", mins:40, mode:"RECOVERY · "+w.t}))};
+    saved.plan=(saved.plan||[]).concat([week]); store.set("plan",saved);
+    renderPlan(); addPoints(10);
+    toast("Recovery week added — see 🗓 Study planner");
+  };
+};
 
 /* ============================ MISC ============================ */
 let toastTimer;

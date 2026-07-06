@@ -20,6 +20,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body style={{ margin: 0, background: '#060B18', color: '#EDF1F8', fontFamily: 'system-ui, sans-serif' }}>
         {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if('serviceWorker' in navigator)navigator.serviceWorker.register('${BASE}/sw.js',{scope:'${BASE}/'}).catch(function(){});`,
+          }}
+        />
       </body>
     </html>
   );
