@@ -184,6 +184,14 @@
     </div>
   </div>
 
+  <div class="sec-title">World-Class School Dashboard — Live School Performance</div>
+  <div class="grid">
+    <div class="card c6"><h3>Attainment gaps</h3><div class="sub">Every group tracked — close the gap, raise the school (SEND · Pupil Premium · EAL · gender)</div><div id="gaps"></div></div>
+    <div class="card c6"><h3>Core progress</h3><div class="sub">Reading age, writing, maths &amp; predicted grades</div><div id="core-prog"></div></div>
+    <div class="card c6"><h3>Readiness</h3><div class="sub">Career · university · apprenticeship · employment</div><div id="readiness"></div></div>
+    <div class="card c6"><h3>Engagement &amp; wellbeing</h3><div class="sub">Homework, parental engagement &amp; mental wellbeing</div><div id="engage"></div></div>
+  </div>
+
   <div class="grid" style="margin-top:16px">
     <div class="card c6">
       <h3>People management</h3><div class="sub">Invite teachers, link students, assign cohorts — one page</div>
@@ -549,6 +557,47 @@ function renderBenchmark(){
 }
 $('bm-scope').onchange=renderBenchmark;renderBenchmark();
 
+/* ============ Live School Performance (demographic gaps + readiness) ============ */
+function renderPerformance(){
+  if(!M.length){['gaps','core-prog','readiness','engage'].forEach(function(id){var e=$(id);if(e)e.innerHTML='<div class="empty">Load the demo school or link students.</div>'});return}
+  function gap(label,flag){
+    var yes=M.filter(flag),no=M.filter(function(m){return !flag(m)});
+    var ya=yes.length?Math.round(avg(yes.map(function(m){return m.overall}))):null;
+    var na=no.length?Math.round(avg(no.map(function(m){return m.overall}))):null;
+    if(ya==null||na==null)return '';
+    var g=na-ya;var c=g<=6?'var(--good)':g<=14?'var(--warn)':'var(--crit)';
+    return '<div class="rank"><span style="width:130px;font-size:12.5px">'+label+' <span style="color:var(--ink-3)">('+yes.length+')</span></span>'+
+      '<span class="bar"><i style="width:'+ya+'%;background:'+col(ya)+'"></i></span><span class="val" style="width:78px">'+ya+'% <span style="color:'+c+'">▼'+g+'</span></span></div>';
+  }
+  $('gaps').innerHTML=
+    gap('SEND',function(m){return m.send})+
+    gap('Pupil Premium',function(m){return m.pp})+
+    gap('EAL',function(m){return m.eal})+
+    gap('Female',function(m){return m.gender==='Female'})+
+    gap('Male',function(m){return m.gender==='Male'})+
+    '<div class="note" style="margin-top:6px">▼ = gap vs the rest of the cohort. Smaller is fairer.</div>';
+  var readAvg=avg(M.map(function(m){return fld(m,'readingAge',12)}));
+  var writeAvg=Math.round(avg(M.map(function(m){return fld(m,'writing',m.overall)})));
+  var mathAvg=Math.round(avg(M.map(function(m){return fld(m,'maths',m.overall)})));
+  var gcsePool=M.filter(function(m){return /9|10|11/.test(''+m.year)}),alPool=M.filter(function(m){return /12|13/.test(''+m.year)});
+  var gcsePred=gcsePool.length?Math.round(avg(gcsePool.map(function(m){return fld(m,'predicted',gradeFor(m.overall))}))):null;
+  var alPred=alPool.length?Math.round(avg(alPool.map(function(m){return clamp(Math.round(m.overall/20),1,5)}))):null;
+  function row(label,val,unit,pct){return '<div class="rank"><span style="width:150px;font-size:12.5px">'+label+'</span><span class="bar"><i style="width:'+clamp(pct,0,100)+'%;background:'+col(pct)+'"></i></span><span class="val" style="width:70px">'+val+(unit||'')+'</span></div>'}
+  $('core-prog').innerHTML=
+    row('Reading age (avg)',readAvg.toFixed(1),' yrs',clamp(readAvg/18*100,0,100))+
+    row('Writing progress',writeAvg,'%',writeAvg)+
+    row('Maths progress',mathAvg,'%',mathAvg)+
+    (gcsePred!=null?row('GCSE prediction (avg)','≈'+gcsePred,'',gcsePred/9*100):'')+
+    (alPred!=null?row('A-Level prediction','≈'+['','E','D','C','B','A'][alPred],'',alPred/5*100):'');
+  var uni=Math.round(100*M.filter(function(m){return m.destination==='University'||m.overall>=72}).length/M.length);
+  var appr=Math.round(100*M.filter(function(m){return m.destination==='Apprenticeship'||(m.overall>=48&&m.overall<72)}).length/M.length);
+  var career=Math.round(clamp((uni+appr)/2+8,0,100));var employ=Math.round(clamp(60+avg(M.map(function(m){return m.behaviour||80}))*0.3,0,100));
+  $('readiness').innerHTML=row('University-ready',uni,'%',uni)+row('Apprenticeship-ready',appr,'%',appr)+row('Career-ready',career,'%',career)+row('Employment-ready',employ,'%',employ);
+  var hw=Math.round(avg(M.map(function(m){return m.hw||0})));var peng=Math.round(avg(M.map(function(m){return fld(m,'parentEngage',60)})));var well=Math.round(avg(M.map(function(m){return fld(m,'wellbeing',72)})));
+  $('engage').innerHTML=row('Homework completion',hw,'%',hw)+row('Parental engagement',peng,'%',peng)+row('Mental wellbeing',well,'%',well);
+}
+renderPerformance();
+
 /* ============ World-Class School Certification ============ */
 var CERT_LEVELS=[
   {k:'Diamond',min:88,c:'#9fd6e6',d:'Among the highest-performing StudYear schools globally — academic excellence, innovation, wellbeing &amp; future readiness.'},
@@ -613,7 +662,11 @@ function loadDemoSchool(){
     var risk=overall<42?'HIGH':overall<55?'MEDIUM':'LOW';if(overall<36&&attendance<82)risk='CRITICAL';
     var gifted=overall>=86;var predicted=gradeFor(overall);
     var destination=overall>=75?'University':overall>=60?'Sixth Form / College':overall>=45?'Apprenticeship':'Needs support';
-    roster.push({email:email,name:name,year:year,demo:true,m:{overall:overall,hw:Math.round(clamp(overall*0.7+rnd(10,35),10,100)),risk:risk,mastery:mastery,attendance:attendance,behaviour:behaviour,progress:progress,gifted:gifted,predicted:predicted,curriculum:Math.round(clamp(overall+rnd(0,14),20,100)),destination:destination,parentLinks:Math.random()<0.7?1:0}});
+    var gender=Math.random()<0.49?'Female':'Male';var send=Math.random()<0.14;var pp=Math.random()<0.25;var eal=Math.random()<0.12;
+    var yrNum=parseInt((year.match(/\d+/)||[7])[0],10);
+    var readingAge=Math.round(clamp(yrNum+5+ (overall-60)/12 + rnd(-1.2,1.2),6,19)*10)/10;
+    roster.push({email:email,name:name,year:year,demo:true,m:{overall:overall,hw:Math.round(clamp(overall*0.7+rnd(10,35),10,100)),risk:risk,mastery:mastery,attendance:attendance,behaviour:behaviour,progress:progress,gifted:gifted,predicted:predicted,curriculum:Math.round(clamp(overall+rnd(0,14),20,100)),destination:destination,parentLinks:Math.random()<0.7?1:0,
+      gender:gender,send:send,pp:pp,eal:eal,readingAge:readingAge,writing:Math.round(clamp(overall+rnd(-10,8),15,100)),maths:mastery['Mathematics']||overall,parentEngage:Math.round(clamp((Math.random()<0.7?1:0)*40+overall*0.5+rnd(0,20),10,100)),wellbeing:Math.round(clamp(behaviour+rnd(-8,10),30,100))}});
   }
   var depts=['Mathematics','Science','English','Humanities','Computing','Languages','Business','Social Sciences'];
   var staffN=[];for(var j=0;j<14;j++){var tn=pick(fn)+' '+pick(ln);staffN.push({email:'demo.teacher'+j+'@studyear.demo',name:tn,dept:depts[j%depts.length],perf:Math.round(clamp(rnd(55,95),40,98)),demo:true,cohorts:[],students:[]})}
