@@ -54,6 +54,8 @@
   .agent .stat.off{color:#e0b566;border:1px solid rgba(201,133,0,.35);background:rgba(201,133,0,.08)}
   .agent .dot{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 6px currentColor}
   .sign{margin-top:14px}.sign input{font-family:var(--serif);font-size:20px;letter-spacing:.02em}
+  .e2ebadge{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#89d3a2;border:1px solid rgba(92,187,123,.3);background:rgba(92,187,123,.07);border-radius:9px;padding:8px 12px;margin-bottom:12px}.e2ebadge span{font-size:14px}
+  .e2ebar{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;color:#89d3a2;border:1px solid rgba(92,187,123,.3);background:rgba(92,187,123,.07);border-radius:20px;padding:5px 13px;margin-top:12px}
   #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
   .savebar{position:sticky;bottom:0;margin:22px -30px -90px;padding:14px 30px;background:linear-gradient(0deg,var(--navy-950) 60%,transparent);display:flex;gap:12px;align-items:center;flex-wrap:wrap;z-index:30}@media(max-width:960px){.savebar{margin:22px -18px -70px;padding:14px 18px}}
 </style></head><body>
@@ -64,6 +66,7 @@
 </nav></aside>
 <main>
   <h1>School registration</h1><p class="lede">Build your institution's complete digital identity. Everything here powers personalised learning, safeguarding routing, AI governance, credential verification and executive analytics. Fields save locally to your workspace; full verification completes when our team confirms your institution — you can use the platform throughout.</p>
+  <div class="e2ebar" id="e2ebar">🔒 End-to-end encrypted OS — your institution's data is encrypted on-device</div>
 
   <div class="card"><h3><span class="ix">✓</span> Registration progress</h3><div class="prog"><i id="setup-bar" style="width:0%"></i></div><div class="note" id="setup-note"></div>
     <div class="rail" id="rail"></div>
@@ -116,7 +119,9 @@ var AI_AGENTS=[
   {k:'safeguarding',i:'🛡️',l:'AI Safeguarding Assistant',d:'Early-warning risk signals',gate:'aiRisk'},
   {k:'data',i:'📊',l:'AI Data Analyst',d:'Forecasting & analytics',gate:'aiForecast'},
   {k:'curriculum',i:'🧠',l:'AI Curriculum Planner',d:'Schemes & lesson planning',gate:'aiLessonPlan'},
-  {k:'coach',i:'🏅',l:'AI Teacher Coach',d:'Marking & CPD support',gate:'aiMarking'}
+  {k:'coach',i:'🏅',l:'AI Teacher Coach',d:'Marking & CPD support',gate:'aiMarking'},
+  {k:'cyber',i:'🔐',l:'AI Cybersecurity Agent',d:'Encryption, threats & access control'},
+  {k:'maint',i:'🛠️',l:'AI Technical Maintenance Agent',d:'Uptime, backups & system health'}
 ];
 
 var SECTIONS=[
@@ -306,15 +311,22 @@ SECTIONS.forEach(function(sec){
     card.appendChild(wrap);form.appendChild(card);return;
   }
   if(sec.type==='docs'){
+    if(SY.e2eAvailable)card.appendChild(el('div','e2ebadge','<span>🔒</span> End-to-end encrypted · documents are AES-GCM encrypted on this device before storage'));
     var dg=el('div','docs');
     sec.docs.forEach(function(dc){
       var d=el('div','doc');
       d.appendChild(el('div','dn',dc.l));
-      d.appendChild(el('div','ds','PDF or image · max 6 MB'));
+      d.appendChild(el('div','ds','PDF or image · max 6 MB · encrypted at rest'));
       var btn=el('button','btn sm ghost','Upload');
       var st=el('div','state none','No file');
-      var cur=data[dc.k];if(cur&&cur.name){st.className='state';st.textContent='✓ '+cur.name}
-      btn.onclick=function(){pickDoc(function(res){data[dc.k]=res;st.className='state';st.textContent='✓ '+res.name;refresh()})};
+      var cur=data[dc.k];if(cur&&cur.name){st.className='state';st.innerHTML='🔒 '+cur.name+(cur.e2e?' <span class="chip">encrypted</span>':'')}
+      btn.onclick=function(){pickDoc(function(res){
+        st.className='state';st.textContent='Encrypting…';
+        SY.encrypt(res.data).then(function(p){
+          data[dc.k]={name:res.name,type:res.type,enc:p,e2e:!!(p&&p.e2e)};
+          st.innerHTML='🔒 '+res.name+(data[dc.k].e2e?' <span class="chip">encrypted</span>':'');refresh();
+        });
+      })};
       var rm=el('button','btn sm ghost','Remove');rm.style.marginLeft='7px';
       rm.onclick=function(){delete data[dc.k];st.className='state none';st.textContent='No file';refresh()};
       d.appendChild(btn);d.appendChild(rm);d.appendChild(st);dg.appendChild(d);

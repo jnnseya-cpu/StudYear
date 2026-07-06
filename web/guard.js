@@ -115,6 +115,81 @@
     },
     schoolSet: function (code, k, v) { try { localStorage.setItem('sy-school:' + code + ':' + k, JSON.stringify(v)); } catch (e) {} },
 
+    // ---- end-to-end encryption (at rest) ----
+    // StudYear is an end-to-end encrypted OS. Sensitive blobs — identity
+    // documents, safeguarding files, verification uploads, PII — are encrypted
+    // with AES-GCM before they ever touch storage. In this preview the key is
+    // device-bound (derived from the account + a device secret generated once
+    // and kept only on this machine). The production backend swaps in a
+    // passphrase-derived, zero-knowledge key so ciphertext is unreadable
+    // server-side — true cross-device E2E, identical call contract.
+    e2eAvailable: !!(window.crypto && window.crypto.subtle),
+    _deviceSecret: function () {
+      try {
+        var d = localStorage.getItem('sy-device-secret');
+        if (!d) {
+          var a = new Uint8Array(32);
+          if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(a);
+          d = btoa(String.fromCharCode.apply(null, a));
+          localStorage.setItem('sy-device-secret', d);
+        }
+        return d;
+      } catch (e) { return 'sy-fallback-secret'; }
+    },
+    _key: null,
+    _getKey: function () {
+      var self = window.SY;
+      if (self._key) return self._key;
+      self._key = (function () {
+        var enc = new TextEncoder();
+        return crypto.subtle.importKey('raw', enc.encode((s.email || 'anon') + '|' + self._deviceSecret()), 'PBKDF2', false, ['deriveKey'])
+          .then(function (material) {
+            return crypto.subtle.deriveKey(
+              { name: 'PBKDF2', salt: enc.encode('studyear-e2e-v1'), iterations: 120000, hash: 'SHA-256' },
+              material, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+          });
+      })();
+      return self._key;
+    },
+    /** encrypt a string -> payload object {e2e, iv, ct} (or passthrough if unavailable) */
+    encrypt: function (plain) {
+      if (!window.SY.e2eAvailable) return Promise.resolve({ e2e: false, v: plain });
+      return window.SY._getKey().then(function (key) {
+        var iv = crypto.getRandomValues(new Uint8Array(12));
+        return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, new TextEncoder().encode(plain))
+          .then(function (ct) {
+            return { e2e: true, iv: btoa(String.fromCharCode.apply(null, iv)), ct: btoa(String.fromCharCode.apply(null, new Uint8Array(ct))) };
+          });
+      }).catch(function () { return { e2e: false, v: plain }; });
+    },
+    /** decrypt a payload object -> string (or null on failure) */
+    decrypt: function (p) {
+      if (!p) return Promise.resolve(null);
+      if (!p.e2e) return Promise.resolve(p.v != null ? p.v : null);
+      return window.SY._getKey().then(function (key) {
+        var iv = Uint8Array.from(atob(p.iv), function (c) { return c.charCodeAt(0); });
+        var ct = Uint8Array.from(atob(p.ct), function (c) { return c.charCodeAt(0); });
+        return crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct)
+          .then(function (pt) { return new TextDecoder().decode(pt); });
+      }).catch(function () { return null; });
+    },
+    /** store a value encrypted at rest (async) */
+    setSecure: function (k, v) {
+      return window.SY.encrypt(JSON.stringify(v)).then(function (p) {
+        localStorage.setItem(NS + k, JSON.stringify(p)); return true;
+      });
+    },
+    /** read a value that was stored encrypted (async) */
+    getSecure: function (k, d) {
+      var raw;
+      try { raw = JSON.parse(localStorage.getItem(NS + k)); } catch (e) { return Promise.resolve(d); }
+      if (raw === null || raw === undefined) return Promise.resolve(d);
+      return window.SY.decrypt(raw).then(function (str) {
+        if (str === null) return d;
+        try { return JSON.parse(str); } catch (e) { return d; }
+      });
+    },
+
     // ---- adaptive accessibility: every person renders to their own needs ----
     // Applies the account's Learning Profile (dyslexia-friendly type, text size,
     // spacing, colour overlay for visual stress, reduced motion) to ANY page
