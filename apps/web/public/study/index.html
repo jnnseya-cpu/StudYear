@@ -94,6 +94,39 @@
   .notes-body ul{margin:6px 0 6px 20px}
   .notes-body b{color:var(--ink)}
 
+  /* timeline viewer */
+  .tl{position:relative;margin:14px 0 4px;padding-left:26px}
+  .tl:before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:rgba(77,157,224,.35)}
+  .tl .ev{position:relative;margin-bottom:15px}
+  .tl .ev:before{content:"";position:absolute;left:-22px;top:6px;width:9px;height:9px;border-radius:50%;background:var(--gold-500)}
+  .tl .yr{font-family:var(--serif);color:var(--gold-300);font-size:15.5px}
+  .tl .tx{font-size:13.5px;color:var(--ink-2)}
+
+  /* crossword viewer */
+  .cw-clue{display:flex;align-items:center;gap:10px;margin:9px 0;flex-wrap:wrap}
+  .cw-clue .c{flex:1;font-size:13.5px;color:var(--ink-2);min-width:220px}
+  .cw-clue input{width:auto;max-width:200px;text-transform:uppercase;letter-spacing:.3em;font-family:monospace}
+  .cw-clue.right input{border-color:var(--good)}
+  .cw-clue.wrong input{border-color:var(--crit)}
+  .cw-clue .len{font-size:11px;color:var(--ink-3);min-width:20px}
+
+  /* swot viewer */
+  .swot{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+  .swot .qd{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:rgba(6,11,24,.5)}
+  .swot .qd h5{font-size:11px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:8px}
+  .swot .qd ul{margin:0 0 0 18px;font-size:13px;color:var(--ink-2)}
+  .swot .qd li{margin:4px 0}
+  .swot .s h5{color:var(--good)} .swot .w h5{color:var(--crit)}
+  .swot .o h5{color:var(--gold-400)} .swot .t h5{color:var(--warn)}
+
+  /* table / grid viewer */
+  table.dt{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:12px}
+  table.dt th{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-400);text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+  table.dt td{padding:8px;border-bottom:1px solid rgba(170,182,204,.08);color:var(--ink-2);vertical-align:top}
+
+  /* character analysis viewer */
+  .chq{border-left:2px solid var(--gold-500);padding:4px 12px;margin:8px 0;font-style:italic;color:var(--gold-300);font-family:var(--serif);font-size:14.5px}
+
   /* planner */
   .plan-week{margin-top:18px}
   .plan-week h4{font-family:var(--serif);font-weight:500;font-size:18px;color:var(--gold-300);margin-bottom:8px}
@@ -156,7 +189,7 @@
   <div class="k"><a href="../" style="color:inherit;text-decoration:none">⌂ StudYear</a> · Study Workspace · <a href="../app/" style="color:inherit;text-decoration:none">Open the OS →</a></div>
   <h1>Search it. Plan it. Practise it. Track it.</h1>
   <p>The complete Get-Revising-class toolset: a searchable library of revision resources across every UK level,
-     a personal study planner built in under five minutes, a past-papers locator, your own resource maker,
+     a personal study planner built in under five minutes, a past-papers locator, eight resource makers — flashcards to crosswords, timelines and SWOTs,
      an always-on tutor, and live progress tracking. Everything below is interactive.</p>
 </header>
 
@@ -244,6 +277,88 @@
       <textarea id="c-n-body" rows="7" placeholder="Write or paste your notes…"></textarea>
       <div style="margin-top:12px"><button class="btn" id="c-n-save">Save notes to library</button></div>
       <div class="note">Your creations appear in 🔎 Find resources with a green “mine” badge, stored locally in this browser.</div>
+    </div>
+
+    <div class="card c6">
+      <h3>Create a quiz</h3><div class="sub">one question per line — question :: correct answer :: wrong :: wrong (up to 3 wrong answers)</div>
+      <label class="f">Quiz title</label><input type="text" id="c-q-title" placeholder="e.g. Circulatory system check">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div><label class="f">Subject</label><select id="c-q-subj"></select></div>
+        <div><label class="f">Level</label><select id="c-q-level"></select></div>
+      </div>
+      <label class="f" style="margin-top:10px">Questions</label>
+      <textarea id="c-q-qs" rows="7" placeholder="What carries oxygen in blood? :: red blood cells :: white blood cells :: platelets&#10;Which side of the heart pumps to the lungs? :: right :: left"></textarea>
+      <div style="margin-top:12px"><button class="btn" id="c-q-save">Save quiz to library</button></div>
+      <div class="note">Answer order is shuffled automatically — the correct one is never always first.</div>
+    </div>
+
+    <div class="card c6">
+      <h3>Create a timeline</h3><div class="sub">one event per line — year or date :: what happened</div>
+      <label class="f">Timeline title</label><input type="text" id="c-t-title" placeholder="e.g. Road to WW2">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div><label class="f">Subject</label><select id="c-t-subj"></select></div>
+        <div><label class="f">Level</label><select id="c-t-level"></select></div>
+      </div>
+      <label class="f" style="margin-top:10px">Events</label>
+      <textarea id="c-t-events" rows="7" placeholder="1933 :: Hitler becomes Chancellor&#10;1936 :: Remilitarisation of the Rhineland&#10;1938 :: Munich Agreement — appeasement peaks"></textarea>
+      <div style="margin-top:12px"><button class="btn" id="c-t-save">Save timeline to library</button></div>
+    </div>
+
+    <div class="card c6">
+      <h3>Create a crossword</h3><div class="sub">one clue per line — clue :: ANSWER (letters/numbers only, no spaces)</div>
+      <label class="f">Crossword title</label><input type="text" id="c-x-title" placeholder="e.g. Chemistry key terms">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div><label class="f">Subject</label><select id="c-x-subj"></select></div>
+        <div><label class="f">Level</label><select id="c-x-level"></select></div>
+      </div>
+      <label class="f" style="margin-top:10px">Clues</label>
+      <textarea id="c-x-clues" rows="7" placeholder="Positive ion :: CATION&#10;Sharing a pair of electrons :: COVALENT"></textarea>
+      <div style="margin-top:12px"><button class="btn" id="c-x-save">Save crossword to library</button></div>
+    </div>
+
+    <div class="card c6">
+      <h3>Create a comparison table</h3><div class="sub">pick the table type; one row per line — left column :: right column</div>
+      <label class="f">Table title</label><input type="text" id="c-b-title" placeholder="e.g. Aerobic vs anaerobic respiration">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div><label class="f">Table type</label><select id="c-b-type"><option>Compare and contrast table</option><option>Advantages and disadvantages table</option><option>Causes and effects table</option></select></div>
+        <div><label class="f">Subject</label><select id="c-b-subj"></select></div>
+        <div><label class="f">Level</label><select id="c-b-level"></select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div><label class="f">Left column heading</label><input type="text" id="c-b-col1" value="Aerobic"></div>
+        <div><label class="f">Right column heading</label><input type="text" id="c-b-col2" value="Anaerobic"></div>
+      </div>
+      <label class="f" style="margin-top:10px">Rows</label>
+      <textarea id="c-b-rows" rows="6" placeholder="Uses oxygen :: No oxygen needed&#10;Lots of ATP :: Little ATP + lactic acid"></textarea>
+      <div style="margin-top:12px"><button class="btn" id="c-b-save">Save table to library</button></div>
+    </div>
+
+    <div class="card c6">
+      <h3>Create a SWOT analysis</h3><div class="sub">one point per line in each box — great for Business, Geography and case studies</div>
+      <label class="f">SWOT title</label><input type="text" id="c-s-title" placeholder="e.g. SWOT — my coursework business idea">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div><label class="f">Subject</label><select id="c-s-subj"></select></div>
+        <div><label class="f">Level</label><select id="c-s-level"></select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div><label class="f">Strengths</label><textarea id="c-s-s" rows="4" placeholder="one per line"></textarea></div>
+        <div><label class="f">Weaknesses</label><textarea id="c-s-w" rows="4" placeholder="one per line"></textarea></div>
+        <div><label class="f">Opportunities</label><textarea id="c-s-o" rows="4" placeholder="one per line"></textarea></div>
+        <div><label class="f">Threats</label><textarea id="c-s-t" rows="4" placeholder="one per line"></textarea></div>
+      </div>
+      <div style="margin-top:12px"><button class="btn" id="c-s-save">Save SWOT to library</button></div>
+    </div>
+
+    <div class="card c6">
+      <h3>Create a mindmap</h3><div class="sub">one branch per line — Branch name :: leaf, leaf, leaf</div>
+      <label class="f">Centre (the big idea)</label><input type="text" id="c-m-title" placeholder="e.g. THE HEART">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div><label class="f">Subject</label><select id="c-m-subj"></select></div>
+        <div><label class="f">Level</label><select id="c-m-level"></select></div>
+      </div>
+      <label class="f" style="margin-top:10px">Branches</label>
+      <textarea id="c-m-branches" rows="6" placeholder="Structure :: 4 chambers, valves, septum&#10;Blood flow :: vena cava, lungs, aorta&#10;Problems :: CHD, statins, stents"></textarea>
+      <div style="margin-top:12px"><button class="btn" id="c-m-save">Save mindmap to library</button></div>
     </div>
   </div>
 </section>
@@ -384,6 +499,94 @@ const LIB = [
       {q:"Margin of safety =",o:["actual output − break-even output","price − variable cost","revenue − total cost","fixed − variable costs"],a:0,exp:"How far sales can fall before losses begin."}]},
  {id:"r15",type:"Mindmap",title:"Christianity — beliefs & practices overview",subj:"Religious Studies",level:"GCSE",board:"AQA",topic:"Christianity",uses:2890,rating:4.3,
   map:{c:"CHRISTIANITY",n:[["The Trinity",["Father","Son","Holy Spirit"]],["Salvation",["grace","atonement","sin"]],["Worship",["liturgical","informal","private prayer"]],["Sacraments",["baptism","Eucharist"]],["Festivals",["Christmas","Easter"]]]}},
+ {id:"r16",type:"Timeline",title:"The Cold War 1945–1991 — every turning point",subj:"History",level:"A2/A-level",board:"AQA",topic:"The Cold War",uses:5140,rating:4.7,
+  events:[["1945","Yalta & Potsdam conferences — the wartime alliance fractures over Poland and reparations."],
+          ["1948–49","Berlin Blockade & Airlift — first direct confrontation; NATO forms April 1949."],
+          ["1950–53","Korean War — containment turns hot; the 38th parallel restored."],
+          ["1956","Hungarian Uprising crushed — Khrushchev's 'thaw' shows its limits."],
+          ["1961","Berlin Wall built — 'a wall is a hell of a lot better than a war' (JFK)."],
+          ["1962","Cuban Missile Crisis — 13 days at the brink; hotline and Test Ban Treaty follow."],
+          ["1968","Prague Spring crushed — the Brezhnev Doctrine declared."],
+          ["1972–79","Détente: SALT I, Helsinki Accords, SALT II — then Afghanistan kills it."],
+          ["1985–89","Gorbachev: glasnost & perestroika; INF Treaty 1987; the Wall falls November 1989."],
+          ["1991","The USSR dissolves on 26 December — the Cold War ends."]]},
+ {id:"r17",type:"Timeline",title:"Medicine Through Time — c1250 to the NHS",subj:"History",level:"GCSE",board:"Edexcel",topic:"Medicine through time (OCR History A)",uses:4230,rating:4.6,
+  events:[["c1250","Four Humours dominate — Galen and the Church control medical ideas."],
+          ["1348","The Black Death — miasma, prayer and flagellants; no germ theory for 500 more years."],
+          ["1628","Harvey proves the circulation of the blood — observation beats ancient authority."],
+          ["1796","Jenner's smallpox vaccination — the first vaccine, resisted for decades."],
+          ["1848 & 1875","Public Health Acts — from laissez-faire to government responsibility."],
+          ["1861","Pasteur's Germ Theory — the single biggest turning point in the whole course."],
+          ["1928","Fleming discovers penicillin; Florey & Chain mass-produce it by 1944."],
+          ["1948","The NHS — healthcare free at the point of use."],
+          ["1953","Watson & Crick describe DNA — the door to genetic medicine opens."]]},
+ {id:"r18",type:"Crossword",title:"GCSE Biology — Cell Biology key terms",subj:"Biology",level:"GCSE",board:"AQA",topic:"Cells, tissues and organs",uses:3890,rating:4.5,
+  clues:[{c:"Organelle where aerobic respiration happens",a:"MITOCHONDRIA"},
+         {c:"Cell division producing two identical daughter cells",a:"MITOSIS"},
+         {c:"Green pigment that absorbs light for photosynthesis",a:"CHLOROPHYLL"},
+         {c:"Movement of water across a partially permeable membrane",a:"OSMOSIS"},
+         {c:"Jelly-like substance where most reactions happen",a:"CYTOPLASM"},
+         {c:"Unspecialised cell that can become any cell type (two words, no space)",a:"STEMCELL"},
+         {c:"Net movement of particles from high to low concentration",a:"DIFFUSION"}]},
+ {id:"r19",type:"Advantages and disadvantages table",title:"Energy resources — every source, both sides",subj:"Physics",level:"GCSE",board:"AQA",topic:"Energy",uses:4470,rating:4.5,
+  cols:["Advantages","Disadvantages"],rows:[
+   ["Wind: no fuel costs, no CO₂ in use, quick to build","Wind: unreliable output, visual/noise objections, needs backup supply"],
+   ["Solar: free fuel, works off-grid, panel costs falling","Solar: nothing at night, weather-dependent, land use at scale"],
+   ["Hydro: reliable, can respond to demand instantly, long life","Hydro: floods valleys, disrupts ecosystems, few viable UK sites left"],
+   ["Nuclear: huge output, low-carbon, reliable baseload","Nuclear: radioactive waste for millennia, high build and decommissioning cost"],
+   ["Fossil fuels: dispatchable, existing infrastructure","Fossil fuels: CO₂ and climate change, finite, price volatility"]]},
+ {id:"r20",type:"Causes and effects table",title:"The Wall Street Crash — causes and effects",subj:"History",level:"GCSE",board:"AQA",topic:"America - 19th and 20th century",uses:3320,rating:4.4,
+  cols:["Cause","Effect"],rows:[
+   ["Speculation and buying shares 'on the margin'","Share prices detached from company value — a bubble"],
+   ["Overproduction in consumer industries","Warehouses full and profits falling by summer 1929"],
+   ["Panic selling, 24–29 October 1929","13 million shares sold in one day; $8bn wiped out"],
+   ["Banks had gambled depositors' money on shares","5,000 bank failures by 1932; ordinary savings destroyed"],
+   ["Collapse of confidence and credit","The Great Depression: 13m unemployed by 1933; Hoovervilles"]]},
+ {id:"r21",type:"Compare and contrast table",title:"Mitosis vs Meiosis — every mark-winning difference",subj:"Biology",level:"A2/A-level",board:"AQA",topic:"DNA, genetics and evolution",uses:5210,rating:4.8,
+  cols:["Mitosis","Meiosis"],rows:[
+   ["One division","Two divisions"],
+   ["2 genetically identical diploid daughter cells","4 genetically different haploid gametes"],
+   ["Growth, repair and asexual reproduction","Sexual reproduction — making gametes"],
+   ["No crossing over","Crossing over + independent assortment → genetic variation"],
+   ["Chromosome number maintained (46 → 46)","Chromosome number halved (46 → 23)"]]},
+ {id:"r22",type:"SWOT analysis",title:"SWOT — a high-street retailer moving online",subj:"Business Studies",level:"GCSE",board:"Edexcel",topic:"Case studies",uses:2760,rating:4.3,
+  swot:{s:["Established brand and loyal local customers","Existing supplier relationships and buying power","Physical stores double as collection points"],
+        w:["No e-commerce experience in-house","Legacy stock systems don't show live availability","Higher cost base than online-only rivals"],
+        o:["A 24/7 national market instead of one town","Customer data enables targeted marketing","Click-and-collect drives store footfall"],
+        t:["Amazon and online-only price competition","Customers expect free delivery and free returns","Cybersecurity and payment fraud risk"]}},
+ {id:"r23",type:"Character analysis",title:"Lady Macbeth — ambition, control, unravelling",subj:"English Literature",level:"GCSE",board:"AQA",uses:6040,rating:4.8,who:"Lady Macbeth",
+  facets:[{f:"Ruthless ambition (Act 1)",q:"unsex me here… fill me from the crown to the toe top-full of direst cruelty",
+           d:"She rejects expected femininity to seize power — a Jacobean audience would read this as unnatural, aligning her with the witches."},
+          {f:"Control of Macbeth",q:"look like th' innocent flower, but be the serpent under't",
+           d:"Imperatives show her dominance in the marriage; the serpent echoes Eden — deception framed as original sin."},
+          {f:"Guilt breaks her (Act 5)",q:"Out, damned spot… all the perfumes of Arabia will not sweeten this little hand",
+           d:"She speaks in prose, not verse — her control of language collapses with her mind. The blood she once dismissed ('a little water clears us of this deed') is now indelible."},
+          {f:"Her end",q:"by self and violent hands / Took off her life",
+           d:"An offstage, reported suicide — Shakespeare denies her a final scene; the wage of 'vaulting ambition' is erasure."}]},
+ {id:"r24",type:"Grid",title:"GCSE Physics — the equations you must memorise",subj:"Physics",level:"GCSE",board:"AQA",topic:"Energy",uses:7180,rating:4.9,
+  cols:["Quantity","Equation","Units"],rows:[
+   ["Kinetic energy","Ek = ½ m v²","J · kg · m/s"],
+   ["Gravitational PE","Ep = m g h","J · kg · N/kg · m"],
+   ["Power","P = E ÷ t","W · J · s"],
+   ["Efficiency","useful output ÷ total input","ratio or %"],
+   ["Charge","Q = I t","C · A · s"],
+   ["Potential difference","V = I R","V · A · Ω"],
+   ["Electrical power","P = V I","W · V · A"],
+   ["Density","ρ = m ÷ V","kg/m³ · kg · m³"],
+   ["Resultant force","F = m a","N · kg · m/s²"],
+   ["Weight","W = m g","N · kg · N/kg"]]},
+ {id:"r25",type:"Revision Notes",title:"Sociology A-Level — Education: the theories in one page",subj:"Sociology",level:"A2/A-level",board:"AQA",topic:"Education",uses:3450,rating:4.6,
+  body:`<h5>Functionalism</h5><p><b>Durkheim:</b> school transmits shared norms — social solidarity — and teaches specialist skills. <b>Parsons:</b> the bridge between family (particularistic) and society (universalistic, meritocratic). <b>Davis &amp; Moore:</b> role allocation — sifting people into jobs by ability.</p>
+        <h5>Marxism</h5><p><b>Althusser:</b> education is an ideological state apparatus reproducing class inequality. <b>Bowles &amp; Gintis:</b> the correspondence principle and the myth of meritocracy — school mirrors the workplace. <b>Willis:</b> the lads' counter-culture shows reproduction isn't passive.</p>
+        <h5>Evaluation lines examiners reward</h5><ul><li>Functionalism assumes consensus; ignores class, gender and ethnic gaps in attainment.</li><li>Marxism can be deterministic — Willis's lads partly see through the system.</li><li>Use policy examples: marketisation (1988 Act), pupil premium, academies.</li></ul>`},
+ {id:"r26",type:"Flashcards",title:"Spanish GCSE — high-frequency phrases",subj:"Spanish",level:"GCSE",board:"AQA",uses:2980,rating:4.4,
+  cards:[["me gusta / me encanta","I like / I love"],["suelo + infinitive","I usually…"],["si tuviera la oportunidad","if I had the chance"],["lo que más me interesa","what interests me most"],["hace dos años fui a…","two years ago I went to…"],["en el futuro espero","in the future I hope"],["a pesar de","in spite of"],["sin embargo","however"]]},
+ {id:"r27",type:"Revision Cards",title:"Law — Actus reus & mens rea in 5 cards",subj:"Law",level:"A2/A-level",board:"OCR",topic:"Criminal law",uses:1980,rating:4.5,
+  cards:[["Actus reus","The guilty act: conduct, consequence or state of affairs. Must be voluntary (Hill v Baxter)."],
+         ["Omissions","No general duty to act — exceptions: contract (Pittwood), relationship (Gibbins & Proctor), creating danger (Miller)."],
+         ["Mens rea — intention","Direct intent: aim or purpose (Mohan). Oblique intent: virtual certainty, defendant appreciates it (Woollin)."],
+         ["Mens rea — recklessness","Subjective: defendant foresees the risk and takes it anyway (Cunningham; confirmed in G and R)."],
+         ["Coincidence & transferred malice","AR and MR must coincide (Thabo Meli — continuing act); malice transfers to the actual victim (Latimer)."]]},
 ];
 
 /* user-created resources live in localStorage */
@@ -407,8 +610,8 @@ fillSelect(document.getElementById("f-subj"),SUBJECTS);
 fillSelect(document.getElementById("f-level"),LEVELS);
 fillSelect(document.getElementById("f-type"),TYPES);
 fillSelect(document.getElementById("f-topic"),TOPICS);
-["c-f-subj","c-n-subj","pp-subj"].forEach(id=>fillSelect(document.getElementById(id),SUBJECTS));
-["c-f-level","c-n-level"].forEach(id=>fillSelect(document.getElementById(id),LEVELS));
+["c-f-subj","c-n-subj","c-q-subj","c-t-subj","c-x-subj","c-b-subj","c-s-subj","c-m-subj","pp-subj"].forEach(id=>fillSelect(document.getElementById(id),SUBJECTS));
+["c-f-level","c-n-level","c-q-level","c-t-level","c-x-level","c-b-level","c-s-level","c-m-level"].forEach(id=>fillSelect(document.getElementById(id),LEVELS));
 
 const TYPE_ICON={Flashcards:"🃏",Quiz:"❓","Revision Notes":"📓",Mindmap:"🧠","Revision Cards":"🗂",Crossword:"🧩",Timeline:"🕰",Video:"🎬",Audio:"🎧",Image:"🖼",Presentation:"📊",Document:"📄",Spreadsheet:"📑","Web Page":"🌐","Character analysis":"🎭","SWOT analysis":"🧭",Grid:"▦","Multi-tool":"🛠",Quizsearch:"🔍","Advantages and disadvantages table":"⚖️","Causes and effects table":"↔️","Compare and contrast table":"🆚",Other:"📚"};
 function renderResults(){
@@ -416,7 +619,7 @@ function renderResults(){
   const s=document.getElementById("f-subj").value, l=document.getElementById("f-level").value, t=document.getElementById("f-type").value;
   const tp=document.getElementById("f-topic").value;
   const hits=allResources().filter(r=>
-    (!q || (r.title+" "+r.subj+" "+(r.topic||"")+" "+(r.body||"")+JSON.stringify(r.cards||r.qs||r.map||"")).toLowerCase().includes(q)) &&
+    (!q || (r.title+" "+r.subj+" "+(r.topic||"")+" "+(r.body||"")+JSON.stringify(r.cards||r.qs||r.map||r.events||r.clues||r.rows||r.swot||r.facets||"")).toLowerCase().includes(q)) &&
     (!s||r.subj===s)&&(!l||r.level===l)&&(!t||r.type===t)&&(!tp||r.topic===tp));
   const el=document.getElementById("results");
   el.innerHTML=hits.map(r=>`
@@ -447,6 +650,66 @@ function openRes(id){
   else if(r.type==="Revision Cards") mbody.innerHTML=head+r.cards.map(c=>`
       <div class="card" style="margin-bottom:10px"><h3 style="color:var(--gold-300);font-family:var(--serif);font-size:17px;font-weight:500">${esc(c[0])}</h3>
       <div style="font-size:14px;color:var(--ink-2);margin-top:4px">${esc(c[1])}</div></div>`).join("");
+  else if(r.type==="Timeline") viewTimeline(r,head);
+  else if(r.type==="Crossword") viewCross(r,head);
+  else if(r.type==="SWOT analysis") viewSwot(r,head);
+  else if(r.type==="Character analysis") viewChars(r,head);
+  else if(r.cols&&r.rows) viewTable(r,head); /* the three comparison tables + Grid */
+  else mbody.innerHTML=head+`<div class="empty">This resource type gets its full viewer when the backend goes live — meanwhile, try the maker in ✍️.</div>`;
+}
+
+function viewTimeline(r,head){
+  mbody.innerHTML=head+`<div class="tl">${r.events.map(e=>`
+    <div class="ev"><div class="yr">${esc(e[0])}</div><div class="tx">${esc(e[1])}</div></div>`).join("")}</div>`;
+}
+
+function viewTable(r,head){
+  mbody.innerHTML=head+`<table class="dt"><tr>${r.cols.map(c=>`<th>${esc(c)}</th>`).join("")}</tr>
+    ${r.rows.map(row=>`<tr>${row.map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</table>`;
+}
+
+function viewSwot(r,head){
+  const qd=(k,label,cls)=>`<div class="qd ${cls}"><h5>${label}</h5><ul>${(r.swot[k]||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`;
+  mbody.innerHTML=head+`<div class="swot">${qd("s","Strengths","s")+qd("w","Weaknesses","w")+qd("o","Opportunities","o")+qd("t","Threats","t")}</div>`;
+}
+
+function viewChars(r,head){
+  mbody.innerHTML=head+r.facets.map(f=>`
+    <div class="card" style="margin-bottom:10px">
+      <h3 style="color:var(--gold-300);font-family:var(--serif);font-size:16px;font-weight:500">${esc(f.f)}</h3>
+      <div class="chq">“${esc(f.q)}”</div>
+      <div style="font-size:13.5px;color:var(--ink-2)">${esc(f.d)}</div>
+    </div>`).join("");
+}
+
+function viewCross(r,head){
+  mbody.innerHTML=head+`<div class="q-prog">Type each answer, then check — letters only, case doesn't matter.</div>
+    ${r.clues.map((c,i)=>`<div class="cw-clue" data-i="${i}">
+      <span class="c">${i+1}. ${esc(c.c)}</span>
+      <input maxlength="${c.a.length}" autocomplete="off" spellcheck="false">
+      <span class="len">${c.a.length}</span></div>`).join("")}
+    <div style="margin-top:14px"><button class="btn" id="cw-check">Check answers</button>
+    <button class="btn ghost" id="cw-reveal">Reveal</button>
+    <span class="q-prog" id="cw-score" style="display:inline;margin-left:10px"></span></div>`;
+  document.getElementById("cw-check").onclick=()=>{
+    let right=0;
+    mbody.querySelectorAll(".cw-clue").forEach(div=>{
+      const i=+div.dataset.i, v=div.querySelector("input").value.toUpperCase().replace(/[^A-Z0-9]/g,"");
+      const ok=v===r.clues[i].a;
+      div.classList.toggle("right",ok); div.classList.toggle("wrong",!ok);
+      if(ok)right++;
+    });
+    document.getElementById("cw-score").textContent=`${right} / ${r.clues.length} correct`;
+    if(right===r.clues.length){const pts=10+2*r.clues.length;addPoints(pts);toast("Crossword complete! +"+pts+" pts")}
+  };
+  document.getElementById("cw-reveal").onclick=()=>{
+    mbody.querySelectorAll(".cw-clue").forEach(div=>{
+      const i=+div.dataset.i;
+      div.querySelector("input").value=r.clues[i].a;
+      div.classList.remove("wrong"); div.classList.add("right");
+    });
+    document.getElementById("cw-score").textContent="answers revealed — no points this time!";
+  };
 }
 
 function viewFlash(r,head){
@@ -520,24 +783,78 @@ function viewMap(r,head){
 }
 
 /* ============================ CREATE ============================ */
-document.getElementById("c-f-save").onclick=()=>{
-  const title=document.getElementById("c-f-title").value.trim();
-  const lines=document.getElementById("c-f-cards").value.split("\n").map(l=>l.split("::").map(s=>s.trim())).filter(p=>p.length===2&&p[0]&&p[1]);
-  if(!title||!lines.length){toast("Add a title and at least one card (front :: back)");return}
+const $v=id=>document.getElementById(id).value;
+function parseLines(id,minParts){
+  return $v(id).split("\n").map(l=>l.split("::").map(s=>s.trim())).filter(p=>p.length>=minParts&&p.every((s,i)=>i>=minParts||s));
+}
+function saveMine(obj,sfx,msg,clearIds){
   const mine=store.get("mine",[]);
-  mine.push({id:"u"+(mine.length+1)+"f",mine:true,type:"Flashcards",title,subj:document.getElementById("c-f-subj").value,level:document.getElementById("c-f-level").value,cards:lines});
-  store.set("mine",mine); addPoints(15); touchStreak();
-  document.getElementById("c-f-title").value="";document.getElementById("c-f-cards").value="";
-  renderResults(); toast("Deck saved — find it in 🔎 with the green badge (+15 pts)");
+  obj.id="u"+(mine.length+1)+sfx; obj.mine=true;
+  mine.push(obj); store.set("mine",mine); addPoints(15); touchStreak();
+  clearIds.forEach(id=>document.getElementById(id).value="");
+  renderResults(); toast(msg+" — find it in 🔎 with the green badge (+15 pts)");
+}
+document.getElementById("c-f-save").onclick=()=>{
+  const title=$v("c-f-title").trim(), lines=parseLines("c-f-cards",2).map(p=>p.slice(0,2));
+  if(!title||!lines.length){toast("Add a title and at least one card (front :: back)");return}
+  saveMine({type:"Flashcards",title,subj:$v("c-f-subj"),level:$v("c-f-level"),cards:lines},"f","Deck saved",["c-f-title","c-f-cards"]);
 };
 document.getElementById("c-n-save").onclick=()=>{
-  const title=document.getElementById("c-n-title").value.trim(), body=document.getElementById("c-n-body").value.trim();
+  const title=$v("c-n-title").trim(), body=$v("c-n-body").trim();
   if(!title||!body){toast("Add a title and some notes first");return}
-  const mine=store.get("mine",[]);
-  mine.push({id:"u"+(mine.length+1)+"n",mine:true,type:"Revision Notes",title,subj:document.getElementById("c-n-subj").value,level:document.getElementById("c-n-level").value,body});
-  store.set("mine",mine); addPoints(15); touchStreak();
-  document.getElementById("c-n-title").value="";document.getElementById("c-n-body").value="";
-  renderResults(); toast("Notes saved to your library (+15 pts)");
+  saveMine({type:"Revision Notes",title,subj:$v("c-n-subj"),level:$v("c-n-level"),body},"n","Notes saved",["c-n-title","c-n-body"]);
+};
+document.getElementById("c-q-save").onclick=()=>{
+  const title=$v("c-q-title").trim();
+  const lines=parseLines("c-q-qs",3).map(p=>p.slice(0,5));
+  if(!title||!lines.length){toast("Add a title and at least one line: question :: correct :: wrong");return}
+  const qs=lines.map(p=>{
+    const q=p[0], correct=p[1], wrong=p.slice(2);
+    const a=Math.floor(Math.random()*(wrong.length+1));
+    const o=wrong.slice(); o.splice(a,0,correct);
+    return {q,o,a,exp:"Correct answer: "+correct};
+  });
+  saveMine({type:"Quiz",title,subj:$v("c-q-subj"),level:$v("c-q-level"),qs},"q","Quiz saved",["c-q-title","c-q-qs"]);
+};
+document.getElementById("c-t-save").onclick=()=>{
+  const title=$v("c-t-title").trim(), events=parseLines("c-t-events",2).map(p=>p.slice(0,2));
+  if(!title||!events.length){toast("Add a title and at least one event (year :: what happened)");return}
+  saveMine({type:"Timeline",title,subj:$v("c-t-subj"),level:$v("c-t-level"),events},"t","Timeline saved",["c-t-title","c-t-events"]);
+};
+document.getElementById("c-x-save").onclick=()=>{
+  const title=$v("c-x-title").trim();
+  const clues=parseLines("c-x-clues",2)
+    .map(p=>({c:p[0],a:p[1].toUpperCase().replace(/[^A-Z0-9]/g,"")}))
+    .filter(x=>x.c&&x.a.length>=2);
+  if(!title||!clues.length){toast("Add a title and at least one clue (clue :: ANSWER)");return}
+  saveMine({type:"Crossword",title,subj:$v("c-x-subj"),level:$v("c-x-level"),clues},"x","Crossword saved",["c-x-title","c-x-clues"]);
+};
+document.getElementById("c-b-save").onclick=()=>{
+  const title=$v("c-b-title").trim(), rows=parseLines("c-b-rows",2).map(p=>p.slice(0,2));
+  if(!title||!rows.length){toast("Add a title and at least one row (left :: right)");return}
+  saveMine({type:$v("c-b-type"),title,subj:$v("c-b-subj"),level:$v("c-b-level"),
+    cols:[$v("c-b-col1").trim()||"Left",$v("c-b-col2").trim()||"Right"],rows},"b","Table saved",["c-b-title","c-b-rows"]);
+};
+/* table type presets the column headings unless the user typed their own */
+document.getElementById("c-b-type").addEventListener("input",()=>{
+  const presets={"Advantages and disadvantages table":["Advantages","Disadvantages"],
+                 "Causes and effects table":["Cause","Effect"],
+                 "Compare and contrast table":["Aerobic","Anaerobic"]};
+  const p=presets[$v("c-b-type")];
+  document.getElementById("c-b-col1").value=p[0]; document.getElementById("c-b-col2").value=p[1];
+});
+document.getElementById("c-s-save").onclick=()=>{
+  const title=$v("c-s-title").trim();
+  const box=id=>$v(id).split("\n").map(s=>s.trim()).filter(Boolean);
+  const swot={s:box("c-s-s"),w:box("c-s-w"),o:box("c-s-o"),t:box("c-s-t")};
+  if(!title||!(swot.s.length+swot.w.length+swot.o.length+swot.t.length)){toast("Add a title and at least one point in any box");return}
+  saveMine({type:"SWOT analysis",title,subj:$v("c-s-subj"),level:$v("c-s-level"),swot},"s","SWOT saved",["c-s-title","c-s-s","c-s-w","c-s-o","c-s-t"]);
+};
+document.getElementById("c-m-save").onclick=()=>{
+  const centre=$v("c-m-title").trim();
+  const n=parseLines("c-m-branches",2).map(p=>[p[0],p[1].split(",").map(s=>s.trim()).filter(Boolean)]).filter(b=>b[0]&&b[1].length);
+  if(!centre||!n.length){toast("Add a centre idea and at least one branch (Branch :: leaf, leaf)");return}
+  saveMine({type:"Mindmap",title:centre,subj:$v("c-m-subj"),level:$v("c-m-level"),map:{c:centre.toUpperCase(),n}},"m","Mindmap saved",["c-m-title","c-m-branches"]);
 };
 
 /* ============================ PLANNER ============================ */
