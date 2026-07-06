@@ -51,6 +51,11 @@
   .invite{border:1px solid rgba(77,157,224,.35);background:rgba(77,157,224,.08);border-radius:11px;padding:12px 14px;margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   .stu-row{display:flex;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
   .acu-note{border:1px solid rgba(77,157,224,.3);background:rgba(77,157,224,.07);border-radius:10px;padding:11px 14px;font-size:12.5px;color:var(--gold-300);margin-top:6px}
+  .ex-col{border:1px solid var(--line);border-radius:11px;padding:12px 13px;background:rgba(6,11,24,.32)}
+  .ex-h{font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:8px}
+  .ex-pill{display:inline-block;font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--line);color:var(--ink-2);margin:3px 4px 0 0}.ex-pill.on{color:#89d3a2;border-color:rgba(92,187,123,.4)}
+  .rec-row{display:flex;gap:9px;padding:7px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:12.5px;color:var(--ink-2)}.rec-row .ri{color:var(--gold-300)}
+  @media(max-width:640px){.ex-col+.ex-col{margin-top:0}}
   #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
   .savebar{position:sticky;bottom:0;margin:22px -30px -90px;padding:14px 30px;background:linear-gradient(0deg,var(--navy-950) 60%,transparent);display:flex;gap:12px;align-items:center;flex-wrap:wrap;z-index:30}@media(max-width:960px){.savebar{margin:22px -18px -70px;padding:14px 18px}}
 </style></head><body>
@@ -83,6 +88,7 @@ $('signout').onclick=function(e){e.preventDefault();SY.signOut()};
 
 var data=SY.get('teacherProfile',{});
 if(!data.email)data.email=S.email;
+var SKILL_LABELS={skBehaviour:'Behaviour management',skDifferentiation:'Differentiation',skSend:'SEND',skStem:'STEM',skCoding:'Coding',skLanguages:'Languages',skMusic:'Music',skSports:'Sports',skLeadership:'Leadership',skPastoral:'Pastoral care'};
 
 var TITLES=['Mr','Mrs','Ms','Miss','Mx','Dr','Prof'];
 var GENDERS=['Female','Male','Non-binary','Prefer not to say'];
@@ -202,7 +208,8 @@ var SECTIONS=[
    {k:'cpdHours',l:'Professional development hours',t:'text'}
  ]},
  {id:'school',n:13,t:'My school & students',s:'Link to your school and build your class roster.',type:'schoollink'},
- {id:'agents',n:14,t:'My AI teaching team',s:'StudYear provisions a personal AI team for every teacher, each operating strictly within the permissions you set in section 10.',type:'agents'}
+ {id:'excellence',n:14,t:'Teacher Excellence Programme™',s:'Continuous AI coaching — your strengths, growth areas and CPD, updated live from your profile. No AI credits used.',type:'excellence'},
+ {id:'agents',n:15,t:'My AI teaching team',s:'StudYear provisions a personal AI team for every teacher, each operating strictly within the permissions you set in section 10.',type:'agents'}
 ];
 
 /* ---------- pickers ---------- */
@@ -276,6 +283,7 @@ SECTIONS.forEach(function(sec){
     });
     card.appendChild(dg);form.appendChild(card);return;
   }
+  if(sec.type==='excellence'){renderExcellence(card);form.appendChild(card);return}
   if(sec.type==='agents'){
     var ag=el('div','agrid');
     TEACHER_AGENTS.forEach(function(a){
@@ -362,6 +370,34 @@ function renderSchool(lsWrap,studWrap){
   studWrap.appendChild(rc);
 }
 
+/* Teacher Excellence Programme — derived coaching, no AI cost */
+function renderExcellence(card){
+  var strengths=Object.keys(SKILL_LABELS).filter(function(k){return data[k]}).map(function(k){return SKILL_LABELS[k]});
+  var grow=Object.keys(SKILL_LABELS).filter(function(k){return !data[k]}).map(function(k){return SKILL_LABELS[k]});
+  var yrs=parseInt(data.yearsExperience||data.teachingExperience,10)||0;
+  var block=el('div');block.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:12px';
+  function col(title,items,tone){var c=el('div','ex-col');c.innerHTML='<div class="ex-h">'+title+'</div>'+(items.length?items.map(function(x){return '<span class="ex-pill '+(tone||'')+'">'+x+'</span>'}).join(''):'<span class="note">Add detail above to personalise this.</span>');return c}
+  block.appendChild(col('💪 Strengths',strengths.length?strengths:['Complete your Skills section'],'on'));
+  var improve=grow.slice(0,4);block.appendChild(col('📈 Areas to develop',improve.length?improve:['Well-rounded profile'],''));
+  card.appendChild(block);
+  /* CPD recommendations derived */
+  var cpd=[];
+  if(!data.skSend)cpd.push('SEND & inclusive practice — unlock more learners');
+  if(!data.skDifferentiation)cpd.push('Differentiation masterclass — stretch and support in one lesson');
+  if(!data.aiMarking)cpd.push('AI-assisted marking — reclaim ~5 hours a week');
+  if(!data.skBehaviour)cpd.push('Classroom management & behaviour for learning');
+  if(yrs>=5&&!data.skLeadership)cpd.push('Middle-leadership pathway — your experience signals readiness');
+  if(!cpd.length)cpd.push('Peer-collaboration lead — mentor colleagues via the Excellence Programme');
+  var cpdWrap=el('div');cpdWrap.style.marginTop='14px';cpdWrap.appendChild(el('div','ex-h','🎓 CPD recommendations'));
+  cpd.forEach(function(c){var r=el('div','rec-row','<span class="ri">→</span><span>'+c+'</span>');cpdWrap.appendChild(r)});
+  card.appendChild(cpdWrap);
+  /* leadership potential + peer collab */
+  var lead=Math.min(98,40+yrs*7+(data.skLeadership?15:0)+strengths.length*3);
+  var lp=el('div');lp.style.marginTop='14px';lp.innerHTML='<div class="ex-h">🚀 Leadership potential</div><div class="prog" style="margin-top:6px"><i style="width:'+lead+'%"></i></div><div class="note" style="margin-top:6px">'+(lead>=75?'High — flagged for leadership development and peer-coaching roles.':lead>=55?'Developing — build breadth across skills and take on a collaboration lead.':'Emerging — focus on your CPD pathway above.')+'</div>';
+  card.appendChild(lp);
+  card.appendChild(el('div','note','Your AI Classroom Coach reviews lessons and refreshes this programme continuously — this preview derives it from your profile at no AI cost.'));
+}
+
 /* rail */
 SECTIONS.forEach(function(sec){var a=el('a',null,sec.n+'. '+sec.t);a.href='#sec-'+sec.id;a.id='rail-'+sec.id;a.onclick=function(e){e.preventDefault();$('sec-'+sec.id).scrollIntoView({behavior:'smooth',block:'start'})};rail.appendChild(a)});
 
@@ -371,7 +407,7 @@ function has(v){return typeof v==='string'?v.trim():v}
 function sectionDone(sec){
   if(sec.type==='toggles')return sec.toggles.some(function(t){return data[t.k]});
   if(sec.type==='docs')return sec.docs.some(function(d){return data[d.k]&&data[d.k].name});
-  if(sec.type==='agents')return true;
+  if(sec.type==='agents'||sec.type==='excellence')return true;
   if(sec.type==='schoollink')return !!data.schoolCode||(data.students&&data.students.length);
   return (sec.fields||[]).some(function(f){return has(data[f.k])});
 }
