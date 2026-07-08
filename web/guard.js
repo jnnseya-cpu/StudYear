@@ -223,4 +223,33 @@
     }
   };
   try { window.SY.applyLearning(); } catch (e) {}
+
+  // ---- Progressive Web App + responsive baseline (applied to every guarded page) ----
+  // One place wires PWA install + offline + iOS home-screen + a responsive safety net,
+  // so all role consoles behave as an installable, screen-fitting app.
+  try {
+    var head = document.head || document.getElementsByTagName('head')[0];
+    function ensureMeta(sel, make) { if (!document.querySelector(sel)) head.appendChild(make()); }
+    // viewport (in case a page forgot it) — fits phones, tablets, laptops, large screens
+    ensureMeta('meta[name="viewport"]', function () { var m = document.createElement('meta'); m.name = 'viewport'; m.content = 'width=device-width, initial-scale=1, viewport-fit=cover'; return m; });
+    // manifest
+    ensureMeta('link[rel="manifest"]', function () { var l = document.createElement('link'); l.rel = 'manifest'; l.href = base + 'manifest.json'; return l; });
+    // theme + iOS standalone
+    ensureMeta('meta[name="theme-color"]', function () { var m = document.createElement('meta'); m.name = 'theme-color'; m.content = '#060B18'; return m; });
+    ensureMeta('meta[name="apple-mobile-web-app-capable"]', function () { var m = document.createElement('meta'); m.name = 'apple-mobile-web-app-capable'; m.content = 'yes'; return m; });
+    ensureMeta('meta[name="mobile-web-app-capable"]', function () { var m = document.createElement('meta'); m.name = 'mobile-web-app-capable'; m.content = 'yes'; return m; });
+    ensureMeta('meta[name="apple-mobile-web-app-status-bar-style"]', function () { var m = document.createElement('meta'); m.name = 'apple-mobile-web-app-status-bar-style'; m.content = 'black-translucent'; return m; });
+    ensureMeta('meta[name="apple-mobile-web-app-title"]', function () { var m = document.createElement('meta'); m.name = 'apple-mobile-web-app-title'; m.content = 'StudYear'; return m; });
+    ensureMeta('link[rel="apple-touch-icon"]', function () { var l = document.createElement('link'); l.rel = 'apple-touch-icon'; l.href = base + 'apple-touch-icon.png'; return l; });
+    // responsive safety net — media stays inside its container on any screen; tables/code scroll
+    if (!document.getElementById('sy-responsive')) {
+      var rs = document.createElement('style'); rs.id = 'sy-responsive';
+      rs.textContent = 'img{max-width:100%;height:auto}.sy-scroll,table.sy-scroll{display:block;max-width:100%;overflow-x:auto}@media(max-width:520px){:root{}}';
+      head.appendChild(rs);
+    }
+    // register the offline/install service worker (scope-relative so / and /StudYear/ both work)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register(base + 'sw.js', { scope: base }).catch(function () {});
+    }
+  } catch (e) {}
 })();
