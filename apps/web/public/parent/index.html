@@ -90,8 +90,16 @@
   .bar{height:8px;border-radius:5px;background:rgba(170,182,204,.12);overflow:hidden}
   .bar i{display:block;height:100%}
   svg{display:block;width:100%}
-  .heat{display:grid;gap:4px}
-  .heatcell{height:26px;border-radius:5px;display:flex;align-items:center;padding:0 8px;font-size:11px;color:#dfe8f5}
+  .heat{display:block}
+  .hm-grid{display:grid;gap:3px;align-items:center}
+  .hm-lbl{font-size:11px;color:var(--ink-2);padding-right:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hm-col{font-size:9.5px;color:var(--ink-3);text-align:center;letter-spacing:.04em}
+  .hm-cell{height:24px;border-radius:4px;cursor:default;transition:transform .12s}
+  .hm-cell:hover{transform:scale(1.12);z-index:2;position:relative;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+  .hm-cell.empty{background:rgba(170,182,204,.08);background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(170,182,204,.07) 4px,rgba(170,182,204,.07) 6px)}
+  .hm-val{font-size:10.5px;color:var(--ink);font-weight:700;text-align:right}
+  .hm-scale{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:10px;color:var(--ink-2)}
+  .hm-scale i{flex:0 0 110px;height:8px;border-radius:5px;background:linear-gradient(90deg,#E06060,#E0A93F,#5CBB7B)}
 
   .res{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;background:rgba(6,11,24,.4);padding:9px 12px;margin-bottom:7px}
   .res .t{flex:1;font-size:13px}.res .t small{display:block;color:var(--ink-3);font-size:11px}
@@ -410,12 +418,43 @@ function renderDeep(m){
   ['W-5','W-4','W-3','W-2','W-1','Now'].forEach(function(l,i){sv+='<text x="'+x(i)+'" y="'+(H-6)+'" text-anchor="middle" fill="#6B7A96" font-size="10">'+l+'</text>'});
   sv+='</svg>';$('mom-chart').innerHTML=sv;
 
-  /* heatmap */
-  var RAMP=['#13294B','#1E4270','#245086','#2B5F9C','#3370B3','#4283C6','#63A0D8','#8FBFE9'];
+  /* subject × week mastery heatmap — a real cell matrix: rows are subjects,
+     columns the last 6 weeks + Now, colour graded red→amber→green (the OS RAG
+     scale), no-data weeks stay neutral. Hover any cell for the exact value. */
   var hs=m.subjects.filter(function(x){return x.attempts||x.mastery}).slice(0,8);
-  $('heatmap').innerHTML=(hs.length?hs:m.subjects.slice(0,6)).map(function(x){
-    var v=x.mastery||0;return '<div class="heatcell" style="background:'+RAMP[clamp(Math.round(v/100*7),0,7)]+'">'+esc(x.s)+' · '+v+'%</div>';
+  var heatSubs=hs.length?hs:m.subjects.slice(0,6);
+  var qz=SY.readAccount(m.email,'quizzes',[])||[];
+  var WEEKS=6;
+  function weekStart(off){var d=new Date();d.setDate(d.getDate()-d.getDay()+1-off*7);d.setHours(0,0,0,0);return d}
+  function heatCol(v){ /* diverging: red 0 → amber 50 → green 100, lightness rises with mastery */
+    if(v==null)return null;
+    var stops=[[224,96,96],[224,169,63],[92,187,123]];
+    var t=clamp(v,0,100)/50, i=t<1?0:1, f=t<1?t:t-1;
+    var a=stops[i],b=stops[i+1];
+    return 'rgb('+Math.round(a[0]+(b[0]-a[0])*f)+','+Math.round(a[1]+(b[1]-a[1])*f)+','+Math.round(a[2]+(b[2]-a[2])*f)+')';
+  }
+  var colHead='<div class="hm-lbl"></div>';
+  for(var wi=WEEKS-1;wi>=1;wi--){var ws=weekStart(wi);colHead+='<div class="hm-col">'+ws.getDate()+'/'+(ws.getMonth()+1)+'</div>'}
+  colHead+='<div class="hm-col" style="color:var(--gold-300)">Now</div><div class="hm-col"></div>';
+  var rowsHtml=heatSubs.map(function(x){
+    var cells='<div class="hm-lbl" title="'+esc(x.s)+'">'+esc(x.s.length>13?x.s.slice(0,12)+'…':x.s)+'</div>';
+    for(var w=WEEKS-1;w>=1;w--){
+      var s0=weekStart(w).getTime(),s1=s0+7*864e5,pts=[];
+      qz.forEach(function(q){if(q.subj!==x.s)return;var t=new Date(q.t).getTime();if(t>=s0&&t<s1)pts.push(q.pct)});
+      var v=pts.length?Math.round(pts.reduce(function(a,b){return a+b},0)/pts.length):null;
+      var wl=weekStart(w);
+      cells+=v==null
+        ?'<div class="hm-cell empty" title="'+esc(x.s)+' · w/c '+wl.getDate()+'/'+(wl.getMonth()+1)+' · no quizzes"></div>'
+        :'<div class="hm-cell" style="background:'+heatCol(v)+'" title="'+esc(x.s)+' · w/c '+wl.getDate()+'/'+(wl.getMonth()+1)+' · '+v+'% ('+pts.length+' quiz'+(pts.length===1?'':'zes')+')"></div>';
+    }
+    var now=x.mastery||0;
+    cells+='<div class="hm-cell" style="background:'+heatCol(now)+';box-shadow:0 0 0 1.5px rgba(242,206,123,.55)" title="'+esc(x.s)+' · current mastery '+now+'%"></div>';
+    cells+='<div class="hm-val">'+now+'%</div>';
+    return cells;
   }).join('');
+  $('heatmap').innerHTML=
+    '<div class="hm-grid" style="grid-template-columns:minmax(84px,1.4fr) repeat('+WEEKS+',1fr) 34px">'+colHead+rowsHtml+'</div>'+
+    '<div class="hm-scale"><span>0%</span><i></i><span>100%</span><span style="margin-left:auto;color:var(--ink-3)">column = week · gold ring = now · hover any cell</span></div>';
 
   $('forecast').textContent='Grade '+m.predicted;
 
