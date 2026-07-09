@@ -65,6 +65,7 @@
   .res .stats{display:flex;gap:14px;margin-top:10px;font-size:11.5px;color:var(--ink-2)}
   .badge{display:inline-block;font-size:10px;letter-spacing:.08em;border:1px solid rgba(170,182,204,.25);border-radius:20px;padding:2px 9px;color:var(--ink-2);margin-right:6px}
   .badge.mine{border-color:var(--good);color:var(--good)}
+  .badge.prem{border-color:var(--gold-400);color:var(--gold-300);vertical-align:middle;margin-left:8px;text-transform:uppercase}
   .empty{color:var(--ink-3);font-style:italic;padding:30px 0;text-align:center}
 
   /* modal viewer */
@@ -319,7 +320,7 @@
 <section id="tab-create">
   <div class="grid">
     <div class="card c6">
-      <h3>AI Flashcard Generator</h3><div class="sub">generate a flippable deck from any topic — supercharge memory retention</div>
+      <h3>AI Flashcard Generator<span class="badge prem">Premium</span></h3><div class="sub">generate a flippable deck from any topic — supercharge memory retention</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div><label class="f">Study level</label><select id="g-fc-level"></select></div>
         <div><label class="f">Subject</label><select id="g-fc-subj"></select></div>
@@ -330,7 +331,7 @@
       <div class="note">Builds cards from the library where a topic matches, then saves the deck. The full AI writer attaches with the backend.</div>
     </div>
     <div class="card c6">
-      <h3>AI Quiz Generator</h3><div class="sub">create a practice quiz on any topic to test yourself and friends</div>
+      <h3>AI Quiz Generator<span class="badge prem">Premium</span></h3><div class="sub">create a practice quiz on any topic to test yourself and friends</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
         <div><label class="f">Study level</label><select id="g-qz-level"></select></div>
         <div><label class="f">Subject</label><select id="g-qz-subj"></select></div>
@@ -343,7 +344,7 @@
     </div>
 
     <div class="card c6">
-      <h3>Create a flashcard deck</h3><div class="sub">one card per line — front and back separated by " :: "</div>
+      <h3>Create a flashcard deck<span class="badge prem">Premium</span></h3><div class="sub">one card per line — front and back separated by " :: "</div>
       <label class="f">Deck title</label><input type="text" id="c-f-title" placeholder="e.g. French irregular verbs">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
         <div><label class="f">Subject</label><select id="c-f-subj"></select></div>
@@ -354,7 +355,7 @@
       <div style="margin-top:12px"><button class="btn" id="c-f-save">Save deck to library</button></div>
     </div>
     <div class="card c6">
-      <h3>Create revision notes</h3><div class="sub">saved into the searchable library, tagged as yours</div>
+      <h3>Create revision notes<span class="badge prem">Premium</span></h3><div class="sub">saved into the searchable library, tagged as yours</div>
       <label class="f">Title</label><input type="text" id="c-n-title" placeholder="e.g. Causes of WW1 — summary">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
         <div><label class="f">Subject</label><select id="c-n-subj"></select></div>
@@ -367,7 +368,7 @@
     </div>
 
     <div class="card c6">
-      <h3>Create a quiz</h3><div class="sub">one question per line — question :: correct answer :: wrong :: wrong (up to 3 wrong answers)</div>
+      <h3>Create a quiz<span class="badge prem">Premium</span></h3><div class="sub">one question per line — question :: correct answer :: wrong :: wrong (up to 3 wrong answers)</div>
       <label class="f">Quiz title</label><input type="text" id="c-q-title" placeholder="e.g. Circulatory system check">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
         <div><label class="f">Subject</label><select id="c-q-subj"></select></div>
@@ -437,7 +438,7 @@
     </div>
 
     <div class="card c6">
-      <h3>Create a mindmap</h3><div class="sub">one branch per line — Branch name :: leaf, leaf, leaf</div>
+      <h3>Create a mindmap<span class="badge prem">Premium</span></h3><div class="sub">one branch per line — Branch name :: leaf, leaf, leaf</div>
       <label class="f">Centre (the big idea)</label><input type="text" id="c-m-title" placeholder="e.g. THE HEART">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
         <div><label class="f">Subject</label><select id="c-m-subj"></select></div>
@@ -463,7 +464,7 @@
     </div>
 
     <div class="card c6">
-      <h3>AI Formula Sheet Generator</h3><div class="sub">a concise sheet of essential formulas for a science or maths subject</div>
+      <h3>AI Formula Sheet Generator<span class="badge prem">Premium</span></h3><div class="sub">a concise sheet of essential formulas for a science or maths subject</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div><label class="f">Subject</label><select id="g-fm-subj"><option>Physics</option><option>Mathematics</option><option>Chemistry</option></select></div>
         <div><label class="f">Study level</label><select id="g-fm-level"></select></div>
@@ -472,7 +473,7 @@
       <div class="note">Saved as a formula grid in your library.</div>
     </div>
     <div class="card c6">
-      <h3>AI Mind Map Generator</h3><div class="sub">enter a central topic — get a branching map of concepts and links</div>
+      <h3>AI Mind Map Generator<span class="badge prem">Premium</span></h3><div class="sub">enter a central topic — get a branching map of concepts and links</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div><label class="f">Subject</label><select id="g-mm-subj"></select></div>
         <div><label class="f">Study level</label><select id="g-mm-level"></select></div>
@@ -484,7 +485,7 @@
     </div>
 
     <div class="card c6">
-      <h3>AI Topic Summarizer</h3><div class="sub">paste an article or your notes — get a concise summary and key points</div>
+      <h3>AI Topic Summarizer<span class="badge prem">Premium</span></h3><div class="sub">paste an article or your notes — get a concise summary and key points</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div><label class="f">Subject</label><select id="c-sm-subj"></select></div>
         <div><label class="f">Study level</label><select id="c-sm-level"></select></div>
@@ -498,7 +499,7 @@
     </div>
 
     <div class="card c6">
-      <h3>AI Essay Plan</h3><div class="sub">enter an essay title or question — get a thesis, introduction, body paragraphs and conclusion</div>
+      <h3>AI Essay Plan<span class="badge prem">Premium</span></h3><div class="sub">enter an essay title or question — get a thesis, introduction, body paragraphs and conclusion</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div><label class="f">Subject</label><select id="c-e-subj"></select></div>
         <div><label class="f">Study level</label><select id="c-e-level"></select></div>
@@ -510,7 +511,7 @@
     </div>
 
     <div class="card c6">
-      <h3>Visual Tools &amp; Graphs</h3><div class="sub">build a chart, a coordinate/function graph or a geometry diagram — great for maths, science and 11+</div>
+      <h3>Visual Tools &amp; Graphs<span class="badge prem">Premium</span></h3><div class="sub">build a chart, a coordinate/function graph or a geometry diagram — great for maths, science and 11+</div>
       <label class="f">Title</label><input type="text" id="c-v-title" placeholder="e.g. Favourite sports survey">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
         <div><label class="f">Tool type</label><select id="c-v-kind">
@@ -561,19 +562,30 @@
 <section id="tab-review">
   <div class="grid">
     <div class="card c5">
-      <h3>AI Assignment Review</h3>
-      <div class="sub">Paste homework, essays or past-paper answers for feedback, a predicted grade and next steps.
-        Each review uses <b id="ar-price"></b> ACUs from your wallet. <span id="ar-bal"></span></div>
+      <h3>AI Assignment Review<span class="badge prem">Premium</span></h3>
+      <div class="sub">Paste or attach homework, essays or past papers for AI feedback, a predicted grade and next steps.
+        Available to all signed-in roles; each review uses <b id="ar-price"></b> ACUs from your wallet
+        (school teachers use the school pool). <span id="ar-bal"></span></div>
       <label class="f">Assignment title</label><input type="text" id="ar-title" placeholder="e.g. The Causes of World War 1 essay">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px">
+        <div><label class="f">Type</label><select id="ar-type" style="text-transform:uppercase">
+          <option value="Homework">Homework</option><option value="Assignment" selected>Assignment</option>
+          <option value="Essay">Essay</option><option value="Coursework">Coursework</option>
+          <option value="Report">Report</option><option value="Dissertation">Dissertation</option>
+          <option value="Thesis">Thesis</option><option value="Personal statement">Personal statement</option>
+          <option value="Other">Other</option></select></div>
         <div><label class="f">Level</label><select id="ar-level"></select></div>
         <div><label class="f">Subject</label><select id="ar-subj"></select></div>
       </div>
-      <label class="f" style="margin-top:10px">Assignment text <span style="text-transform:none;letter-spacing:0">(min. 100 characters)</span></label>
-      <textarea id="ar-text" rows="9" placeholder="Paste your assignment here…"></textarea>
+      <label class="f" style="margin-top:10px">Assignment text <span style="text-transform:none;letter-spacing:0">(min. 100 characters — or attach a file below)</span></label>
+      <textarea id="ar-text" rows="9" placeholder="Paste your assignment here (min. 100 characters), or attach a file below."></textarea>
+      <div id="ar-drop" style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border:1px dashed rgba(170,182,204,.3);border-radius:10px;padding:10px">
+        <button class="btn ghost sm" id="ar-upload">📎 Attach assignment file</button>
+        <input type="file" id="ar-file" accept=".txt,.md,.csv,text/plain,.pdf,application/pdf,image/*" style="display:none">
+        <span class="note" id="ar-filename" style="margin:0">Drag &amp; drop or click — .txt, .pdf, .png, .jpg, .webp (max 25&nbsp;MB PDF / 8&nbsp;MB image)</span>
+      </div>
       <div style="margin-top:12px"><button class="btn" id="ar-go">Get Feedback</button></div>
-      <div class="note">Preview build: feedback is generated from a rules-based writing analysis. The live model
-        (SY-A16) marks against the exact board mark scheme and reads PDF/photo attachments when the backend goes live.</div>
+      <div class="note" id="ar-mode-note">Text files load into the box; PDFs and photos of written work (incl. handwriting) are read by the live model when AI is enabled.</div>
     </div>
     <div class="card c7">
       <h3>AI Review &amp; Feedback</h3><div class="sub" id="ar-sub">Feedback, strengths, targets and a scored breakdown appear here.</div>
@@ -686,7 +698,7 @@
 <section id="tab-course">
   <div class="grid">
     <div class="card c5">
-      <h3>AI Course Generator</h3>
+      <h3>AI Course Generator<span class="badge prem">Premium</span></h3>
       <div class="sub">Let StudYear build a structured course with modules, topics, and quizzes based on any topic
         you choose.</div>
       <label class="f">Study Level</label><select id="cg-level"><option value="">Select a level</option></select>
@@ -694,7 +706,7 @@
       <label class="f" style="margin-top:10px">Exam Board (Optional)</label>
       <select id="cg-board"><option value="">Any</option><option>AQA</option><option>CCEA</option><option>CIE</option><option>Edexcel</option><option>OCR</option><option>SQA</option><option>WJEC</option></select>
       <div style="margin-top:14px"><button class="btn" id="cg-go">Generate Course</button></div>
-      <div class="note" id="cg-cost">Uses <b id="cg-price"></b> ACUs per course — no premium plan required. <span id="cg-bal"></span></div>
+      <div class="note" id="cg-cost">Premium tool — uses <b id="cg-price"></b> ACUs per course. <span id="cg-bal"></span></div>
     </div>
     <div class="card c7">
       <h3>Generated Course Outline</h3><div class="sub" id="cg-sub">Your AI-generated course will appear below.</div>
@@ -1002,6 +1014,28 @@ function spendAcus(n,label){
   if(typeof refreshBalances==="function")refreshBalances();
   return true;
 }
+
+/* ---------- Premium plan gate (owner policy 2026-07) ----------
+   The creator toolkit and Assignment Review are Premium: Student Premium,
+   Premium+ and Max unlock them (Child Free and Student Access do not).
+   Usage stays metered — Premium unlocks tools, ACUs still pay per use. */
+const PREMIUM_PLANS={student_premium:1,student_premium_plus:1,student_max:1};
+function hasPremium(){return !!PREMIUM_PLANS[getWallet().plan]}
+const PREMIUM_TOOLS={
+  "g-fc-go":"AI Flashcard Generator","c-f-save":"Flashcard decks",
+  "g-qz-go":"AI Quiz Generator","c-q-save":"Quiz creator",
+  "c-n-save":"Revision notes","c-sm-save":"AI Topic Summarizer",
+  "c-e-save":"AI Essay Plan","g-fm-go":"AI Formula Sheet Generator",
+  "g-mm-go":"AI Mind Map Generator","c-m-save":"Mindmap creator",
+  "c-v-save":"Visual Tools & Graphs","cg-go":"AI Course Generator",
+  "ar-go":"AI Assignment Review"};
+/* capture-phase: the plan check runs before any tool's own handler */
+document.addEventListener("click",function(e){
+  const b=e.target.closest("button");if(!b||!PREMIUM_TOOLS[b.id]||hasPremium())return;
+  e.preventDefault();e.stopImmediatePropagation();
+  toast(PREMIUM_TOOLS[b.id]+" is a Premium tool — upgrade to Student Premium (£10/month) in My account → Plans & top-up.");
+  logEvent("billing","Premium tool locked: "+PREMIUM_TOOLS[b.id],"Upgrade to Student Premium or above to unlock the creator toolkit and Assignment Review.");
+},true);
 
 /* ============================ TABS ============================ */
 function showTab(t){
@@ -2626,13 +2660,63 @@ document.getElementById("ar-level").value=(PROFILE.level&&LEVELS.includes(PROFIL
 document.getElementById("ar-price").textContent=AR_PRICE;
 function refreshArBal(){const b=document.getElementById("ar-bal");if(b)b.textContent="Your balance: "+walletBalance()+" ACUs.";}
 refreshArBal();
+/* ---- file attach: text files fill the box; PDFs and images attach as data-URLs
+   for the live model's document/vision input (reads typed or handwritten work).
+   Limits mirror the product copy: 25 MB PDF · 8 MB image. ---- */
+let arImage=null;
+function arTakeFile(f){
+  if(!f)return;
+  const isPdf=f.type==="application/pdf"||/\.pdf$/i.test(f.name);
+  if(isPdf||/^image\//.test(f.type)){
+    const capMb=isPdf?25:8;
+    if(f.size>capMb*1024*1024){toast("Max "+capMb+" MB per "+(isPdf?"PDF":"image"));return}
+    const r=new FileReader();
+    r.onload=()=>{arImage=r.result;
+      document.getElementById("ar-filename").innerHTML=(isPdf?"📄":"📷")+" <b style='color:var(--gold-300)'>"+esc(f.name)+"</b> attached — the AI will read it"+(window.SYAI&&SYAI.ready()?"":" <span style='color:var(--warn)'>(enable live AI in the Gateway to review attached files)</span>");};
+    r.readAsDataURL(f);
+  }else{
+    const r2=new FileReader();
+    r2.onload=()=>{document.getElementById("ar-text").value=String(r2.result).slice(0,20000);arImage=null;
+      document.getElementById("ar-filename").innerHTML="📄 <b style='color:var(--gold-300)'>"+esc(f.name)+"</b> loaded into the box";toast("Document loaded")};
+    r2.readAsText(f);
+  }
+}
+document.getElementById("ar-upload").onclick=()=>document.getElementById("ar-file").click();
+document.getElementById("ar-file").addEventListener("change",function(){arTakeFile(this.files[0]);this.value=""});
+(function(){const dz=document.getElementById("ar-drop");if(!dz)return;
+  dz.addEventListener("dragover",e=>{e.preventDefault();dz.style.borderColor="var(--gold-400)"});
+  dz.addEventListener("dragleave",()=>{dz.style.borderColor="rgba(170,182,204,.3)"});
+  dz.addEventListener("drop",e=>{e.preventDefault();dz.style.borderColor="rgba(170,182,204,.3)";
+    arTakeFile(e.dataTransfer.files&&e.dataTransfer.files[0]);});
+})();
 document.getElementById("ar-go").onclick=()=>{
   const title=document.getElementById("ar-title").value.trim();
   const text=document.getElementById("ar-text").value.trim();
-  if(text.length<100){toast("Paste at least 100 characters of your work");return}
+  if(text.length<100&&!arImage){toast("Paste at least 100 characters — or attach your document, PDF or photo");return}
+  if(arImage&&!(window.SYAI&&SYAI.ready())){toast("File review needs live AI — ask your admin to enable it in the AI Gateway, or paste the text");return}
   if(!spendAcus(AR_PRICE,"Assignment review: "+(title||"untitled")))return;
   refreshArBal();
   const subj=document.getElementById("ar-subj").value, level=document.getElementById("ar-level").value;
+  const artype=(document.getElementById("ar-type")||{}).value||"Assignment";
+  /* live model: full examiner marking (reads attached photos/documents) */
+  if(window.SYAI&&SYAI.ready()){
+    const board=PROFILE.board&&PROFILE.board!=="—"?PROFILE.board:"";
+    document.getElementById("ar-sub").textContent=(title||"Your assignment")+" · marking with "+SYAI.provider()+"…";
+    document.getElementById("ar-out").innerHTML='<div class="empty">Your examiner is reading the work…</div>';
+    SYAI.ask("You are a "+level+" "+(subj||"")+" examiner"+(board?" marking to "+board+" standards":"")+". Mark the student's work like a real examiner. Return markdown with: '## Predicted grade' (grade + %); '## Criterion breakdown' — Structure, Evidence, Analysis, Clarity, Development, each as '**Name** — NN% · one-line comment'; '## Strengths' — 3 bullets quoting their actual words; '## Targets' — 3 specific, fixable targets each with HOW to fix; '## Rewrite one sentence' — quote one weak sentence and give the improved version; '## Next steps' — 2 actions before the next assignment. Be specific to THIS work, never generic."+(arImage?" The work is in the attached document or photo — read it carefully first (it may be handwritten).":""),
+      "Type of work: "+artype+"\n"+(title?"Title: "+title+"\n":"")+(text?"Work:\n"+text:"The work is in the attached file."),
+      {maxTokens:1600,image:arImage||undefined}).then(t=>{
+      addPoints(10);touchStreak();
+      logEvent("review","Assignment reviewed: "+(title||subj),level+(subj?" · "+subj:"")+" — live AI examiner review.");
+      document.getElementById("ar-sub").textContent=(title||"Your assignment")+" · "+level+(subj?" · "+subj:"")+" · live AI examiner";
+      document.getElementById("ar-out").innerHTML='<div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:6px">Live AI examiner review'+(arImage?' · read from your attached file':'')+'</div>'+SYAI.render(t);
+      arImage=null;document.getElementById("ar-filename").textContent="";
+    }).catch(e=>{toast("Live AI error — using the writing analysis");arStatic(title,text,subj,level)});
+    return;
+  }
+  arStatic(title,text,subj,level);
+};
+function arStatic(title,text,subj,level){
   /* rules-based writing analysis */
   const words=text.split(/\s+/).filter(Boolean).length;
   const sentences=text.split(/[.!?]+/).filter(s=>s.trim().length>3);
@@ -2972,21 +3056,37 @@ document.getElementById("il-go").onclick=()=>{
   logEvent("lesson","Interactive lesson: "+_L.topic,level+" level — interactive lesson started.");
   document.getElementById("il-sub").textContent=_L.topic+" · "+level+(_L.type?" · interactive walkthrough with marked practice":" · guided walkthrough")+" — step through, then take the quiz.";
   renderLesson();
-  /* live AI writes the real taught content for conceptual topics (quantitative
-     topics already have computed teaching, examples and marked practice) */
-  if(!_L.type&&window.SYAI&&SYAI.ready()){
-    document.getElementById("il-sub").textContent=_L.topic+" · "+level+" · writing your lesson with "+SYAI.provider()+"…";
-    SYAI.ask("You are StudYear's lesson author for a "+level+(subj?" "+subj:"")+" student. For the topic, return EXACTLY three sections separated by the line '---': (1) a clear, specific explanation of what it is with **bold key terms** (5–8 sentences, real content, not study advice); (2) a worked exam-style example: the question, then 3–5 concrete solution/answer steps; (3) the 3 most common exam traps for this topic, each with the fix. Use markdown, be genuinely educational.",
-      "Topic: "+topic,{maxTokens:1400}).then(t=>{
+  /* live AI authors a full curriculum-grade lesson (six sections, spec-aligned).
+     Quantitative topics keep their computed worked examples and marked practice;
+     conceptual topics get an AI worked example too. */
+  if(window.SYAI&&SYAI.ready()){
+    const board=PROFILE.board&&PROFILE.board!=="—"?PROFILE.board:"";
+    const curric=/ib|baccal/i.test(level)?"the IB curriculum":/national 5|highers/i.test(level)?"the Scottish (SQA) curriculum":/igcse|cie/i.test(level+board)?"the international (CIE/IGCSE) curriculum":"the UK national curriculum";
+    document.getElementById("il-sub").textContent=_L.topic+" · "+level+" · writing your curriculum-aligned lesson with "+SYAI.provider()+"…";
+    SYAI.ask("You are StudYear's curriculum lesson author. Write an EXTREMELY detailed, curriculum-accurate lesson on the topic for a "+level+(subj?" "+subj:"")+" student, aligned to "+curric+(board?" and the "+board+" specification":"")+". Return EXACTLY six sections separated by lines containing only '---':\n1) 4–6 learning objectives, one per line, each tied to the curriculum/specification point it serves (name the spec area, e.g. 'AQA 4.4.1' style where known, otherwise the curriculum strand);\n2) Key vocabulary: 6–8 terms, each as '**term** — precise definition';\n3) The core teaching: a genuinely educational, detailed explanation with sub-points, **bold key terms** and at least two concrete examples — real subject content, not study advice;\n4) Going deeper: the mechanisms (how and why), links to related spec topics, one more worked micro-example, and the single most common misunderstanding corrected;\n5) A worked exam-style question: the question on the first line (with mark allocation), then the full model answer as numbered mark-scheme-style steps showing where each mark is earned;\n6) Exam technique for this level"+(board?" and "+board:"")+": the command words that appear on this topic and what each demands, typical mark allocations, and the 3 most common traps with fixes.\nUse markdown throughout. Depth and accuracy over brevity.",
+      "Topic: "+topic,{maxTokens:2800}).then(t=>{
       const parts=String(t).split(/\n-{3,}\n?/);
-      const teach=_L.steps.find(s=>s.type==="teach");
-      if(parts[0]&&teach){teach.html=SYAI.render(parts[0]);teach.live=true}
-      if(parts[1]){const ex=_L.steps.find(s=>s.type==="example");
-        if(ex){const lines=parts[1].split("\n").map(x=>x.trim()).filter(Boolean);
-          ex.ex={q:lines[0]?lines[0].replace(/^\*+|\*+$/g,""):("Apply "+_L.topic),steps:lines.slice(1).map(l=>SYAI.render(l)),answer:null};}}
-      const traps=_L.steps.filter(s=>s.type==="teach")[1];
-      if(parts[2]&&traps){traps.html=SYAI.render(parts[2]);traps.live=true}
-      document.getElementById("il-sub").textContent=_L.topic+" · "+level+" · live AI lesson — step through, then take the quiz.";
+      const quiz=_L.steps.find(s=>s.type==="quiz");
+      const steps=[];
+      const objLines=(parts[0]||"").split("\n").map(x=>x.replace(/^[-*\d.)\s#]+/,"").trim()).filter(Boolean);
+      steps.push({type:"intro",objectives:objLines.length?objLines.slice(0,8):_L.steps[0].objectives});
+      if(parts[1])steps.push({type:"teach",h:"1 · Key vocabulary",html:SYAI.render(parts[1]),live:true});
+      if(parts[2])steps.push({type:"teach",h:"2 · The core teaching",html:SYAI.render(parts[2]),live:true});
+      if(parts[3])steps.push({type:"teach",h:"3 · Going deeper",html:SYAI.render(parts[3]),live:true});
+      if(_L.type){
+        /* keep the computed worked example + marked practice + retrieval */
+        _L.steps.filter(s=>s.type==="example"||s.type==="practice"||s.type==="recall").forEach(s=>steps.push(s));
+        if(parts[4])steps.push({type:"teach",h:"Exam-style worked example",html:SYAI.render(parts[4]),live:true});
+      }else{
+        if(parts[4]){const lines=parts[4].split("\n").map(x=>x.trim()).filter(Boolean);
+          steps.push({type:"example",h:"4 · Worked exam-style example",ex:{q:lines[0].replace(/^\*+|\*+$/g,""),steps:lines.slice(1).map(l=>SYAI.render(l)),answer:null}});}
+        const recall=_L.steps.find(s=>s.type==="recall");if(recall)steps.push(recall);
+      }
+      if(parts[5])steps.push({type:"teach",h:"Exam technique & common traps",html:SYAI.render(parts[5]),live:true});
+      if(quiz)steps.push(quiz);
+      steps.push({type:"summary"});
+      _L.steps=steps;_ls={i:0,correct:0,practiceTotal:0,quizScore:0,confidence:null};
+      document.getElementById("il-sub").textContent=_L.topic+" · "+level+(board?" · "+board:"")+" · curriculum-aligned live AI lesson ("+steps.length+" steps) — step through, then take the quiz.";
       renderLesson();
     }).catch(()=>{document.getElementById("il-sub").textContent=_L.topic+" · "+level+" · guided walkthrough — step through, then take the quiz."});
   }
