@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>StudYear — Local Authority</title><link rel="manifest" href="../manifest.json"><link rel="icon" href="../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--gold-300:#A9CFF2;--gold-400:#5FA8E0;--gold-500:#3D8FD1;--good:#5CBB7B;--warn:#c98500;--crit:#e66767;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#6B7A96;--line:rgba(77,157,224,.14);--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}body{background:radial-gradient(1200px 700px at 82% -12%,rgba(77,157,224,.13),transparent 60%),var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  .shell{display:flex;min-height:100vh;max-width:1440px;margin:0 auto}
+  aside{width:224px;flex:none;border-right:1px solid var(--line);padding:22px 14px 30px;position:sticky;top:0;align-self:flex-start;max-height:100vh;overflow-y:auto}
+  .slogo{font-family:var(--serif);font-size:19px;color:var(--ink);text-decoration:none;display:block;padding:4px 10px 6px}.slogo b{color:#4FA6E0;font-weight:600}
+  aside .role{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);padding:0 10px 14px}
+  aside nav a{display:block;font-size:13px;color:var(--ink-2);text-decoration:none;padding:8px 10px;border-radius:8px;margin:1px 0}aside nav a:hover{color:var(--gold-300);background:rgba(77,157,224,.08)}aside nav a.on{color:var(--gold-300);background:rgba(77,157,224,.12)}
+  main{flex:1;padding:30px 30px 90px;min-width:0;max-width:1080px}@media(max-width:960px){.shell{flex-direction:column}aside{width:100%;position:sticky;top:0;z-index:60;max-height:46vh;overflow-y:auto;background:#060B18;border-right:none;border-bottom:1px solid var(--line)}aside nav{display:flex;flex-wrap:wrap;gap:2px}main{padding:22px 18px 70px}}
+  a{color:inherit}h1{font-family:var(--serif);font-weight:500;font-size:28px}.k{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-400)}p.lede{color:var(--ink-2);font-weight:300;margin-top:6px;max-width:82ch}
+  .live{font-size:11px;color:var(--good);border:1px solid rgba(92,187,123,.4);border-radius:20px;padding:3px 10px}
+  .code{font-family:var(--serif);font-size:24px;letter-spacing:.16em;color:var(--gold-300)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:16px}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-top:16px}.c4{grid-column:span 4}.c6{grid-column:span 6}.c8{grid-column:span 8}.c12{grid-column:span 12}@media(max-width:960px){.grid>*{grid-column:span 6}}@media(max-width:600px){.grid>*{grid-column:span 12}}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:18px 20px}.card h3{font-family:var(--serif);font-weight:500;font-size:16px}.card .sub{font-size:12px;color:var(--ink-3);margin:4px 0 10px}
+  .stat .v{font-family:var(--serif);font-size:30px;color:var(--gold-300);line-height:1}.stat .k2{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}
+  label.f{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:12px 0 5px}
+  input,select{width:100%;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}select option{background:#101B33}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}@media(max-width:640px){.two,.three{grid-template-columns:1fr}}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12px var(--sans);border-radius:9px;padding:9px 15px;cursor:pointer;text-decoration:none;display:inline-block}.btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}.btn.sm{padding:6px 11px;font-size:11.5px}.btn.ghost{border-color:rgba(170,182,204,.3);background:transparent;color:var(--ink-2)}
+  .row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:13px}.row b{color:var(--ink)}
+  .badge{font-size:10px;border-radius:20px;padding:3px 9px;border:1px solid rgba(77,157,224,.35);color:var(--gold-300)}.badge.good{border-color:rgba(92,187,123,.45);color:var(--good)}.badge.warn{border-color:rgba(201,133,0,.45);color:#e0b566}
+  .bar{height:9px;border-radius:5px;background:rgba(170,182,204,.12);overflow:hidden}.bar i{display:block;height:100%}
+  .rank{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:12.5px}
+  .prog{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px;background:rgba(6,11,24,.32)}
+  .prog .pt{font-size:14px;font-weight:600;color:var(--ink)}.prog .pm{font-size:11.5px;color:var(--ink-3);margin-top:3px}
+  .impact{font-family:var(--serif);font-size:20px;color:var(--good)}
+  .empty{color:var(--ink-3);font-style:italic;padding:12px 0}.note{font-size:11.5px;color:var(--ink-3);margin-top:8px}
+  .trust{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}.tb{font-size:11.5px;color:var(--ink-2);border:1px solid var(--line);border-radius:20px;padding:6px 12px}.tb b{color:var(--gold-300)}
+  .demobar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid rgba(201,133,0,.35);background:rgba(201,133,0,.07);border-radius:12px;padding:11px 15px;margin-top:14px;font-size:12.5px;color:#e0b566}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+</style></head><body>
+<script src="../guard.js" data-role="authority" data-base="../"></script>
+<div class="shell">
+<aside><a class="slogo" href="../">⌂ <b>StudYear</b></a><div class="role">Local Authority</div><nav>
+  <a href="./" class="on">Overview</a><a href="#schools">Schools</a><a href="#programmes">Programmes &amp; funding</a><a href="#impact">Impact evidence</a><a href="#youth">Youth Guarantee</a><a href="#" id="signout">Sign out</a>
+</nav></aside>
+<main>
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span class="live">● Live</span><span class="k" style="margin:0">Councils · youth programmes · intervention funds</span><button class="btn" id="demo-btn" style="margin-left:auto">Load demo</button></div>
+  <h1>Local Authority command centre</h1>
+  <p class="lede">Measurable outcomes at cohort scale — verified progress evidence per pound spent. Catch-up and premium
+    programmes reported with before/after mastery, not attendance sheets. Data flows both ways: schools feed anonymised
+    cohort data up; you push programmes and funding back down.</p>
+  <div class="demobar" id="demobar" style="display:none"></div>
+
+  <div class="card" style="margin-top:16px"><h3>Authority connection code</h3><div class="sub">Schools enter this in their Command Centre to feed you anonymised cohort data.</div>
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span class="code" id="la-code">------</span><button class="btn sm" id="copy-code">Copy</button></div>
+  </div>
+
+  <div class="kpis">
+    <div class="card stat"><div class="v" id="k-schools">0</div><div class="k2">Connected schools</div></div>
+    <div class="card stat"><div class="v" id="k-students">0</div><div class="k2">Students (cohort)</div></div>
+    <div class="card stat"><div class="v" id="k-attain">0%</div><div class="k2">Avg attainment</div></div>
+    <div class="card stat"><div class="v" id="k-progs">0</div><div class="k2">Active programmes</div></div>
+    <div class="card stat"><div class="v" id="k-roi">—</div><div class="k2">Avg mastery gain</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="card c12" id="schools"><h3>Cohort benchmarking across schools</h3><div class="sub">Anonymised at student level · schools ranked by attainment</div><div id="school-table"></div></div>
+
+    <div class="card c6" id="programmes"><h3>Programmes &amp; funding</h3><div class="sub">Create a catch-up or premium programme — pushed to your schools</div>
+      <div class="two"><div><label class="f">Programme name</label><input id="p-name" placeholder="e.g. Year 11 Maths catch-up"></div><div><label class="f">Type</label><select id="p-type"><option>Catch-up</option><option>Premium</option><option>Intervention fund</option></select></div></div>
+      <div class="two"><div><label class="f">Funding (£)</label><input id="p-cost" placeholder="e.g. 40000"></div><div><label class="f">Students</label><input id="p-students" placeholder="e.g. 120"></div></div>
+      <div style="margin-top:10px"><button class="btn solid" id="p-add">Create &amp; push to schools</button></div>
+      <div id="prog-list" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card c6" id="impact"><h3>Funding-impact evidence</h3><div class="sub">Before/after mastery per programme — verified impact per £</div><div id="impact-list"></div></div>
+
+    <div class="card c6" id="youth"><h3>Youth Guarantee — destinations</h3><div class="sub">Employability through attainment, across the area</div><div id="destinations"></div></div>
+    <div class="card c6"><h3>Wellbeing &amp; safeguarding</h3><div class="sub">Aggregate signals (KCSIE workflows in the secure backend)</div><div id="safeguard"></div></div>
+
+    <div class="card c12"><h3>Compliance &amp; licensing</h3>
+      <div class="trust">
+        <span class="tb"><b>Verified impact</b> · before/after mastery</span>
+        <span class="tb"><b>GDPR &amp; AADC</b> conformant by design</span>
+        <span class="tb"><b>KCSIE</b>-aligned safeguarding</span>
+        <span class="tb"><b>Area-wide licensing</b></span>
+        <span class="tb"><b>Anonymised</b> cohort benchmarking</span>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+<div id="toast"></div>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;
+function $(id){return document.getElementById(id)}function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var e=$('toast');e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2400)}
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+function money(n){return '£'+(Math.round(n||0)).toLocaleString()}
+function avg(a){return a.length?Math.round(a.reduce(function(x,y){return x+y},0)/a.length):0}
+
+var code=SY.get('authorityCode',null);if(!code){code='LA-'+(Math.random().toString(36).slice(2,7)).toUpperCase();SY.set('authorityCode',code)}
+$('la-code').textContent=code;
+$('copy-code').onclick=function(){(navigator.clipboard?navigator.clipboard.writeText(code):Promise.reject()).then(function(){toast('Code copied')},function(){toast('Code: '+code)})};
+
+function laGet(k,d){try{var v=JSON.parse(localStorage.getItem('sy-la:'+code+':'+k));return v==null?d:v}catch(e){return d}}
+function laSet(k,v){try{localStorage.setItem('sy-la:'+code+':'+k,JSON.stringify(v))}catch(e){}}
+function schools(){var out=[];var re=new RegExp('^sy-la:'+code+':school:(.+)$');for(var i=0;i<localStorage.length;i++){var key=localStorage.key(i);if(re.test(key)){try{out.push(JSON.parse(localStorage.getItem(key)))}catch(e){}}}return out}
+
+function draw(){
+  var S=schools();
+  var totalStudents=S.reduce(function(a,s){return a+(s.students||0)},0);
+  var attain=S.length?avg(S.map(function(s){return s.avg||0})):0;
+  var progs=laGet('programmes',[]);
+  $('k-schools').textContent=S.length;$('k-students').textContent=totalStudents.toLocaleString();$('k-attain').textContent=attain+'%';
+  $('k-progs').textContent=progs.filter(function(p){return p.status!=='closed'}).length;
+  var gains=progs.filter(function(p){return p.current!=null&&p.baseline!=null}).map(function(p){return p.current-p.baseline});
+  $('k-roi').textContent=gains.length?('+'+avg(gains)+' pts'):'—';
+
+  /* benchmarking table */
+  $('school-table').innerHTML=S.length?('<div class="row" style="color:var(--ink-3);font-size:11px"><span style="flex:1">School</span><span style="width:60px">Students</span><span style="width:90px">Attainment</span><span style="width:70px">Progress</span><span style="width:70px">Attend.</span></div>'+
+    S.slice().sort(function(a,b){return (b.avg||0)-(a.avg||0)}).map(function(s){var c=(s.avg||0)>=65?'var(--good)':(s.avg||0)>=50?'var(--warn)':'var(--crit)';
+      return '<div class="row"><span style="flex:1"><b>'+esc(s.name||s.schoolCode)+'</b></span><span style="width:60px">'+(s.students||0)+'</span><span style="width:90px"><span class="bar" style="display:inline-block;width:50px;vertical-align:middle"><i style="width:'+(s.avg||0)+'%;background:'+c+'"></i></span> '+(s.avg||0)+'%</span><span style="width:70px">+'+(s.progress||0)+'</span><span style="width:70px">'+(s.attendance||0)+'%</span></div>';
+    }).join('')):'<div class="empty">No schools connected yet. Share your authority code — schools connect from their Command Centre.</div>';
+
+  /* programmes + impact */
+  $('prog-list').innerHTML=progs.length?progs.map(function(p,i){return '<div class="row"><span style="flex:1"><b>'+esc(p.name)+'</b> <span class="badge">'+esc(p.type)+'</span></span><span style="color:var(--ink-3);font-size:11.5px">'+money(p.cost)+' · '+(p.students||0)+' students</span> '+(p.status==='closed'?'<span class="badge good">closed</span>':'<button class="btn sm ghost" data-adv="'+i+'">+ report progress</button>')+'</div>'}).join(''):'<div class="empty">No programmes yet.</div>';
+  $('prog-list').querySelectorAll('[data-adv]').forEach(function(b){b.onclick=function(){var pr=laGet('programmes',[]);var p=pr[+b.dataset.adv];p.current=Math.min(100,(p.current||p.baseline||50)+4);laSet('programmes',pr);toast('Progress reported — impact updated');draw()}});
+  $('impact-list').innerHTML=progs.length?progs.map(function(p){var gain=(p.current!=null&&p.baseline!=null)?(p.current-p.baseline):0;var perK=p.cost?Math.round(gain/(p.cost/1000)*10)/10:0;
+    return '<div class="prog"><div class="pt">'+esc(p.name)+'</div><div class="pm">'+esc(p.type)+' · '+money(p.cost)+' · '+(p.students||0)+' students</div>'+
+      '<div class="rank" style="margin-top:8px"><span style="width:70px">Before</span><span class="bar" style="flex:1"><i style="width:'+(p.baseline||0)+'%;background:var(--ink-3)"></i></span><span style="width:40px;text-align:right">'+(p.baseline||0)+'%</span></div>'+
+      '<div class="rank"><span style="width:70px">After</span><span class="bar" style="flex:1"><i style="width:'+(p.current||p.baseline||0)+'%;background:var(--good)"></i></span><span style="width:40px;text-align:right">'+(p.current||p.baseline||0)+'%</span></div>'+
+      '<div style="margin-top:6px"><span class="impact">+'+gain+' pts</span> <span class="note" style="margin:0">mastery · '+perK+' pts per £1k</span></div></div>';
+  }).join(''):'<div class="empty">Create a programme to generate funding-impact evidence.</div>';
+
+  /* destinations aggregate */
+  var dest={};S.forEach(function(s){var d=s.dest||{};Object.keys(d).forEach(function(k){dest[k]=(dest[k]||0)+d[k]})});
+  var dk=Object.keys(dest);$('destinations').innerHTML=dk.length?dk.sort(function(a,b){return dest[b]-dest[a]}).map(function(d){return '<div class="row"><span style="flex:1">'+esc(d)+'</span><b>'+dest[d]+'</b></div>'}).join(''):'<div class="empty">Connect schools to see area destinations.</div>';
+
+  /* wellbeing/safeguarding aggregate */
+  var well=S.length?avg(S.map(function(s){return s.wellbeing||0})):0;var alerts=S.reduce(function(a,s){return a+(s.safeguard||0)},0);
+  $('safeguard').innerHTML=S.length?('<div class="row"><span style="flex:1">Average wellbeing</span><b>'+well+'%</b></div><div class="row"><span style="flex:1">Safeguarding alerts (area)</span><b style="color:'+(alerts?'var(--crit)':'var(--good)')+'">'+alerts+'</b></div><div class="note">Case detail stays in each school under KCSIE; the authority sees counts only.</div>'):'<div class="empty">No data yet.</div>';
+}
+
+$('p-add').onclick=function(){
+  var name=$('p-name').value.trim();if(!name){toast('Name the programme');return}
+  var S=schools();var baseline=S.length?avg(S.map(function(s){return s.avg||0})):55;
+  var progs=laGet('programmes',[]);
+  progs.push({id:'p'+progs.length,name:name,type:$('p-type').value,cost:parseFloat($('p-cost').value)||0,students:parseInt($('p-students').value,10)||0,baseline:baseline,current:baseline,status:'active'});
+  laSet('programmes',progs);
+  /* push to schools (data down) */
+  laSet('pushed',(laGet('pushed',[])).concat([{name:name,type:$('p-type').value,when:new Date().toISOString()}]));
+  SY.log('la','Programme created & pushed',name);
+  $('p-name').value='';$('p-cost').value='';$('p-students').value='';toast('Programme created and pushed to schools');draw();
+};
+
+if(laGet('demo',false)){var db=$('demobar');db.style.display='flex';db.innerHTML='🎓 <b style="color:#e0b566">Demo authority loaded</b> — sample connected schools &amp; programmes. <b>No AI cost.</b> <button class="btn sm" id="clr" style="margin-left:auto;padding:5px 11px">Clear demo</button>';
+  $('clr').onclick=function(){var re=new RegExp('^sy-la:'+code+':');var rm=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(re.test(k))rm.push(k)}rm.forEach(function(k){localStorage.removeItem(k)});location.reload()};}
+$('demo-btn').onclick=function(){
+  var names=['Elmwood High','Northgate Academy','Riverside College','St Aidan\'s','Parkview Secondary','Meadow Trust'];
+  function rnd(a,b){return Math.round(a+Math.random()*(b-a))}
+  names.forEach(function(nm,i){
+    var avgv=rnd(48,78);var students=rnd(400,1200);
+    laSet('school:DEMO'+i,{schoolCode:'DEMO'+i,name:nm,students:students,avg:avgv,progress:rnd(2,14),attendance:rnd(88,97),wellbeing:rnd(60,85),safeguard:rnd(0,3),demo:true,
+      dest:{University:Math.round(students*0.28),'Sixth Form / College':Math.round(students*0.34),Apprenticeship:Math.round(students*0.22),'Needs support':Math.round(students*0.16)},updatedAt:new Date().toISOString()});
+  });
+  laSet('programmes',[
+    {id:'p0',name:'KS4 Maths catch-up',type:'Catch-up',cost:42000,students:180,baseline:52,current:61,status:'active',demo:true},
+    {id:'p1',name:'Pupil Premium literacy',type:'Premium',cost:65000,students:240,baseline:48,current:59,status:'active',demo:true},
+    {id:'p2',name:'NEET-prevention fund',type:'Intervention fund',cost:38000,students:90,baseline:44,current:50,status:'active',demo:true}
+  ]);
+  laSet('demo',true);SY.log('demo','LA demo loaded','6 schools, 3 programmes — no AI cost');location.reload();
+};
+draw();
+})();
+</script>
+</body></html>

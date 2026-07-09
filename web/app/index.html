@@ -5,7 +5,7 @@
 (function(){var q=new URLSearchParams(location.search);
 if(q.get('switch')){try{localStorage.removeItem('sy-session')}catch(e){}location.replace('../auth/');return}
 var s=null;try{s=JSON.parse(localStorage.getItem('sy-session'))}catch(e){}
-if(s&&s.role&&['student','parent','teacher','tutor','school'].indexOf(s.role)>=0){location.replace('./'+s.role+'/')}
+if(s&&s.role&&['student','parent','teacher','tutor','school','authority'].indexOf(s.role)>=0){location.replace('./'+s.role+'/')}
 else location.replace('../auth/');})();
 </script>
 </body></html>

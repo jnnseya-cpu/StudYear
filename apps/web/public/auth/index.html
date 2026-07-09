@@ -92,7 +92,7 @@
 <script>
 (function(){
 'use strict';
-var PUBLIC_ROLES=[['student','Student'],['parent','Parent'],['teacher','Teacher'],['school','School'],['tutor','Tutor']];
+var PUBLIC_ROLES=[['student','Student'],['parent','Parent'],['teacher','Teacher'],['school','School'],['tutor','Tutor'],['authority','Local Authority']];
 var ALL_ROLES=PUBLIC_ROLES.concat([['admin','Admin']]);
 var LABELS={}; ALL_ROLES.forEach(function(r){LABELS[r[0]]=r[1]});
 var q=new URLSearchParams(location.search);

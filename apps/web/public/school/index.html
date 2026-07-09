@@ -260,6 +260,8 @@
       <div class="note" style="font-style:normal">Generate a cohort report once students are linked — attainment vs target, risk register, and ACU usage.</div>
       <div style="margin-top:8px"><a class="btn" href="#" id="gen-report">Generate summary</a></div>
       <div id="report-out"></div></div>
+    <div class="card c12" id="la-card"><h3>🏛️ Local Authority</h3><div class="sub">Feed anonymised cohort data to your council or programme, and receive their programmes &amp; funding. Data flows both ways — no student PII leaves your school.</div><div id="la-body"></div></div>
+
     <div class="card c12" id="knowledge"><h3>Knowledge hub</h3><div class="sub">Shared resources set to your cohort</div>
       <div class="note" style="font-style:normal">Post class work and resources to your join code — linked students (and their parents, if allowed) receive it. Manage from People management.</div></div>
   </div>
@@ -716,6 +718,34 @@ function renderEquity(){
   $('equity-recs').innerHTML=worst.length?('<div class="note" style="font-style:normal;margin-bottom:4px">Targeted, evidence-based recommendations from the Inclusion &amp; Equity Agent:</div>'+worst.map(function(r){return '<div class="rec"><span class="ri">→</span><span><b>'+esc(r.label)+'</b> are '+r.gap+' pts behind the cohort — mentoring, targeted tutoring and family engagement for this group.</span></div>'}).join('')):'<div class="note">No group is materially behind — equitable outcomes across the cohort. Keep monitoring.</div>';
 }
 renderEquity();
+
+/* ============ Local Authority — two-way data ============ */
+function renderLA(){
+  var settings=SY.get('schoolSettings',{});
+  var laCode=settings.authorityCode||SY.get('authorityLink',null);
+  var body=$('la-body');if(!body)return;
+  function summary(){
+    var attendance=Math.round(avg(M.map(function(m){return fld(m,'attendance',93)})));
+    var wellbeing=Math.round(avg(M.map(function(m){return fld(m,'wellbeing',72)})));
+    var progress=Math.round(avg(M.map(function(m){return fld(m,'progress',Math.max(0,m.overall-55))})));
+    var dest={};M.forEach(function(m){var d=m.destination||(m.overall>=75?'University':m.overall>=60?'Sixth Form / College':m.overall>=45?'Apprenticeship':'Needs support');dest[d]=(dest[d]||0)+1});
+    return {schoolCode:code,name:schoolName,students:M.length,avg:cohort,progress:progress,attendance:attendance,wellbeing:wellbeing,safeguard:atRisk.filter(function(m){return m.risk==='CRITICAL'}).length,dest:dest,updatedAt:new Date().toISOString()};
+  }
+  function publish(lc){try{localStorage.setItem('sy-la:'+lc+':school:'+code,JSON.stringify(summary()))}catch(e){}}
+  if(laCode){
+    if(M.length)publish(laCode);
+    var progs=[];try{progs=JSON.parse(localStorage.getItem('sy-la:'+laCode+':programmes'))||[]}catch(e){}
+    body.innerHTML='<div class="row"><span style="flex:1">✓ Connected to authority <b>'+esc(laCode)+'</b> — sharing anonymised cohort summary'+(M.length?' ('+M.length+' students)':'')+'.</span><button class="btn sm" id="la-disc">Disconnect</button></div>'+
+      '<div class="note" style="font-style:normal;margin:8px 0 4px">Programmes &amp; funding from your authority</div>'+
+      (progs.length?progs.map(function(p){return '<div class="row"><b>'+esc(p.name)+'</b> <span class="badge">'+esc(p.type)+'</span><span style="margin-left:auto;color:var(--ink-3);font-size:11.5px">'+(p.cost?'£'+(p.cost).toLocaleString():'')+(p.students?' · '+p.students+' students':'')+'</span></div>'}).join(''):'<div class="empty">No programmes pushed yet.</div>');
+    $('la-disc').onclick=function(){var s=SY.get('schoolSettings',{});delete s.authorityCode;SY.set('schoolSettings',s);SY.remove('authorityLink');try{localStorage.removeItem('sy-la:'+laCode+':school:'+code)}catch(e){}renderLA()};
+  } else {
+    body.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input id="la-in" placeholder="Authority code (e.g. LA-XXXXX)" style="max-width:240px;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);padding:9px 12px;font:400 14px var(--sans)"><button class="btn solid" id="la-go">Connect</button></div>'+
+      '<div class="note">Your council or programme provides this code. Only anonymised cohort aggregates are shared — never student names or PII.</div>';
+    $('la-go').onclick=function(){var v=($('la-in').value||'').trim().toUpperCase();if(!v)return;var s=SY.get('schoolSettings',{});s.authorityCode=v;SY.set('schoolSettings',s);SY.set('authorityLink',v);publish(v);SY.log('la','Connected to Local Authority',v);renderLA()};
+  }
+}
+renderLA();
 
 /* demo banner */
 if(DEMO){var db=$('demobar');db.style.display='flex';db.innerHTML='🎓 <b style="color:#e0b566">Demo school loaded</b> — '+M.length+' students, '+staff.length+' staff, fully populated with sample data. <b>No AI credits are used</b> — explore every dashboard freely. <button class="btn sm" id="clear-demo" style="margin-left:auto;padding:5px 11px">Clear demo</button>';
