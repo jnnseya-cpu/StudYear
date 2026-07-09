@@ -714,6 +714,9 @@
   <div class="grid">
     <div class="card c7"><h3>Quiz scores over time</h3><div class="sub">every quiz you finish lands here</div><div id="score-chart"><div class="empty">Take a quiz in 🔎 Find resources to start the chart.</div></div></div>
     <div class="card c5"><h3>Subject progress</h3><div class="sub">mastery per subject — quizzes + your latest diagnostic</div><div id="mastery"></div></div>
+    <div class="card c6"><h3>Improvement — are you getting better?</h3><div class="sub">your earlier scores vs your most recent, per subject</div><div id="prog-improve"></div></div>
+    <div class="card c6"><h3>Activity &amp; consistency</h3><div class="sub">everything you've done — the whole picture</div><div id="prog-activity"></div></div>
+    <div class="card c12"><h3>Strengths &amp; what to focus on next</h3><div class="sub">from your live mastery and diagnostics</div><div id="prog-focus"></div></div>
     <div class="card c12">
       <h3>AI Grade Improvement Plan</h3>
       <div class="sub">Track your study progress and generate an improvement plan to reach your target grades.</div>
@@ -2079,6 +2082,67 @@ function renderProgress(){
   mast.innerHTML=rows.length?rows.map(([s,m])=>`
     <div class="mrow"><span>${esc(s)}</span><div class="bar"><i style="width:${m}%;background:${SUBJ_COLOURS[s]||"#3D8FD1"}"></i></div><span class="pc">${m}%</span></div>`).join("")
     :'<div class="empty">Finish a quiz or run a diagnostic to see subject progress.</div>';
+  renderProgressDeep(qz,dg,plan);
+}
+
+/* deep, data-driven progress: improvement trends, activity/consistency, strengths & focus */
+function renderProgressDeep(qz,dg,plan){
+  qz=qz||store.get("quizzes",[]);
+  const $=id=>document.getElementById(id);
+  /* ---- improvement per subject: earlier half vs recent half ---- */
+  const bySubj={};qz.slice().sort((a,b)=>new Date(a.when||0)-new Date(b.when||0)).forEach(q=>{(bySubj[q.subj]=bySubj[q.subj]||[]).push(q.pct)});
+  const imp=Object.entries(bySubj).map(([s,v])=>{
+    if(v.length<2)return {s,delta:null,latest:v[v.length-1],n:v.length};
+    const half=Math.max(1,Math.floor(v.length/2));
+    const early=v.slice(0,half),late=v.slice(-half);
+    const ea=Math.round(early.reduce((a,b)=>a+b,0)/early.length),la=Math.round(late.reduce((a,b)=>a+b,0)/late.length);
+    return {s,delta:la-ea,latest:v[v.length-1],n:v.length};
+  }).sort((a,b)=>(b.delta==null?-999:b.delta)-(a.delta==null?-999:a.delta));
+  if($("prog-improve"))$("prog-improve").innerHTML=imp.length?imp.map(r=>{
+    const d=r.delta;const badge=d==null?`<span class="pc" style="color:var(--ink-3)">need 2+ quizzes</span>`
+      :d>0?`<span class="pc" style="color:var(--good)">▲ +${d}% improving</span>`
+      :d<0?`<span class="pc" style="color:var(--crit)">▼ ${d}% dipped</span>`
+      :`<span class="pc" style="color:var(--ink-2)">▬ steady</span>`;
+    return `<div class="mrow"><span>${esc(r.s)} <small style="color:var(--ink-3)">·${r.n}</small></span><div class="bar"><i style="width:${r.latest}%;background:${SUBJ_COLOURS[r.s]||"#3D8FD1"}"></i></div>${badge}</div>`;
+  }).join(""):'<div class="empty">Take a few quizzes in the same subject and your improvement trend appears here.</div>';
+
+  /* ---- activity & consistency ---- */
+  const acts=(typeof store!=="undefined")?store.get("activity",[]):[];
+  const lessons=acts.filter(a=>a.k==="lesson").length;
+  const diags=store.get("diagnostics",[]).length;
+  const saved=(typeof allResources==="function"?allResources().filter(r=>r.mine).length:0);
+  const days=new Set(qz.map(q=>(q.when||"").slice(0,10)).filter(Boolean));acts.forEach(a=>{if(a.when)days.add(a.when.slice(0,10))});
+  const planDone=plan&&plan.done?Object.keys(plan.done).length:0;
+  const cells=[["Quizzes taken",qz.length],["Lessons done",lessons],["Diagnostics",diags],["Saved resources",saved],["Plan sessions done",planDone],["Active days",days.size],["Points",store.get("points",0).toLocaleString()],["Best streak",streakLen()+"d"]];
+  if($("prog-activity"))$("prog-activity").innerHTML=`<div class="tiles" style="grid-template-columns:repeat(2,1fr);gap:8px">${cells.map(c=>`<div class="tile" style="padding:10px 12px"><div class="v" style="font-size:20px">${c[1]}</div><div class="k">${c[0]}</div></div>`).join("")}</div>`;
+
+  /* ---- strengths & focus ---- */
+  const rows=subjectMastery();
+  if($("prog-focus")){
+    if(!rows.length){$("prog-focus").innerHTML='<div class="empty">Run a diagnostic or take quizzes to unlock strengths and focus areas.</div>';}
+    else{
+      const strongest=rows[rows.length-1],weakest=rows[0];
+      const mostImproved=imp.filter(r=>r.delta!=null).sort((a,b)=>b.delta-a.delta)[0];
+      const diag=store.get("diagnostics",[])[0]||null;
+      const weakTopics=diag?(diag.list.find(x=>x.s===weakest[0])?(DIAG_TOPICS[weakest[0]]||DIAG_FALLBACK).slice(0,3):[]):[];
+      $("prog-focus").innerHTML=`
+        <div class="tiles" style="grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px">
+          <div class="tile"><div class="v" style="color:var(--good)">${esc(strongest[0])}</div><div class="k">Strongest · ${strongest[1]}%</div></div>
+          <div class="tile"><div class="v" style="color:var(--warn)">${esc(weakest[0])}</div><div class="k">Focus here · ${weakest[1]}%</div></div>
+          <div class="tile"><div class="v" style="color:var(--gold-300)">${mostImproved?esc(mostImproved.s):"—"}</div><div class="k">${mostImproved?"Most improved · +"+mostImproved.delta+"%":"Most improved"}</div></div>
+        </div>
+        <div style="font-size:13.5px;color:var(--ink-2);line-height:1.7">
+          <b>Your next best moves:</b>
+          <ul style="margin:6px 0 0 18px">
+            <li>Do a targeted lesson on <b>${esc(weakest[0])}</b>${weakTopics.length?` — start with: ${weakTopics.map(esc).join(", ")}`:""}. <a href="#" data-goto-lesson="${esc(weakest[0])}" style="color:var(--gold-300)">Open a lesson →</a></li>
+            <li>Keep <b>${esc(strongest[0])}</b> warm with one retrieval quiz this week.</li>
+            <li>${days.size<3?"Build a routine — a short session on 3+ days beats one long cram.":"Great consistency ("+days.size+" active days) — protect the streak."}</li>
+          </ul>
+        </div>`;
+      const gl=$("prog-focus").querySelector("[data-goto-lesson]");
+      if(gl)gl.onclick=e=>{e.preventDefault();openLessonFor(gl.dataset.gotoLesson,gl.dataset.gotoLesson,PROFILE.level||"");};
+    }
+  }
 }
 
 /* combined mastery per subject: rolling quiz average + latest diagnostic confidence */
