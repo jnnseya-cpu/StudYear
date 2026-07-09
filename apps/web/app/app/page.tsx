@@ -21,13 +21,17 @@ export default function AccountChooser() {
       window.location.replace(`${BASE}/app/${h}/`);
       return;
     }
+    // Local Authority and Admin are not public cards — they enter via a link.
+    if (h === 'authority') { window.location.replace(`${BASE}/auth/?role=authority`); return; }
+    if (h === 'admin') { window.location.replace(`${BASE}/auth/?role=admin`); return; }
     try {
       const s = JSON.parse(localStorage.getItem('sy-session') ?? 'null');
       if (s?.role) {
         // signed-in users go straight to THEIR console — the full category
         // list only shows to guests, or on an explicit ?switch=1
         const switching = new URLSearchParams(window.location.search).get('switch') === '1';
-        if (!switching && PERSONAS.some((p) => p.slug === s.role)) {
+        const known = ['student', 'parent', 'teacher', 'school', 'tutor', 'admin', 'authority'];
+        if (!switching && known.includes(s.role)) {
           window.location.replace(`${BASE}/app/${s.role}/`);
           return;
         }
@@ -70,20 +74,32 @@ export default function AccountChooser() {
       </section>
 
       <section className="cards">
-        {PERSONAS.map((p) => {
+        {PERSONAS.filter((p) => p.slug !== 'admin').map((p) => {
           const mine = session?.role === p.slug;
           return (
             <a key={p.slug} className={`pcard${mine ? ' mine' : ''}`} href={`${BASE}/app/${p.slug}/`}>
               <span className="avatar">{p.label[0]}</span>
               <span className="who">{p.label}{mine && ' · your account'}</span>
               <h2>{p.strap}</h2>
-              <span className="acct">
-                {p.slug === 'admin' ? 'Provisioned internally' : `Requires a ${p.label.toLowerCase()} account`}
-              </span>
+              <span className="acct">Requires a {p.label.toLowerCase()} account</span>
               <span className="go">{mine ? 'Enter your console →' : session ? 'Switch account to enter →' : 'Sign in / create account →'}</span>
             </a>
           );
         })}
+      </section>
+
+      <section className="restricted">
+        <span className="rlabel">Organisation &amp; internal access</span>
+        <div className="rlinks">
+          <a href={`${BASE}/auth/?role=authority`}>
+            <b>Local Authority</b>
+            <span>Councils, youth programmes &amp; intervention funds — one account, many colleagues. Sign in or create an account →</span>
+          </a>
+          <a href={`${BASE}/auth/?role=admin`}>
+            <b>Admin</b>
+            <span>Platform operations — internal, least-privilege. Sign in →</span>
+          </a>
+        </div>
       </section>
 
       <footer className="os-foot">
@@ -134,6 +150,14 @@ const CSS = `
   .os-foot a{color:#AAB6CC}
   .os-foot a:hover{color:#A9CFF2}
   .os-foot span{margin-left:auto}
+  .restricted{margin-top:26px;border-top:1px dashed rgba(77,157,224,.2);padding-top:20px}
+  .restricted .rlabel{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#6B7A96}
+  .rlinks{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+  .rlinks a{display:block;border:1px solid rgba(77,157,224,.14);border-radius:12px;padding:16px 18px;
+    background:rgba(16,27,51,.4);transition:border-color .15s}
+  .rlinks a:hover{border-color:#3D8FD1}
+  .rlinks a b{color:#EDF1F8;font-size:14px}
+  .rlinks a span{display:block;font-size:12px;color:#7c8aa3;margin-top:4px}
   @media(max-width:960px){.cards{grid-template-columns:1fr 1fr}}
-  @media(max-width:640px){.cards{grid-template-columns:1fr}.hero h1{font-size:31px}}
+  @media(max-width:640px){.cards{grid-template-columns:1fr}.hero h1{font-size:31px}.rlinks{grid-template-columns:1fr}}
 `;

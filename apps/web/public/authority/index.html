@@ -41,8 +41,17 @@
   .clk{cursor:pointer}.clk:hover{background:rgba(77,157,224,.05)}
   .spark text{fill:var(--ink-3);font-size:10px}
   #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+  .stat.clik{cursor:pointer;transition:border-color .12s,transform .12s}.stat.clik:hover{border-color:var(--gold-500);transform:translateY(-2px)}.stat .more{font-size:10px;color:var(--gold-400);margin-top:4px;opacity:.7}
+  .clik{cursor:pointer}
+  #modal{position:fixed;inset:0;background:rgba(4,8,18,.72);display:none;align-items:flex-start;justify-content:center;z-index:120;padding:40px 16px;overflow-y:auto}
+  #modal.open{display:flex}
+  #modal .box{background:linear-gradient(180deg,#101b33,#0b1220);border:1px solid var(--gold-500);border-radius:16px;max-width:720px;width:100%;padding:22px 24px;box-shadow:0 24px 70px rgba(0,0,0,.6)}
+  #modal h3{font-family:var(--serif);font-weight:500;font-size:20px;display:flex;align-items:center;gap:10px}
+  #modal .x{margin-left:auto;cursor:pointer;color:var(--ink-3);font-size:22px;line-height:1;background:none;border:0}
+  #modal .msub{font-size:12px;color:var(--ink-3);margin:4px 0 14px}
 </style></head><body>
 <script src="../guard.js" data-role="authority" data-base="../"></script>
+<script src="../export.js"></script>
 <div class="shell">
 <aside><a class="slogo" href="../">⌂ <b>StudYear</b></a><div class="role">Local Authority</div><nav>
   <a href="./" class="on">Overview</a><a href="#schools">Schools</a><a href="#equity">Equity &amp; gap</a><a href="#attendance">Attendance</a><a href="#programmes">Programmes &amp; funding</a><a href="#impact">Impact evidence</a><a href="#youth">Youth Guarantee</a><a href="#" id="signout">Sign out</a>
@@ -61,6 +70,11 @@
       <div class="fb"><b>▲ Fed up from schools</b><span id="flow-up">Anonymised attainment, attendance, disadvantage gap, destinations, wellbeing.</span></div>
       <div class="fb"><b>▼ Pushed down to schools</b><span id="flow-down">No programmes pushed yet.</span></div>
     </div>
+  </div>
+
+  <div class="card" style="margin-top:14px"><h3>Team &amp; access</h3><div class="sub">One authority, many colleagues. Everyone who signs in with a Local Authority account and joins this code shares the same live data.</div>
+    <div class="two"><div><label class="f">Join an existing authority</label><div style="display:flex;gap:8px"><input id="join-code" placeholder="Paste an authority code (LA-XXXXX)"><button class="btn" id="join-btn">Join</button></div></div>
+      <div><label class="f">Your team on this authority</label><div id="team-list" class="note" style="margin-top:6px"></div></div></div>
   </div>
 
   <div class="kpis">
@@ -96,7 +110,7 @@
     </div>
 
     <div class="card c6" id="impact"><h3>Funding-impact evidence</h3><div class="sub">Before/after mastery per programme · verified impact per £ · ranked by cost-effectiveness</div>
-      <div style="margin:0 0 6px"><button class="btn sm" id="export-pack">⬇ Generate evidence pack</button></div>
+      <div style="margin:0 0 6px"><button class="btn sm" id="export-pack">⬇ Export evidence pack — Excel · Word · PDF · PowerPoint</button></div>
       <div id="impact-list"></div></div>
 
     <div class="card c6" id="youth"><h3>Youth Guarantee — destinations</h3><div class="sub">Employability through attainment, across the area · apprenticeship-first</div><div id="destinations"></div></div>
@@ -115,6 +129,7 @@
   </div>
 </main>
 </div>
+<div id="modal"><div class="box"><h3><span id="m-title">Detail</span><button class="x" id="m-close">×</button></h3><div class="msub" id="m-sub"></div><div id="m-body"></div></div></div>
 <div id="toast"></div>
 <script>
 (function(){
@@ -133,6 +148,18 @@ $('copy-code').onclick=function(){(navigator.clipboard?navigator.clipboard.write
 
 function laGet(k,d){try{var v=JSON.parse(localStorage.getItem('sy-la:'+code+':'+k));return v==null?d:v}catch(e){return d}}
 function laSet(k,v){try{localStorage.setItem('sy-la:'+code+':'+k,JSON.stringify(v))}catch(e){}}
+
+/* ---- modal (drill-down) ---- */
+function openModal(title,sub,html){$('m-title').textContent=title;$('m-sub').textContent=sub||'';$('m-body').innerHTML=html;$('modal').classList.add('open')}
+$('m-close').onclick=function(){$('modal').classList.remove('open')};
+$('modal').onclick=function(e){if(e.target===$('modal'))$('modal').classList.remove('open')};
+
+/* ---- team & multi-user access ---- */
+var team=laGet('team',[]);var meEmail=(SY.session.email||'').toLowerCase();
+if(meEmail&&!team.some(function(t){return t.email===meEmail})){team.push({email:meEmail,name:SY.session.name||meEmail,at:new Date().toISOString()});laSet('team',team)}
+function renderTeam(){var t=laGet('team',[]);$('team-list').innerHTML=t.length?t.map(function(m){return '<div>'+esc(m.name||m.email)+(m.email===meEmail?' <span style="color:var(--gold-400)">(you)</span>':'')+'</div>'}).join(''):'Just you so far — share your code with colleagues.'}
+$('join-btn').onclick=function(){var c=($('join-code').value||'').trim().toUpperCase();if(c.length<4){toast('Enter an authority code');return}SY.set('authorityCode',c);toast('Joined authority '+c+' — loading shared data');setTimeout(function(){location.reload()},600)};
+renderTeam();
 function schools(){var out=[];var re=new RegExp('^sy-la:'+code+':school:(.+)$');for(var i=0;i<localStorage.length;i++){var key=localStorage.key(i);if(re.test(key)){try{out.push(JSON.parse(localStorage.getItem(key)))}catch(e){}}}return out}
 
 var sortKey='avg';var open={};
@@ -259,6 +286,29 @@ function draw(){
   /* wellbeing/safeguarding */
   var well=S.length?avg(S.map(function(s){return s.wellbeing||0})):0;var alerts=S.reduce(function(a,s){return a+(s.safeguard||0)},0);
   $('safeguard').innerHTML=S.length?('<div class="row"><span class="rag" style="background:'+(well>=70?'var(--good)':well>=55?'var(--warn)':'var(--crit)')+'"></span><span style="flex:1">Average wellbeing</span><b>'+well+'%</b></div><div class="row"><span class="rag" style="background:'+(alerts?'var(--crit)':'var(--good)')+'"></span><span style="flex:1">Safeguarding alerts (area)</span><b style="color:'+(alerts?'var(--crit)':'var(--good)')+'">'+alerts+'</b></div><div class="note">Case detail stays in each school under KCSIE; the authority sees counts only.</div>'):'<div class="empty">No data yet.</div>';
+
+  wireDrilldowns(S,progs,dest,dtot);
+}
+
+/* ---- make every headline metric clickable to see more ---- */
+function tableFrom(headers,rows){return '<div class="row th">'+headers.map(function(h,i){return '<span style="'+(i===0?'flex:1':'width:110px;text-align:right')+'">'+esc(h)+'</span>'}).join('')+'</div>'+rows.map(function(r){return '<div class="row">'+r.map(function(c,i){return '<span style="'+(i===0?'flex:1':'width:110px;text-align:right')+'">'+c+'</span>'}).join('')+'</div>'}).join('')}
+function wireDrilldowns(S,progs,dest,dtot){
+  function tile(id,title,sub,builder){var el=$(id);if(!el)return;var card=el.closest('.card');if(!card)return;card.classList.add('clik');if(!card.querySelector('.more')){var m=document.createElement('div');m.className='more';m.textContent='click to see more →';el.parentNode.appendChild(m)}card.onclick=function(){openModal(title,sub,builder())}}
+  var byAttain=S.slice().sort(function(a,b){return (b.avg||0)-(a.avg||0)});
+  tile('k-schools','Connected schools',S.length+' schools feeding anonymised data',function(){return tableFrom(['School','Roll','Attainment'],byAttain.map(function(s){return [esc(s.name||s.schoolCode),(s.students||0).toLocaleString(),(s.avg||0)+'%']}))});
+  tile('k-students','Students in cohort','Across all connected schools',function(){return tableFrom(['School','Students'],byAttain.map(function(s){return [esc(s.name||s.schoolCode),(s.students||0).toLocaleString()]}))});
+  tile('k-attain','Average attainment','Per-school attainment, ranked',function(){return tableFrom(['School','Attainment','vs last term'],byAttain.map(function(s){var d=(s.avg||0)-(s.prevAvg||s.avg||0);return [esc(s.name||s.schoolCode),(s.avg||0)+'%',(d>0?'+':'')+d+' pts']}))});
+  tile('k-p8','Average Progress 8','Per-school Progress 8 estimate',function(){return tableFrom(['School','Progress 8'],S.slice().sort(function(a,b){return (b.p8||0)-(a.p8||0)}).map(function(s){return [esc(s.name||s.schoolCode),s.p8!=null?((s.p8>0?'+':'')+s.p8):'—']}))});
+  tile('k-gap','Disadvantage gap','Attainment gap, widest first',function(){return tableFrom(['School','Gap (pts)'],S.filter(function(s){return s.ppGap!=null}).sort(function(a,b){return b.ppGap-a.ppGap}).map(function(s){return [esc(s.name||s.schoolCode),s.ppGap+' pts']}))});
+  tile('k-pa','Persistent absence','Below-90% attendance, highest first',function(){return tableFrom(['School','Persistent abs.','Attendance'],S.filter(function(s){return s.persistentAbs!=null}).sort(function(a,b){return b.persistentAbs-a.persistentAbs}).map(function(s){return [esc(s.name||s.schoolCode),s.persistentAbs+'%',(s.attendance||0)+'%']}))});
+  tile('k-progs','Active programmes','Programmes pushed to your schools',function(){return tableFrom(['Programme','Funding','Students'],progs.map(function(p){return [esc(p.name)+' — '+esc(p.type),money(p.cost),(p.students||0)]}))});
+  tile('k-fund','Funding deployed','Across all programmes',function(){return tableFrom(['Programme','Funding','£/student'],progs.map(function(p){return [esc(p.name),money(p.cost),money(p.cost/Math.max(1,p.students||1))]}))});
+  tile('k-roi','Average mastery gain','Before/after per programme',function(){return tableFrom(['Programme','Before','After','Gain'],progs.map(function(p){return [esc(p.name),(p.baseline||0)+'%',(p.current||p.baseline||0)+'%','+'+((p.current||0)-(p.baseline||0))+' pts']}))});
+  tile('k-eff','Cost-effectiveness','Points of mastery gained per £1,000',function(){return tableFrom(['Programme','Pts / £1k'],progs.map(function(p){var g=(p.current||0)-(p.baseline||0);return [esc(p.name),(p.cost?Math.round(g/(p.cost/1000)*10)/10:0)]}))});
+  /* destinations rows → per-school breakdown */
+  Array.prototype.forEach.call($('destinations').querySelectorAll('.rank'),function(rowEl){var key=(rowEl.querySelector('span')||{}).textContent;if(!key||!dest[key])return;rowEl.classList.add('clik');rowEl.onclick=function(){openModal(key+' — destinations',key+' across the area',tableFrom(['School',key],S.filter(function(s){return s.dest&&s.dest[key]}).sort(function(a,b){return (b.dest[key]||0)-(a.dest[key]||0)}).map(function(s){return [esc(s.name||s.schoolCode),(s.dest[key]||0).toLocaleString()]})))}});
+  /* wellbeing/safeguarding → per-school */
+  var sg=$('safeguard');if(sg&&S.length){var rows=sg.querySelectorAll('.row');if(rows[0]){rows[0].classList.add('clik');rows[0].onclick=function(){openModal('Wellbeing by school','Average wellbeing index per school',tableFrom(['School','Wellbeing'],S.slice().sort(function(a,b){return (a.wellbeing||0)-(b.wellbeing||0)}).map(function(s){return [esc(s.name||s.schoolCode),(s.wellbeing||0)+'%']})))}}if(rows[1]){rows[1].classList.add('clik');rows[1].onclick=function(){openModal('Safeguarding alerts by school','Counts only — case detail stays in schools under KCSIE',tableFrom(['School','Alerts'],S.filter(function(s){return s.safeguard}).sort(function(a,b){return (b.safeguard||0)-(a.safeguard||0)}).map(function(s){return [esc(s.name||s.schoolCode),(s.safeguard||0)]})))}}}
 }
 
 $('p-add').onclick=function(){
@@ -273,28 +323,46 @@ $('p-add').onclick=function(){
   $('p-name').value='';$('p-cost').value='';$('p-students').value='';toast('Programme created and pushed to schools');draw();
 };
 
-/* downloadable funding-impact evidence pack */
-$('export-pack').onclick=function(){
-  var S=schools();var progs=laGet('programmes',[]);
-  if(!progs.length&&!S.length){toast('Load or connect data first');return}
-  var d=new Date();var when=d.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
-  var rows=progs.map(function(p){var gain=(p.current!=null&&p.baseline!=null)?(p.current-p.baseline):0;var perK=p.cost?Math.round(gain/(p.cost/1000)*10)/10:0;
-    return '<tr><td>'+esc(p.name)+'</td><td>'+esc(p.type)+'</td><td>'+esc(p.cohort||'Whole area')+'</td><td>£'+(p.cost||0).toLocaleString()+'</td><td>'+(p.students||0)+'</td><td>'+(p.baseline||0)+'%</td><td>'+(p.current||p.baseline||0)+'%</td><td>+'+gain+' pts</td><td>'+perK+'</td></tr>';}).join('');
-  var srows=S.slice().sort(function(a,b){return (b.avg||0)-(a.avg||0)}).map(function(s){return '<tr><td>'+esc(s.name||s.schoolCode)+'</td><td>'+(s.students||0)+'</td><td>'+(s.avg||0)+'%</td><td>'+(s.p8!=null?s.p8:'—')+'</td><td>'+(s.ppGap!=null?s.ppGap+' pts':'—')+'</td><td>'+(s.attendance||0)+'%</td></tr>';}).join('');
+/* funding-impact evidence pack — Excel / Word / PDF / PowerPoint */
+function packData(){
+  var S=schools().slice().sort(function(a,b){return (b.avg||0)-(a.avg||0)});var progs=laGet('programmes',[]);
   var fund=progs.reduce(function(a,p){return a+(p.cost||0)},0);
-  var html='<!doctype html><html><head><meta charset="utf-8"><title>StudYear — Funding-Impact Evidence Pack</title>'+
-    '<style>body{font-family:Georgia,serif;color:#111;max-width:900px;margin:32px auto;padding:0 24px;line-height:1.5}h1{font-size:26px}h2{font-size:18px;margin-top:28px;border-bottom:2px solid #2E6BC4;padding-bottom:4px}table{width:100%;border-collapse:collapse;margin-top:10px;font-family:Arial,sans-serif;font-size:12.5px}th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}th{background:#eef3fb}.meta{color:#555;font-size:13px}.kbox{display:inline-block;border:1px solid #2E6BC4;border-radius:8px;padding:8px 14px;margin:4px 8px 4px 0;font-family:Arial}</style></head><body>'+
-    '<h1>Funding-Impact Evidence Pack</h1><p class="meta">Authority '+esc(code)+' · generated '+when+' · StudYear — the AI Academic Operating System</p>'+
-    '<div><span class="kbox"><b>'+S.length+'</b> schools</span><span class="kbox"><b>£'+fund.toLocaleString()+'</b> deployed</span><span class="kbox"><b>'+progs.filter(function(p){return p.status!=='closed'}).length+'</b> active programmes</span></div>'+
-    '<h2>Programmes — before/after mastery &amp; cost-effectiveness</h2><table><tr><th>Programme</th><th>Type</th><th>Cohort</th><th>Funding</th><th>Students</th><th>Before</th><th>After</th><th>Gain</th><th>Pts/£1k</th></tr>'+(rows||'<tr><td colspan="9">No programmes.</td></tr>')+'</table>'+
-    '<h2>School benchmarking (anonymised)</h2><table><tr><th>School</th><th>Roll</th><th>Attainment</th><th>Progress 8</th><th>Disadvantage gap</th><th>Attendance</th></tr>'+(srows||'<tr><td colspan="6">No schools.</td></tr>')+'</table>'+
-    '<p class="meta" style="margin-top:26px">Verified impact · GDPR &amp; AADC conformant · KCSIE-aligned · anonymised at student level. Prepared for governors, inspectors and funding bodies.</p></body></html>';
-  try{
-    var blob=new Blob([html],{type:'text/html'});var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');a.href=url;a.download='StudYear-evidence-pack-'+code+'.html';document.body.appendChild(a);a.click();document.body.removeChild(a);
-    setTimeout(function(){URL.revokeObjectURL(url)},4000);
-    toast('Evidence pack downloaded');
-  }catch(e){toast('Export not supported here')}
+  var progRows=progs.map(function(p){var gain=(p.current!=null&&p.baseline!=null)?(p.current-p.baseline):0;var perK=p.cost?Math.round(gain/(p.cost/1000)*10)/10:0;
+    return [p.name,p.type,p.cohort||'Whole area',p.cost||0,p.students||0,(p.baseline||0)+'%',(p.current||p.baseline||0)+'%','+'+gain+' pts',perK]});
+  var schRows=S.map(function(s){return [s.name||s.schoolCode,s.students||0,(s.avg||0)+'%',s.p8!=null?s.p8:'—',s.ppGap!=null?s.ppGap+' pts':'—',(s.attendance||0)+'%']});
+  return {S:S,progs:progs,fund:fund,progRows:progRows,schRows:schRows,
+    progHead:['Programme','Type','Cohort','Funding (£)','Students','Before','After','Gain','Pts/£1k'],
+    schHead:['School','Roll','Attainment','Progress 8','Disadvantage gap','Attendance']};
+}
+$('export-pack').onclick=function(e){
+  if(!schools().length&&!laGet('programmes',[]).length){toast('Load or connect data first');return}
+  var fname='StudYear-evidence-pack-'+code;
+  SYExport.menu(e.currentTarget,{
+    excel:function(){var d=packData();SYExport.excel(fname,[
+      {name:'Programmes',rows:[d.progHead].concat(d.progRows)},
+      {name:'Schools',rows:[d.schHead].concat(d.schRows)},
+      {name:'Summary',rows:[['Metric','Value'],['Authority',code],['Schools',d.S.length],['Funding deployed',d.fund],['Active programmes',d.progs.filter(function(p){return p.status!=='closed'}).length]]}
+    ]);toast('Excel workbook downloaded')},
+    word:function(){var d=packData();SYExport.word(fname,{title:'Funding-Impact Evidence Pack',blocks:[
+      {p:'Authority '+code+' · StudYear — the AI Academic Operating System'},
+      {p:d.S.length+' schools · £'+d.fund.toLocaleString()+' deployed · '+d.progs.filter(function(p){return p.status!=='closed'}).length+' active programmes'},
+      {h:'Programmes — before/after mastery & cost-effectiveness'},{table:{headers:d.progHead,rows:d.progRows.map(function(r){return r.map(function(c,i){return i===3?'£'+Number(c).toLocaleString():String(c)})})}},
+      {h:'School benchmarking (anonymised)'},{table:{headers:d.schHead,rows:d.schRows}},
+      {p:'Verified impact · GDPR & AADC conformant · KCSIE-aligned · anonymised at student level. Prepared for governors, inspectors and funding bodies.'}
+    ]});toast('Word document downloaded')},
+    pdf:function(){var d=packData();var t=function(head,rows){return '<table><tr>'+head.map(function(h){return '<th>'+esc(h)+'</th>'}).join('')+'</tr>'+rows.map(function(r){return '<tr>'+r.map(function(c,i){return '<td>'+esc(i===3&&head[3].indexOf('£')>=0?'£'+Number(c).toLocaleString():c)+'</td>'}).join('')+'</tr>'}).join('')+'</table>'};
+      SYExport.pdf('StudYear Evidence Pack','<h1>Funding-Impact Evidence Pack</h1><p class="meta">Authority '+esc(code)+' · '+d.S.length+' schools · £'+d.fund.toLocaleString()+' deployed</p><h2>Programmes</h2>'+t(d.progHead,d.progRows)+'<h2>School benchmarking (anonymised)</h2>'+t(d.schHead,d.schRows)+'<p class="meta">Verified impact · GDPR &amp; AADC conformant · KCSIE-aligned.</p>')},
+    ppt:function(){var d=packData();var slides=[
+      {title:'Funding-Impact Evidence Pack',subtitle:'Authority '+code+' · StudYear — the AI Academic Operating System'},
+      {title:'Headlines',bullets:[d.S.length+' connected schools',
+        '£'+d.fund.toLocaleString()+' funding deployed',
+        d.progs.filter(function(p){return p.status!=='closed'}).length+' active programmes',
+        'Avg mastery gain +'+(function(){var g=d.progs.filter(function(p){return p.current!=null&&p.baseline!=null}).map(function(p){return p.current-p.baseline});return g.length?Math.round(g.reduce(function(a,b){return a+b},0)/g.length):0})()+' pts']},
+      {title:'Programmes — impact per £',bullets:d.progs.map(function(p){var g=(p.current||0)-(p.baseline||0);return p.name+': +'+g+' pts ('+(p.cost?Math.round(g/(p.cost/1000)*10)/10:0)+' pts per £1k)'})},
+      {title:'School benchmarking',bullets:d.S.slice(0,8).map(function(s){return (s.name||s.schoolCode)+': '+(s.avg||0)+'% · P8 '+(s.p8!=null?s.p8:'—')+' · gap '+(s.ppGap!=null?s.ppGap:'—')})},
+      {title:'Assurance',bullets:['Verified impact · before/after mastery','GDPR & AADC conformant by design','KCSIE-aligned safeguarding','Anonymised at student level','Aligned to the UK Youth Guarantee']}
+    ];SYExport.ppt(fname,slides);toast('PowerPoint downloaded')}
+  });
 };
 
 /* sort buttons */
