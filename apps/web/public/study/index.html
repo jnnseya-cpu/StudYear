@@ -508,13 +508,18 @@
     </div>
 
     <div class="card c6">
-      <h3>AI Essay Plan<span class="badge prem">Premium</span></h3><div class="sub">enter an essay title or question — get a thesis, introduction, body paragraphs and conclusion</div>
+      <h3>AI Essay Plan<span class="badge prem">Premium</span></h3><div class="sub">enter an essay title or question — or upload the brief, sources or your draft — and get a thesis, introduction, body paragraphs and conclusion</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div><label class="f">Subject</label><select id="c-e-subj"></select></div>
         <div><label class="f">Study level</label><select id="c-e-level"></select></div>
       </div>
       <label class="f" style="margin-top:10px">Essay topic or question</label>
       <input type="text" id="c-e-q" placeholder="e.g. 'To what extent was the Cold War inevitable?'">
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn ghost sm" id="c-e-upload">📎 Upload brief, sources or draft</button>
+        <input type="file" id="c-e-file" style="display:none">
+        <span class="note" id="c-e-filename" style="margin:0">Word, OpenDocument, text, RTF — or PDF when live AI is on</span>
+      </div>
       <div style="margin-top:12px"><button class="btn" id="c-e-save">Generate essay plan</button></div>
       <div class="note">Structured scaffold, saved to your library. The full AI writer attaches when the backend is live.</div>
     </div>
@@ -1687,18 +1692,59 @@ function qzStatic(topic,n){
 };
 
 /* AI essay plan — live model when configured, else structured scaffold */
-document.getElementById("c-e-save").onclick=()=>{
-  const q=$v("c-e-q").trim();
-  if(q.length<8){toast("Enter your essay title or question");return}
-  const subj=$v("c-e-subj"), level=$v("c-e-level");
-  if(window.SYAI&&SYAI.ready()){
-    toast("Planning with "+SYAI.provider()+"…");
-    SYAI.ask("You are an "+(level||"GCSE")+(subj?" "+subj:"")+" essay coach. Produce a specific essay plan for the question: a clear thesis, an introduction, 3 body paragraphs (each Point/Evidence/Explain with a CONCRETE example relevant to this exact question), a counter-argument paragraph, and a conclusion. Use markdown headings and bullets. Be specific to the question, not generic.","Essay question: "+q,{maxTokens:1100}).then(txt=>{
-      saveMine({type:"Revision Notes",title:"Essay plan — "+q,subj,level,body:SYAI.render(txt)},"e","AI essay plan saved",["c-e-q"]);
-    }).catch(e=>{toast("Live AI error — using the scaffold");essayStatic(q,subj,level)});
+/* essay-plan upload: Word/ODF/text/RTF extract to text on-device; PDFs attach
+   for the live model's document channel; the plan is built FROM the upload */
+let essayDoc="",essayPdf=null,essayDocName="";
+document.getElementById("c-e-upload").onclick=()=>document.getElementById("c-e-file").click();
+document.getElementById("c-e-file").addEventListener("change",function(){
+  const f=this.files[0];this.value="";if(!f)return;
+  const fn=document.getElementById("c-e-filename");
+  const done=t=>{essayDoc=String(t).slice(0,12000);essayPdf=null;essayDocName=f.name;
+    fn.innerHTML="📄 <b style='color:var(--gold-300)'>"+esc(f.name)+"</b> loaded — the plan will build from it";
+    const q=document.getElementById("c-e-q");
+    if(!q.value.trim()){const m=essayDoc.match(/[^\n.!?]{15,160}\?/);if(m)q.value=m[0].trim();}
+    toast("Document loaded — generate your plan");};
+  if(/\.(docx|pptx|xlsx|odt|odp|ods)$/i.test(f.name)){
+    fn.textContent="Reading "+f.name+"…";
+    arZipText(f).then(t=>{if(t)done(t);else throw new Error("empty")})
+      .catch(()=>{fn.innerHTML="<span style='color:var(--warn)'>Couldn't read "+esc(f.name)+" — save it as .txt or paste the question.</span>"});
     return;
   }
-  essayStatic(q,subj,level);
+  if(f.type==="application/pdf"||/\.pdf$/i.test(f.name)){
+    if(!(window.SYAI&&SYAI.ready())){fn.innerHTML="<span style='color:var(--warn)'>PDF plans need live AI — enable it in the Gateway, or upload Word/.txt.</span>";return}
+    if(f.size>25*1024*1024){toast("Max 25 MB per PDF");return}
+    const r=new FileReader();
+    r.onload=()=>{essayPdf=r.result;essayDoc="";essayDocName=f.name;
+      fn.innerHTML="📄 <b style='color:var(--gold-300)'>"+esc(f.name)+"</b> attached — the AI will read it";};
+    r.readAsDataURL(f);
+    return;
+  }
+  if(/^image\//.test(f.type)){fn.innerHTML="<span style='color:var(--warn)'>For essay plans use a text document or PDF — photos work best in AI Assignment Review.</span>";return}
+  const r2=new FileReader();
+  r2.onload=()=>{let t=String(r2.result);
+    if(/\.rtf$/i.test(f.name))t=t.replace(/\\'[0-9a-f]{2}/gi," ").replace(/\\[a-z]+-?\d* ?/gi,"").replace(/[{}]/g,"");
+    const sample=t.slice(0,2000),bad=(sample.match(/[\x00-\x08\x0E-\x1F]/g)||[]).length;
+    if(bad>sample.length*0.02){fn.innerHTML="<span style='color:var(--warn)'>"+esc(f.name)+" isn't readable — convert to Word/.txt or paste the question.</span>";return}
+    done(t)};
+  r2.readAsText(f);
+});
+document.getElementById("c-e-save").onclick=()=>{
+  const q=$v("c-e-q").trim();
+  if(q.length<8&&!essayDoc&&!essayPdf){toast("Enter your essay title or question — or upload the document");return}
+  const subj=$v("c-e-subj"), level=$v("c-e-level");
+  const planTitle="Essay plan — "+(q||essayDocName||"uploaded document");
+  const clearUpload=()=>{essayDoc="";essayPdf=null;essayDocName="";document.getElementById("c-e-filename").textContent="";};
+  if(window.SYAI&&SYAI.ready()){
+    toast("Planning with "+SYAI.provider()+"…");
+    SYAI.ask("You are an "+(level||"GCSE")+(subj?" "+subj:"")+" essay coach. Produce a specific essay plan: a clear thesis, an introduction, 3 body paragraphs (each Point/Evidence/Explain with a CONCRETE example relevant to this exact question), a counter-argument paragraph, and a conclusion. Use markdown headings and bullets. Be specific to the question, not generic."+(essayDoc?" Base the plan on the student's uploaded document (the brief, sources or draft) included in the message — use its actual content and quote it where useful.":"")+(essayPdf?" The brief/source document is attached — read it first and base the plan on its actual content.":""),
+      "Essay question: "+(q||"(take the question from the uploaded document)")+(essayDoc?"\n\nUploaded document ("+essayDocName+"):\n"+essayDoc.slice(0,8000):""),
+      {maxTokens:1100,image:essayPdf||undefined}).then(txt=>{
+      saveMine({type:"Revision Notes",title:planTitle,subj,level,body:SYAI.render(txt)},"e","AI essay plan saved",["c-e-q"]);
+      clearUpload();
+    }).catch(e=>{toast("Live AI error — using the scaffold");essayStatic(q||essayDocName,subj,level);clearUpload()});
+    return;
+  }
+  essayStatic(q||essayDocName,subj,level);clearUpload();
 };
 function essayStatic(q,subj,level){
   const body=`<h5>Essay question</h5><p><b>${esc(q)}</b></p>

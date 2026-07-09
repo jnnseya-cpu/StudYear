@@ -8,8 +8,11 @@
 (function(){
   'use strict';
   function cfg(){try{return JSON.parse(localStorage.getItem('sy-billing-live'))||null}catch(e){return null}}
-  function ready(){var c=cfg();return !!(c&&c.links&&Object.keys(c.links).length)}
-  function linkFor(id){var c=cfg();return (c&&c.links&&c.links[id])||null}
+  /* demo sessions never reach Stripe — checkout always runs the preview
+     activation so presentations spend nothing */
+  function isDemo(){try{var s=JSON.parse(localStorage.getItem('sy-session'));return !!(s&&s.demo)}catch(e){return false}}
+  function ready(){if(isDemo())return false;var c=cfg();return !!(c&&c.links&&Object.keys(c.links).length)}
+  function linkFor(id){if(isDemo())return null;var c=cfg();return (c&&c.links&&c.links[id])||null}
   /* checkout(planId, {promo, email, ref, activate}) → 'redirect' | 'preview' */
   function checkout(planId, opts){
     opts=opts||{};var url=linkFor(planId);

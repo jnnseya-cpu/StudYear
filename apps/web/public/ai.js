@@ -11,7 +11,10 @@
 (function(){
   'use strict';
   function cfg(){try{return JSON.parse(localStorage.getItem('sy-ai-live'))||null}catch(e){return null}}
-  function ready(){var c=cfg();return !!(c&&c.provider&&c.key)}
+  /* demo sessions never call the live providers — every tool uses its
+     on-device fallback, so presentations spend nothing */
+  function isDemo(){try{var s=JSON.parse(localStorage.getItem('sy-session'));return !!(s&&s.demo)}catch(e){return false}}
+  function ready(){if(isDemo())return false;var c=cfg();return !!(c&&c.provider&&c.key)}
   function provider(){var c=cfg();return c?c.provider:null}
   function modelFor(c){
     if(c.model)return c.model;
