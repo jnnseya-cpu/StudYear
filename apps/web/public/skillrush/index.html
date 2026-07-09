@@ -74,6 +74,14 @@
   <div class="card" id="mission-card"><h3>🎯 Today's mission</h3><div class="sub" id="mission-sub">Your daily workout — teacher-set when your class has a focus, otherwise your weakest skill</div>
     <div id="mission"></div></div>
 
+  <div class="card" id="heroes-card"><h3>🦸 Maths Heroes</h3>
+    <div class="sub">Addition. Subtraction. Multiplication. Division. <b>Mastered.</b> From counting mistakes to confident maths mastery — one smart question at a time.</div>
+    <div id="heroes" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:6px"></div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="btn sm solid" id="diag-go">🩺 2-minute arithmetic diagnostic →</button>
+      <span class="note" id="diag-note" style="margin:0">12 quick questions across the four operations — sets your Ready / At-risk / Critical status and your mission.</span>
+    </div></div>
+
   <div class="card" id="setup">
     <h3>Choose your skill</h3>
     <div class="skills" id="skills"></div>
@@ -152,7 +160,21 @@ var GEOFACT=[['Capital of France','paris'],['Capital of Spain','madrid'],['Capit
 var HISTDATE=[['Year WW2 began in Europe',1939],['Year WW1 began',1914],['Battle of Hastings',1066],['Great Fire of London',1666],['Magna Carta signed',1215],['Year WW2 ended',1945],['Titanic sank',1912],['First Moon landing',1969]];
 function bankGen(bank,text){return function(){var it=pick(bank);return {q:it[0],a:it[1],text:text!==false}}}
 var SKILLS=[
+  ['addition','Addition',function(lv){var m=lv===0?20:lv===1?200:999;var a=ri(2,m),b=ri(2,m);return {q:a+' + '+b,a:a+b}}],
+  ['subtraction','Subtraction',function(lv){var m=lv===0?20:lv===1?200:999;var a=ri(2,m),b=ri(2,m);var hi=Math.max(a,b),lo=Math.min(a,b);return {q:hi+' − '+lo,a:hi-lo}}],
   ['tables','Times tables',function(lv){var a=ri(2,Math.min(12,4+lv*2)),b=ri(2,12);return {q:a+' × '+b,a:a*b}}],
+  ['division','Division',function(lv){var b=ri(2,12),ans=ri(2,12+lv*6);return {q:(b*ans)+' ÷ '+b,a:ans}}],
+  ['bonds','Number bonds',function(lv){var t=lv===0?20:lv===1?100:1000;var a=lv===2?ri(1,99)*10:ri(1,t-1);return {q:'What adds to '+t+' with '+a+'?',a:t-a}}],
+  ['inverse','Inverse operations',function(lv){var k=ri(0,3);
+    if(k===0){var b=ri(2,9+lv*3),ans=ri(2,9+lv*3);return {q:'? × '+b+' = '+(b*ans),a:ans}}
+    if(k===1){var b2=ri(2,12),ans2=ri(2,12);return {q:'? ÷ '+b2+' = '+ans2,a:b2*ans2}}
+    if(k===2){var b3=ri(5,40+lv*40),ans3=ri(5,40+lv*40);return {q:'? + '+b3+' = '+(b3+ans3),a:ans3}}
+    var b4=ri(3,30+lv*30),ans4=ri(3,30+lv*30);return {q:'? − '+b4+' = '+ans4,a:ans4+b4}}],
+  ['word','Word problems',function(lv){var k=ri(0,3);var n1=ri(3,10+lv*15),n2=ri(2,9+lv*6);
+    if(k===0)return {q:'Ava has '+n1+' stickers and buys '+n2+' more. How many now?',a:n1+n2};
+    if(k===1)return {q:'A box holds '+n2+' eggs. How many eggs in '+n1+' boxes?',a:n1*n2};
+    if(k===2)return {q:'Leo had '+(n1+n2)+' marbles and lost '+n2+'. How many left?',a:n1};
+    return {q:n1*n2+' sweets are shared equally between '+n2+' friends. How many each?',a:n1}}],
   ['mental','Mental arithmetic',function(lv){var a=ri(10,50+lv*40),b=ri(10,50+lv*30);return Math.random()<0.5?{q:a+' + '+b,a:a+b}:{q:(a+b)+' − '+a,a:b}}],
   ['fractions','Fractions',function(lv){var d=[2,4,5,10,20][ri(0,Math.min(4,1+lv))];var n=ri(1,d-1);var whole=d*ri(1,4+lv*4);return {q:n+'/'+d+' of '+whole,a:whole*n/d}}],
   ['decimals','Decimals',function(lv){var a=ri(1,9),b=ri(1,9);if(lv<2)return {q:'0.'+a+' + 0.'+b,a:Math.round((a/10+b/10)*100)/100};var m=ri(2,9);return {q:'0.'+a+' × '+m,a:Math.round(a*m)/10}}],
@@ -173,7 +195,7 @@ var SKILLS=[
 var PROFILE=SY.get('profile',{})||{};
 var LEVEL=PROFILE.level||'GCSE';
 var LV_BOOST=/primary|11\+/i.test(LEVEL)?0:/ks3|7-9|national 5/i.test(LEVEL)?1:2;   /* 0 gentle · 1 core · 2 exam-grade */
-var LEVEL_SKILLS={0:['tables','mental','fractions','spelling','vocab','geography'],1:['tables','mental','fractions','decimals','percent','grammar','science','history'],2:['mental','fractions','percent','algebra','squares','formulas','vocab','science','geography','history']};
+var LEVEL_SKILLS={0:['addition','subtraction','tables','division','bonds','word','spelling'],1:['tables','division','mental','inverse','fractions','decimals','percent','word','grammar','science'],2:['mental','inverse','fractions','percent','algebra','squares','formulas','vocab','science','geography','history']};
 var recommended=LEVEL_SKILLS[LV_BOOST]||LEVEL_SKILLS[2];
 document.querySelector('.lede').innerHTML+=' <span style="color:var(--gold-400)">Pitched at '+esc(LEVEL)+'.</span>';
 
@@ -262,7 +284,30 @@ function coachStatic(wk,nm){
 
 /* ---- session engine ---- */
 var S=null,timerIv=null;
-var MODES={focus:{n:20,perQ:8,label:'Focus',lv:1},confidence:{n:12,perQ:0,label:'Confidence',lv:0},exam:{n:25,perQ:6,label:'Exam Pressure',lv:2},comeback:{n:15,perQ:12,label:'Comeback',lv:0},battle:{n:20,perQ:7,label:'Class Battle',lv:1},duel:{n:12,perQ:10,label:'Parent Challenge',lv:1},national:{n:25,perQ:6,label:'National Test',lv:2}};
+var MODES={focus:{n:20,perQ:8,label:'Focus',lv:1},confidence:{n:12,perQ:0,label:'Confidence',lv:0},exam:{n:25,perQ:6,label:'Exam Pressure',lv:2},comeback:{n:15,perQ:12,label:'Comeback',lv:0},battle:{n:20,perQ:7,label:'Class Battle',lv:1},duel:{n:12,perQ:10,label:'Parent Challenge',lv:1},national:{n:25,perQ:6,label:'National Test',lv:2},diagnostic:{n:12,perQ:10,label:'Arithmetic Diagnostic',lv:1}};
+
+/* ---- Maths Heroes: four-operation mastery, trophies & readiness ---- */
+var HERO_OPS=[['addition','Addition','Addition Hero','➕'],['subtraction','Subtraction','Subtraction Sniper','➖'],['tables','Multiplication','Multiplication Boss','✖️'],['division','Division','Division Master','➗']];
+function opStatus(k){
+  var d=SR.mathsDiag&&SR.mathsDiag.ops&&SR.mathsDiag.ops[k];
+  var st=skillStats(k);var a=st.total?Math.round(100*st.right/st.total):null;
+  var v=d!=null?d:a;
+  if(v==null)return ['—','var(--ink-3)'];
+  return v>=80?['Ready','var(--good)']:v>=50?['At risk','var(--warn)']:['Critical','var(--crit)'];
+}
+function renderHeroes(){
+  $('heroes').innerHTML=HERO_OPS.map(function(o){
+    var st=skillStats(o[0]);var a=st.total?Math.round(100*st.right/st.total):null;
+    var trophy=st.total>=20&&a>=90;
+    var s=opStatus(o[0]);
+    return '<div class="stat" style="border-color:'+(trophy?'rgba(230,199,102,.5)':'var(--line)')+'">'+
+      '<div style="font-size:20px">'+o[3]+(trophy?' 🏆':'')+'</div>'+
+      '<div class="v" style="font-size:18px;margin-top:4px">'+(a==null?'—':a+'%')+'</div>'+
+      '<div class="l">'+esc(o[1])+'</div>'+
+      '<div style="font-size:10px;margin-top:5px;color:'+s[1]+'">● '+s[0]+(trophy?' · '+esc(o[2]):'')+'</div></div>';
+  }).join('');
+}
+$('diag-go').onclick=function(){startSession('diagnostic')};
 
 /* ---- National Championship (admin-triggered; one attempt; top 5 per education level win) ---- */
 function nationalCfg(){try{return JSON.parse(localStorage.getItem('sy-national'))||null}catch(e){return null}}
@@ -285,6 +330,8 @@ $('national-go').onclick=function(){
 };
 document.querySelectorAll('.mode').forEach(function(m){m.onclick=function(){startSession(m.dataset.mode)}});
 function gen(){
+  /* the diagnostic rotates through the four operations, 3 questions each */
+  if(S.mode==='diagnostic')curSkill=HERO_OPS[S.n%4][0];
   var sk=SKILLS.find(function(s){return s[0]===curSkill});
   /* blend the mode's pressure with the student's education level (LV_BOOST) */
   var lv=S.mode==='comeback'?Math.min(LV_BOOST,Math.floor(S.n/5)):Math.max(0,Math.min(2,MODES[S.mode].lv+LV_BOOST-1));
@@ -335,8 +382,11 @@ function mark(val){
   var correct=S.cur.text?norm(val)===norm(S.cur.a):Math.abs(parseFloat(val)-S.cur.a)<0.001;
   var st=SR.skill[curSkill]=SR.skill[curSkill]||{right:0,total:0,bestSpeed:null};
   st.total++;
+  if(S.mode==='diagnostic'){S.perOp=S.perOp||{};var po=S.perOp[curSkill]=S.perOp[curSkill]||{right:0,total:0};po.total++;if(S.cur.text?norm(val)===norm(S.cur.a):Math.abs(parseFloat(val)-S.cur.a)<0.001)po.right++;}
   if(correct){S.right++;st.right++;if(S.duel)S.duel['p'+S.duel.phase]++;
-    var c=S.mode==='exam'||S.mode==='battle'?3:2;S.coins+=c;$('h-right').textContent=S.right;$('h-coins').textContent=S.coins;$('h-coins').classList.add('pop');setTimeout(function(){$('h-coins').classList.remove('pop')},300);
+    /* mode-weighted coins: adaptive Focus pays most (steers volume to smart practice),
+       assessment modes pay least so status stays honest */
+    var c=S.mode==='focus'?4:S.mode==='exam'||S.mode==='battle'?3:S.mode==='national'||S.mode==='diagnostic'?1:2;S.coins+=c;$('h-right').textContent=S.right;$('h-coins').textContent=S.coins;$('h-coins').classList.add('pop');setTimeout(function(){$('h-coins').classList.remove('pop')},300);
     if(!st.bestSpeed||t<st.bestSpeed)st.bestSpeed=Math.round(t*10)/10;
     $('fb').innerHTML='<span style="color:var(--good)">✓ Correct'+(t<3?' — fast!':'')+'</span>';}
   else{$('fb').innerHTML='<span style="color:#f0a0a0">✗ '+(val==null?'Time!':'Not quite')+' — answer: <b>'+esc(String(S.cur.a))+'</b></span>';}
@@ -369,6 +419,13 @@ function finish(quit){
     bt.push({name:SR.rockName,right:S.right,week:wk,when:new Date().toISOString()});
     SY.schoolSet(link.code,'skillrush-battle',bt);
   }
+  /* arithmetic diagnostic: per-operation readiness (Ready / At risk / Critical) */
+  if(S.mode==='diagnostic'&&S.perOp){
+    var ops={};Object.keys(S.perOp).forEach(function(k){var po=S.perOp[k];ops[k]=po.total?Math.round(100*po.right/po.total):null});
+    SR.mathsDiag={when:todayKey(),ops:ops};SY.set('skillrush',SR);
+    var crit=HERO_OPS.filter(function(o){return ops[o[0]]!=null&&ops[o[0]]<50}).map(function(o){return o[1]});
+    toast(crit.length?('Diagnostic done — focus on '+crit.join(' & ')+' first'):'Diagnostic done — check your Maths Heroes statuses');
+  }
   /* national championship: one official attempt, grouped by education level */
   if(S.mode==='national'){
     var nat=nationalCfg();
@@ -398,7 +455,7 @@ function finish(quit){
     '<p class="note">'+(acc>=90?'Rock-solid — try Exam Pressure Mode next.':acc>=70?'Good work — one more session locks it in.':'Keep going — Comeback Mode will rebuild this step by step.')+'</p>'+
     '<div style="margin-top:10px"><button class="btn solid sm" id="again">Go again →</button></div>';
   var savedMode=S.mode;$('again').onclick=function(){startSession(savedMode)};
-  S=null;renderTop();renderBoard();renderBattle();renderMission();
+  S=null;renderTop();renderBoard();renderBattle();renderMission();renderHeroes();
 }
 
 /* ---- stats / boards ---- */
@@ -438,7 +495,7 @@ function renderBattle(){
   $('battle').innerHTML='<div class="stats"><div class="stat"><div class="v">'+total.toLocaleString()+'</div><div class="l">Class points</div></div><div class="stat"><div class="v">'+mine.toLocaleString()+'</div><div class="l">Your points</div></div><div class="stat"><div class="v">'+bt.length+'</div><div class="l">Battle sessions</div></div></div>'+
     (total?'':'<div class="note">Play ⚔️ Class Battle mode — every correct answer adds a point for your class.</div>');
 }
-renderTop();renderBoard();renderBattle();renderMission();renderNational();
+renderTop();renderBoard();renderBattle();renderMission();renderNational();renderHeroes();
 })();
 </script>
 </body></html>

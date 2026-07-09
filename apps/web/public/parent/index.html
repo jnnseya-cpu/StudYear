@@ -697,7 +697,7 @@ document.querySelectorAll('#elite-suite [data-tab]').forEach(function(a){a.oncli
   var kids=SY.get('children',[]);
   if(!kids.length){box.innerHTML='<div class="note" style="font-style:normal">Link a child above — their SkillRush fluency progress, family practice plan and quiet-hours control appear here.</div>';return}
   var kid=kids[0];var nm=SY.accountName(kid.email);
-  var SRN={tables:'Times tables',mental:'Mental arithmetic',fractions:'Fractions',decimals:'Decimals',percent:'Percentages',algebra:'Algebra',squares:'Squares & roots',formulas:'Formula recall',spelling:'Spelling',grammar:'Grammar',vocab:'Vocabulary',science:'Science facts',geography:'Geography facts',history:'History dates',french:'French vocab'};
+  var SRN={addition:'Addition',subtraction:'Subtraction',tables:'Times tables',division:'Division',bonds:'Number bonds',inverse:'Inverse operations',word:'Word problems',mental:'Mental arithmetic',fractions:'Fractions',decimals:'Decimals',percent:'Percentages',algebra:'Algebra',squares:'Squares & roots',formulas:'Formula recall',spelling:'Spelling',grammar:'Grammar',vocab:'Vocabulary',science:'Science facts',geography:'Geography facts',history:'History dates',french:'French vocab'};
   var sr=SY.readAccount(kid.email,'skillrush',null);
   var today=new Date().toISOString().slice(0,10);
   var curfew=SY.readAccount(kid.email,'skillrushCurfew',null)||{};
