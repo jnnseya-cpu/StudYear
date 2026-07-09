@@ -147,10 +147,25 @@
 </div>
 
 <div class="grid">
-  <div class="card c8"><h3>Live AI Alerts</h3><div class="sub">Signals across your linked learners, updated from their live activity</div><div id="alerts"></div></div>
+  <div class="card c8" id="sec-alerts"><h3>Live AI Alerts</h3><div class="sub">Signals across your linked learners, updated from their live activity</div><div id="alerts"></div></div>
   <div class="card c4"><h3>Your subscription</h3><div class="sub" id="sub-name">Parent</div>
     <div id="sub-feats"></div>
     <div style="margin-top:10px"><a class="btn sm" href="plans/">Manage plan</a></div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card c12" id="elite-suite"><h3>Your Elite suite — quick access</h3><div class="sub">Everything in your plan, one tap away in your command centre</div>
+    <div class="eqa" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+      <a class="btn ghost sm" href="#stab-ring" data-scroll>🧭 Family intelligence dashboard</a>
+      <a class="btn ghost sm" href="#sec-alerts" data-scroll>🔔 Live AI alerts</a>
+      <a class="btn ghost sm" data-tab="pathway">🎓 University readiness</a>
+      <a class="btn ghost sm" data-tab="intel">🧠 Burnout prevention</a>
+      <a class="btn ghost sm" data-tab="pathway">🚀 Future pathway &amp; careers</a>
+      <a class="btn ghost sm" href="#sec-advisor" data-scroll>🤖 Priority AI advisor</a>
+      <a class="btn ghost sm" href="plans/">💳 3,900 ACUs / month</a>
+    </div>
+    <div class="note" id="elite-note" style="margin-top:8px"></div>
   </div>
 </div>
 
@@ -208,7 +223,7 @@
 
 <!-- advisor + intervention -->
 <div class="grid" style="margin-top:22px">
-  <div class="card c7"><h3>AI parent advisor</h3><div class="sub">Your co-pilot for parenting education — personalised to live data</div>
+  <div class="card c7" id="sec-advisor"><h3>AI parent advisor</h3><div class="sub">Your co-pilot for parenting education — personalised to live data</div>
     <div class="chips" id="advisor-chips"></div>
     <div style="display:flex;gap:8px"><input id="advisor-in" placeholder="Ask a question about your child's learning…" style="flex:1"><button class="btn" id="advisor-go">Ask advisor</button></div>
     <div id="advisor-out">Ask anything about your child's learning and I'll answer from their live data.</div>
@@ -635,6 +650,13 @@ $('tabs').addEventListener('click',function(e){var b=e.target.closest('button');
   document.querySelectorAll('.tabpane').forEach(function(p){p.classList.toggle('on',p.id==='pane-'+b.dataset.t)});
 });
 $('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+
+/* ---- Elite suite quick-access: scroll to a section, or open a deep-view tab ---- */
+function activateTab(t){var deep=$('deep');if(!deep||deep.style.display==='none'){var n=$('elite-note');if(n)n.textContent='Link a child above to open live '+t+' — your Elite tools activate the moment a learner is connected.';deep&&deep.scrollIntoView&&deep.scrollIntoView({behavior:'smooth'});return}
+  var btn=$('tabs').querySelector('[data-t="'+t+'"]');if(btn){btn.click();deep.scrollIntoView({behavior:'smooth',block:'start'})}}
+document.querySelectorAll('#elite-suite [data-scroll]').forEach(function(a){a.onclick=function(e){e.preventDefault();var el=document.querySelector(a.getAttribute('href'));if(el)el.scrollIntoView({behavior:'smooth',block:'center'})}});
+document.querySelectorAll('#elite-suite [data-tab]').forEach(function(a){a.onclick=function(e){e.preventDefault();activateTab(a.getAttribute('data-tab'))}});
+
 render();
 })();
 </script>
