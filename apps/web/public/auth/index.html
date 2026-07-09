@@ -79,6 +79,19 @@
       <label>Admin invite code</label>
       <input id="invite" type="password" autocomplete="off" placeholder="provided by platform ops">
     </div>
+    <!-- honeypot: real people never see or fill this; automated bots do -->
+    <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden">
+      <label>Company website</label>
+      <input id="hp" type="text" tabindex="-1" autocomplete="off">
+    </div>
+    <div id="row-human" style="margin-top:6px">
+      <label style="display:flex;gap:9px;align-items:center;cursor:pointer;font-weight:400">
+        <input type="checkbox" id="human-ck" style="width:auto;accent-color:#4FA6E0"> I'm a human, not a bot</label>
+      <div id="human-challenge" style="display:none;margin-top:8px">
+        <label>Quick human check: <b id="chal-q"></b></label>
+        <input id="chal-a" type="text" inputmode="numeric" autocomplete="off" placeholder="type the answer">
+      </div>
+    </div>
     <button class="cta" id="go" type="submit">Sign in →</button>
   </form>
   <div class="alt">
@@ -149,8 +162,32 @@ if(mismatch&&wantRole){
   say('Signed in as <b>'+session.name+'</b> ('+(LABELS[session.role]||session.role)+'). <a href="../app/'+session.role+'/">Open my console</a> or switch accounts below.','ok');
 }
 
+/* ---- human verification / anti-bot (preview-grade; the backend swaps in a
+   server-verified challenge such as Cloudflare Turnstile + IP rate-limiting) ---- */
+var _formLoaded=Date.now();
+function _ri(a,b){return Math.floor(a+Math.random()*(b-a+1))}
+var _chalA=0;
+function newChallenge(){var a=_ri(2,9),b=_ri(2,9);_chalA=a+b;var el=$('chal-q');if(el)el.textContent='what is '+a+' + '+b+'?'}
+newChallenge();
+$('human-ck').addEventListener('change',function(){$('human-challenge').style.display=this.checked?'block':'none';if(this.checked){newChallenge();var a=$('chal-a');if(a)a.focus()}});
+function _thr(){try{return JSON.parse(localStorage.getItem('sy-auth-throttle'))||{n:0,until:0}}catch(e){return {n:0,until:0}}}
+function _setThr(t){try{localStorage.setItem('sy-auth-throttle',JSON.stringify(t))}catch(e){}}
+function _fail(){var t=_thr();t.n=(t.n||0)+1;if(t.n>=5)t.until=Date.now()+Math.min(300000,15000*Math.pow(2,t.n-5));_setThr(t)}
+function _pass(){_setThr({n:0,until:0})}
+function _resetHuman(){newChallenge();var a=$('chal-a');if(a)a.value='';$('human-ck').checked=false;$('human-challenge').style.display='none'}
+function botGuard(){
+  var t=_thr(),now=Date.now();
+  if(t.until&&now<t.until){say('Too many attempts detected. Please wait '+Math.ceil((t.until-now)/1000)+' seconds before trying again.','err');return false}
+  if($('hp').value){_fail();say('Automated request blocked. Reload the page and try again.','err');return false}      /* honeypot */
+  if(now-_formLoaded<1200){_fail();say('That was too fast — please take a moment and try again.','err');return false}  /* time-trap */
+  if(!$('human-ck').checked){say('Please confirm you are a human to continue.','err');$('human-ck').focus();return false}
+  if(parseInt($('chal-a').value,10)!==_chalA){_fail();_resetHuman();say('Human check failed — please answer the new question.','err');return false}
+  return true;
+}
+
 $('f').addEventListener('submit',async function(e){
   e.preventDefault();
+  if(!botGuard())return;
   var email=$('email').value.trim().toLowerCase(), pw=$('pw').value;
   if(!/^\S+@\S+\.\S+$/.test(email)){say('Enter a valid email address.','err');return}
   if(pw.length<8){say('Password must be at least 8 characters.','err');return}
@@ -170,6 +207,7 @@ $('f').addEventListener('submit',async function(e){
     var salt=Array.from(crypto.getRandomValues(new Uint8Array(12))).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
     users.push({name:name,email:email,role:role,salt:salt,hash:await hash(salt,pw)});
     save('sy-users',users);
+    _pass();
     save('sy-session',{name:name,email:email,role:role,ts:new Date().toISOString()});
     // new students onboard by building their personalised profile first
     if(role==='student'&&!next){location.replace('../account/profile/?welcome=1');return}
@@ -182,7 +220,8 @@ $('f').addEventListener('submit',async function(e){
       if(matches[i].hash===await hash(matches[i].salt,pw)){authed=matches[i];
         if(wantRole&&matches[i].role===wantRole)break}
     }
-    if(!authed){say('Wrong password.','err');return}
+    if(!authed){say('Wrong password.','err');_fail();_resetHuman();return}
+    _pass();
     if(wantRole&&authed.role!==wantRole){
       save('sy-session',{name:authed.name,email:authed.email,role:authed.role,ts:new Date().toISOString()});
       say('Signed in — but this account is a <b>'+(LABELS[authed.role]||authed.role)+'</b> account, and this area needs a <b>'+

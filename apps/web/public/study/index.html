@@ -2561,6 +2561,10 @@ fillSelect(document.getElementById("il-subj"),SUBJECTS);
 fillSelect(document.getElementById("cg-level"),LEVELS);
 document.getElementById("il-level").value=(PROFILE.level&&LEVELS.includes(PROFILE.level))?PROFILE.level:"GCSE";
 document.getElementById("cg-level").value=(PROFILE.level&&LEVELS.includes(PROFILE.level))?PROFILE.level:"GCSE";
+/* prefill Subject (interactive lesson) and Exam Board (course generator) from the student profile */
+(function(){var subs=(PROFILE.subjects||[]).map(x=>x.s);var primary=subs[0];
+  if(primary)setSelect("il-subj",primary);
+  if(PROFILE.board)setSelect("cg-board",PROFILE.board);})();
 document.getElementById("il-price").textContent=IL_PRICE;
 document.getElementById("cg-price").textContent=CG_PRICE;
 function refreshBalances(){
