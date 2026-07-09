@@ -74,13 +74,20 @@
   <div class="card" id="mission-card"><h3>🎯 Today's mission</h3><div class="sub" id="mission-sub">Your daily workout — teacher-set when your class has a focus, otherwise your weakest skill</div>
     <div id="mission"></div></div>
 
-  <div class="card" id="heroes-card"><h3>🦸 Maths Heroes</h3>
-    <div class="sub">Addition. Subtraction. Multiplication. Division. <b>Mastered.</b> From counting mistakes to confident maths mastery — one smart question at a time.</div>
+  <div class="card" id="heroes-card"><h3>🎸 Number Rock Stars™ <span style="font-size:11px;color:var(--ink-3);letter-spacing:.08em">· MATHS HEROES</span></h3>
+    <div class="sub">The four-operation arithmetic fluency module. Addition. Subtraction. Multiplication. Division. <b>Mastered.</b> From counting mistakes to confident maths mastery — one smart question at a time.</div>
     <div id="heroes" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:6px"></div>
     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <button class="btn sm solid" id="diag-go">🩺 2-minute arithmetic diagnostic →</button>
       <span class="note" id="diag-note" style="margin:0">12 quick questions across the four operations — sets your Ready / At-risk / Critical status and your mission.</span>
-    </div></div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span class="note" style="margin:0">My fact map:</span>
+      <select id="fm-op" style="width:auto;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:8px;color:var(--ink);padding:5px 8px;font-size:12px">
+        <option value="add">➕ Addition</option><option value="sub">➖ Subtraction</option><option value="mul" selected>✖️ Multiplication</option><option value="div">➗ Division</option>
+      </select>
+    </div>
+    <div id="factmap"></div></div>
 
   <div class="card" id="setup">
     <h3>Choose your skill</h3>
@@ -168,11 +175,29 @@ var SCIFACT=[['Chemical symbol for iron','fe'],['Chemical formula for water','h2
 var GEOFACT=[['Capital of France','paris'],['Capital of Spain','madrid'],['Capital of Japan','tokyo'],['Capital of Italy','rome'],['Capital of Egypt','cairo'],['Longest river in the world','nile'],['Largest ocean','pacific'],['Highest mountain in the UK','ben nevis']];
 var HISTDATE=[['Year WW2 began in Europe',1939],['Year WW1 began',1914],['Battle of Hastings',1066],['Great Fire of London',1666],['Magna Carta signed',1215],['Year WW2 ended',1945],['Titanic sank',1912],['First Moon landing',1969]];
 function bankGen(bank,text){return function(){var it=pick(bank);return {q:it[0],a:it[1],text:text!==false}}}
+/* ---- Number Rock Stars™ fact engine: every core fact (≈530: 0+0…20+20,
+   within-20 differences, 1×1…12×12 and exact quotients) is a tracked node.
+   biasPair() re-weights toward the learner's weakest/slowest facts in Focus &
+   Comeback (the Garage loop); inverse pairs (+↔−, ×↔÷) are linked nodes. ---- */
+function biasPair(op,rand){
+  try{
+    if(S&&(S.mode==='focus'||S.mode==='comeback')&&SR.facts){
+      var cands=Object.keys(SR.facts).filter(function(k){return k.indexOf(op+':')===0}).map(function(k){var f=SR.facts[k];return {k:k,m:f.t?f.r/f.t:0,ms:f.ms||9,t:f.t}}).filter(function(x){return x.t>=2&&(x.m<0.85||x.ms>4)});
+      if(cands.length>=3){
+        cands.sort(function(a,b){return (a.m-b.m)||(b.ms-a.ms)});
+        var pickFrom=cands.slice(0,6);var c=pickFrom[ri(0,pickFrom.length-1)];
+        var nums=c.k.split(':')[1].split(/[^0-9]+/).map(Number).filter(function(n){return !isNaN(n)});
+        if(nums.length>=2)return nums;
+      }
+    }
+  }catch(e){}
+  return rand();
+}
 var SKILLS=[
-  ['addition','Addition',function(lv){var m=lv===0?20:lv===1?200:999;var a=ri(2,m),b=ri(2,m);return {q:a+' + '+b,a:a+b}}],
-  ['subtraction','Subtraction',function(lv){var m=lv===0?20:lv===1?200:999;var a=ri(2,m),b=ri(2,m);var hi=Math.max(a,b),lo=Math.min(a,b);return {q:hi+' − '+lo,a:hi-lo}}],
-  ['tables','Times tables',function(lv){var a=ri(2,Math.min(12,4+lv*2)),b=ri(2,12);return {q:a+' × '+b,a:a*b}}],
-  ['division','Division',function(lv){var b=ri(2,12),ans=ri(2,12+lv*6);return {q:(b*ans)+' ÷ '+b,a:ans}}],
+  ['addition','Addition',function(lv){var m=lv===0?10:lv===1?20:99;var p=biasPair('add',function(){return [ri(0,m),ri(0,m)]});var a=p[0],b=p[1];return {q:a+' + '+b,a:a+b,fk:'add:'+a+'+'+b,inv:'sub:'+(a+b)+'-'+b}}],
+  ['subtraction','Subtraction',function(lv){var m=lv===0?10:lv===1?20:99;var p=biasPair('sub',function(){var x=ri(0,m),y=ri(0,m);return [Math.max(x,y),Math.min(x,y)]});var hi=p[0],lo=p[1];return {q:hi+' − '+lo,a:hi-lo,fk:'sub:'+hi+'-'+lo,inv:'add:'+(hi-lo)+'+'+lo}}],
+  ['tables','Times tables',function(lv){var mx=Math.min(12,4+lv*2);var p=biasPair('mul',function(){return [ri(1,mx),ri(1,12)]});var a=p[0],b=p[1];return {q:a+' × '+b,a:a*b,fk:'mul:'+a+'x'+b,inv:'div:'+(a*b)+'/'+b}}],
+  ['division','Division',function(lv){var p=biasPair('div',function(){var b=ri(1,12),ans=ri(1,12);return [b*ans,b]});var d=p[0],b2=p[1];if(!b2||d%b2)return {q:'12 ÷ 3',a:4,fk:'div:12/3',inv:'mul:4x3'};return {q:d+' ÷ '+b2,a:d/b2,fk:'div:'+d+'/'+b2,inv:'mul:'+(d/b2)+'x'+b2}}],
   ['bonds','Number bonds',function(lv){var t=lv===0?20:lv===1?100:1000;var a=lv===2?ri(1,99)*10:ri(1,t-1);return {q:'What adds to '+t+' with '+a+'?',a:t-a}}],
   ['inverse','Inverse operations',function(lv){var k=ri(0,3);
     if(k===0){var b=ri(2,9+lv*3),ans=ri(2,9+lv*3);return {q:'? × '+b+' = '+(b*ans),a:ans}}
@@ -298,7 +323,17 @@ var S=null,timerIv=null;
 var MODES={focus:{n:20,perQ:8,label:'Focus',lv:1},confidence:{n:12,perQ:0,label:'Confidence',lv:0},exam:{n:25,perQ:6,label:'Exam Pressure',lv:2},comeback:{n:15,perQ:12,label:'Comeback',lv:0},battle:{n:20,perQ:7,label:'Class Battle',lv:1},duel:{n:12,perQ:10,label:'Parent Challenge',lv:1},national:{n:25,perQ:6,label:'National Test',lv:2},diagnostic:{n:12,perQ:10,label:'Arithmetic Diagnostic',lv:1}};
 
 /* ---- Maths Heroes: four-operation mastery, trophies & readiness ---- */
-var HERO_OPS=[['addition','Addition','Addition Hero','➕'],['subtraction','Subtraction','Subtraction Sniper','➖'],['tables','Multiplication','Multiplication Boss','✖️'],['division','Division','Division Master','➗']];
+var HERO_OPS=[['addition','Addition','Addition Hero','➕','add','#5CBB7B'],['subtraction','Subtraction','Subtraction Sniper','➖','sub','#5FA8E0'],['tables','Multiplication','Multiplication Boss','✖️','mul','#b48fe0'],['division','Division','Division Master','➗','div','#e0a75f']];
+/* Number Rank ladder — speed-derived per operation (TTRS Rock Status, ×4) */
+var NR_RANKS=[[1,'Number God'],[2,'Number Legend'],[3,'Number Star'],[4,'Headliner'],[5,'Support Act'],[6,'Breakthrough'],[7,'Rising Act'],[8,'Gigger'],[9,'Busker'],[10,'Garage Act'],[1e9,'Newcomer']];
+function opFacts(pre){var out=[];Object.keys(SR.facts||{}).forEach(function(k){if(k.indexOf(pre+':')===0)out.push(SR.facts[k])});return out}
+function opRank(pre){
+  var fs=opFacts(pre).filter(function(f){return f.ms!=null&&f.t>=1});
+  if(fs.length<10)return 'Unranked';
+  var avg=fs.reduce(function(a,f){return a+f.ms},0)/fs.length;
+  for(var i=0;i<NR_RANKS.length;i++)if(avg<=NR_RANKS[i][0])return NR_RANKS[i][1];
+  return 'Newcomer';
+}
 function opStatus(k){
   var d=SR.mathsDiag&&SR.mathsDiag.ops&&SR.mathsDiag.ops[k];
   var st=skillStats(k);var a=st.total?Math.round(100*st.right/st.total):null;
@@ -310,15 +345,37 @@ function renderHeroes(){
   $('heroes').innerHTML=HERO_OPS.map(function(o){
     var st=skillStats(o[0]);var a=st.total?Math.round(100*st.right/st.total):null;
     var trophy=st.total>=20&&a>=90;
-    var s=opStatus(o[0]);
-    return '<div class="stat" style="border-color:'+(trophy?'rgba(230,199,102,.5)':'var(--line)')+'">'+
+    var s=opStatus(o[0]);var rank=opRank(o[4]);
+    return '<div class="stat" style="border-left:3px solid '+o[5]+';border-color:'+(trophy?'rgba(230,199,102,.5)':'var(--line)')+'">'+
       '<div style="font-size:20px">'+o[3]+(trophy?' 🏆':'')+'</div>'+
       '<div class="v" style="font-size:18px;margin-top:4px">'+(a==null?'—':a+'%')+'</div>'+
       '<div class="l">'+esc(o[1])+'</div>'+
-      '<div style="font-size:10px;margin-top:5px;color:'+s[1]+'">● '+s[0]+(trophy?' · '+esc(o[2]):'')+'</div></div>';
+      '<div style="font-size:10px;margin-top:4px;color:'+o[5]+'">♪ '+esc(rank)+'</div>'+
+      '<div style="font-size:10px;margin-top:3px;color:'+s[1]+'">● '+s[0]+(trophy?' · '+esc(o[2]):'')+'</div></div>';
   }).join('');
+  renderFactMap();
+}
+/* red→green fact heatmaps — one per operation ("gone green" per op) */
+function renderFactMap(){
+  var box=$('factmap');if(!box)return;
+  var pre=$('fm-op').value;
+  var isMul=pre==='mul'||pre==='div';
+  var N=isMul?12:10,off=isMul?1:0;
+  var html='<div style="overflow-x:auto"><table style="border-collapse:collapse;margin-top:6px">';
+  for(var r=off;r<=N;r++){html+='<tr>';
+    for(var c=off;c<=N;c++){
+      var k=pre==='add'?('add:'+r+'+'+c):pre==='sub'?('sub:'+(r+c)+'-'+c):pre==='mul'?('mul:'+r+'x'+c):('div:'+(r*c)+'/'+c);
+      var f=(SR.facts||{})[k];var m=f&&f.t?f.r/f.t:null;
+      var col=m==null?'rgba(107,122,150,.15)':m>=0.8?'rgba(92,187,123,.55)':m>=0.5?'rgba(201,133,0,.5)':'rgba(230,103,103,.55)';
+      var lbl=pre==='add'?(r+'+'+c):pre==='sub'?((r+c)+'−'+c):pre==='mul'?(r+'×'+c):((r*c)+'÷'+c);
+      html+='<td title="'+lbl+(m!=null?' · '+Math.round(m*100)+'%':' · not practised')+'" style="width:15px;height:15px;background:'+col+';border:1px solid rgba(6,11,24,.6)"></td>';
+    }
+    html+='</tr>';}
+  html+='</table></div><div class="note" style="margin-top:6px">Red → green, one cell per fact. Goal: gone green. Inverse pairs (+↔−, ×↔÷) share credit automatically.</div>';
+  box.innerHTML=html;
 }
 $('diag-go').onclick=function(){startSession('diagnostic')};
+$('fm-op').onchange=renderFactMap;
 
 /* ---- National Championship (admin-triggered; one attempt; top 5 per education level win) ---- */
 function nationalCfg(){try{return JSON.parse(localStorage.getItem('sy-national'))||null}catch(e){return null}}
@@ -394,6 +451,14 @@ function mark(val){
   var st=SR.skill[curSkill]=SR.skill[curSkill]||{right:0,total:0,bestSpeed:null};
   st.total++;
   if(S.mode==='diagnostic'){S.perOp=S.perOp||{};var po=S.perOp[curSkill]=S.perOp[curSkill]||{right:0,total:0};po.total++;if(S.cur.text?norm(val)===norm(S.cur.a):Math.abs(parseFloat(val)-S.cur.a)<0.001)po.right++;}
+  /* fact-level mastery: latency+accuracy per fact node, with inverse-pair credit */
+  if(S.cur.fk){
+    SR.facts=SR.facts||{};
+    var okF=S.cur.text?norm(val)===norm(S.cur.a):Math.abs(parseFloat(val)-S.cur.a)<0.001;
+    var f=SR.facts[S.cur.fk]=SR.facts[S.cur.fk]||{r:0,t:0,ms:null};
+    f.t++;if(okF)f.r++;f.ms=f.ms==null?t:Math.round((f.ms*0.7+t*0.3)*10)/10;
+    if(okF&&S.cur.inv){var g=SR.facts[S.cur.inv]=SR.facts[S.cur.inv]||{r:0,t:0,ms:null};g.r+=0.5;g.t+=0.5}
+  }
   if(correct){S.right++;st.right++;if(S.duel)S.duel['p'+S.duel.phase]++;
     /* mode-weighted coins: adaptive Focus pays most (steers volume to smart practice),
        assessment modes pay least so status stays honest */
