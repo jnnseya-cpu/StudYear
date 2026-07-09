@@ -27,6 +27,7 @@
   #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
 </style></head><body>
 <script src="../../guard.js" data-role="admin" data-base="../../"></script>
+<script src="../../ai.js"></script>
 <div class="shell">
 <aside><a class="slogo" href="../../">⌂ <b class="wm">StudYear</b></a><nav>
   <a href="../">Overview</a><a href="../#users">Users</a><a href="../#tutors">Tutors</a><a href="../../blog/admin/">Blog studio</a><a href="../#schools">Schools</a><a href="./" class="on">AI Gateway</a><a href="#" id="signout">Sign out</a>
@@ -51,6 +52,23 @@
   </div>
 
   <div style="margin-top:20px"><button class="btn solid" id="save">Save gateway</button> <button class="btn ghost" id="test">Test connections</button> <span class="note" id="saved" style="font-size:11.5px;color:var(--ink-3)"></span></div>
+
+  <div class="card" style="margin-top:26px;border-color:rgba(92,187,123,.4)"><h3>⚡ Turn the AI tools live (preview, this device)</h3>
+    <div class="sub">Switch the student &amp; staff AI tools (AI Tutor first) from on-device templates to a <b>real model</b>. The key is stored on this device only and called from the browser — use a <b>restricted/test key</b>. Google Gemini is the smoothest from a browser; OpenAI and Anthropic also work.</div>
+    <div class="two">
+      <div><label class="f">Provider</label><select id="live-provider"><option value="gemini">Google Gemini</option><option value="openai">OpenAI</option><option value="anthropic">Anthropic Claude</option></select></div>
+      <div><label class="f">Model</label><input id="live-model" placeholder="e.g. gemini-2.0-flash"></div>
+    </div>
+    <label class="f">API key (restricted/test)</label>
+    <input id="live-key" type="password" autocomplete="off" placeholder="AIza… / sk-… / sk-ant-…">
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn solid" id="live-enable">Enable live AI</button>
+      <button class="btn ghost" id="live-test">Send a real test prompt</button>
+      <button class="btn ghost" id="live-off">Turn off</button>
+      <span class="note" id="live-state" style="font-size:11.5px"></span>
+    </div>
+    <div id="live-out" class="note" style="margin-top:8px"></div>
+  </div>
 </main>
 </div>
 <div id="toast"></div>
@@ -101,6 +119,32 @@ $('test').onclick=function(){
   if(!on.length){toast('Enable a provider and add a key first');return}
   toast('Preview: '+on.length+' provider(s) configured. Live connection tests run from the server-side gateway.');
 };
+
+/* ---- live browser AI activation (SYAI) ---- */
+var DEFMODEL={gemini:'gemini-2.0-flash',openai:'gpt-4o-mini',anthropic:'claude-3-5-haiku-20241022'};
+function liveState(){
+  var c=window.SYAI&&SYAI.config&&SYAI.config();
+  if(c&&c.provider&&c.key){$('live-state').innerHTML='<span style="color:var(--good)">● Live — '+c.provider+' · '+(c.model||DEFMODEL[c.provider])+'</span>';}
+  else{$('live-state').innerHTML='<span style="color:var(--ink-3)">Off — tools use on-device engine</span>';}
+}
+(function(){var c=window.SYAI&&SYAI.config&&SYAI.config();if(c){$('live-provider').value=c.provider||'gemini';$('live-model').value=c.model||'';}})();
+$('live-provider').onchange=function(){if(!$('live-model').value)$('live-model').placeholder='e.g. '+DEFMODEL[$('live-provider').value]};
+$('live-enable').onclick=function(){
+  var key=$('live-key').value.trim();if(!key){toast('Paste an API key first');return}
+  var o={provider:$('live-provider').value,key:key,model:$('live-model').value.trim()||DEFMODEL[$('live-provider').value]};
+  SYAI.setConfig(o);SY.log('gateway','Live AI enabled',o.provider+' · '+o.model);toast('Live AI enabled — the AI Tutor now uses '+o.provider);liveState();
+};
+$('live-off').onclick=function(){SYAI.clear();toast('Live AI turned off — tools revert to the on-device engine');liveState()};
+$('live-test').onclick=function(){
+  var key=$('live-key').value.trim();
+  if(key){SYAI.setConfig({provider:$('live-provider').value,key:key,model:$('live-model').value.trim()||DEFMODEL[$('live-provider').value]})}
+  if(!SYAI.ready()){toast('Enable live AI first');return}
+  $('live-out').textContent='Contacting '+SYAI.provider()+'…';
+  SYAI.ask('You are a helpful GCSE tutor. Answer in one short sentence.','Say hello and name one study tip.',{maxTokens:120}).then(function(t){
+    $('live-out').innerHTML='<span style="color:var(--good)">✓ Real response:</span> '+SYAI.render(t);liveState();
+  }).catch(function(e){$('live-out').innerHTML='<span style="color:#f0a0a0">✗ '+String(e.message||e)+'</span><br><span class="note">If this is a CORS/401 error, check the key and that the provider allows browser calls (Gemini is the most browser-friendly).</span>'});
+};
+liveState();
 })();
 </script>
 </body></html>

@@ -206,6 +206,7 @@
 </head>
 <body>
 <script src="../guard.js" data-role="student" data-base="../"></script>
+<script src="../ai.js"></script>
 <div class="wrap">
 
 <header class="page">
@@ -636,7 +637,7 @@
 <section id="tab-tutor">
   <div class="grid">
     <div class="card c8">
-      <h3>AI Tutor</h3><div class="sub">Your personal AI-powered academic assistant. Ask questions, get explanations, and test your knowledge.</div>
+      <h3>AI Tutor <span id="tutor-mode" style="font-size:10px;letter-spacing:.06em;border-radius:20px;padding:2px 9px;vertical-align:middle"></span></h3><div class="sub">Your personal AI-powered academic assistant. Ask questions, get explanations, and test your knowledge.</div>
       <div id="chat"></div>
       <div class="chips" id="chips"></div>
       <div class="chatline">
@@ -2041,10 +2042,32 @@ function addMsg(t,who){
   d.innerHTML=(who==="bot"?"<b>Tutor</b> · ":"")+esc(t).replace(/\n/g,"<br>");
   chat.appendChild(d);chat.scrollTop=chat.scrollHeight;
 }
+function tutorSystemPrompt(){
+  const lvl=(typeof STUDENT_LEVEL!=="undefined"&&STUDENT_LEVEL)||PROFILE.level||"GCSE";
+  const subs=(PROFILE.subjects||[]).map(x=>x.s).filter(Boolean).join(", ");
+  return "You are StudYear's AI Tutor for a "+lvl+" student"+(subs?" studying "+subs:"")+". "+
+    "Teach the method, never just the final answer. Be clear, encouraging and concise. Use short paragraphs, bold key terms and numbered steps or bullet lists. "+
+    "When a diagram is asked for, describe it with clearly labelled parts in a list (you cannot draw). "+
+    "End with one quick check-question. Keep it pitched at "+lvl+" level.";
+}
 function sendChat(){
   const inp=document.getElementById("chat-in");const t=inp.value.trim();if(!t)return;
   addMsg(t,"me");inp.value="";touchStreak();addPoints(3);
   logEvent("tutor","AI Tutor: "+(t.length>52?t.slice(0,52)+"…":t),"You asked the AI teaching assistant a question.");
+  /* quiz commands stay on the deterministic engine; everything else uses the live model when configured */
+  const isQuiz=/\bquiz me\b|\bquiz\b.*\bon\b|test me/i.test(t);
+  if(!isQuiz && !pendingQuiz && window.SYAI && SYAI.ready()){
+    const wait=document.createElement("div");wait.className="msg bot";wait.innerHTML="<b>Tutor</b> · <span class='typing'>thinking…</span>";
+    chat.appendChild(wait);chat.scrollTop=chat.scrollHeight;
+    SYAI.ask(tutorSystemPrompt(),t,{maxTokens:1100}).then(txt=>{
+      wait.innerHTML="<b>Tutor</b> · "+SYAI.render(txt||"(no response)");
+      chat.scrollTop=chat.scrollHeight;addPoints(2);
+    }).catch(err=>{
+      wait.innerHTML="<b>Tutor</b> · <span style='color:#f0a0a0'>Couldn't reach the model ("+esc(String(err.message||err)).slice(0,80)+"). Falling back to the built-in tutor.</span>";
+      setTimeout(()=>botReply(t),200);
+    });
+    return;
+  }
   setTimeout(()=>botReply(t),350);
 }
 document.getElementById("chat-send").onclick=sendChat;
@@ -2054,7 +2077,11 @@ document.getElementById("chat-in").addEventListener("keydown",e=>{if(e.key==="En
   c.onclick=()=>{document.getElementById("chat-in").value=s;sendChat()};
   document.getElementById("chips").appendChild(c);
 });
-addMsg("How can I help you today?\nI can explain topics, solve problems, or quiz you.","bot");
+(function(){var badge=document.getElementById("tutor-mode");if(!badge)return;
+  if(window.SYAI&&SYAI.ready()){badge.textContent="● Live · "+SYAI.provider();badge.style.cssText="font-size:10px;letter-spacing:.06em;border-radius:20px;padding:2px 9px;vertical-align:middle;border:1px solid rgba(92,187,123,.5);color:#8ee0a5"}
+  else{badge.textContent="on-device";badge.style.cssText="font-size:10px;letter-spacing:.06em;border-radius:20px;padding:2px 9px;vertical-align:middle;border:1px solid rgba(170,182,204,.3);color:var(--ink-3)"}
+})();
+addMsg((window.SYAI&&SYAI.ready())?"How can I help you today? I'm connected to a live model — ask me anything, or say 'quiz me on <topic>'.":"How can I help you today?\nI can explain topics, solve problems, or quiz you.","bot");
 
 /* ============================ PROGRESS ============================ */
 function todayKey(){return new Date().toISOString().slice(0,10)}
