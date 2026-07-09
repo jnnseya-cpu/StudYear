@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — SkillRush™</title><link rel="manifest" href="../manifest.json"><link rel="icon" href="../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--gold-300:#A9CFF2;--gold-400:#5FA8E0;--gold-500:#3D8FD1;--good:#5CBB7B;--warn:#c98500;--crit:#e66767;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#6B7A96;--line:rgba(77,157,224,.14);--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}body{background:radial-gradient(1100px 600px at 82% -12%,rgba(77,157,224,.13),transparent 60%),var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  body.bigfont{font-size:19px}body.bigfont .q-big{font-size:64px !important}
+  .wrap{max-width:1080px;margin:0 auto;padding:26px 22px 90px}
+  .top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}.top .logo{font-family:var(--serif);font-size:18px;text-decoration:none;color:var(--ink)}.top .logo b{color:#4FA6E0}.top .sp{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .chip{font-size:12px;color:var(--ink-2);border:1px solid rgba(170,182,204,.25);border-radius:20px;padding:6px 12px;text-decoration:none;background:none;cursor:pointer;font-family:var(--sans)}
+  a{color:inherit}h1{font-family:var(--serif);font-weight:500;font-size:30px}.k{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-400)}p.lede{color:var(--ink-2);font-weight:300;margin-top:4px;max-width:78ch}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:16px}
+  .stat{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:rgba(16,27,51,.5)}.stat .v{font-family:var(--serif);font-size:24px;color:var(--gold-300);line-height:1}.stat .l{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-top:5px}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:18px 20px;margin-top:16px}.card h3{font-family:var(--serif);font-weight:500;font-size:17px}.card .sub{font-size:12px;color:var(--ink-3);margin:4px 0 10px}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12.5px var(--sans);border-radius:9px;padding:10px 16px;cursor:pointer;text-decoration:none;display:inline-block}.btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}.btn.sm{padding:6px 11px;font-size:11.5px}.btn.ghost{border-color:rgba(170,182,204,.3);background:transparent;color:var(--ink-2)}
+  .skills{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}.skills .sk{font-size:12.5px;color:var(--ink-2);border:1px solid var(--line);border-radius:20px;padding:7px 14px;cursor:pointer;background:none;font-family:var(--sans)}.skills .sk.on{color:var(--gold-300);border-color:var(--gold-500);background:rgba(77,157,224,.1)}
+  .modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:10px}
+  .mode{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:rgba(6,11,24,.35);cursor:pointer;transition:border-color .12s,transform .12s}.mode:hover{border-color:var(--gold-500);transform:translateY(-2px)}
+  .mode b{color:var(--ink);font-size:14px}.mode span{display:block;font-size:11.5px;color:var(--ink-3);margin-top:4px}
+  .mode .tag{display:inline-block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;border:1px solid rgba(92,187,123,.5);color:#8ee0a5;border-radius:8px;padding:1px 7px;margin-top:7px}
+  /* arena */
+  #arena{display:none}
+  .q-big{font-family:var(--serif);font-size:52px;color:var(--ink);text-align:center;margin:22px 0 8px}
+  .a-line{display:flex;gap:10px;justify-content:center;margin-top:10px}
+  .a-line input{width:200px;background:rgba(6,11,24,.75);border:2px solid var(--gold-500);border-radius:12px;color:var(--ink);font:600 28px var(--sans);padding:12px 16px;outline:none;text-align:center}
+  .hud{display:flex;gap:14px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:6px;font-size:13px;color:var(--ink-2)}
+  .hud b{color:var(--gold-300)}
+  .timerbar{height:8px;border-radius:5px;background:rgba(170,182,204,.12);overflow:hidden;max-width:420px;margin:14px auto 0}.timerbar i{display:block;height:100%;background:linear-gradient(90deg,#5CBB7B,#c98500,#e66767);transition:width .2s linear}
+  .fb{text-align:center;font-size:15px;margin-top:10px;min-height:24px}
+  .row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:13px}.row b{color:var(--ink)}
+  .empty{color:var(--ink-3);font-style:italic;padding:12px 0}.note{font-size:11.5px;color:var(--ink-3);margin-top:8px}
+  .acc{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:12.5px;color:var(--ink-2)}
+  .acc label{display:flex;gap:7px;align-items:center;cursor:pointer}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+  @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.25)}100%{transform:scale(1)}}
+  .pop{animation:pop .3s ease}
+</style></head><body>
+<script src="../guard.js" data-role="student" data-base="../"></script>
+<div class="wrap">
+  <div class="top"><a class="logo" href="../">⌂ <b class="wm">StudYear</b></a>
+    <div class="sp"><a class="chip" href="../study/">Study workspace</a><a class="chip" href="../dashboards/student/">Dashboard</a><a class="chip" href="../account/achievements/">Achievements</a><a class="chip" href="#" id="signout">Sign out</a></div></div>
+  <div class="k">SkillRush™ · the 5-minute daily academic workout</div>
+  <h1>Fluency Arena</h1>
+  <p class="lede">Fast, focused practice that turns weak skills into automatic ones. Earn coins and XP, keep your streak, climb the leaderboard — five minutes a day.</p>
+
+  <div class="stats">
+    <div class="stat"><div class="v" id="s-coins">0</div><div class="l">Coins</div></div>
+    <div class="stat"><div class="v" id="s-xp">0</div><div class="l">XP</div></div>
+    <div class="stat"><div class="v" id="s-streak">0</div><div class="l">Day streak</div></div>
+    <div class="stat"><div class="v" id="s-best">—</div><div class="l">Best speed</div></div>
+    <div class="stat"><div class="v" id="s-acc">—</div><div class="l">Accuracy</div></div>
+    <div class="stat"><div class="v" id="s-rank">—</div><div class="l">League rank</div></div>
+  </div>
+
+  <div class="card" id="mission-card"><h3>🎯 Today's mission</h3><div class="sub" id="mission-sub">Your daily workout, picked from your weakest skill</div>
+    <div id="mission"></div></div>
+
+  <div class="card" id="setup">
+    <h3>Choose your skill</h3>
+    <div class="skills" id="skills"></div>
+    <h3 style="margin-top:16px">Choose your mode</h3>
+    <div class="modes">
+      <div class="mode" data-mode="focus"><b>⚡ Focus Mode</b><span>Your weakest micro-skill · 3 minutes · adaptive difficulty</span><span class="tag">AI-picked</span></div>
+      <div class="mode" data-mode="confidence"><b>🌱 Confidence Mode</b><span>No timer, calm pace, hints — rebuild self-belief first</span><span class="tag">No pressure</span></div>
+      <div class="mode" data-mode="exam"><b>⏱ Exam Pressure Mode</b><span>25 questions · 6 seconds each — mirrors the real check</span><span class="tag">MTC-style</span></div>
+      <div class="mode" data-mode="comeback"><b>🚀 Comeback Mode</b><span>Starts easy, builds up — for getting back on track</span><span class="tag">Recovery</span></div>
+    </div>
+    <div class="acc" id="acc">
+      <label><input type="checkbox" id="acc-font"> Huge font</label>
+      <label><input type="checkbox" id="acc-timer"> Hide timer (reduce anxiety)</label>
+      <label><input type="checkbox" id="acc-sound" checked> Ding on correct</label>
+    </div>
+    <div class="note">Accessibility-first: no ads, no chat, anonymous on leaderboards. Results feed 📈 My Progress and your school's fluency heatmap.</div>
+  </div>
+
+  <div class="card" id="arena">
+    <div class="hud"><span>Skill: <b id="h-skill"></b></span><span>Mode: <b id="h-mode"></b></span><span>Q <b id="h-n">1</b>/<b id="h-total">20</b></span><span>✓ <b id="h-right">0</b></span><span>Coins <b id="h-coins">0</b></span></div>
+    <div class="timerbar" id="tb"><i id="tbi" style="width:100%"></i></div>
+    <div class="q-big" id="q">—</div>
+    <div class="a-line"><input id="ans" inputmode="numeric" autocomplete="off" placeholder="?"></div>
+    <div class="fb" id="fb"></div>
+    <div style="text-align:center;margin-top:14px"><button class="btn ghost sm" id="quit">End session</button> <button class="btn sm" id="hint" style="display:none">Hint</button></div>
+  </div>
+
+  <div class="card" id="result" style="display:none"></div>
+
+  <div class="card"><h3>🏆 League — this week</h3><div class="sub" id="lb-sub">Anonymous rock-names · your school when linked, this device otherwise</div><div id="board"></div></div>
+</div>
+<div id="toast"></div>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var e=$('toast');e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2200)}
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+function ri(a,b){return Math.floor(a+Math.random()*(b-a+1))}
+function todayKey(){return new Date().toISOString().slice(0,10)}
+
+/* ---- state ---- */
+var SR=SY.get('skillrush',{coins:0,xp:0,days:[],history:[],skill:{},rockName:null});
+if(!SR.rockName){var A=['Turbo','Mega','Rocket','Neon','Cosmic','Blaze','Quantum','Thunder'],B=['Fox','Falcon','Panda','Tiger','Comet','Wolf','Dragon','Otter'];SR.rockName=A[ri(0,A.length-1)]+' '+B[ri(0,B.length-1)]+' '+ri(10,99);SY.set('skillrush',SR)}
+
+/* ---- skills & question generators (the fluency engine) ---- */
+var SKILLS=[
+  ['tables','Times tables',function(lv){var a=ri(2,Math.min(12,4+lv*2)),b=ri(2,12);return {q:a+' × '+b,a:a*b}}],
+  ['mental','Mental arithmetic',function(lv){var a=ri(10,50+lv*40),b=ri(10,50+lv*30);return Math.random()<0.5?{q:a+' + '+b,a:a+b}:{q:(a+b)+' − '+a,a:b}}],
+  ['fractions','Fractions',function(lv){var d=[2,4,5,10,20][ri(0,Math.min(4,1+lv))];var n=ri(1,d-1);var whole=d*ri(1,4+lv*4);return {q:n+'/'+d+' of '+whole,a:whole*n/d}}],
+  ['decimals','Decimals',function(lv){var a=ri(1,9),b=ri(1,9);return lv<2?{q:'0.'+a+' + 0.'+b,a:Math.round((a/10+b/10)*100)/100}:{q:'0.'+a+' × '+ri(2,9),a:0}}],
+  ['percent','Percentages',function(lv){var p=[50,25,10,20,5,75][ri(0,Math.min(5,1+lv))];var base=ri(1,8+lv*8)*10;return {q:p+'% of '+base,a:base*p/100}}],
+  ['algebra','Algebra basics',function(lv){var x=ri(2,5+lv*5),b=ri(1,10),m=ri(2,Math.min(9,2+lv*2));return {q:m+'x '+(Math.random()<0.5?'+ '+b+' = '+(m*x+b):'− '+b+' = '+(m*x-b))+',  x = ?',a:x}}],
+  ['squares','Squares & roots',function(lv){var n=ri(2,8+lv*4);return Math.random()<0.5?{q:n+'²',a:n*n}:{q:'√'+(n*n),a:n}}],
+  ['formulas','GCSE formula recall',function(lv){var f=[['Area of a triangle = ½ × base × … ? (h)','h'],['Speed = distance ÷ … ? (t)','t'],['Circumference = 2 × π × … ? (r)','r']][ri(0,2)];return {q:f[0],a:f[1],text:true}}]
+];
+/* decimals lv>=2 uses ×: compute correctly */
+SKILLS[3][2]=function(lv){var a=ri(1,9),b=ri(1,9);if(lv<2)return {q:'0.'+a+' + 0.'+b,a:Math.round((a/10+b/10)*100)/100};var m=ri(2,9);return {q:'0.'+a+' × '+m,a:Math.round(a*m)/10}};
+
+var curSkill='tables';
+$('skills').innerHTML=SKILLS.map(function(s){return '<button class="sk'+(s[0]===curSkill?' on':'')+'" data-sk="'+s[0]+'">'+esc(s[1])+'</button>'}).join('');
+$('skills').querySelectorAll('.sk').forEach(function(b){b.onclick=function(){curSkill=b.dataset.sk;$('skills').querySelectorAll('.sk').forEach(function(x){x.classList.toggle('on',x===b)})}});
+
+/* ---- accessibility ---- */
+$('acc-font').onchange=function(){document.body.classList.toggle('bigfont',this.checked)};
+
+/* ---- daily mission (weakest skill) ---- */
+function skillStats(k){var st=SR.skill[k]||{right:0,total:0,bestSpeed:null};return st}
+function weakestSkill(){var worst=null,worstAcc=2;SKILLS.forEach(function(s){var st=skillStats(s[0]);var acc=st.total?st.right/st.total:0.5;if(acc<worstAcc){worstAcc=acc;worst=s[0]}});return worst||'tables'}
+function renderMission(){
+  var wk=weakestSkill();var nm=(SKILLS.find(function(s){return s[0]===wk})||[])[1];
+  var doneToday=SR.days.indexOf(todayKey())>=0;
+  $('mission').innerHTML='<div class="row" style="border:0"><span style="flex:1">'+(doneToday?'✅ Mission complete — come back tomorrow to keep the streak!':'Today: a 3-minute <b>Focus</b> session on <b style="color:var(--gold-300)">'+esc(nm)+'</b> — your weakest skill right now.')+'</span>'+(doneToday?'':'<button class="btn solid sm" id="mission-go">Start mission →</button>')+'</div>';
+  var g=$('mission-go');if(g)g.onclick=function(){curSkill=wk;startSession('focus')};
+}
+
+/* ---- session engine ---- */
+var S=null,timerIv=null;
+var MODES={focus:{n:20,perQ:8,label:'Focus',lv:1},confidence:{n:12,perQ:0,label:'Confidence',lv:0},exam:{n:25,perQ:6,label:'Exam Pressure',lv:2},comeback:{n:15,perQ:12,label:'Comeback',lv:0}};
+document.querySelectorAll('.mode').forEach(function(m){m.onclick=function(){startSession(m.dataset.mode)}});
+function gen(){
+  var sk=SKILLS.find(function(s){return s[0]===curSkill});
+  var lv=S.mode==='comeback'?Math.min(2,Math.floor(S.n/5)):MODES[S.mode].lv;
+  return sk[2](lv);
+}
+function startSession(mode){
+  S={mode:mode,n:0,right:0,coins:0,times:[],total:MODES[mode].n,cur:null,t0:0};
+  $('setup').style.display='none';$('result').style.display='none';$('arena').style.display='block';
+  $('h-skill').textContent=(SKILLS.find(function(s){return s[0]===curSkill})||[])[1];
+  $('h-mode').textContent=MODES[mode].label;$('h-total').textContent=S.total;
+  $('hint').style.display=mode==='confidence'?'inline-block':'none';
+  $('tb').style.display=(MODES[mode].perQ&&!$('acc-timer').checked)?'block':'none';
+  next();
+  setTimeout(function(){$('ans').focus()},50);
+}
+function next(){
+  if(S.n>=S.total){finish();return}
+  S.cur=gen();S.n++;S.t0=Date.now();
+  $('h-n').textContent=S.n;$('q').textContent=S.cur.q+' =';$('ans').value='';$('fb').textContent='';
+  $('ans').focus();
+  clearInterval(timerIv);
+  var perQ=MODES[S.mode].perQ;
+  if(perQ){var left=perQ*1000;$('tbi').style.width='100%';
+    timerIv=setInterval(function(){left-=200;$('tbi').style.width=Math.max(0,100*left/(perQ*1000))+'%';
+      if(left<=0){clearInterval(timerIv);mark(null)}},200);}
+}
+function mark(val){
+  clearInterval(timerIv);
+  var t=(Date.now()-S.t0)/1000;S.times.push(t);
+  var correct=S.cur.text?String(val||'').trim().toLowerCase()===String(S.cur.a).toLowerCase():Math.abs(parseFloat(val)-S.cur.a)<0.001;
+  var st=SR.skill[curSkill]=SR.skill[curSkill]||{right:0,total:0,bestSpeed:null};
+  st.total++;
+  if(correct){S.right++;st.right++;var c=S.mode==='exam'?3:2;S.coins+=c;$('h-right').textContent=S.right;$('h-coins').textContent=S.coins;$('h-coins').classList.add('pop');setTimeout(function(){$('h-coins').classList.remove('pop')},300);
+    if(!st.bestSpeed||t<st.bestSpeed)st.bestSpeed=Math.round(t*10)/10;
+    $('fb').innerHTML='<span style="color:var(--good)">✓ Correct'+(t<3?' — fast!':'')+'</span>';}
+  else{$('fb').innerHTML='<span style="color:#f0a0a0">✗ '+(val==null?'Time!':'Not quite')+' — answer: <b>'+esc(String(S.cur.a))+'</b></span>';}
+  setTimeout(next,correct?350:900);
+}
+$('ans').addEventListener('keydown',function(e){if(e.key==='Enter'&&this.value.trim()!=='')mark(this.value)});
+$('hint').onclick=function(){var a=String(S.cur.a);$('fb').innerHTML='<span style="color:var(--gold-300)">💡 Starts with “'+esc(a[0])+'” — '+a.length+' character'+(a.length>1?'s':'')+'</span>'};
+$('quit').onclick=function(){finish(true)};
+function finish(quit){
+  clearInterval(timerIv);$('arena').style.display='none';$('setup').style.display='block';
+  if(!S||!S.times.length){S=null;return}
+  var acc=Math.round(100*S.right/S.times.length);
+  var avg=Math.round(S.times.reduce(function(a,b){return a+b},0)/S.times.length*10)/10;
+  var xp=S.right*3+(acc>=90?15:acc>=70?8:0);
+  SR.coins+=S.coins;SR.xp+=xp;
+  if(SR.days.indexOf(todayKey())<0)SR.days.push(todayKey());SR.days=SR.days.slice(-90);
+  SR.history.unshift({d:todayKey(),skill:curSkill,mode:S.mode,acc:acc,avg:avg,n:S.times.length});SR.history=SR.history.slice(0,100);
+  SY.set('skillrush',SR);
+  /* feed the wider OS: quizzes store (Progress/parent dashboards) + points + streak */
+  try{var qz=SY.get('quizzes',[]);qz.push({t:todayKey(),subj:'Mathematics',title:'SkillRush '+curSkill,pct:acc,when:new Date().toISOString()});SY.set('quizzes',qz)}catch(e){}
+  try{SY.set('points',SY.get('points',0)+Math.round(xp/2))}catch(e){}
+  try{var stk=SY.get('streak',{days:[],best:0});if(stk.days.indexOf(todayKey())<0)stk.days.push(todayKey());SY.set('streak',stk)}catch(e){}
+  SY.log('skillrush','SkillRush session',(SKILLS.find(function(s){return s[0]===curSkill})||[])[1]+' · '+acc+'% · '+avg+'s avg');
+  /* leaderboard: school store when linked, else device */
+  var link=SY.get('schoolLink',null);var week=todayKey().slice(0,7);
+  var entry={name:SR.rockName,xp:SR.xp,coins:SR.coins,acc:acc,week:week};
+  if(link&&link.code){var bd=SY.schoolGet(link.code,'skillrush-board',[]);bd=bd.filter(function(x){return x.name!==SR.rockName});bd.push(entry);SY.schoolSet(link.code,'skillrush-board',bd)}
+  else{var bd2=[];try{bd2=JSON.parse(localStorage.getItem('sy-skillrush-board'))||[]}catch(e){}bd2=bd2.filter(function(x){return x.name!==SR.rockName});bd2.push(entry);try{localStorage.setItem('sy-skillrush-board',JSON.stringify(bd2))}catch(e){}}
+  $('result').style.display='block';
+  $('result').innerHTML='<h3>'+(quit?'Session ended':'Session complete! 🎸')+'</h3>'+
+    '<div class="stats" style="margin-top:10px">'+
+    '<div class="stat"><div class="v">'+S.right+'/'+S.times.length+'</div><div class="l">Correct</div></div>'+
+    '<div class="stat"><div class="v">'+acc+'%</div><div class="l">Accuracy</div></div>'+
+    '<div class="stat"><div class="v">'+avg+'s</div><div class="l">Avg speed</div></div>'+
+    '<div class="stat"><div class="v" style="color:var(--good)">+'+S.coins+'</div><div class="l">Coins</div></div>'+
+    '<div class="stat"><div class="v" style="color:var(--good)">+'+xp+'</div><div class="l">XP</div></div></div>'+
+    '<p class="note">'+(acc>=90?'Rock-solid — try Exam Pressure Mode next.':acc>=70?'Good work — one more session locks it in.':'Keep going — Comeback Mode will rebuild this step by step.')+'</p>'+
+    '<div style="margin-top:10px"><button class="btn solid sm" id="again">Go again →</button></div>';
+  $('again').onclick=function(){startSession(S.mode)};
+  S=null;renderTop();renderBoard();renderMission();
+}
+
+/* ---- top stats + leaderboard ---- */
+function streakLen(){var set={};(SR.days||[]).forEach(function(d){set[d]=1});var n=0,d=new Date();while(set[d.toISOString().slice(0,10)]){n++;d.setDate(d.getDate()-1)}return n}
+function renderTop(){
+  $('s-coins').textContent=SR.coins.toLocaleString();$('s-xp').textContent=SR.xp.toLocaleString();$('s-streak').textContent=streakLen();
+  var best=null,tot=0,right=0;Object.keys(SR.skill).forEach(function(k){var st=SR.skill[k];tot+=st.total;right+=st.right;if(st.bestSpeed&&(!best||st.bestSpeed<best))best=st.bestSpeed});
+  $('s-best').textContent=best?best+'s':'—';$('s-acc').textContent=tot?Math.round(100*right/tot)+'%':'—';
+}
+function renderBoard(){
+  var link=SY.get('schoolLink',null);var bd=[];
+  if(link&&link.code){bd=SY.schoolGet(link.code,'skillrush-board',[]);$('lb-sub').textContent='Anonymous rock-names · your class at '+(SY.schoolGet(link.code,'name','your school'))}
+  else{try{bd=JSON.parse(localStorage.getItem('sy-skillrush-board'))||[]}catch(e){}}
+  bd=bd.slice().sort(function(a,b){return (b.xp||0)-(a.xp||0)});
+  var myIdx=bd.findIndex(function(x){return x.name===SR.rockName});
+  $('s-rank').textContent=myIdx>=0?('#'+(myIdx+1)):'—';
+  $('board').innerHTML=bd.length?bd.slice(0,10).map(function(x,i){return '<div class="row"><b style="width:30px">'+(i+1)+'</b><span style="flex:1">'+esc(x.name)+(x.name===SR.rockName?' <span style="color:var(--gold-400)">(you)</span>':'')+'</span><span>'+(x.xp||0).toLocaleString()+' XP</span></div>'}).join(''):'<div class="empty">No sessions yet this week — be first on the board!</div>';
+}
+renderTop();renderBoard();renderMission();
+})();
+</script>
+</body></html>
