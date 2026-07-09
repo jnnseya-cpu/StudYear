@@ -100,32 +100,39 @@ export default function PersonaConsole({ persona: p }: { persona: Persona }) {
           a hard stop at zero, and Child Free ships {FREE_TIER.acusPerMonth} ACUs every month.
         </p>
         <div className="cta">
-          <a className="btn gold" href={p.dashboard ? `${BASE}/dashboards/${p.dashboard}/` : `${BASE}/dashboards/`}>
-            Open my {p.label.toLowerCase()} dashboard →
+          <a className="btn gold" href={p.workspace ? `${BASE}/${p.workspace}/` : p.dashboard ? `${BASE}/dashboards/${p.dashboard}/` : `${BASE}/dashboards/`}>
+            {p.workspaceCta ?? `Open my ${p.label.toLowerCase()} dashboard`} →
           </a>
-          {p.slug === 'student' && <a className="btn ghost" href={`${BASE}/study/`}>Open study workspace</a>}
-          {p.slug === 'student' && <a className="btn ghost" href={`${BASE}/account/`}>My account</a>}
-          {p.slug === 'parent' && <a className="btn ghost" href={`${BASE}/parent/`}>Parent Command Centre</a>}
-          {p.slug === 'school' && <a className="btn ghost" href={`${BASE}/school/`}>School Command Centre</a>}
+          {p.dashboard && (
+            <a className="btn ghost" href={`${BASE}/dashboards/${p.dashboard}/`}>Analytics dashboard</a>
+          )}
+          <a className="btn ghost" href={`${BASE}/account/`}>My account</a>
         </div>
       </section>
 
       <section className="modules">
-        {p.modules.map((m) => (
-          <article key={m.agent + m.label} className="mod">
-            <div className="agent">{m.agent}</div>
-            <h3>{m.label}</h3>
-            <p>{m.desc}</p>
-            <div className="foot">
-              {m.tariff ? (
-                <span className="tariff">{ACU_TARIFF[m.tariff]} ACUs · {poundsFor(ACU_TARIFF[m.tariff])}</span>
-              ) : (
-                <span className="tariff free">included</span>
-              )}
-              <span className="go">launch →</span>
-            </div>
-          </article>
-        ))}
+        {p.modules.map((m) => {
+          const inner = (
+            <>
+              <div className="agent">{m.agent}</div>
+              <h3>{m.label}</h3>
+              <p>{m.desc}</p>
+              <div className="foot">
+                {m.tariff ? (
+                  <span className="tariff">{ACU_TARIFF[m.tariff]} ACUs · {poundsFor(ACU_TARIFF[m.tariff])}</span>
+                ) : (
+                  <span className="tariff free">included</span>
+                )}
+                <span className="go">launch →</span>
+              </div>
+            </>
+          );
+          return m.href ? (
+            <a key={m.agent + m.label} className="mod live" href={`${BASE}/${m.href}`}>{inner}</a>
+          ) : (
+            <article key={m.agent + m.label} className="mod">{inner}</article>
+          );
+        })}
       </section>
 
       {p.plans && (
@@ -146,9 +153,9 @@ export default function PersonaConsole({ persona: p }: { persona: Persona }) {
 
       <footer className="os-foot">
         <a href={`${BASE}/`}>Home</a>
-        <a href={p.dashboard ? `${BASE}/dashboards/${p.dashboard}/` : `${BASE}/dashboards/`}>My dashboard</a>
-        {p.slug === 'student' && <a href={`${BASE}/study/`}>Study workspace</a>}
-        {p.slug === 'student' && <a href={`${BASE}/account/`}>My account</a>}
+        <a href={p.workspace ? `${BASE}/${p.workspace}/` : p.dashboard ? `${BASE}/dashboards/${p.dashboard}/` : `${BASE}/dashboards/`}>My workspace</a>
+        {p.dashboard && <a href={`${BASE}/dashboards/${p.dashboard}/`}>Analytics dashboard</a>}
+        <a href={`${BASE}/account/`}>My account</a>
         <span>© StudYear — the AI Academic Operating System</span>
       </footer>
     </main>
@@ -188,6 +195,10 @@ const CSS = `
   .mod{border:1px solid rgba(77,157,224,.14);border-radius:14px;padding:18px 20px;
     background:linear-gradient(180deg,rgba(16,27,51,.62),rgba(11,18,32,.9));transition:border-color .12s}
   .mod:hover{border-color:#3D8FD1}
+  a.mod{cursor:pointer}
+  a.mod.live:hover{box-shadow:0 0 0 1px #3D8FD1, 0 12px 34px rgba(0,0,0,.4);transform:translateY(-1px)}
+  a.mod .go{transition:color .12s}
+  a.mod:hover .go{color:#5FA8E0}
   .agent{font-size:10px;letter-spacing:.18em;color:#6B7A96;margin-bottom:8px}
   .mod h3{font-family:Georgia,serif;font-weight:500;font-size:18px;margin:0 0 6px}
   .mod p{font-size:13.5px;color:#AAB6CC;margin:0;min-height:40px}

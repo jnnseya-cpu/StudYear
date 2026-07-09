@@ -16,6 +16,14 @@
   <h1 id="welcome">Your academic operations hub</h1>
   <p class="lede" id="lede">Live cohort monitoring.</p>
 
+  <div id="getstarted"></div>
+
+  <div class="qa" style="margin-top:16px">
+    <a href="attendance/"><b>📋 Take the register</b><span>Mark present · late · absent for your class</span></a>
+    <a href="classroom/"><b>📹 Teach a live class</b><span>Start a live video lesson &amp; brief learners</span></a>
+    <a href="register/#sec-school"><b>🏫 Link your school</b><span>Connect your class roster &amp; leadership</span></a>
+  </div>
+
   <div class="mini">
     <div class="card stat"><div class="v" id="m-avg">0%</div><div class="k">Cohort average</div></div>
     <div class="card stat"><div class="v" id="m-riskpct">0</div><div class="k">At risk</div></div>
@@ -55,6 +63,8 @@ var name=(TW.profile&&TW.profile.name)||SY.session.name||'Teacher';
 $('welcome').textContent=name.split(' ')[0]+', your academic operations hub';
 $('school-badge').textContent=TW.schoolName?(esc(TW.schoolName)+(TW.verified?'':' (Pending)')):'Not linked to a school';
 if(!TW.schoolCode)$('school-badge').className='badge warn';
+if(!TW.schoolCode){$('getstarted').innerHTML='<div class="card" style="border-color:rgba(201,133,0,.4);background:rgba(201,133,0,.07);margin-top:16px"><h3>Get started — link your school</h3><div class="sub">You\'re not linked to a school yet. Link it to pull your class roster, take the register and share data with leadership. You can still teach and take a register for students on your own profile.</div><a class="btn solid" href="register/#sec-school">Link my school →</a> <a class="btn ghost" href="attendance/">Take a register now →</a></div>'}
+else if(!TW.verified){$('getstarted').innerHTML='<div class="card" style="border-color:rgba(77,157,224,.35);margin-top:16px"><h3>School link pending approval</h3><div class="sub">'+esc(TW.schoolName)+' has your request. Once leadership approves, your full class roster appears here.</div></div>'}
 
 var students=(TW.myStudents&&TW.myStudents())||[];
 var M=students.map(function(s){return TW.metrics(s.email)});

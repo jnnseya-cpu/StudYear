@@ -33,9 +33,9 @@
   '#toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}';
   var st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
   var items=[
-    ['','Command Centre'],['classes/','Classes'],['interventions/','Interventions'],['assignments/','Assignments'],
-    ['classroom/','Classroom'],['analytics/','Analytics'],['communications/','Communications'],
-    ['assistant/','AI Teaching Assistant'],['lessonbuilder/','AI lesson builder'],['register/','Profile']
+    ['','Command Centre'],['attendance/','Take the register'],['classes/','Classes'],['interventions/','Interventions'],['assignments/','Assignments'],
+    ['classroom/','Classroom · teach live'],['analytics/','Analytics'],['communications/','Communications'],
+    ['assistant/','AI Teaching Assistant'],['lessonbuilder/','AI lesson builder'],['register/','Profile &amp; school link']
   ];
   var nav=items.map(function(it){var href=base+it[0];if(it[0]===''){href=base||'./'}var on=(it[0]===cur)?' class="on"':'';return '<a href="'+href+'"'+on+'>'+it[1]+'</a>'}).join('');
   var aside=document.createElement('aside');
