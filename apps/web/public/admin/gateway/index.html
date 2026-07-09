@@ -76,6 +76,12 @@
     <textarea id="pay-links" rows="6" placeholder="parent_pro https://buy.stripe.com/xxx&#10;parent_elite https://buy.stripe.com/yyy&#10;school_medium https://buy.stripe.com/zzz" style="width:100%;font-family:monospace;font-size:12.5px"></textarea>
     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn solid" id="pay-save">Save payment links</button><button class="btn ghost" id="pay-off">Clear (revert to preview)</button><span class="note" id="pay-state" style="font-size:11.5px"></span></div>
   </div>
+
+  <div class="card" style="margin-top:20px;border-color:rgba(230,199,102,.5)"><h3>🏆 SkillRush™ National Championship</h3>
+    <div class="sub">Admin-only trigger. Opens the one-attempt National Test for every student, grouped by education level. The <b>top 5 in each level</b> win a full year of free access for themselves and their parent.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn solid" id="nat-start">Open championship</button><button class="btn ghost" id="nat-stop">Close championship</button><span class="note" id="nat-state" style="font-size:11.5px"></span></div>
+    <div id="nat-board" style="margin-top:12px"></div>
+  </div>
 </main>
 </div>
 <div id="toast"></div>
@@ -164,6 +170,53 @@ $('pay-save').onclick=function(){
 };
 $('pay-off').onclick=function(){SYBill.clear();$('pay-links').value='';toast('Cleared — subscriptions revert to preview activation');payState()};
 payState();
+
+/* ---- SkillRush National Championship (admin trigger + winners) ---- */
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function natCfg(){try{return JSON.parse(localStorage.getItem('sy-national'))||null}catch(e){return null}}
+function natBoard(id){try{return JSON.parse(localStorage.getItem('sy-national-board:'+id))||[]}catch(e){return []}}
+function natState(){
+  var n=natCfg();
+  $('nat-state').innerHTML=n&&n.active?'<span style="color:var(--good)">● OPEN — id '+esc(n.id)+' · started '+new Date(n.startedAt).toLocaleDateString('en-GB')+'</span>':'<span style="color:var(--ink-3)">Closed</span>';
+  renderNatBoard();
+}
+function renderNatBoard(){
+  var n=natCfg();var box=$('nat-board');
+  if(!n){box.innerHTML='';return}
+  var board=natBoard(n.id);
+  if(!board.length){box.innerHTML='<div class="note">No official attempts yet.</div>';return}
+  var byLevel={};board.forEach(function(e){(byLevel[e.level||'Other']=byLevel[e.level||'Other']||[]).push(e)});
+  box.innerHTML=Object.keys(byLevel).map(function(lv){
+    var top=byLevel[lv].slice().sort(function(a,b){return (b.right||0)-(a.right||0)}).slice(0,5);
+    return '<div style="margin-top:10px"><b style="color:var(--gold-300)">'+esc(lv)+'</b> — top 5 (of '+byLevel[lv].length+')'+
+      top.map(function(e,i){return '<div class="row"><b style="width:24px">'+(i+1)+'</b><span style="width:24px">'+esc(e.av||'🎸')+'</span><span style="flex:1">'+esc(e.name)+' <span class="note" style="margin:0">'+esc(e.email)+'</span></span><span>'+e.right+'/25</span></div>'}).join('')+
+      '<button class="btn sm" data-award="'+esc(lv)+'" style="margin-top:6px">🏅 Award year-free access to these 5 (+ parents)</button></div>';
+  }).join('');
+  box.querySelectorAll('[data-award]').forEach(function(b){b.onclick=function(){
+    var lv=b.dataset.award;var top=byLevel[lv].slice().sort(function(x,y){return (y.right||0)-(x.right||0)}).slice(0,5);
+    var until=new Date(Date.now()+365*864e5).toISOString();
+    top.forEach(function(e){
+      try{var w=JSON.parse(localStorage.getItem('sy-u:'+e.email+':wallet'))||{acus:0};
+        w.plan='student_max';w.planExpires=until;w.nationalWinner=true;w.acus=(w.acus||0)+1000;
+        localStorage.setItem('sy-u:'+e.email+':wallet',JSON.stringify(w));
+        localStorage.setItem('sy-u:'+e.email+':nationalWinner',JSON.stringify({level:lv,year:new Date().getFullYear(),parentIncluded:true,until:until}));
+      }catch(err){}
+    });
+    SY.log('national','Championship prizes awarded',lv+' — '+top.length+' winners + parents, 1 year full access');
+    toast(top.length+' winners in '+lv+' awarded a year of full access (with parents)');
+  }});
+}
+$('nat-start').onclick=function(){
+  var id='NAT'+Date.now().toString(36).toUpperCase();
+  localStorage.setItem('sy-national',JSON.stringify({active:true,id:id,startedAt:new Date().toISOString()}));
+  SY.log('national','National Championship opened',id);toast('Championship OPEN — students see the banner in SkillRush');natState();
+};
+$('nat-stop').onclick=function(){
+  var n=natCfg();if(!n){natState();return}
+  n.active=false;localStorage.setItem('sy-national',JSON.stringify(n));
+  SY.log('national','National Championship closed',n.id);toast('Championship closed — award the winners below');natState();
+};
+natState();
 })();
 </script>
 </body></html>

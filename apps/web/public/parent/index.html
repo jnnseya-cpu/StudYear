@@ -170,6 +170,12 @@
   </div>
 </div>
 
+<div class="grid">
+  <div class="card c12" id="pc-skillrush"><h3>🎸 SkillRush™ — daily fluency</h3><div class="sub">The 5-minute academic gym: safe, anonymous, no ads or chat. Here's what it means for your child.</div>
+    <div id="sr-parent"></div>
+  </div>
+</div>
+
 <!-- snapshots -->
 <div class="sec-title">Live child snapshots <span class="pill" id="linked-count">0 linked</span></div>
 <div id="snapshots"></div>
@@ -683,6 +689,53 @@ function activateTab(t){var deep=$('deep');if(!deep||deep.style.display==='none'
   var btn=$('tabs').querySelector('[data-t="'+t+'"]');if(btn){btn.click();deep.scrollIntoView({behavior:'smooth',block:'start'})}}
 document.querySelectorAll('#elite-suite [data-scroll]').forEach(function(a){a.onclick=function(e){e.preventDefault();var el=document.querySelector(a.getAttribute('href'));if(el)el.scrollIntoView({behavior:'smooth',block:'center'})}});
 document.querySelectorAll('#elite-suite [data-tab]').forEach(function(a){a.onclick=function(e){e.preventDefault();activateTab(a.getAttribute('data-tab'))}});
+
+/* ---- SkillRush parent view: improved today · stuck · say tonight · confidence ·
+   family plan · weekly report · burnout · reward · curfew (safeguarding) ---- */
+(function(){
+  var box=document.getElementById('sr-parent');if(!box)return;
+  var kids=SY.get('children',[]);
+  if(!kids.length){box.innerHTML='<div class="note" style="font-style:normal">Link a child above — their SkillRush fluency progress, family practice plan and quiet-hours control appear here.</div>';return}
+  var kid=kids[0];var nm=SY.accountName(kid.email);
+  var SRN={tables:'Times tables',mental:'Mental arithmetic',fractions:'Fractions',decimals:'Decimals',percent:'Percentages',algebra:'Algebra',squares:'Squares & roots',formulas:'Formula recall',spelling:'Spelling',grammar:'Grammar',vocab:'Vocabulary',science:'Science facts',geography:'Geography facts',history:'History dates',french:'French vocab'};
+  var sr=SY.readAccount(kid.email,'skillrush',null);
+  var today=new Date().toISOString().slice(0,10);
+  var curfew=SY.readAccount(kid.email,'skillrushCurfew',null)||{};
+  function acc(st){return st&&st.total?Math.round(100*st.right/st.total):null}
+  var html='';
+  if(!sr||!(sr.history||[]).length){
+    html='<div class="note" style="font-style:normal">'+esc(nm)+' hasn\'t played SkillRush yet. Tonight\'s 10-minute family plan: open SkillRush together, pick 🌱 Confidence Mode, then finish with 👨‍👧 Parent Challenge — you vs them, 6 questions each.</div>';
+  }else{
+    var todays=sr.history.filter(function(h){return h.d===today});
+    var improved=todays.length?todays.map(function(h){return (SRN[h.skill]||h.skill)+' ('+h.acc+'%)'}).join(', '):null;
+    var worst=null,worstAcc=101;Object.keys(sr.skill||{}).forEach(function(k){var a=acc(sr.skill[k]);if(a!=null&&a<worstAcc){worstAcc=a;worst=k}});
+    var week=sr.history.filter(function(h){return (new Date(today)-new Date(h.d))/864e5<7});
+    var weekAcc=week.length?Math.round(week.reduce(function(a,h){return a+h.acc},0)/week.length):null;
+    var burnout=todays.length>=6;
+    var confDip=week.length>=3&&week.slice(0,2).every(function(h){return h.acc<45});
+    html='<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:4px">'+
+      '<div class="card" style="margin:0"><h3 style="font-size:14px">✨ Improved today</h3><div class="note" style="font-style:normal;margin-top:6px">'+(improved?esc(nm.split(' ')[0])+' practised '+esc(improved)+'.':'No session yet today — a nudge tonight keeps the streak alive.')+'</div></div>'+
+      '<div class="card" style="margin:0"><h3 style="font-size:14px">🧗 Where they\'re stuck</h3><div class="note" style="font-style:normal;margin-top:6px">'+(worst?('<b style="color:var(--ink)">'+esc(SRN[worst]||worst)+'</b> at '+worstAcc+'% — short daily bursts beat long sessions.'):'Nothing flagged yet.')+'</div></div>'+
+      '<div class="card" style="margin:0"><h3 style="font-size:14px">💬 What to say tonight</h3><div class="note" style="font-style:normal;margin-top:6px">“'+(improved?('I saw you practised '+esc((SRN[(todays[0]||{}).skill]||'today'))+' — show me your fastest answer!'):'Fancy beating me at Parent Challenge? Loser makes the hot chocolate.')+'”</div></div>'+
+      '<div class="card" style="margin:0"><h3 style="font-size:14px">📅 10-minute family plan</h3><div class="note" style="font-style:normal;margin-top:6px">1) 3 min Focus on '+esc(SRN[worst]||'their mission')+' · 2) 3 min Confidence Mode · 3) 4 min 👨‍👧 Parent Challenge together.</div></div>'+
+      '<div class="card" style="margin:0"><h3 style="font-size:14px">📈 Weekly report</h3><div class="note" style="font-style:normal;margin-top:6px">'+week.length+' session'+(week.length===1?'':'s')+' this week'+(weekAcc!=null?' · average accuracy '+weekAcc+'%':'')+' · '+(sr.coins||0)+' coins · '+(sr.xp||0)+' XP.</div></div>'+
+      '<div class="card" style="margin:0"><h3 style="font-size:14px">'+(burnout?'🛑 Burnout warning':confDip?'💛 Confidence alert':'🏅 Reward suggestion')+'</h3><div class="note" style="font-style:normal;margin-top:6px">'+
+        (burnout?esc(nm.split(' ')[0])+' has done '+todays.length+' sessions today — celebrate, then encourage a rest. Little and often wins.'
+        :confDip?'Recent scores dipped — worth a gentle check-in. Suggest 🌱 Confidence Mode (no timer, hints on).'
+        :(weekAcc!=null&&weekAcc>=85?'A brilliant week ('+weekAcc+'%) — a small reward tonight lands the habit: their choice of dinner?':'Consistency is forming — praise the streak, not just the scores.'))+'</div></div></div>';
+  }
+  html+='<div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-top:12px">'+
+    '<div><label class="f" style="margin:0 0 4px">Quiet hours from</label><select id="cf-from"><option value="">off</option>'+Array.from({length:24},function(_,h){return '<option value="'+h+'"'+(String(curfew.from)===String(h)?' selected':'')+'>'+h+':00</option>'}).join('')+'</select></div>'+
+    '<div><label class="f" style="margin:0 0 4px">to</label><select id="cf-to">'+Array.from({length:24},function(_,h){return '<option value="'+h+'"'+(String(curfew.to)===String(h)?' selected':(curfew.to==null&&h===7?' selected':''))+'>'+h+':00</option>'}).join('')+'</select></div>'+
+    '<button class="btn sm" id="cf-save">Save quiet hours</button>'+
+    '<span class="note" style="margin:0">Safeguarding: SkillRush pauses during quiet hours (e.g. 20:00–07:00). No ads · no chat · anonymous leaderboards.</span></div>';
+  box.innerHTML=html;
+  document.getElementById('cf-save').onclick=function(){
+    var f=document.getElementById('cf-from').value,t=document.getElementById('cf-to').value;
+    try{localStorage.setItem('sy-u:'+kid.email+':skillrushCurfew',JSON.stringify(f===''?null:{from:+f,to:+t}))}catch(e){}
+    toast(f===''?'Quiet hours off':'Quiet hours saved — SkillRush pauses '+f+':00–'+t+':00');
+  };
+})();
 
 render();
 })();
