@@ -1014,9 +1014,14 @@ let myOnly=false;
 function applyHash(){
   let h=location.hash.replace("#","");
   if(h==="mine"){ myOnly=true; const c=document.getElementById("f-mine"); if(c)c.checked=true; h="search"; }
-  if(h==="diag-results") h="diag";
+  /* diagnostic results & the recovery plan both live in the Diagnostic tab —
+     the recovery plan is built FROM a diagnostic, so route there and scroll. */
+  let scrollTo=null;
+  if(h==="diag-results"){scrollTo="diag-results";h="diag";}
+  if(h==="recovery"||h==="recover"){scrollTo="recovery";h="diag";}
   if(document.getElementById("tab-"+h)) showTab(h);
   if(typeof renderResults==="function") try{renderResults()}catch(e){}
+  if(scrollTo){const el=document.getElementById(scrollTo);if(el)setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"start"}),80);}
 }
 window.addEventListener("hashchange",applyHash);
 
@@ -2566,39 +2571,224 @@ function refreshBalances(){
 }
 refreshBalances();
 
-/* rules-based lesson scaffold — structured objectives → sections → check quiz */
-function buildLesson(topic,level){
-  const cap=topic.replace(/\b\w/g,c=>c.toUpperCase());
-  return {
-    topic:cap,level,
-    objectives:["Define "+topic+" and the key terms around it","Explain how and why it works","Apply it to an exam-style question","Recall the facts under timed conditions"],
-    sections:[
-      {h:"1 · What it is",b:"Start with a precise definition of "+topic+". At "+level+" level, examiners reward the exact vocabulary — learn the key terms first, then the ideas that connect them."},
-      {h:"2 · How it works",b:"Break "+topic+" into its moving parts. For each part, ask: what causes it, what does it lead to, and what would change if it were removed? That cause-and-effect chain is what longer exam answers are built from."},
-      {h:"3 · Worked example",b:"Take one typical "+level+" question on "+topic+" and work it through end to end, narrating every decision. Then redo it from a blank page — if you get stuck, that's the exact spot to revise."},
-      {h:"4 · Common exam traps",b:"Most marks are lost by describing when the question says explain, or forgetting to name the key term. For "+topic+", write the one sentence you must include for full marks and memorise it."}],
-    quiz:tutorQuizBank(topic).slice(0,3)
+/* ============ Interactive lesson engine ============
+   Genuinely interactive on-device teaching: step navigation, worked examples with
+   reveal, real practice questions with marking + progressive hints (computed for
+   quantitative topics), retrieval prompts, "explain it differently", and a scored
+   end quiz. No AI cost — the live backend swaps in model-authored content. */
+function _cap(t){return String(t).replace(/\b\w/g,c=>c.toUpperCase())}
+function _ri(a,b){return Math.floor(a+Math.random()*(b-a+1))}
+function _money(n){return "£"+(Math.round(n*100)/100).toFixed(2)}
+function lessonType(topic,subj){
+  const t=(topic+" "+(subj||"")).toLowerCase();
+  if(/percent|%|increase by|decrease by|vat|interest/.test(t))return "percent";
+  if(/ratio|proportion|scale|recipe|best buy|exchange|unit|per /.test(t))return "proportion";
+  if(/quadratic|factoris|x\^2|x²/.test(t))return "quadratic";
+  if(/speed|velocity|distance|mph|motion|acceleration/.test(t))return "speed";
+  return null;
+}
+/* quantitative generators: each returns teach html, a worked example, randomised
+   practice (numeric, marked, with hints) and MCQs (computed distractors). */
+const QGEN={
+  proportion:{
+    teach:"Two quantities are in <b>direct proportion</b> when one is always the same multiple of the other — double one and the other doubles. The reliable method is the <b>unitary method</b>: first find the value of <b>one</b> unit (divide), then multiply by how many you need.",
+    example(){const n=_ri(3,6),unit=_ri(2,9)*0.1*10/10,total=Math.round(n*unit*100)/100,m=_ri(7,12),ans=Math.round(unit*m*100)/100;
+      return {q:n+" identical pens cost "+_money(total)+". How much do "+m+" pens cost?",
+        steps:[n+" pens → "+_money(total),"1 pen → "+_money(total)+" ÷ "+n+" = "+_money(total/n),m+" pens → "+_money(total/n)+" × "+m+" = <b>"+_money(ans)+"</b>"],answer:ans}},
+    practice(){const n=_ri(3,7),unit=_ri(3,12),total=n*unit,m=_ri(8,15),ans=unit*m;
+      return {q:n+" identical bricks weigh "+total+" kg. What do "+m+" bricks weigh (kg)?",answer:ans,tol:0.5,
+        hints:["Find the weight of ONE brick first.","One brick = "+total+" ÷ "+n+" = "+unit+" kg.","Now multiply "+unit+" by "+m+"."],
+        exp:"One brick = "+total+"÷"+n+" = "+unit+" kg, so "+m+" bricks = "+unit+"×"+m+" = "+ans+" kg."}},
+    mcq(){const n=_ri(2,5),unit=_ri(2,6),total=n*unit,m=_ri(6,10),ans=unit*m;
+      return {q:n+" books cost £"+total+". How much do "+m+" books cost?",o:["£"+ans,"£"+(total+m),"£"+(total*m),"£"+(unit*n*m)].map(String),a:0,
+        exp:"One book = £"+unit+", so "+m+" books = £"+ans+"."}},
+    recallPrompt:"Close the book: what are the two steps to solve ANY direct-proportion problem?",
+    recallModel:"1) Find the value of one unit (divide the total by the quantity). 2) Multiply that unit value by the new quantity you want."},
+  percent:{
+    teach:"A percentage is a fraction out of 100. To find <b>p% of A</b>, compute <b>A × p ÷ 100</b>. To <b>increase</b> A by p%, multiply by <b>(1 + p/100)</b>; to <b>decrease</b>, multiply by <b>(1 − p/100)</b> — the multiplier method is fastest and least error-prone.",
+    example(){const A=_ri(4,9)*10,p=_ri(1,4)*5,ans=Math.round(A*(1+p/100)*100)/100;
+      return {q:"Increase "+A+" by "+p+"%.",steps:["Multiplier = 1 + "+p+"/100 = "+(1+p/100),A+" × "+(1+p/100)+" = <b>"+ans+"</b>"],answer:ans}},
+    practice(){const A=_ri(5,20)*10,p=_ri(1,6)*5,dec=Math.random()<0.5,ans=Math.round(A*(dec?1-p/100:1+p/100)*100)/100;
+      return {q:(dec?"Decrease ":"Increase ")+A+" by "+p+"%.",answer:ans,tol:0.05,
+        hints:["Turn "+p+"% into a multiplier.","Multiplier = 1 "+(dec?"−":"+")+" "+p+"/100 = "+(dec?1-p/100:1+p/100)+".","Multiply "+A+" by that."],
+        exp:A+" × "+(dec?1-p/100:1+p/100)+" = "+ans+"."}},
+    mcq(){const A=_ri(4,9)*10,p=_ri(1,4)*5,ans=Math.round(A*p/100*100)/100;
+      return {q:"What is "+p+"% of "+A+"?",o:[String(ans),String(A-p),String(A*p),String(Math.round(A/p*100)/100)],a:0,exp:p+"% of "+A+" = "+A+"×"+p+"/100 = "+ans+"."}},
+    recallPrompt:"Without looking: how do you increase a number by a percentage in one multiplication?",
+    recallModel:"Multiply by (1 + p/100). e.g. +20% means × 1.2. For a decrease multiply by (1 − p/100)."},
+  quadratic:{
+    teach:"A quadratic <b>x² + bx + c = 0</b> with whole-number solutions can be solved by <b>factorising</b>: find two numbers that <b>multiply to c</b> and <b>add to b</b>. If they are p and q, the equation factorises to (x + p)(x + q) = 0, so x = −p or x = −q.",
+    example(){const r1=_ri(1,6),r2=_ri(1,6),b=r1+r2,c=r1*r2;
+      return {q:"Solve x² + "+b+"x + "+c+" = 0.",steps:["Two numbers multiply to "+c+" and add to "+b+": "+r1+" and "+r2,"(x + "+r1+")(x + "+r2+") = 0","x = <b>−"+r1+"</b> or x = <b>−"+r2+"</b>"],answer:-Math.max(r1,r2)}},
+    practice(){const r1=_ri(1,7),r2=_ri(1,7),b=r1+r2,c=r1*r2;
+      return {q:"Solve x² + "+b+"x + "+c+" = 0. Type the SMALLER solution (the more negative one).",answer:-Math.max(r1,r2),tol:0.01,
+        hints:["Find two numbers that multiply to "+c+" and add to "+b+".","They are "+r1+" and "+r2+".","Solutions are −"+r1+" and −"+r2+"; the smaller is "+(-Math.max(r1,r2))+"."],
+        exp:"(x+"+r1+")(x+"+r2+")=0 → x = −"+r1+" or −"+r2+". Smaller = "+(-Math.max(r1,r2))+"."}},
+    mcq(){const r1=_ri(1,5),r2=_ri(1,5),b=r1+r2,c=r1*r2;
+      return {q:"The solutions of x² + "+b+"x + "+c+" = 0 are:",o:["x = −"+r1+" and x = −"+r2,"x = "+r1+" and x = "+r2,"x = −"+b+" and x = −"+c,"x = "+c+" and x = "+b].map(String),a:0,
+        exp:"Factorises to (x+"+r1+")(x+"+r2+") = 0."}},
+    recallPrompt:"Close the book: to factorise x² + bx + c, what must the two numbers do?",
+    recallModel:"They must multiply to c and add to b. Then x = the negatives of those two numbers."},
+  speed:{
+    teach:"Speed, distance and time are linked by <b>speed = distance ÷ time</b>. Rearrange with the triangle: cover what you want — distance = speed × time, time = distance ÷ speed. Keep units consistent (hours with mph, seconds with m/s).",
+    example(){const s=_ri(4,9)*10,t=_ri(2,4),d=s*t;
+      return {q:"A car travels at "+s+" mph for "+t+" hours. How far does it go?",steps:["distance = speed × time","= "+s+" × "+t,"= <b>"+d+" miles</b>"],answer:d}},
+    practice(){const d=_ri(6,20)*10,t=_ri(2,5),s=Math.round(d/t*100)/100;
+      return {q:"A train covers "+d+" km in "+t+" hours. What is its average speed (km/h)?",answer:s,tol:0.5,
+        hints:["Speed = distance ÷ time.","= "+d+" ÷ "+t+".","Work it out to 1–2 d.p."],exp:"speed = "+d+"÷"+t+" = "+s+" km/h."}},
+    mcq(){const s=_ri(3,8)*10,t=_ri(2,4),d=s*t;
+      return {q:"At "+s+" km/h for "+t+" h, distance travelled is:",o:[d+" km",(s+t)+" km",Math.round(s/t)+" km",(s*t*2)+" km"].map(String),a:0,exp:"distance = "+s+"×"+t+" = "+d+" km."}},
+    recallPrompt:"Without looking: give the three rearrangements of speed = distance ÷ time.",
+    recallModel:"speed = distance ÷ time; distance = speed × time; time = distance ÷ speed."}
+};
+function buildQuiz(topic,subj,type){
+  if(type&&QGEN[type]){const seen={},out=[];let guard=0;while(out.length<4&&guard++<40){const q=QGEN[type].mcq();if(!seen[q.q]){seen[q.q]=1;out.push(q)}}return out}
+  const lib=tutorQuizBank(topic);if(lib.length)return lib.slice(0,Math.min(5,lib.length));
+  /* conceptual fallback: metacognitive checks that still test good exam technique */
+  const T=_cap(topic);
+  return [
+    {q:"For a ‘"+T+"’ exam answer, the command word tells you to EXPLAIN. What earns the marks?",o:["Give reasons — how/why, with a cause→effect chain","List facts with no links","Write as much as possible","Only define the key term"],a:0,exp:"Explain = reasoned how/why. Each linked reason is a mark."},
+    {q:"Best first move when revising "+T+"?",o:["Retrieve from memory, then check notes","Re-read notes passively","Highlight the textbook","Copy the definition out"],a:0,exp:"Active retrieval beats passive re-reading for long-term memory."},
+    {q:"To lock "+T+" into memory you should:",o:["Space practice over several days","Cram it once the night before","Read it aloud once","Watch a video only"],a:0,exp:"Spaced retrieval is the strongest evidence-based technique."}];
+}
+function buildLesson(topic,level,subj){
+  const cap=_cap(topic),type=lessonType(topic,subj||"");
+  const steps=[{type:"intro",objectives:type
+    ?["State the method for "+cap,"Follow a worked example step by step","Solve fresh questions yourself, with hints if you need them","Pass the end-of-lesson quiz"]
+    :["Define "+cap+" and its key terms","Explain how and why it works","Apply it to an exam-style question","Recall it under timed conditions"]}];
+  if(type){const G=QGEN[type];
+    steps.push({type:"teach",h:"1 · The method",html:G.teach});
+    steps.push({type:"example",h:"2 · Worked example",ex:G.example()});
+    steps.push({type:"practice",h:"3 · Your turn",pq:G.practice()});
+    steps.push({type:"practice",h:"4 · One more — no hints unless you need them",pq:G.practice()});
+    steps.push({type:"recall",h:"5 · Close the book",prompt:G.recallPrompt,model:G.recallModel});
+  }else{
+    steps.push({type:"teach",h:"1 · What it is",html:"Start with a precise definition of <b>"+esc(cap)+"</b> and the key terms around it. At "+esc(level)+" level, examiners reward exact vocabulary — nail the terms first, then the ideas that connect them.",alt:"Think of it like teaching it to a 10-year-old: one plain sentence for what it is, one everyday example, then the proper term. If you can say it simply, you understand it."});
+    steps.push({type:"predict",h:"2 · Predict first",prompt:"Before you read on — in one line, what do you already think "+esc(cap)+" means? Write it, then reveal.",reveal:"Compare yours to: a clear definition names <i>what it is</i>, <i>what it does</i>, and <i>one example</i>. If your line missed one of those, add it."});
+    steps.push({type:"example",h:"3 · Worked example",ex:{q:"Apply "+esc(cap)+" to a typical "+esc(level)+" question.",steps:["Read the question and underline the command word (define / explain / evaluate).","Name the key term precisely.","Give the how/why chain: cause → effect → consequence.","Write the one sentence that secures full marks."],answer:null}});
+    steps.push({type:"recall",h:"4 · Close the book",prompt:"From memory: write the one sentence you must include in any "+esc(cap)+" answer for full marks.",model:"A strong sentence names the key term AND states the how/why in a cause→effect chain — that is what separates ‘describe’ from ‘explain’ marks."});
+    steps.push({type:"teach",h:"5 · Common exam traps",html:"Most marks are lost by <b>describing when the question says explain</b>, or forgetting to <b>name the key term</b>. Fix: write your full-marks sentence at the top of your answer so you never omit it."});
+  }
+  steps.push({type:"quiz",qs:buildQuiz(topic,subj,type)});
+  steps.push({type:"summary"});
+  return {topic:cap,level,subj:subj||"",type,steps};
+}
+
+/* ---- interactive renderer with per-step state ---- */
+let _L=null,_ls={i:0,correct:0,practiceTotal:0,quizScore:0,confidence:null};
+function _numClose(a,b,tol){return Math.abs(parseFloat(a)-b)<=(tol||0.01)}
+function renderLesson(){
+  const L=_L,st=L.steps[_ls.i],out=document.getElementById("il-out");
+  const pct=Math.round(100*_ls.i/(L.steps.length-1));
+  let body="";
+  const nav=`<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+    ${_ls.i>0?`<button class="btn ghost sm" id="il-back">← Back</button>`:""}
+    ${_ls.i<L.steps.length-1?`<button class="btn sm" id="il-next">Next →</button>`:""}</div>`;
+  const head=`<div style="height:7px;border-radius:5px;background:rgba(170,182,204,.14);overflow:hidden;margin-bottom:12px"><i style="display:block;height:100%;width:${pct}%;background:linear-gradient(90deg,#4FA6E0,#2E6BC4)"></i></div>
+    <div class="note" style="margin:0 0 8px">Step ${_ls.i+1} of ${L.steps.length}</div>`;
+  if(st.type==="intro"){
+    body=`<h3 style="font-family:var(--serif);color:var(--gold-300)">Learning objectives</h3>
+      <ul style="margin:8px 0 0 18px;font-size:13.5px;color:var(--ink-2)">${st.objectives.map(o=>`<li style="margin:5px 0">${esc(o)}</li>`).join("")}</ul>
+      <p class="note" style="margin-top:10px">Work through each step — teach, example, your turn — then take the quiz. ${_ls.i}</p>`;
+  }else if(st.type==="teach"){
+    body=`<h3 style="font-family:var(--serif);font-size:17px;color:var(--gold-300)">${esc(st.h)}</h3>
+      <p style="font-size:14px;color:var(--ink-2);margin-top:8px;line-height:1.7">${st.html}</p>
+      ${st.alt?`<button class="btn ghost sm" id="il-alt" style="margin-top:10px">Explain it differently ↺</button><p id="il-alt-out" style="display:none;font-size:13.5px;color:var(--gold-300);margin-top:8px;line-height:1.7"></p>`:""}`;
+  }else if(st.type==="example"){
+    body=`<h3 style="font-family:var(--serif);font-size:17px;color:var(--gold-300)">${esc(st.h)}</h3>
+      <p style="font-size:14px;color:var(--ink);margin:8px 0 6px"><b>Q.</b> ${st.ex.q}</p>
+      <div class="note" style="margin:0 0 8px">Reveal one step at a time — try to predict each line before you click.</div>
+      <div id="il-steps"></div>
+      <button class="btn sm" id="il-reveal">Reveal next step</button>`;
+  }else if(st.type==="practice"){
+    body=`<h3 style="font-family:var(--serif);font-size:17px;color:var(--gold-300)">${esc(st.h)}</h3>
+      <p style="font-size:14px;color:var(--ink);margin:8px 0 8px"><b>Q.</b> ${esc(st.pq.q)}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="il-ans" placeholder="Your answer" style="max-width:180px"><button class="btn sm" id="il-check">Check</button><button class="btn ghost sm" id="il-hint">Hint</button></div>
+      <div id="il-hintbox" class="note" style="margin-top:8px"></div>
+      <div id="il-fb" style="margin-top:8px"></div>`;
+  }else if(st.type==="predict"||st.type==="recall"){
+    body=`<h3 style="font-family:var(--serif);font-size:17px;color:var(--gold-300)">${esc(st.h)}</h3>
+      <p style="font-size:14px;color:var(--ink-2);margin:8px 0 8px">${st.prompt}</p>
+      <textarea id="il-free" rows="3" placeholder="Write your answer…" style="width:100%"></textarea>
+      <button class="btn sm" id="il-model" style="margin-top:8px">Reveal model answer</button>
+      <div id="il-modelout" style="display:none;margin-top:8px;font-size:13.5px;color:var(--gold-300);line-height:1.7"></div>
+      <div id="il-rate" style="display:none;margin-top:10px"><span class="note">How did you do?</span>
+        <div style="display:flex;gap:6px;margin-top:5px"><button class="btn ghost sm" data-r="0">😦 Not yet</button><button class="btn ghost sm" data-r="1">😐 Nearly</button><button class="btn ghost sm" data-r="2">🙂 Got it</button></div></div>`;
+  }else if(st.type==="quiz"){
+    body=`<h3 style="font-family:var(--serif);font-size:17px;color:var(--gold-300)">End-of-lesson quiz</h3>
+      <div class="note" style="margin:4px 0 8px">${st.qs.length} questions · immediate feedback · logs to 📈 My progress.</div>
+      <div id="il-quizbox"></div>`;
+  }else if(st.type==="summary"){
+    const pt=_ls.practiceTotal,pc=_ls.correct,qs=L.steps.find(s=>s.type==="quiz").qs.length;
+    const rec=_ls.confidence===0?"Re-run this lesson tomorrow and redo the practice from a blank page.":_ls.confidence===1?"Almost there — do 5 more practice questions on this before you move on.":"Solid. Space it: revisit once in 3 days to lock it in.";
+    body=`<h3 style="font-family:var(--serif);color:var(--gold-300)">Lesson complete 🎓</h3>
+      <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+        <div class="card"><div style="font-family:var(--serif);font-size:26px;color:var(--gold-300)">${pt?pc+"/"+pt:"—"}</div><div class="k">Practice correct</div></div>
+        <div class="card"><div style="font-family:var(--serif);font-size:26px;color:var(--gold-300)">${_ls.quizScore}/${qs}</div><div class="k">Quiz score</div></div></div>
+      <p style="font-size:14px;color:var(--ink-2);margin-top:10px"><b>Next step:</b> ${rec}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button class="btn sm" id="il-again">Practise more (new questions)</button>
+        <button class="btn ghost sm" id="il-restart">Restart lesson</button></div>`;
+  }
+  out.innerHTML=head+body+nav;
+  wireStep(st);
+}
+function wireStep(st){
+  const $=id=>document.getElementById(id);
+  if($("il-next"))$("il-next").onclick=()=>{_ls.i++;renderLesson()};
+  if($("il-back"))$("il-back").onclick=()=>{_ls.i--;renderLesson()};
+  if(st.type==="teach"&&st.alt&&$("il-alt")){$("il-alt").onclick=()=>{const o=$("il-alt-out");o.style.display="block";o.innerHTML="↺ "+st.alt}}
+  if(st.type==="example"){let k=0;const box=$("il-steps");const show=()=>{if(k<st.ex.steps.length){box.insertAdjacentHTML("beforeend",`<div style="font-size:13.5px;color:var(--ink-2);margin:4px 0;padding-left:10px;border-left:2px solid var(--gold-500)">${st.ex.steps[k]}</div>`);k++;}if(k>=st.ex.steps.length){$("il-reveal").disabled=true;$("il-reveal").textContent="All steps shown ✓";$("il-reveal").classList.add("ghost")}};$("il-reveal").onclick=show;}
+  if(st.type==="practice"){let hint=0,done=false;const pq=st.pq;
+    $("il-hint").onclick=()=>{if(hint<pq.hints.length){$("il-hintbox").innerHTML="💡 "+esc(pq.hints[hint]);hint++}else{$("il-hintbox").innerHTML="💡 "+esc(pq.exp)}};
+    $("il-check").onclick=()=>{const v=$("il-ans").value.trim();if(v===""){toast("Type your answer first");return}
+      const ok=_numClose(v,pq.answer,pq.tol);if(!done){done=true;_ls.practiceTotal++;if(ok)_ls.correct++;}
+      $("il-fb").innerHTML=ok?`<div style="color:var(--good);font-size:13.5px">✅ Correct. ${esc(pq.exp)}</div>`
+        :`<div style="color:#f0a0a0;font-size:13.5px">❌ Not quite — the answer is <b>${pq.answer}</b>. ${esc(pq.exp)}</div>`;
+      if(ok)addPoints(5);};
+    $("il-ans").addEventListener("keydown",e=>{if(e.key==="Enter")$("il-check").click()});}
+  if(st.type==="predict"||st.type==="recall"){
+    $("il-model").onclick=()=>{const o=$("il-modelout");o.style.display="block";o.innerHTML="✓ "+(st.model||st.reveal);if($("il-rate"))$("il-rate").style.display="block"};
+    if($("il-rate"))$("il-rate").querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{_ls.confidence=+b.dataset.r;toast(["Noted — we'll recommend a re-run.","Noted — a bit more practice.","Great — keep the momentum!"][+b.dataset.r]);b.parentNode.querySelectorAll("button").forEach(x=>x.style.opacity=.5);b.style.opacity=1});}
+  if(st.type==="quiz"){runLessonQuiz(st.qs,$("il-quizbox"));}
+  if(st.type==="summary"){
+    if($("il-again"))$("il-again").onclick=()=>{const L=buildLesson(_L.topic,_L.level,_L.subj);_L=L;_ls={i:_L.type?2:2,correct:0,practiceTotal:0,quizScore:0,confidence:null};/* jump to first practice/example */_ls.i=_L.steps.findIndex(s=>s.type==="practice"||s.type==="example");if(_ls.i<0)_ls.i=1;renderLesson()};
+    if($("il-restart"))$("il-restart").onclick=()=>{_ls={i:0,correct:0,practiceTotal:0,quizScore:0,confidence:null};renderLesson()};}
+}
+function runLessonQuiz(qs,box){
+  let i=0,score=0;
+  const step=()=>{
+    if(i>=qs.length){box.innerHTML=`<div class="card"><div style="font-family:var(--serif);font-size:22px;color:var(--gold-300)">You scored ${score}/${qs.length}</div>
+      <p class="note" style="margin-top:6px">${score===qs.length?"Perfect — this has stuck.":score>=qs.length/2?"Good — review the ones you missed.":"Worth another pass: redo the lesson and the practice."}</p></div>`;
+      _ls.quizScore=score;addPoints(4+3*score);
+      logEvent("quiz","Lesson quiz: "+_L.topic,"Scored "+score+"/"+qs.length);
+      try{const prog=store.get("quizzes",[]);prog.unshift({subj:_L.subj||"Other",topic:_L.topic,pct:Math.round(100*score/qs.length),when:new Date().toISOString()});store.set("quizzes",prog.slice(0,100))}catch(e){}
+      return;}
+    const q=qs[i];
+    box.innerHTML=`<div class="note" style="margin:0 0 6px">Question ${i+1} of ${qs.length}</div>
+      <p style="font-size:14px;color:var(--ink);margin-bottom:8px">${esc(q.q)}</p>
+      <div id="il-opts">${q.o.map((o,k)=>`<button class="btn ghost sm il-opt" data-k="${k}" style="display:block;width:100%;text-align:left;margin:5px 0">${String.fromCharCode(65+k)}) ${esc(o)}</button>`).join("")}</div>
+      <div id="il-qfb" style="margin-top:8px"></div>`;
+    box.querySelectorAll(".il-opt").forEach(b=>b.onclick=()=>{
+      const k=+b.dataset.k,right=k===q.a;if(right)score++;
+      box.querySelectorAll(".il-opt").forEach(x=>{x.disabled=true;const xk=+x.dataset.k;if(xk===q.a)x.style.borderColor="var(--good)";if(xk===k&&!right)x.style.borderColor="var(--crit)"});
+      document.getElementById("il-qfb").innerHTML=`<div style="font-size:13.5px;color:${right?"var(--good)":"#f0a0a0"}">${right?"✅ Correct.":"❌ Answer: "+String.fromCharCode(65+q.a)+") "+esc(q.o[q.a])}. ${esc(q.exp||"")}</div>
+        <button class="btn sm" id="il-qnext" style="margin-top:8px">${i+1<qs.length?"Next question →":"See result →"}</button>`;
+      document.getElementById("il-qnext").onclick=()=>{i++;step()};
+    });
   };
+  step();
 }
 document.getElementById("il-go").onclick=()=>{
   const topic=document.getElementById("il-topic").value.trim();
   if(!topic){toast("Enter a topic to learn about");return}
   if(!spendAcus(IL_PRICE,"Interactive lesson: "+topic))return;
-  const level=document.getElementById("il-level").value;
-  const L=buildLesson(topic,level);
+  const level=document.getElementById("il-level").value,subj=document.getElementById("il-subj").value;
+  _L=buildLesson(topic,level,subj);_ls={i:0,correct:0,practiceTotal:0,quizScore:0,confidence:null};
   addPoints(10);touchStreak();
-  logEvent("lesson","Interactive lesson: "+L.topic,level+" level — structured lesson generated.");
-  document.getElementById("il-sub").textContent=L.topic+" · "+level+" · walk through each section, then take the check quiz.";
-  document.getElementById("il-out").innerHTML=`
-    <div class="card" style="margin-bottom:10px"><h3 style="font-family:var(--serif);font-weight:500;color:var(--gold-300)">Learning objectives</h3>
-      <ul style="margin:8px 0 0 18px;font-size:13.5px;color:var(--ink-2)">${L.objectives.map(o=>`<li style="margin:4px 0">${esc(o)}</li>`).join("")}</ul></div>
-    ${L.sections.map(s=>`<div class="card" style="margin-bottom:10px">
-      <h3 style="font-family:var(--serif);font-weight:500;font-size:17px;color:var(--gold-300)">${esc(s.h)}</h3>
-      <p style="font-size:13.5px;color:var(--ink-2);margin-top:6px">${esc(s.b)}</p></div>`).join("")}
-    ${L.quiz.length?`<div style="margin-top:6px"><button class="btn" id="il-quiz">Take the end-of-lesson quiz (${L.quiz.length} Q) →</button></div>`
-      :`<p class="note">Generate a lesson on a topic with library questions (e.g. memory, quadratics, mechanics) to unlock an end quiz.</p>`}`;
-  const qb=document.getElementById("il-quiz");
-  if(qb)qb.onclick=()=>{ openInlineQuiz({title:L.topic+" — lesson check",subj:document.getElementById("il-subj").value||"Other",qs:L.quiz}); };
+  logEvent("lesson","Interactive lesson: "+_L.topic,level+" level — interactive lesson started.");
+  document.getElementById("il-sub").textContent=_L.topic+" · "+level+(_L.type?" · interactive walkthrough with marked practice":" · guided walkthrough")+" — step through, then take the quiz.";
+  renderLesson();
 };
 /* reuse the modal quiz viewer for generated quizzes */
 function openInlineQuiz(r){ r.id=r.id||("gen"+Date.now()); LIB.push(r); openRes(r.id); }
