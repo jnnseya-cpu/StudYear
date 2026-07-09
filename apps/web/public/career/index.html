@@ -62,6 +62,10 @@
     <div id="paths"></div>
   </div>
 
+  <div class="card" id="ai-impact-card" style="display:none"><h3>🤖 AI &amp; the future of work</h3><div class="sub">How automation and AI could reshape each pathway — and how to stay ahead of it, from Year 5</div>
+    <div id="ai-impact"></div>
+  </div>
+
   <div class="card" id="emp-card" style="display:none"><h3>🏢 Opportunity matches</h3><div class="sub">Live labour-market lens — local, national and international</div>
     <div class="emps" id="employers"></div>
     <div class="note" id="coach"></div>
@@ -150,6 +154,48 @@ function generate(){
     '<div class="emp"><h4>International</h4><div class="e">Global graduate schemes<br>Overseas apprenticeships<br>Remote-first employers<br>Study-abroad pathways</div></div>';
   $('coach').innerHTML='🤖 <b>AI Career Coach:</b> based on your data, '+scored[0].pw.t.toLowerCase()+' is your strongest route right now — but keep '+scored[1].pw.t.toLowerCase()+' open. Boost your match by lifting '+(strengths[0]?esc(strengths[0]):'your core subjects')+' and gaining experience in '+(intr.length?esc((INTERESTS.find(function(i){return i[0]===intr[0]})||[])[1]||''):'a field you enjoy')+'.';
   $('emp-card').style.display='block';
+  renderAIImpact(intr);
+}
+
+/* AI impact on jobs — automation exposure per field + how to stay ahead.
+   Grounded in the consensus of automation-risk research (routine/clerical highest
+   exposure; caring, skilled-trades, creative-judgement and complex-reasoning roles
+   more resilient). Every field lists AI-resilient adjacent skills — the point is
+   not "avoid this path" but "do this path in an AI-augmented way". */
+var AI_IMPACT={
+  tech:{risk:'Medium',ex:'AI now writes boilerplate code and tests — routine coding shrinks, but AI systems, security and product judgement grow fast.',keep:['Build & deploy AI systems, not just code','Cybersecurity & data privacy','Product thinking & problem framing']},
+  engineering:{risk:'Low',ex:'Design is AI-assisted, but real-world build, testing and safety judgement stay human. Demand rises in green energy & robotics.',keep:['Robotics & automation','Sustainable / green engineering','Hands-on prototyping']},
+  health:{risk:'Low',ex:'AI supports diagnosis and admin, but care, dexterity and human trust are hard to automate — an ageing population lifts demand.',keep:['Patient care & communication','Working alongside diagnostic AI','Mental-health & community care']},
+  business:{risk:'High',ex:'Routine bookkeeping, data entry and basic analysis are highly automatable. Strategy, negotiation and AI-driven decision-making are the safe ground.',keep:['Data & AI-driven decision-making','Entrepreneurship & strategy','Complex negotiation & leadership']},
+  creative:{risk:'Medium',ex:'Generative AI produces drafts fast — but taste, direction, originality and brand judgement rise in value. Creatives who direct AI thrive.',keep:['Creative direction & curation','Using generative tools as a co-pilot','Original concept & storytelling']},
+  media:{risk:'Medium',ex:'AI drafts, edits and captions at scale; verification, live production and authentic voice become the differentiators.',keep:['Fact-checking & media literacy','Live & on-the-ground production','Authentic personal brand']},
+  science:{risk:'Low',ex:'AI accelerates research and analysis, but experimental design, ethics and interpretation stay human. AI-for-science is a growth field.',keep:['Experimental design','Data science & bioinformatics','Research ethics']},
+  construction:{risk:'Low',ex:'Skilled trades and on-site problem-solving are among the hardest to automate. Modern methods (BIM, modular, green retrofit) add demand.',keep:['Skilled trades & site craft','Digital construction (BIM)','Green retrofit & sustainability']},
+  law:{risk:'Medium',ex:'AI handles document review and research; advocacy, judgement, ethics and client trust remain human. Legal-tech literacy is a big advantage.',keep:['Advocacy & negotiation','Legal-tech & AI governance','Ethics & policy']},
+  sport:{risk:'Low',ex:'Physical performance, coaching and community are human. AI adds analytics — those who use data to coach gain an edge.',keep:['Coaching & sports psychology','Performance data & analytics','Physio & rehabilitation']},
+  education:{risk:'Low',ex:'AI personalises learning, but relationships, motivation and safeguarding are human. Teachers who use AI well reclaim time and lift outcomes.',keep:['Mentoring & motivation','AI-assisted teaching','SEND & inclusive practice']},
+  environment:{risk:'Low',ex:'The green transition is a decades-long growth engine; AI optimises systems while field, policy and engineering roles expand.',keep:['Renewable energy systems','Climate data & modelling','Environmental policy']},
+  hospitality:{risk:'Medium',ex:'Bookings and some service automate, but hospitality, experience design and human warmth stay central — especially premium and experiential.',keep:['Experience & event design','Hospitality leadership','Personalised service']},
+  marine:{risk:'Low',ex:'Marine engineering, ports and offshore work are hands-on and safety-critical; offshore wind adds strong demand.',keep:['Marine & offshore engineering','Offshore renewables','Navigation & logistics']},
+  agriculture:{risk:'Medium',ex:'Precision farming and robotics automate routine tasks, but agri-tech, land management and food security create new high-skill roles.',keep:['Agri-tech & precision farming','Sustainable land management','Food science & supply chains']}
+};
+function riskColor(r){return r==='High'?'var(--crit)':r==='Medium'?'var(--warn)':'var(--good)'}
+function renderAIImpact(intr){
+  var list=(intr&&intr.length)?intr:Object.keys(AI_IMPACT).slice(0,4);
+  var rows=list.map(function(x){var d=AI_IMPACT[x];if(!d)return '';var name=(INTERESTS.find(function(i){return i[0]===x})||[])[1]||x;
+    return '<div style="border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:10px;background:rgba(6,11,24,.32)">'+
+      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b style="color:var(--ink);font-size:14px">'+esc(name)+'</b>'+
+      '<span style="font-size:11px;border:1px solid '+riskColor(d.risk)+';color:'+riskColor(d.risk)+';border-radius:20px;padding:2px 10px">AI exposure: '+d.risk+'</span></div>'+
+      '<div style="font-size:13px;color:var(--ink-2);margin-top:6px;line-height:1.6">'+esc(d.ex)+'</div>'+
+      '<div style="font-size:12px;color:var(--gold-300);margin-top:8px"><b>Stay ahead — build:</b> '+d.keep.map(esc).join(' · ')+'</div></div>';
+  }).join('');
+  var highs=list.filter(function(x){return AI_IMPACT[x]&&AI_IMPACT[x].risk==='High'});
+  var summary='<div class="note" style="margin-top:10px;font-size:12.5px">'+
+    (highs.length?'⚠ Some of your interests ('+highs.map(function(x){return esc((INTERESTS.find(function(i){return i[0]===x})||[])[1]||x)}).join(', ')+') are more exposed to automation. That doesn\'t rule them out — it means aim for the <b>judgement, creativity and human</b> parts of the field, and learn to <b>direct AI</b> rather than compete with it.'
+    :'✓ Your chosen fields are relatively AI-resilient. Keep the edge by learning to <b>use AI as a co-pilot</b> in whatever you do — that is the single biggest career advantage this decade.')+
+    ' StudYear\'s Apprenticeship-First™ engine weights future-resilient and green-economy routes.</div>';
+  $('ai-impact').innerHTML=rows+summary;
+  $('ai-impact-card').style.display='block';
 }
 function pathWhy(k,a,p,intr){
   if(k==='university')return a>=68?'Your strong grades open competitive courses and graduate careers.':'Achievable with a grade lift — foundation and clearing routes also exist.';
