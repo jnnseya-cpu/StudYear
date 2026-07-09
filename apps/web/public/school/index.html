@@ -163,7 +163,7 @@
     <div class="card c4"><h3>Year group ranking</h3><div class="sub">By cohort progress</div><div id="rank-year"></div></div>
     <div class="card c4"><h3>Subject ranking</h3><div class="sub">Strongest → weakest</div><div id="rank-subj"></div></div>
     <div class="card c8"><h3>Teacher performance</h3><div class="sub">AI Lesson Quality Analysis™ — engagement, outcomes, differentiation</div><div id="teacher-perf"></div></div>
-    <div class="card c4"><h3>Destination prediction</h3><div class="sub">Predicted student destinations</div><div id="destinations"></div></div>
+    <div class="card c4"><h3>Destination prediction</h3><div class="sub">Predicted student destinations · click a group to track students</div><div id="destinations"></div></div>
     <div class="card c12"><h3>🤖 AI recommendations</h3><div class="sub">Prioritised actions from the AI School Brain™ — highest impact first</div><div id="ai-recs"></div></div>
   </div>
 
@@ -454,9 +454,27 @@ function renderLeadership(){
     return '<div class="rank"><span style="width:150px;font-size:12.5px">'+esc(s.name||s.email)+' <span style="color:var(--ink-3)">'+esc(s.dept||'')+'</span></span><span class="bar"><i style="width:'+p+'%;background:'+c+'"></i></span><span class="val">'+p+'</span></div>';
   }).join(''):'<div class="empty">Deploy staff on People management to see performance.</div>';
 
-  /* destinations */
-  var dest={};M.forEach(function(m){var d=m.destination||(m.overall>=75?'University':m.overall>=60?'Sixth Form / College':m.overall>=45?'Apprenticeship':'Needs support');dest[d]=(dest[d]||0)+1});
-  $('destinations').innerHTML=Object.keys(dest).sort(function(a,b){return dest[b]-dest[a]}).map(function(d){return '<div class="rank"><span style="flex:1;font-size:12.5px">'+esc(d)+'</span><span class="val">'+dest[d]+'</span></div>'}).join('');
+  /* destinations — click a group to track the students in it */
+  var destMap={};M.forEach(function(m){var d=m.destination||(m.overall>=75?'University':m.overall>=60?'Sixth Form / College':m.overall>=45?'Apprenticeship':'Needs support');(destMap[d]=destMap[d]||[]).push(m)});
+  var destColor={'University':'var(--good)','Sixth Form / College':'var(--gold-500)','Apprenticeship':'var(--warn)','Needs support':'var(--crit)'};
+  var destOrder=Object.keys(destMap).sort(function(a,b){return destMap[b].length-destMap[a].length});
+  $('destinations').innerHTML=destOrder.map(function(d,i){
+    var c=destColor[d]||'var(--gold-500)';
+    return '<div class="drow" data-d="'+i+'" style="cursor:pointer"><div class="rank" style="margin:0"><span style="width:8px;height:8px;border-radius:50%;background:'+c+';flex:none"></span><span style="flex:1;font-size:12.5px">'+esc(d)+'</span><span class="val">'+destMap[d].length+'</span><span class="dchev" style="color:var(--ink-3);width:14px;text-align:right">▸</span></div>'+
+      '<div class="ddetail" id="ddet-'+i+'" style="display:none;margin:4px 0 8px 16px;border-left:1px solid var(--line);padding-left:10px"></div></div>';
+  }).join('');
+  $('destinations').querySelectorAll('.drow').forEach(function(row){
+    row.querySelector('.rank').onclick=function(){
+      var i=+row.dataset.d;var det=$('ddet-'+i);var open=det.style.display!=='none';
+      row.querySelector('.dchev').textContent=open?'▸':'▾';
+      if(open){det.style.display='none';return}
+      var list=destMap[destOrder[i]].slice().sort(function(a,b){return b.overall-a.overall});
+      det.innerHTML=list.map(function(m){var rc=m.risk==='HIGH'||m.risk==='CRITICAL'?'crit':m.risk==='MEDIUM'?'warn':'good';
+        return '<div class="row" style="padding:5px 0"><span style="flex:1;font-size:12px">'+esc(SY.accountName(m.email)||m.name||m.email)+' <span style="color:var(--ink-3)">'+esc(m.year||'')+'</span></span><span style="font-size:11.5px;color:var(--ink-2)">'+m.overall+'%</span> <span class="badge '+rc+'" style="margin-left:6px">'+(m.risk||'').toLowerCase()+'</span></div>';
+      }).join('')+'<div style="margin-top:6px"><a href="reports/" class="badge" style="color:var(--gold-300)">Export list →</a> <a href="interventions/" class="badge" style="color:var(--gold-300)">Plan support →</a></div>';
+      det.style.display='block';
+    };
+  });
 
   /* AI recommendations */
   var recs=[];
