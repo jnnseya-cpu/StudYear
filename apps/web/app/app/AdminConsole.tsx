@@ -340,6 +340,9 @@ export default function AdminConsole() {
               <span className="ic">{icon}</span>{label}
             </button>
           ))}
+          <a className="extlink" href={`${BASE}/admin/comms/`}><span className="ic">📣</span>Comms engine</a>
+          <a className="extlink" href={`${BASE}/admin/gateway/`}><span className="ic">🔐</span>AI Gateway</a>
+          <a className="extlink" href={`${BASE}/blog/admin/`}><span className="ic">✍</span>Blog Studio</a>
         </nav>
         <div className="me">
           <b>{session.name}</b>
@@ -953,6 +956,8 @@ const CSS = `
     color:#AAB6CC;font:500 13.5px inherit;padding:10px 12px;cursor:pointer;text-align:left}
   .adm nav button:hover{color:#EDF1F8;background:rgba(77,157,224,.08)}
   .adm nav button.on{color:#A9CFF2;background:rgba(77,157,224,.14)}
+  .adm nav .extlink{display:flex;align-items:center;gap:11px;color:#AAB6CC;font:500 13.5px inherit;padding:10px 12px;border-radius:9px;text-decoration:none}
+  .adm nav .extlink:hover{color:#A9CFF2;background:rgba(77,157,224,.08)}
   .adm nav .ic{width:18px;text-align:center}
   .adm .me{margin-top:auto;border-top:1px solid rgba(77,157,224,.14);padding:14px 8px 4px;font-size:12.5px}
   .adm .me b{display:block;color:#EDF1F8}
