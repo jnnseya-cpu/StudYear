@@ -48,7 +48,7 @@
     <div class="sp"><a class="chip" href="../study/">Study workspace</a><a class="chip" href="../dashboards/student/">Dashboard</a><a class="chip" href="../account/achievements/">Achievements</a><a class="chip" href="#" id="signout">Sign out</a></div></div>
   <div class="k">SkillRush™ · the 5-minute daily academic workout</div>
   <h1>Fluency Arena</h1>
-  <p class="lede">Fast, focused practice that turns weak skills into automatic ones. Earn coins and XP, keep your streak, climb the leaderboard — five minutes a day.</p>
+  <p class="lede">Fast, focused practice that turns weak skills into automatic ones — from Year 1 (age 4) to university. Earn coins and XP, keep your streak, climb the leaderboard — five minutes a day.</p>
 
   <div class="idrow">
     <div class="av" id="avatar" title="Change avatar">🦊</div>
@@ -194,7 +194,9 @@ var SKILLS=[
 /* ---- education-level pitch: difficulty and skill emphasis follow the profile ---- */
 var PROFILE=SY.get('profile',{})||{};
 var LEVEL=PROFILE.level||'GCSE';
-var LV_BOOST=/primary|11\+/i.test(LEVEL)?0:/ks3|7-9|national 5/i.test(LEVEL)?1:2;   /* 0 gentle · 1 core · 2 exam-grade */
+/* StudYear spans Year 1 (age 4) to university: 0 gentle (Y1–Y6 / 11+ / Fun) ·
+   1 core (KS3 / National 5) · 2 exam-grade (GCSE → A-level → IB → university) */
+var LV_BOOST=/primary|11\+|year ?[1-6]\b|fun/i.test(LEVEL)?0:/ks3|7-9|national 5/i.test(LEVEL)?1:2;
 var LEVEL_SKILLS={0:['addition','subtraction','tables','division','bonds','word','spelling'],1:['tables','division','mental','inverse','fractions','decimals','percent','word','grammar','science'],2:['mental','inverse','fractions','percent','algebra','squares','formulas','vocab','science','geography','history']};
 var recommended=LEVEL_SKILLS[LV_BOOST]||LEVEL_SKILLS[2];
 document.querySelector('.lede').innerHTML+=' <span style="color:var(--gold-400)">Pitched at '+esc(LEVEL)+'.</span>';
