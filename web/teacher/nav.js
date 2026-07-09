@@ -39,7 +39,7 @@
   ];
   var nav=items.map(function(it){var href=base+it[0];if(it[0]===''){href=base||'./'}var on=(it[0]===cur)?' class="on"':'';return '<a href="'+href+'"'+on+'>'+it[1]+'</a>'}).join('');
   var aside=document.createElement('aside');
-  aside.innerHTML='<a class="slogo" href="'+base+'../">⌂ Stud<b>Year</b></a><div class="role">School teacher</div><nav>'+nav+'<a href="#" id="__signout">Sign out</a></nav>';
+  aside.innerHTML='<a class="slogo" href="'+base+'../">⌂ <b class="wm">StudYear</b></a><div class="role">School teacher</div><nav>'+nav+'<a href="#" id="__signout">Sign out</a></nav>';
   var shell=document.querySelector('.shell');if(shell)shell.insertBefore(aside,shell.firstChild);
   var so=document.getElementById('__signout');if(so)so.onclick=function(e){e.preventDefault();if(window.SY)window.SY.signOut()};
   if(!document.getElementById('toast')){var t=document.createElement('div');t.id='toast';document.body.appendChild(t)}

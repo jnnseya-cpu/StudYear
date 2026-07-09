@@ -45,7 +45,7 @@
     return '<a href="'+href+'"'+on+'>'+it[1]+'</a>';
   }).join('');
   var aside=document.createElement('aside');
-  aside.innerHTML='<a class="slogo" href="'+base+'../">⌂ Stud<b>Year</b></a><div class="role">Private tutor</div><nav>'+nav+'<a href="#" id="__signout">Sign out</a></nav>';
+  aside.innerHTML='<a class="slogo" href="'+base+'../">⌂ <b class="wm">StudYear</b></a><div class="role">Private tutor</div><nav>'+nav+'<a href="#" id="__signout">Sign out</a></nav>';
   var shell=document.querySelector('.shell');
   if(shell)shell.insertBefore(aside,shell.firstChild);
   var so=document.getElementById('__signout');
