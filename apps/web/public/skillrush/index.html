@@ -149,7 +149,6 @@ function weekKey(){var d=new Date();var on=new Date(d.getFullYear(),0,1);var wk=
 
 /* ---- state & identity ---- */
 var SR=SY.get('skillrush',{coins:0,xp:0,days:[],history:[],skill:{},heroName:null,avatar:null});
-if(!SR.heroName&&SR.rockName){SR.heroName=SR.rockName;delete SR.rockName;SY.set('skillrush',SR)}
 if(!SR.heroName){var A=['Turbo','Mega','Rocket','Neon','Cosmic','Blaze','Quantum','Thunder'],B=['Fox','Falcon','Panda','Tiger','Comet','Wolf','Dragon','Otter'];SR.heroName=pick(A)+' '+pick(B)+' '+ri(10,99);SY.set('skillrush',SR)}
 if(!SR.avatar)SR.avatar='🦊';
 var AVATARS=['🦊','🐼','🦁','🐯','🐸','🦉','🐙','🦄','🤖','👾','🚀','🧠','⚡','🔥','🌟','🎧'];
