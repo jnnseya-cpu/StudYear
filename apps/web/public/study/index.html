@@ -1554,11 +1554,21 @@ document.getElementById("g-mm-go").onclick=()=>{
   saveMine({type:"Mindmap",title:topic+" — mind map",subj:$v("g-mm-subj"),level:$v("g-mm-level"),map},"mm","Mind map generated",["g-mm-topic"]);
 };
 
-/* AI topic summarizer — extractive: rank sentences by keyword frequency */
+/* AI topic summarizer — live model when configured, else extractive on-device */
 document.getElementById("c-sm-save").onclick=()=>{
   const topic=$v("c-sm-topic").trim(), text=$v("c-sm-text").trim();
   if(!topic){toast("Give the topic a name");return}
   if(text.length<120){toast("Paste at least a paragraph to summarise");return}
+  if(window.SYAI&&SYAI.ready()){
+    toast("Summarising with "+SYAI.provider()+"…");
+    SYAI.ask("You are a study assistant. Summarise the text for a "+($v("c-sm-level")||"GCSE")+" student on '"+topic+"'. Return a 3–4 sentence summary, then 4–6 key bullet points, then a short 'Key terms' line. Use markdown.","TEXT:\n"+text,{maxTokens:800}).then(txt=>{
+      saveMine({type:"Revision Notes",title:topic+" — AI summary",subj:$v("c-sm-subj"),level:$v("c-sm-level"),body:SYAI.render(txt)},"sm","AI summary saved",["c-sm-topic","c-sm-text"]);
+    }).catch(e=>{toast("Live AI error — using on-device summary");smStatic(topic,text)});
+    return;
+  }
+  smStatic(topic,text);
+};
+function smStatic(topic,text){
   const sentences=text.replace(/\s+/g," ").match(/[^.!?]+[.!?]+/g)||[text];
   const stop=new Set("the a an and or of to in is are was were be been being that this it its for on with as at by from into their they them he she his her we you your our".split(" "));
   const freq={};
@@ -1602,11 +1612,21 @@ document.getElementById("g-qz-go").onclick=()=>{
   saveMine({type:"Quiz",title:topic+" — practice quiz",subj:$v("g-qz-subj"),level:$v("g-qz-level"),qs:pool.slice(0,n)},"gq","Quiz generated",["g-qz-topic"]);
 };
 
-/* AI essay plan — structured scaffold saved as revision notes */
+/* AI essay plan — live model when configured, else structured scaffold */
 document.getElementById("c-e-save").onclick=()=>{
   const q=$v("c-e-q").trim();
   if(q.length<8){toast("Enter your essay title or question");return}
   const subj=$v("c-e-subj"), level=$v("c-e-level");
+  if(window.SYAI&&SYAI.ready()){
+    toast("Planning with "+SYAI.provider()+"…");
+    SYAI.ask("You are an "+(level||"GCSE")+(subj?" "+subj:"")+" essay coach. Produce a specific essay plan for the question: a clear thesis, an introduction, 3 body paragraphs (each Point/Evidence/Explain with a CONCRETE example relevant to this exact question), a counter-argument paragraph, and a conclusion. Use markdown headings and bullets. Be specific to the question, not generic.","Essay question: "+q,{maxTokens:1100}).then(txt=>{
+      saveMine({type:"Revision Notes",title:"Essay plan — "+q,subj,level,body:SYAI.render(txt)},"e","AI essay plan saved",["c-e-q"]);
+    }).catch(e=>{toast("Live AI error — using the scaffold");essayStatic(q,subj,level)});
+    return;
+  }
+  essayStatic(q,subj,level);
+};
+function essayStatic(q,subj,level){
   const body=`<h5>Essay question</h5><p><b>${esc(q)}</b></p>
     <h5>Thesis statement</h5><p>Answer the question directly in one or two sentences — take a clear position (e.g. "${esc(q.replace(/\?$/,""))}" was largely the case because…). Everything below proves this.</p>
     <h5>Introduction</h5><ul><li>Open with your thesis — the examiner should know your answer by sentence two.</li><li>Signpost the 3 arguments you'll make.</li><li>Define any key term in the question.</li></ul>
