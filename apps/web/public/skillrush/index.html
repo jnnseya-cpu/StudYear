@@ -45,7 +45,7 @@
 <script src="../ai.js"></script>
 <div class="wrap">
   <div class="top"><a class="logo" href="../">⌂ <b class="wm">StudYear</b></a>
-    <div class="sp"><a class="chip" href="../study/">Study workspace</a><a class="chip" href="../dashboards/student/">Dashboard</a><a class="chip" href="../account/achievements/">Achievements</a><a class="chip" href="#" id="signout">Sign out</a></div></div>
+    <div class="sp"><a class="chip" href="#" id="lang-toggle" title="Switch language / Changer de langue">FR</a><a class="chip" href="../study/">Study workspace</a><a class="chip" href="../dashboards/student/">Dashboard</a><a class="chip" href="../account/achievements/">Achievements</a><a class="chip" href="#" id="signout">Sign out</a></div></div>
   <div class="k">SkillRush™ · the 5-minute daily academic workout</div>
   <h1>Fluency Arena</h1>
   <p class="lede">Fast, focused practice that turns weak skills into automatic ones — from Year 1 (age 4) to university. Earn coins and XP, keep your streak, climb the leaderboard — five minutes a day.</p>
@@ -152,8 +152,17 @@ $('avpick').querySelectorAll('button').forEach(function(b){b.onclick=function(){
 $('edit-name').onclick=function(e){e.preventDefault();var n=prompt('Choose your rock name (shown anonymously on leaderboards):',SR.rockName);if(n&&n.trim().length>=3){SR.rockName=n.trim().slice(0,24);SY.set('skillrush',SR);$('rockname').textContent=SR.rockName;toast('Rock name updated')}};
 
 /* ---- fluency engine: 14 skills ---- */
+/* ---- localisation seam (the "Hip Hoppers" playbook: keep the engine, localise
+   the fantasy). LANG swaps the motivational wrapper + language-sensitive banks;
+   the adaptive engine, modes, economy and boards are identical. Owned by the
+   Localisation agent; FR is the first pack for the DRC/francophone corridor. */
+var LANG=SR.lang||'en';
+var SPELL_FR=[['recevior','recevoir'],['boujour','bonjour'],['ecolle','école'],['mersi','merci'],['famile','famille'],['toujour','toujours'],['apres','après'],['tres','très'],['garcon','garçon'],['francais','français']];
+var GRAMMAR_FR=[['le / la — ___ maison','la'],['le / la — ___ livre','le'],['un / une — ___ pomme','une'],['un / une — ___ chien','un'],['est / sont — Ils ___ contents.','sont'],['est / sont — Elle ___ ici.','est'],['a / à — Il ___ un vélo.','a'],['a / à — Je vais ___ Paris.','à']];
 var SPELL=[['recieve','receive'],['seperate','separate'],['definately','definitely'],['becuase','because'],['wich','which'],['freind','friend'],['tommorow','tomorrow'],['enviroment','environment'],['goverment','government'],['occured','occurred'],['neccessary','necessary'],['begining','beginning']];
+if(LANG==='fr')SPELL=SPELL_FR;
 var GRAMMAR=[['much / many — How ___ water is left?','much'],['much / many — How ___ apples are there?','many'],['is / are — The team ___ winning.','is'],['was / were — They ___ late yesterday.','were'],['its / it’s — The dog wagged ___ tail.','its'],['your / you’re — ___ going to love this.','you’re'],['a / an — I ate ___ orange.','an'],['who / whom — ___ wrote this book?','who']];
+if(LANG==='fr')GRAMMAR=GRAMMAR_FR;
 var VOCAB=[['Opposite of "ancient" (m…)','modern'],['Synonym of "begin" (s…)','start'],['Opposite of "expand" (c…)','contract'],['Synonym of "rapid" (f…)','fast'],['Opposite of "scarce" (p…)','plentiful'],['Synonym of "brave" (c…)','courageous'],['Opposite of "victory" (d…)','defeat'],['Synonym of "angry" (f…)','furious']];
 var SCIFACT=[['Chemical symbol for iron','fe'],['Chemical formula for water','h2o'],['Planet closest to the Sun','mercury'],['Unit of force','newton'],['The powerhouse of the cell','mitochondria'],['Largest organ of the human body','skin'],['Gas plants absorb (formula)','co2'],['Chemical symbol for gold','au']];
 var GEOFACT=[['Capital of France','paris'],['Capital of Spain','madrid'],['Capital of Japan','tokyo'],['Capital of Italy','rome'],['Capital of Egypt','cairo'],['Longest river in the world','nile'],['Largest ocean','pacific'],['Highest mountain in the UK','ben nevis']];
@@ -496,6 +505,27 @@ function renderBattle(){
   $('battle-sub').textContent='Week '+wk+' · '+SY.schoolGet(link.code,'name','your school');
   $('battle').innerHTML='<div class="stats"><div class="stat"><div class="v">'+total.toLocaleString()+'</div><div class="l">Class points</div></div><div class="stat"><div class="v">'+mine.toLocaleString()+'</div><div class="l">Your points</div></div><div class="stat"><div class="v">'+bt.length+'</div><div class="l">Battle sessions</div></div></div>'+
     (total?'':'<div class="note">Play ⚔️ Class Battle mode — every correct answer adds a point for your class.</div>');
+}
+/* ---- FR wrapper: translate the motivational shell (engine untouched) ---- */
+$('lang-toggle').textContent=LANG==='fr'?'EN':'FR';
+$('lang-toggle').onclick=function(e){e.preventDefault();SR.lang=LANG==='fr'?'en':'fr';SY.set('skillrush',SR);location.reload()};
+if(LANG==='fr'){
+  var FR={'.k':'SkillRush™ · l’entraînement académique de 5 minutes par jour',
+    'h1':'Arène de Fluidité'};
+  document.querySelector('.k').textContent=FR['.k'];
+  document.querySelector('h1').textContent=FR['h1'];
+  document.querySelector('.lede').innerHTML='Un entraînement rapide et ciblé qui transforme les points faibles en automatismes — de la 1<sup>re</sup> année (4 ans) à l’université. Gagne des pièces et de l’XP, garde ta série, grimpe au classement — cinq minutes par jour. <span style="color:var(--gold-400)">Niveau : '+esc(LEVEL)+'</span>';
+  document.querySelector('#mission-card h3').textContent='🎯 Mission du jour';
+  document.querySelector('#mission-card .sub').textContent='Ton entraînement quotidien — choisi par ton enseignant quand la classe a un objectif, sinon ta compétence la plus faible';
+  var hs=document.querySelectorAll('#setup h3');if(hs[0])hs[0].textContent='Choisis ta compétence';if(hs[1])hs[1].textContent='Choisis ton mode';
+  var FRMODES={focus:['⚡ Mode Concentration','Ta micro-compétence la plus faible · 3 minutes · difficulté adaptative'],confidence:['🌱 Mode Confiance','Sans chrono, rythme calme, indices — reconstruis la confiance d’abord'],exam:['⏱ Mode Examen','25 questions · 6 secondes chacune — comme la vraie épreuve'],comeback:['🚀 Mode Remontée','Commence facile, monte en puissance — pour se remettre en selle'],battle:['⚔️ Bataille de classe','Chaque bonne réponse marque des points pour ta classe cette semaine'],duel:['👨‍👧 Défi Parent','Passe l’appareil — toi contre ton parent, 6 questions chacun']};
+  document.querySelectorAll('.mode').forEach(function(m){var f=FRMODES[m.dataset.mode];if(f){m.querySelector('b').textContent=f[0];m.querySelector('span').textContent=f[1]}});
+  document.querySelector('#coach-card h3').textContent='🤖 Coach IA';
+  document.querySelector('#coach-card .sub').textContent='Bloqué sur une compétence ? Le coach explique pourquoi et te donne une mini-leçon ciblée.';
+  $('coach-go').textContent='Coache ma compétence la plus faible →';
+  $('diag-go').textContent='🩺 Diagnostic arithmétique de 2 minutes →';
+  $('quit').textContent='Terminer';$('hint').textContent='Indice';
+  document.querySelector('#heroes-card .sub').innerHTML='Addition. Soustraction. Multiplication. Division. <b>Maîtrisées.</b> Des erreurs de calcul à la maîtrise confiante — une question intelligente à la fois.';
 }
 renderTop();renderBoard();renderBattle();renderMission();renderNational();renderHeroes();
 })();
