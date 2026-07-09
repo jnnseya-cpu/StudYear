@@ -2937,6 +2937,23 @@ document.getElementById("cg-go").onclick=()=>{
   if(!spendAcus(CG_PRICE,"AI course: "+topic))return;
   const board=document.getElementById("cg-board").value;
   const cap=topic.replace(/\b\w/g,c=>c.toUpperCase());
+  /* live model authors the full course when a key is configured */
+  if(window.SYAI&&SYAI.ready()){
+    document.getElementById("cg-sub").textContent=cap+" · "+level+(board?" · "+board:"")+" · generating with live AI…";
+    document.getElementById("cg-out").innerHTML='<div class="note">Writing your course with '+SYAI.provider()+'…</div>';
+    const sys="You are StudYear's course designer. Write a structured "+level+" course"+(board?" aligned to the "+board+" exam board":"")+". Produce 4–6 modules. For each module use a '## Module N — <title>' heading, then 3–5 specific subtopics as bullets, then a line '▸ ends with a check quiz'. Be concrete and exam-relevant to the topic. End with a short 'How to study this course' note.";
+    SYAI.ask(sys,"Course topic: "+topic+"\nLevel: "+level+(board?"\nExam board: "+board:""),{maxTokens:1500}).then(txt=>{
+      addPoints(10);touchStreak();logEvent("course","AI course: "+cap,level+(board?" · "+board:"")+" — live AI course generated.");
+      document.getElementById("cg-sub").textContent=cap+" · "+level+(board?" · "+board:"")+" · live AI course";
+      document.getElementById("cg-out").innerHTML='<div class="card">'+SYAI.render(txt)+'</div>'+
+        '<div style="margin-top:8px"><button class="btn sm" id="cg-savecourse">Save course to library</button></div>';
+      const sv=document.getElementById("cg-savecourse");if(sv)sv.onclick=()=>{saveMine({type:"Revision Notes",title:cap+" — AI course",subj:"",level:level,body:txt},"co","Course saved",[])};
+    }).catch(e=>{toast("Live AI error — using the built-in outline");cgStatic(topic,level,board,cap)});
+    return;
+  }
+  cgStatic(topic,level,board,cap);
+};
+function cgStatic(topic,level,board,cap){
   const modules=[
     {t:"Foundations of "+cap,topics:["Key terms and definitions","Why "+topic+" matters","The big picture / timeline"]},
     {t:"Core Concepts",topics:["The main principles of "+topic,"How the parts connect","Worked examples"]},

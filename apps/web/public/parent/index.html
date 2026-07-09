@@ -108,6 +108,7 @@
 </head>
 <body>
 <script src="../guard.js" data-role="parent" data-base="../"></script>
+<script src="../ai.js"></script>
 <div class="wrap">
 
 <div class="top">
@@ -624,7 +625,17 @@ function advisorAnswer(q){
 var CHIPS=['Why is my child struggling?','What subject needs urgent attention?','Is burnout likely?','Should revision intensity increase?'];
 $('advisor-chips').innerHTML=CHIPS.map(function(c){return '<button class="qchip">'+esc(c)+'</button>'}).join('');
 $('advisor-chips').querySelectorAll('.qchip').forEach(function(b){b.onclick=function(){$('advisor-in').value=b.textContent;askAdvisor()}});
-function askAdvisor(){var q=$('advisor-in').value.trim();if(!q)return;$('advisor-out').textContent=advisorAnswer(q)}
+function childContext(){try{return 'Child: '+nm+'. Overall progress '+m.overall+'%, predicted Grade '+m.predicted+', exam risk '+m.risk+'. Weakest subject '+(m.weakest||'—')+', strongest '+(m.strongest||'—')+'. Per-subject mastery: '+(m.subjects||[]).map(function(x){return x.s+' '+x.mastery+'%'}).join(', ')+'.'}catch(e){return 'No child linked yet.'}}
+function askAdvisor(){
+  var q=$('advisor-in').value.trim();if(!q)return;
+  if(window.SYAI&&SYAI.ready()){
+    $('advisor-out').innerHTML='<span style="opacity:.6">Thinking with '+SYAI.provider()+'…</span>';
+    var sys="You are StudYear's AI Parent Advisor. Give a parent calm, practical, specific guidance about their child's learning, grounded ONLY in the data provided — never invent numbers. Be concise (3–5 sentences or short bullets), reassuring and action-oriented, and suggest one concrete next step.";
+    SYAI.ask(sys,q+"\n\n"+childContext(),{maxTokens:600}).then(function(t){$('advisor-out').innerHTML=SYAI.render(t)}).catch(function(e){$('advisor-out').textContent=advisorAnswer(q)});
+    return;
+  }
+  $('advisor-out').textContent=advisorAnswer(q);
+}
 $('advisor-go').onclick=askAdvisor;
 $('advisor-in').addEventListener('keydown',function(e){if(e.key==='Enter')askAdvisor()});
 
