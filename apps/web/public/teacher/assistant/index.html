@@ -7,6 +7,7 @@
   .sugg{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.sugg button{font-size:12px;color:var(--ink-2);border:1px solid var(--line);background:rgba(6,11,24,.3);border-radius:20px;padding:7px 12px;cursor:pointer}
 </style></head><body>
 <script src="../../guard.js" data-role="teacher" data-base="../../"></script>
+<script src="../../ai.js"></script>
 <div class="shell"><main>
   <div class="k">Institutional staff</div><h1>AI Teaching Assistant</h1>
   <p class="lede">Your AI teaching partner — lesson plans, differentiated work, homework, quizzes, marking, feedback, parent emails and more, in seconds.</p>
@@ -46,8 +47,28 @@ $('ctx-note').innerHTML=(SEC.subjects.length||SEC.levels.length)
 var mode='plan';
 $('tools').querySelectorAll('.t').forEach(function(el){el.onclick=function(){$('tools').querySelectorAll('.t').forEach(function(x){x.classList.remove('on')});el.classList.add('on');mode=el.dataset.t}});
 document.querySelectorAll('.sugg button').forEach(function(b){b.onclick=function(){$('topic').value=b.dataset.s;mode='explain';$('tools').querySelectorAll('.t').forEach(function(x){x.classList.toggle('on',x.dataset.t==='explain')});gen()}});
+var MODE_PROMPTS={
+  plan:"Write a complete, teach-ready lesson plan: objectives, 5-min starter (retrieval), main teaching (I do / we do / you do with concrete content), differentiation (support & stretch), a 4-question check for understanding WITH answers, plenary and homework.",
+  diff:"Produce differentiated tasks on the topic: Support (partially-worked example + sentence starters), Core (a real practice set of 4–5 questions), Stretch (a multi-step exam question + 'explain why'), and SEND/EAL scaffolds with key vocabulary defined.",
+  quiz:"Write a 5-question quiz rising in difficulty, each with 4 options, the correct answer marked, and a one-line explanation.",
+  homework:"Set a ~25-minute homework: 5 questions rising in difficulty plus one reasoning task, with a mark scheme.",
+  explain:"Explain the topic to the class: hook, plain-language core idea, one worked example, the most common misconception and its fix, and a prompt for students to explain it back.",
+  mark:"Write a marking & feedback frame: 3 specific strengths to look for, 3 specific targets, WWW/EBI comments a teacher can paste, and the one next-step action — all specific to the topic and exam-board style.",
+  parent:"Draft a warm, professional parent email about the student's work on this topic: what was studied, how they did, one specific way to help at home. Ready to send.",
+  behaviour:"Give a practical behaviour strategy for this class context: positive framing script, routine change, seating consideration, 2-minute check-in plan and a reward milestone."};
 function gen(){
   var s=$('subj').value.trim()||'the subject',l=$('level').value.trim()||'this level',t=$('topic').value.trim()||'the topic';var o='';
+  if(window.SYAI&&SYAI.ready()){
+    $('out').style.display='block';$('out').innerHTML='<div class="note">Working with '+SYAI.provider()+'…</div>';
+    SYAI.ask("You are a "+l+" "+s+" teacher's AI assistant. "+(MODE_PROMPTS[mode]||MODE_PROMPTS.plan)+" Use markdown. Be genuinely usable in a real classroom — concrete content, no placeholders.","Topic: "+t,{maxTokens:1400})
+      .then(function(txt){$('out').innerHTML='<div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:6px">Live AI · '+esc(mode)+'</div>'+SYAI.render(txt)})
+      .catch(function(e){$('out').innerHTML='<div class="note" style="color:#f0a0a0">Live AI error — showing the template.</div>';setTimeout(function(){genStatic(s,l,t)},300)});
+    return;
+  }
+  genStatic(s,l,t);
+}
+function genStatic(s,l,t){
+  var o='';
   if(mode==='plan')o='<h4>Lesson plan · '+t+'</h4>Objectives: define, apply and reason about '+t+'.\nStarter (5m): retrieval.\nMain (25m): I do → we do → you do.\nDifferentiation: scaffold + stretch.\nCheck: 4-question mini-quiz.\nPlenary: summary + homework.';
   else if(mode==='diff')o='<h4>Differentiated tasks · '+t+'</h4>Support: partially-worked example + sentence starters.\nCore: standard practice set.\nStretch: multi-step exam question + "explain why".\nSEND/EAL: visual scaffold, key vocabulary list.';
   else if(mode==='quiz')o='<h4>Quiz · '+t+'</h4>1. Recall\n2. One-step apply\n3. Two-step apply\n4. Spot-the-error\n5. Exam-style stretch (auto-marked in the live build).';

@@ -419,6 +419,12 @@ function renderDeep(m){
     (m.weakest?'Needs attention: <b style="color:var(--ink)">'+esc(m.weakest)+'</b>.':'')+'</p>'+
     '<div style="font-size:12px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase;margin-top:8px">Wins</div>'+
     '<div class="feat"><b>✓</b> '+esc(nm)+': '+(m.weekly>=0?'+':'')+m.weekly+'% weekly growth'+(win?' · momentum in '+esc(win):'')+'</div>';
+  /* live-AI weekly briefing on top of the data summary */
+  if(window.SYAI&&SYAI.ready()){
+    SYAI.ask("You are StudYear's family-briefing writer. From the data, write a warm, specific weekly parent briefing: 3–4 sentences on how the week really went, one 'Wins' bullet list (2–3 real wins from the data), one 'This week, try' action. Ground every claim in the data; never invent. Markdown.",
+      "Child "+nm+": overall "+m.overall+"%, predicted Grade "+m.predicted+", weekly growth "+m.weekly+"%, risk "+m.risk+". Subjects: "+(m.subjects||[]).map(function(x){return x.s+" "+x.mastery+"% (momentum "+x.momentum+"%)"}).join("; ")+".",{maxTokens:600})
+    .then(function(t){$('brief').innerHTML='<div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:4px">Live AI briefing</div>'+SYAI.render(t)}).catch(function(){});
+  }
 
   /* live subjects */
   $('live-subjects').innerHTML=m.subjects.map(function(x){
@@ -573,10 +579,20 @@ function radarSvg(subs){
 
 /* ---- intervention: build a recovery plan and (with consent) push it to the child ---- */
 function generateIntervention(m,target){
+  /* live model writes subject-specific recovery topics when configured */
+  if(window.SYAI&&SYAI.ready()&&!arguments[2]){
+    toast('Designing the intervention with '+SYAI.provider()+'…');
+    SYAI.ask("List exactly 5 specific recovery-session topics for a "+(m.profile.level||'GCSE')+" student weak in "+target.s+" (mastery "+(target.mastery||0)+"%). One per line, no numbering — each a concrete, teachable session (topic + activity), ordered easiest first.","Subject: "+target.s,{maxTokens:300})
+      .then(function(t){var tp=String(t).split("\n").map(function(x){return x.trim().replace(/^[-*\d.]+\s*/,'')}).filter(Boolean).slice(0,5);
+        generateIntervention(m,target,tp.length>=3?tp:null)})
+      .catch(function(){generateIntervention(m,target,true)});
+    return;
+  }
+  var aiTopics=Array.isArray(arguments[2])?arguments[2]:null;
   var nm=SY.accountName(m.email);
   var plan=SY.readAccount(m.email,'plan',{plan:[],done:{}})||{plan:[],done:{}};
   var wkN=(plan.plan&&plan.plan.length)?plan.plan[plan.plan.length-1].n+1:1;
-  var topics=['Foundations & key terms','Active-recall drill','Timed practice questions','Review wrong answers'];
+  var topics=aiTopics||['Foundations & key terms','Active-recall drill','Timed practice questions','Review wrong answers'];
   var lvl=m.profile.level||'GCSE';
   var week={n:wkN,days:['Mon','Tue','Wed','Thu','Fri'].map(function(d,i){
     return {date:null,d:d,dow:d,subj:target.s,level:lvl,topic:topics[i%topics.length],slot:2,time:'19:00',mins:30,

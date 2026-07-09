@@ -87,17 +87,20 @@
 </head>
 <body>
 <script src="../../guard.js" data-role="student" data-base="../../"></script>
+<script src="../../billing.js"></script>
 <div class="shell">
 
 <aside class="side">
   <a class="slogo" href="../../">⌂ <b class="wm">StudYear</b></a>
   <nav>
     <a href="../../dashboards/student/">Dashboard</a>
+    <a href="../../live/">Live Classroom</a>
+    <a href="../../career/">Career Passport</a>
     <a href="../../tutors/">Find tutors</a>
     <a href="../#parent-link">Parent link code</a>
     <a href="../../study/#diag">Academic Diagnostic</a>
-    <a href="../../study/#diag">Diagnostic Results</a>
-    <a href="../../study/#planner">Personal Recovery Plan</a>
+    <a href="../../study/#diag-results">Diagnostic Results</a>
+    <a href="../../study/#recovery">Personal Recovery Plan</a>
     <a href="../../study/#planner">AI Study Planner</a>
     <a href="../../study/#tutor">AI Tutor</a>
     <a href="../../study/#lesson">Interactive Lesson</a>
@@ -231,24 +234,28 @@ document.body.addEventListener('click',function(e){
   var b=e.target.closest('button');if(!b)return;
   if(b.dataset.pack){
     var pk=PACKS.find(function(x){return x.id===b.dataset.pack});
-    wallet.acus+=pk.acus;SY.set('wallet',wallet);drawWallet();
-    SY.log('billing',pk.label+' purchased',fmt(pk.acus)+' ACUs added to your wallet.');
-    toast('Preview purchase'+(promo?' (code '+promo+')':'')+' — '+fmt(pk.acus)+' ACUs credited. Stripe checkout takes over when billing goes live.');
+    var actP=function(){
+      wallet.acus+=pk.acus;SY.set('wallet',wallet);drawWallet();
+      SY.log('billing',pk.label+' purchased',fmt(pk.acus)+' ACUs added to your wallet.');
+      toast('Preview purchase'+(promo?' (code '+promo+')':'')+' — '+fmt(pk.acus)+' ACUs credited. Stripe checkout takes over when billing goes live.');};
+    if(window.SYBill){SYBill.checkout(pk.id,{promo:promo,email:(SY.session&&SY.session.email),ref:(SY.session&&SY.session.email),activate:actP})}else actP();
   }
   if(b.dataset.plan){
     var pl=PLANS.find(function(x){return x.id===b.dataset.plan});
     if(wallet.plan===pl.id&&pl.pounds>0){toast('You are already on '+pl.label);return}
-    wallet.plan=pl.id;wallet.month=monthKey();
-    if(pl.pounds>0){
-      wallet.acus+=pl.acus;                          // the single 30-day payment's ACUs
-      wallet.planStart=new Date().toISOString();
-      wallet.planExpires=new Date(Date.now()+30*DAY).toISOString(); // stops automatically after 30 days
-    }else{delete wallet.planExpires}
-    SY.set('wallet',wallet);drawWallet();
-    SY.log('billing',pl.pounds>0?('Started '+pl.label):'Switched to Child Free',
-      pl.pounds>0?(fmt(pl.acus)+' ACUs added · 30-day term, ends '+fmtDay(wallet.planExpires)+' with no auto-renewal.'):'Child Free — 100 ACUs every month.');
-    toast(pl.pounds===0?'You are on Child Free — 100 ACUs every month'
-      :'Preview '+pl.label+(promo?' (code '+promo+')':'')+' — '+fmt(pl.acus)+' ACUs added. Runs 30 days then stops automatically (no auto-renewal).');
+    var actS=function(){
+      wallet.plan=pl.id;wallet.month=monthKey();
+      if(pl.pounds>0){
+        wallet.acus+=pl.acus;                          // the single 30-day payment's ACUs
+        wallet.planStart=new Date().toISOString();
+        wallet.planExpires=new Date(Date.now()+30*DAY).toISOString(); // stops automatically after 30 days
+      }else{delete wallet.planExpires}
+      SY.set('wallet',wallet);drawWallet();
+      SY.log('billing',pl.pounds>0?('Started '+pl.label):'Switched to Child Free',
+        pl.pounds>0?(fmt(pl.acus)+' ACUs added · 30-day term, ends '+fmtDay(wallet.planExpires)+' with no auto-renewal.'):'Child Free — 100 ACUs every month.');
+      toast(pl.pounds===0?'You are on Child Free — 100 ACUs every month'
+        :'Preview '+pl.label+(promo?' (code '+promo+')':'')+' — '+fmt(pl.acus)+' ACUs added. Runs 30 days then stops automatically (no auto-renewal).');};
+    if(pl.pounds>0&&window.SYBill){SYBill.checkout(pl.id,{promo:promo,email:(SY.session&&SY.session.email),ref:(SY.session&&SY.session.email),activate:actS})}else actS();
   }
 });
 drawWallet();

@@ -1586,10 +1586,22 @@ function smStatic(topic,text){
   saveMine({type:"Revision Notes",title:topic+" — summary",subj:$v("c-sm-subj"),level:$v("c-sm-level"),body},"sm","Summary saved",["c-sm-topic","c-sm-text"]);
 };
 
-/* AI flashcard generator — mines matching library cards/notes by topic */
+/* AI flashcard generator — live model when configured; else mines the library */
 document.getElementById("g-fc-go").onclick=()=>{
   const topic=$v("g-fc-topic").trim();
   if(topic.length<3){toast("Enter a topic for your flashcards");return}
+  if(window.SYAI&&SYAI.ready()){
+    toast("Writing flashcards with "+SYAI.provider()+"…");
+    SYAI.ask("Create exactly 10 study flashcards for a "+($v("g-fc-level")||"GCSE")+" student on the topic. Return ONLY lines in the format 'front :: back' — no headings, no numbering. Fronts are precise questions/terms; backs are accurate, concise answers.","Topic: "+topic,{maxTokens:900}).then(t=>{
+      const cards=String(t).split("\n").map(l=>{const p=l.split("::").map(s=>s.trim());if(p[0])p[0]=p[0].replace(/^[-*)\s]*\d*[.)]?\s*/,"").trim()||p[0];return p}).filter(p=>p.length>=2&&p[0]&&p[1]).map(p=>p.slice(0,2));
+      if(cards.length<3){toast("Model returned too few cards — using the library");fcStatic(topic);return}
+      saveMine({type:"Flashcards",title:topic+" — AI deck",subj:$v("g-fc-subj"),level:$v("g-fc-level"),cards:cards.slice(0,12)},"gf","AI flashcards generated",["g-fc-topic"]);
+    }).catch(()=>{toast("Live AI error — using the library");fcStatic(topic)});
+    return;
+  }
+  fcStatic(topic);
+};
+function fcStatic(topic){
   const t=topic.toLowerCase(), cards=[];
   allResources().forEach(r=>{
     const match=(r.title+" "+r.subj+" "+(r.topic||"")).toLowerCase().includes(t);
@@ -1602,11 +1614,30 @@ document.getElementById("g-fc-go").onclick=()=>{
   if(uniq.length<3){toast("Not enough on '"+topic+"' in the offline bank — try Bonding, Memory, Photosynthesis, WW1…");return}
   saveMine({type:"Flashcards",title:topic+" — generated deck",subj:$v("g-fc-subj"),level:$v("g-fc-level"),cards:uniq.slice(0,12)},"gf","Flashcards generated",["g-fc-topic"]);
 };
-/* AI quiz generator — assembles from the offline question bank */
+/* AI quiz generator — live model when configured; else the offline question bank */
 document.getElementById("g-qz-go").onclick=()=>{
   const topic=$v("g-qz-topic").trim();
   if(topic.length<3){toast("Enter a topic for your quiz");return}
   const n=Math.max(3,Math.min(10,+$v("g-qz-n")||5));
+  if(window.SYAI&&SYAI.ready()){
+    toast("Writing your quiz with "+SYAI.provider()+"…");
+    SYAI.ask("Write exactly "+n+" multiple-choice questions for a "+($v("g-qz-level")||"GCSE")+" student on the topic. Return ONLY lines in the format 'question :: correct answer :: wrong :: wrong :: wrong' (4 options total, correct FIRST). After each question line, you may add a line 'exp:: one-sentence explanation'. No numbering or headings. Questions must be factually accurate and specific to the topic.","Topic: "+topic,{maxTokens:1200}).then(t=>{
+      const qs=[];let last=null;
+      String(t).split("\n").forEach(l=>{l=l.trim();if(!l)return;
+        if(/^exp\s*::/i.test(l)){if(last)last.exp=l.replace(/^exp\s*::\s*/i,"");return}
+        const p=l.split("::").map(s=>s.trim());
+        if(p.length>=3){const q=p[0].replace(/^[-*)\s]*\d*[.)]?\s*/,"").trim()||p[0];const opts=p.slice(1,5).filter(Boolean);
+          if(q&&opts.length>=2){last={q:q,o:opts,a:0};qs.push(last)}}});
+      if(qs.length<3){toast("Model returned too few questions — using the bank");qzStatic(topic,n);return}
+      /* shuffle options so the correct answer isn't always first */
+      qs.forEach(q=>{const correct=q.o[0];for(let i=q.o.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[q.o[i],q.o[j]]=[q.o[j],q.o[i]]}q.a=q.o.indexOf(correct)});
+      saveMine({type:"Quiz",title:topic+" — AI quiz",subj:$v("g-qz-subj"),level:$v("g-qz-level"),qs:qs.slice(0,n)},"gq","AI quiz generated",["g-qz-topic"]);
+    }).catch(()=>{toast("Live AI error — using the bank");qzStatic(topic,n)});
+    return;
+  }
+  qzStatic(topic,n);
+};
+function qzStatic(topic,n){
   const pool=tutorQuizBank(topic);
   if(pool.length<3){toast("Not enough '"+topic+"' questions offline — try World War 2, quadratics, memory, mechanics…");return}
   saveMine({type:"Quiz",title:topic+" — practice quiz",subj:$v("g-qz-subj"),level:$v("g-qz-level"),qs:pool.slice(0,n)},"gq","Quiz generated",["g-qz-topic"]);
@@ -2690,7 +2721,17 @@ document.getElementById("pg-go").onclick=()=>{
       [0,50,100].forEach(g=>{sv+=`<line x1="${P}" x2="${W-P}" y1="${y(g)}" y2="${y(g)}" stroke="rgba(170,182,204,.14)"/>`});
       sv+=`<polyline fill="none" stroke="#3D8FD1" stroke-width="2" points="${qz.map((q,i)=>x(i)+","+y(q.pct)).join(" ")}"/>`;
       qz.forEach((q,i)=>sv+=`<circle cx="${x(i)}" cy="${y(q.pct)}" r="4" fill="#A9CFF2"/>`);
-      return sv+"</svg>";})()}</div>`:""}`;
+      return sv+"</svg>";})()}</div>`:""}
+    <div id="pg-ai"></div>`;
+  /* live-AI examiner analysis on top of the data-driven prediction */
+  if(window.SYAI&&SYAI.ready()){
+    const box=document.getElementById("pg-ai");
+    box.innerHTML='<div class="note">Writing your examiner analysis with '+SYAI.provider()+'…</div>';
+    SYAI.ask("You are a "+(PROFILE.level||"GCSE")+" "+subj+" examiner. Given a student's data, write a specific 4–6 sentence prediction analysis: what the trajectory means, the 2–3 topics most likely capping the grade, and exactly what to do in the next 2 weeks to move up one grade. No generic advice; be concrete for this subject. Use markdown.",
+      "Data: quiz scores in order: "+qz.map(q=>q.pct+"%").join(", ")+". Blended mastery "+mastery+"%. Predicted Grade "+grade+". Trend "+trend+"."+(tgt?" Target grade "+tgt+".":""),{maxTokens:600})
+    .then(t=>{box.innerHTML='<div class="card" style="margin-top:10px"><div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:4px">Live AI examiner analysis</div>'+SYAI.render(t)+'</div>'})
+    .catch(()=>{box.innerHTML=''});
+  }
 };
 
 /* ============================ INTERACTIVE LESSON ============================ */
@@ -2931,6 +2972,24 @@ document.getElementById("il-go").onclick=()=>{
   logEvent("lesson","Interactive lesson: "+_L.topic,level+" level — interactive lesson started.");
   document.getElementById("il-sub").textContent=_L.topic+" · "+level+(_L.type?" · interactive walkthrough with marked practice":" · guided walkthrough")+" — step through, then take the quiz.";
   renderLesson();
+  /* live AI writes the real taught content for conceptual topics (quantitative
+     topics already have computed teaching, examples and marked practice) */
+  if(!_L.type&&window.SYAI&&SYAI.ready()){
+    document.getElementById("il-sub").textContent=_L.topic+" · "+level+" · writing your lesson with "+SYAI.provider()+"…";
+    SYAI.ask("You are StudYear's lesson author for a "+level+(subj?" "+subj:"")+" student. For the topic, return EXACTLY three sections separated by the line '---': (1) a clear, specific explanation of what it is with **bold key terms** (5–8 sentences, real content, not study advice); (2) a worked exam-style example: the question, then 3–5 concrete solution/answer steps; (3) the 3 most common exam traps for this topic, each with the fix. Use markdown, be genuinely educational.",
+      "Topic: "+topic,{maxTokens:1400}).then(t=>{
+      const parts=String(t).split(/\n-{3,}\n?/);
+      const teach=_L.steps.find(s=>s.type==="teach");
+      if(parts[0]&&teach){teach.html=SYAI.render(parts[0]);teach.live=true}
+      if(parts[1]){const ex=_L.steps.find(s=>s.type==="example");
+        if(ex){const lines=parts[1].split("\n").map(x=>x.trim()).filter(Boolean);
+          ex.ex={q:lines[0]?lines[0].replace(/^\*+|\*+$/g,""):("Apply "+_L.topic),steps:lines.slice(1).map(l=>SYAI.render(l)),answer:null};}}
+      const traps=_L.steps.filter(s=>s.type==="teach")[1];
+      if(parts[2]&&traps){traps.html=SYAI.render(parts[2]);traps.live=true}
+      document.getElementById("il-sub").textContent=_L.topic+" · "+level+" · live AI lesson — step through, then take the quiz.";
+      renderLesson();
+    }).catch(()=>{document.getElementById("il-sub").textContent=_L.topic+" · "+level+" · guided walkthrough — step through, then take the quiz."});
+  }
 };
 /* reuse the modal quiz viewer for generated quizzes */
 function openInlineQuiz(r){ r.id=r.id||("gen"+Date.now()); LIB.push(r); openRes(r.id); }

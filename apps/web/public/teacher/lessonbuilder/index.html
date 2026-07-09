@@ -7,6 +7,7 @@
   .module .q{font-size:11.5px;color:var(--gold-300);margin-top:6px}
 </style></head><body>
 <script src="../../guard.js" data-role="teacher" data-base="../../"></script>
+<script src="../../ai.js"></script>
 <div class="shell"><main>
   <div class="k">Institutional staff</div><h1>AI Course Generator</h1>
   <p class="lede">Let our AI build a structured course with modules, topics and quizzes based on any topic you choose.</p>
@@ -45,6 +46,16 @@ $('gen').onclick=function(){
   var pool=schoolAcu();
   if(TW.schoolCode){if(pool<15){$('out').innerHTML='<div class="empty">Your school pool has '+pool+' ACUs — 15 needed. Ask your admin to top up in ACU command.</div>';return}
     var p=SY.schoolGet(TW.schoolCode,'acu',{balance:0,burn:[]});p.balance=Math.max(0,(p.balance||0)-15);p.burn=(p.burn||[]).concat(15);SY.schoolSet(TW.schoolCode,'acu',p);$('acu-note').textContent='Uses 15 ACUs per course. School pool: '+p.balance.toLocaleString()+' ACUs.';}
+  if(window.SYAI&&SYAI.ready()){
+    $('out').innerHTML='<div class="empty">Writing the course with '+SYAI.provider()+'…</div>';
+    SYAI.ask("You are a "+level+" course designer for teachers"+(board?" aligned to the "+board+" exam board":"")+". Produce a 4–6 module course: for each module a '## Module N — <title>' heading, 3–5 concrete subtopics as bullets, and a line '✔ End-of-module quiz: 5 questions'. Real, exam-relevant content. End with a one-line teaching sequence note.","Course topic: "+topic,{maxTokens:1400})
+      .then(function(t){$('out').innerHTML='<div class="module">'+SYAI.render(t)+'</div>';SY.log('course','Live AI course generated',topic+' · '+level);toast('Live AI course generated')})
+      .catch(function(){lbStatic(topic,level,board)});
+    return;
+  }
+  lbStatic(topic,level,board);
+};
+function lbStatic(topic,level,board){
   var mods=[
     {t:'Foundations of '+topic,topics:['Key vocabulary & definitions','Core principles','Why it matters (real-world context)']},
     {t:'Building understanding',topics:['Worked examples','Guided practice','Common misconceptions']},

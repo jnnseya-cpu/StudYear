@@ -8,6 +8,7 @@
   .pack .a{font-family:var(--serif);font-size:30px;color:var(--gold-300)}.pack .p{font-size:20px;margin:6px 0}.pack .save{font-size:11px;color:var(--good)}
 </style></head><body>
 <script src="../../guard.js" data-role="tutor" data-base="../../"></script>
+<script src="../../billing.js"></script>
 <div class="shell"><main>
   <div class="k">Teaching operator</div><h1>Top up your ACU wallet</h1>
   <p class="lede">One-off packs from £3 to £30 — ACUs power the AI Teaching Assistant, diagnostics, planner, interactive lessons, predictions and other metered tools. Premium unlocks tools; usage is always metered (no unlimited AI).</p>
@@ -33,7 +34,9 @@ var promo=0;
 function bal(){return SY.get('acus',0)}
 function draw(){$('bal').textContent=bal().toLocaleString();
   $('packs').innerHTML=PACKS.map(function(p,i){var price=(p.p*(1-promo)).toFixed(2);return '<div class="pack'+(p.best?' best':'')+'">'+(p.best?'<div class="save" style="margin-bottom:4px">Most popular</div>':'<div style="height:17px"></div>')+'<div style="font-size:12px;color:var(--ink-2);margin-bottom:6px">'+p.n+'</div><div class="a">'+p.a.toLocaleString()+'</div><div class="k">ACUs</div><div class="p">£'+price+'</div><div class="save">'+(promo?'code applied':'one-time')+'</div><button class="btn solid" data-buy="'+i+'" style="margin-top:12px;width:100%">Purchase</button></div>'}).join('');
-  $('packs').querySelectorAll('[data-buy]').forEach(function(b){b.onclick=function(){var p=PACKS[+b.dataset.buy];SY.set('acus',bal()+p.a);SY.log('acu','ACU top-up',p.n+' · +'+p.a+' ACUs · £'+(p.p*(1-promo)).toFixed(2));toast('Added '+p.a.toLocaleString()+' ACUs');draw()}});
+  $('packs').querySelectorAll('[data-buy]').forEach(function(b){b.onclick=function(){var p=PACKS[+b.dataset.buy];
+    var act=function(){SY.set('acus',bal()+p.a);SY.log('acu','ACU top-up',p.n+' · +'+p.a+' ACUs · £'+(p.p*(1-promo)).toFixed(2));toast('Added '+p.a.toLocaleString()+' ACUs');draw()};
+    if(window.SYBill){SYBill.checkout('tutor_pack_'+(+b.dataset.buy),{promo:($('promo').value||'').trim(),email:(SY.session&&SY.session.email),activate:act})}else act();}});
 }
 $('applycode').onclick=function(){var c=($('promo').value||'').trim().toUpperCase();if(!c){return}
   var codes={STUDYEAR10:0.10,WELCOME15:0.15,LAUNCH20:0.20};
