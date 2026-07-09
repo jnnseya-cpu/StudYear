@@ -63,50 +63,66 @@
 function $(id){return document.getElementById(id)}function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 $('signout').onclick=function(e){e.preventDefault();SY.signOut()};
 
-/* pull real activity */
-var points=SY.get('points',0)||0;
-var streak=SY.get('streak',0)||0;
-var quizzes=SY.get('quizzes',[])||[];
+/* pull real activity (all coerced to numbers/arrays — the study workspace stores
+   streak as an object {days,best}, so derive the day-count from it) */
+function num(v){v=+v;return isFinite(v)?v:0}
+var points=num(SY.get('points',0));
+var streakObj=SY.get('streak',{days:[]}); if(!streakObj||typeof streakObj!=='object')streakObj={days:[]};
+var streak=(function(){var set=new Set(streakObj.days||[]);var n=0,d=new Date();while(set.has(d.toISOString().slice(0,10))){n++;d.setDate(d.getDate()-1)}return n})();
+var quizzes=SY.get('quizzes',[]); if(!Array.isArray(quizzes))quizzes=[];
 var plan=SY.get('plan',null);
 var diag=(SY.get('diagnostics',[])||[])[0];
-var activity=SY.get('activity',[])||[];
-var profile=SY.get('profile',{});
+var activity=SY.get('activity',[]); if(!Array.isArray(activity))activity=[];
+var profile=SY.get('profile',{})||{};
 var subs=profile.subjects?profile.subjects.length:0;
-var highScores=quizzes.filter(function(q){return q.pct>=80}).length;
-var avgQuiz=quizzes.length?Math.round(quizzes.reduce(function(a,q){return a+q.pct},0)/quizzes.length):0;
+var highScores=quizzes.filter(function(q){return num(q.pct)>=80}).length;
+var avgQuiz=quizzes.length?Math.round(quizzes.reduce(function(a,q){return a+num(q.pct)},0)/quizzes.length):0;
 var planDone=plan&&plan.done?Object.keys(plan.done).length:0;
+var lessons=activity.filter(function(a){return a.k==='lesson'}).length;
 var courses=activity.filter(function(a){return a.k==='course'}).length;
 var reviews=activity.filter(function(a){return a.k==='review'}).length;
 
-/* XP: points + quizzes + streak + plan */
-var xp=points+quizzes.length*10+streak*5+planDone*8+highScores*6+courses*25;
+/* XP: points + quizzes + streak + plan (all numeric) */
+var xp=num(points+quizzes.length*10+streak*5+planDone*8+highScores*6+courses*25);
 var level=Math.max(1,Math.floor(Math.sqrt(xp/40))+1);
 var thisLevelXp=(level-1)*(level-1)*40, nextLevelXp=level*level*40;
 var pct=Math.round(100*(xp-thisLevelXp)/Math.max(1,(nextLevelXp-thisLevelXp)));
 $('lvl').innerHTML=level+'<br><small>LEVEL</small>';
 $('xp').style.width=Math.max(3,Math.min(100,pct))+'%';
-$('xp-note').textContent=(nextLevelXp-xp)+' XP to level '+(level+1);
+$('xp-note').textContent=Math.max(0,nextLevelXp-xp)+' XP to level '+(level+1);
 $('s-xp').textContent=xp.toLocaleString();$('s-streak').textContent=streak;
 
 /* badges: {icon,title,desc, have, prog} */
 function tier(v,steps){var got=steps.filter(function(s){return v>=s}).length;var next=steps.find(function(s){return v<s});return {got:got,next:next,max:steps.length}}
+/* ordered as a progression journey: getting started → building habits →
+   improving → mastery → legend. Each badge carries a numeric progress 0–100
+   so the row also sorts earned-first within the journey. */
+function pctOf(v,target){return Math.max(0,Math.min(100,Math.round(100*num(v)/target)))}
 var BADGES=[
-  {ic:'🔥',t:'Streak keeper',d:'Study day after day',have:streak>=3,prog:streak+'/3 days'},
-  {ic:'⚡',t:'On a roll',d:'14-day streak',have:streak>=14,prog:streak+'/14 days'},
-  {ic:'🧠',t:'Quiz taker',d:'Complete 10 quizzes',have:quizzes.length>=10,prog:quizzes.length+'/10'},
-  {ic:'🎯',t:'Sharpshooter',d:'10 quizzes at 80%+',have:highScores>=10,prog:highScores+'/10'},
-  {ic:'📈',t:'Rising star',d:'Average quiz score 70%+',have:avgQuiz>=70,prog:avgQuiz+'%'},
-  {ic:'🗺️',t:'Explorer',d:'Study 4+ subjects',have:subs>=4,prog:subs+'/4'},
-  {ic:'✅',t:'Plan finisher',d:'Complete 10 plan sessions',have:planDone>=10,prog:planDone+'/10'},
-  {ic:'📚',t:'Course grad',d:'Finish an AI course',have:courses>=1,prog:courses+'/1'},
-  {ic:'✍️',t:'Draft master',d:'Use assignment review 3×',have:reviews>=3,prog:reviews+'/3'},
-  {ic:'🩺',t:'Self-aware',d:'Complete a diagnostic',have:!!diag,prog:diag?'done':'0/1'},
-  {ic:'🏆',t:'Century',d:'Earn 100 quizzes',have:quizzes.length>=100,prog:quizzes.length+'/100'},
-  {ic:'🌟',t:'Legend',d:'Reach level 10',have:level>=10,prog:'Lvl '+level+'/10'}
+  /* 1 · first steps */
+  {ic:'🩺',t:'Self-aware',d:'Complete a diagnostic',have:!!diag,prog:diag?'done':'0/1',p:diag?100:0},
+  {ic:'🧠',t:'First quiz',d:'Complete your first quiz',have:quizzes.length>=1,prog:Math.min(quizzes.length,1)+'/1',p:pctOf(quizzes.length,1)},
+  {ic:'📖',t:'Lesson learner',d:'Finish an interactive lesson',have:lessons>=1,prog:lessons+'/1',p:pctOf(lessons,1)},
+  {ic:'🗺️',t:'Explorer',d:'Study 4+ subjects',have:subs>=4,prog:subs+'/4',p:pctOf(subs,4)},
+  /* 2 · building habits */
+  {ic:'🔥',t:'Streak keeper',d:'3-day study streak',have:streak>=3,prog:streak+'/3 days',p:pctOf(streak,3)},
+  {ic:'✅',t:'Plan finisher',d:'Complete 10 plan sessions',have:planDone>=10,prog:planDone+'/10',p:pctOf(planDone,10)},
+  {ic:'🧠',t:'Quiz taker',d:'Complete 10 quizzes',have:quizzes.length>=10,prog:quizzes.length+'/10',p:pctOf(quizzes.length,10)},
+  {ic:'⚡',t:'On a roll',d:'14-day streak',have:streak>=14,prog:streak+'/14 days',p:pctOf(streak,14)},
+  /* 3 · improving & mastery */
+  {ic:'📈',t:'Rising star',d:'Average quiz score 70%+',have:avgQuiz>=70,prog:avgQuiz+'%',p:pctOf(avgQuiz,70)},
+  {ic:'🎯',t:'Sharpshooter',d:'10 quizzes at 80%+',have:highScores>=10,prog:highScores+'/10',p:pctOf(highScores,10)},
+  {ic:'📚',t:'Course grad',d:'Finish an AI course',have:courses>=1,prog:courses+'/1',p:pctOf(courses,1)},
+  {ic:'✍️',t:'Draft master',d:'Use assignment review 3×',have:reviews>=3,prog:reviews+'/3',p:pctOf(reviews,3)},
+  /* 4 · legend */
+  {ic:'🏆',t:'Century',d:'Take 100 quizzes',have:quizzes.length>=100,prog:quizzes.length+'/100',p:pctOf(quizzes.length,100)},
+  {ic:'🌟',t:'Legend',d:'Reach level 10',have:level>=10,prog:'Lvl '+level+'/10',p:pctOf(level,10)}
 ];
 var earned=BADGES.filter(function(b){return b.have});
 $('s-badges').textContent=earned.length;
-$('badges').innerHTML=BADGES.map(function(b){return '<div class="badge2 '+(b.have?'on':'off')+'"><div class="ic">'+b.ic+'</div><div class="bt">'+esc(b.t)+'</div><div class="bd">'+esc(b.d)+'</div><div class="prog">'+(b.have?'✓ earned':esc(b.prog))+'</div></div>'}).join('');
+$('badges').innerHTML=BADGES.map(function(b){
+  var barb=b.have?'':'<div class="bar" style="height:5px;border-radius:4px;background:rgba(170,182,204,.14);overflow:hidden;margin-top:7px"><i style="display:block;height:100%;width:'+b.p+'%;background:var(--gold-500)"></i></div>';
+  return '<div class="badge2 '+(b.have?'on':'off')+'"><div class="ic">'+b.ic+'</div><div class="bt">'+esc(b.t)+'</div><div class="bd">'+esc(b.d)+'</div><div class="prog">'+(b.have?'✓ earned':esc(b.prog))+'</div>'+barb+'</div>'}).join('');
 
 /* certificates for milestones */
 var CERTS=[

@@ -1043,16 +1043,25 @@ function setSelect(id,val){
   if([...el.options].some(o=>o.value===val||o.textContent===val)){el.value=val;return true}
   return false;
 }
+/* Generic profile prefill: auto-fill EVERY level / subject / exam-board select
+   across all create tools from the student's profile — detected by the select's
+   own options, so new tools are covered automatically and type-pickers (Tool
+   type, Table type…) are never touched. Subjects rotate so decks aren't all
+   locked to one subject. */
 function applyProfileDefaults(){
-  const subs=(PROFILE.subjects||[]).map(x=>x.s);
+  const subs=(PROFILE.subjects||[]).map(x=>x.s).filter(Boolean);
   const primary=subs[0]||null, level=PROFILE.level||null, board=PROFILE.board||null;
-  /* level everywhere it's offered */
-  ["c-f-level","c-n-level","c-q-level","c-t-level","c-x-level","c-b-level","c-s-level","c-m-level","c-l-level","c-v-level","c-e-level","c-sm-level","g-fc-level","g-qz-level","g-fm-level","g-mm-level","pp-level","dd-level","il-level","cg-level","ar-level"].forEach(id=>setSelect(id,level));
-  /* board everywhere */
-  ["pp-board","dd-board","ar-board"].forEach(id=>setSelect(id,board));
-  /* spread the student's subjects across the creators so they aren't all locked to one */
-  const subjIds=["c-f-subj","c-n-subj","c-q-subj","c-t-subj","c-x-subj","c-b-subj","c-s-subj","c-m-subj","c-l-subj","c-v-subj","c-e-subj","c-sm-subj","g-fc-subj","g-qz-subj","g-mm-subj","pp-subj","ar-subj","dd-subj"];
-  subjIds.forEach((id,i)=>setSelect(id, subs.length?subs[i%subs.length]:primary));
+  let si=0;
+  document.querySelectorAll('select').forEach(function(el){
+    const id=(el.id||'').toLowerCase();
+    const opts=[...el.options].map(o=>o.value||o.textContent);
+    const isLevel=/level/.test(id)||opts.some(o=>LEVELS.includes(o));
+    const isBoard=/board/.test(id);
+    const isSubj=/subj/.test(id)||opts.some(o=>SUBJECTS.includes(o));
+    if(level&&isLevel&&opts.includes(level)){el.value=level;return}
+    if(board&&isBoard&&opts.includes(board)){el.value=board;return}
+    if(subs.length&&isSubj){const pick=subs[si%subs.length];if(opts.includes(pick)){el.value=pick;si++;return}if(primary&&opts.includes(primary)){el.value=primary;return}}
+  });
 }
 applyProfileDefaults();
 
@@ -1407,8 +1416,27 @@ function viewMap(r,head){
 
 /* ============================ CREATE ============================ */
 const $v=id=>document.getElementById(id).value;
+/* forgiving line parser — accepts ::, |, tab, comma, " - ", ":" or 2+ spaces as
+   the separator, and even "label value" (last token) when 2 parts are needed and
+   the final token is a number. So natural input like "math 12" or "aller, to go"
+   works, not only the strict "front :: back". */
+function splitLine(l){
+  l=l.trim();
+  if(l.includes("::"))return l.split("::");
+  if(l.includes("\t"))return l.split("\t");
+  if(l.includes(" | ")||l.includes("|"))return l.split("|");
+  if(/\s[-–]\s/.test(l))return l.split(/\s[-–]\s/);
+  if(l.includes(","))return l.split(",");
+  if(/\s{2,}/.test(l))return l.split(/\s{2,}/);
+  if(l.includes(":"))return l.split(":");
+  var m=l.match(/^(.*\S)\s+(-?\d+(?:\.\d+)?)$/);  /* "math 12" -> ["math","12"] */
+  if(m)return [m[1],m[2]];
+  return [l];
+}
 function parseLines(id,minParts){
-  return $v(id).split("\n").map(l=>l.split("::").map(s=>s.trim())).filter(p=>p.length>=minParts&&p.every((s,i)=>i>=minParts||s));
+  return $v(id).split("\n").map(l=>l.trim()).filter(Boolean)
+    .map(l=>splitLine(l).map(s=>s.trim()).filter(Boolean))
+    .filter(p=>p.length>=minParts);
 }
 function saveMine(obj,sfx,msg,clearIds){
   const mine=store.get("mine",[]);
@@ -2625,10 +2653,9 @@ fillSelect(document.getElementById("il-subj"),SUBJECTS);
 fillSelect(document.getElementById("cg-level"),LEVELS);
 document.getElementById("il-level").value=(PROFILE.level&&LEVELS.includes(PROFILE.level))?PROFILE.level:"GCSE";
 document.getElementById("cg-level").value=(PROFILE.level&&LEVELS.includes(PROFILE.level))?PROFILE.level:"GCSE";
-/* prefill Subject (interactive lesson) and Exam Board (course generator) from the student profile */
-(function(){var subs=(PROFILE.subjects||[]).map(x=>x.s);var primary=subs[0];
-  if(primary)setSelect("il-subj",primary);
-  if(PROFILE.board)setSelect("cg-board",PROFILE.board);})();
+/* re-run the generic profile prefill now that every late-built select has its
+   options, so Subject/Level/Exam-board are filled across ALL create tools */
+try{applyProfileDefaults()}catch(e){}
 document.getElementById("il-price").textContent=IL_PRICE;
 document.getElementById("cg-price").textContent=CG_PRICE;
 function refreshBalances(){
