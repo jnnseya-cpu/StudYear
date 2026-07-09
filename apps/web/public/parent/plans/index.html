@@ -50,6 +50,7 @@
 </head>
 <body>
 <script src="../../guard.js" data-role="parent" data-base="../../"></script>
+<script src="../../billing.js"></script>
 <div class="wrap">
 <div class="top">
   <a class="logo" href="../../">⌂ <b class="wm">StudYear</b></a>
@@ -126,11 +127,16 @@ $('plans').innerHTML=PLANS.map(function(p){return '<div class="plan'+(p.rec?' re
 $('plans').addEventListener('click',function(e){
   var b=e.target.closest('[data-plan]');if(!b)return;
   var pl=PLANS.find(function(x){return x.id===b.dataset.plan});
-  wallet.plan=pl.id;wallet.acus=(wallet.acus||0)+pl.acus;wallet.month=monthKey();
-  wallet.planStart=new Date().toISOString();wallet.planExpires=new Date(Date.now()+30*DAY).toISOString();
-  SY.set('wallet',wallet);drawWallet();
-  SY.log('billing','Started '+pl.label,fmt(pl.acus)+' ACUs added · 30-day term, ends '+fmtDay(wallet.planExpires)+' with no auto-renewal.');
-  toast('Preview '+pl.label+(promo?' ('+promo+')':'')+' active — runs 30 days then stops automatically (no auto-renewal).');
+  var activate=function(){
+    wallet.plan=pl.id;wallet.acus=(wallet.acus||0)+pl.acus;wallet.month=monthKey();
+    wallet.planStart=new Date().toISOString();wallet.planExpires=new Date(Date.now()+30*DAY).toISOString();
+    SY.set('wallet',wallet);drawWallet();
+    SY.log('billing','Started '+pl.label,fmt(pl.acus)+' ACUs added · 30-day term, ends '+fmtDay(wallet.planExpires)+' with no auto-renewal.');
+    toast('Preview '+pl.label+(promo?' ('+promo+')':'')+' active — runs 30 days then stops automatically (no auto-renewal).');
+  };
+  /* real Stripe checkout when payment links are configured; else preview-activate */
+  if(window.SYBill){SYBill.checkout(pl.id,{promo:promo,email:(SY.session&&SY.session.email),ref:(SY.session&&SY.session.email),activate:activate})}
+  else activate();
 });
 drawWallet();
 })();

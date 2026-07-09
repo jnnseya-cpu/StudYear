@@ -42,6 +42,7 @@
 </head>
 <body>
 <script src="../../guard.js" data-role="school" data-base="../../"></script>
+<script src="../../billing.js"></script>
 <div class="wrap">
 <div class="top"><a class="logo" href="../../">⌂ <b class="wm">StudYear</b></a><a class="chip" href="../">← Command Centre</a></div>
 <header><h1>School subscription plans</h1><p>Subscribe your institution through Stripe. Each plan includes a monthly shared ACU pool for all staff and students. Top up with additional ACU packs anytime.</p></header>
@@ -108,10 +109,13 @@ $('packs').innerHTML=PACKS.map(function(p){return '<div class="pack'+(p.pop?' po
 
 document.body.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
   if(b.dataset.plan){var pl=PLANS.find(function(x){return x.id===b.dataset.plan});
-    sub={plan:pl.id,start:new Date().toISOString(),expires:new Date(Date.now()+30*DAY).toISOString()};SY.set('schoolSub',sub);
-    pool.balance=(pool.balance||0)+pl.acus;SY.schoolSet(code,'acu',pool);draw();
-    SY.log('billing','Started '+pl.label,fmt(pl.acus)+' shared ACUs added · 30-day term, ends '+fmtDay(sub.expires)+' (no auto-renewal).');
-    toast('Preview '+pl.label+(promo?' ('+promo+')':'')+' — '+fmt(pl.acus)+' ACUs added to the pool. Runs 30 days then stops (no auto-renewal).');}
+    var activate=function(){
+      sub={plan:pl.id,start:new Date().toISOString(),expires:new Date(Date.now()+30*DAY).toISOString()};SY.set('schoolSub',sub);
+      pool.balance=(pool.balance||0)+pl.acus;SY.schoolSet(code,'acu',pool);draw();
+      SY.log('billing','Started '+pl.label,fmt(pl.acus)+' shared ACUs added · 30-day term, ends '+fmtDay(sub.expires)+' (no auto-renewal).');
+      toast('Preview '+pl.label+(promo?' ('+promo+')':'')+' — '+fmt(pl.acus)+' ACUs added to the pool. Runs 30 days then stops (no auto-renewal).');};
+    if(window.SYBill){SYBill.checkout(pl.id,{promo:promo,email:(SY.session&&SY.session.email),ref:code,activate:activate})}else activate();
+    return;}
   if(b.dataset.pack){var pk=PACKS.find(function(x){return x.id===b.dataset.pack});
     pool.balance=(pool.balance||0)+pk.acus;SY.schoolSet(code,'acu',pool);draw();
     SY.log('billing',pk.label+' purchased',fmt(pk.acus)+' ACUs added to the school pool.');

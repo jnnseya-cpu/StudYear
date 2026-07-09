@@ -28,6 +28,7 @@
 </style></head><body>
 <script src="../../guard.js" data-role="admin" data-base="../../"></script>
 <script src="../../ai.js"></script>
+<script src="../../billing.js"></script>
 <div class="shell">
 <aside><a class="slogo" href="../../">⌂ <b class="wm">StudYear</b></a><nav>
   <a href="../">Overview</a><a href="../#users">Users</a><a href="../#tutors">Tutors</a><a href="../../blog/admin/">Blog studio</a><a href="../#schools">Schools</a><a href="./" class="on">AI Gateway</a><a href="#" id="signout">Sign out</a>
@@ -68,6 +69,12 @@
       <span class="note" id="live-state" style="font-size:11.5px"></span>
     </div>
     <div id="live-out" class="note" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card" style="margin-top:20px;border-color:rgba(201,133,0,.4)"><h3>💳 Turn subscriptions live (Stripe Payment Links)</h3>
+    <div class="sub">Paste one Stripe <b>Payment Link</b> per plan — one line each as <code>planId https://buy.stripe.com/…</code>. Subscribe buttons then redirect to real Stripe checkout with the buyer's promo code prefilled. Leave blank to keep preview activation. No server needed; a Firebase/Vercel Checkout-Session server can replace this later.</div>
+    <textarea id="pay-links" rows="6" placeholder="parent_pro https://buy.stripe.com/xxx&#10;parent_elite https://buy.stripe.com/yyy&#10;school_medium https://buy.stripe.com/zzz" style="width:100%;font-family:monospace;font-size:12.5px"></textarea>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn solid" id="pay-save">Save payment links</button><button class="btn ghost" id="pay-off">Clear (revert to preview)</button><span class="note" id="pay-state" style="font-size:11.5px"></span></div>
   </div>
 </main>
 </div>
@@ -145,6 +152,18 @@ $('live-test').onclick=function(){
   }).catch(function(e){$('live-out').innerHTML='<span style="color:#f0a0a0">✗ '+String(e.message||e)+'</span><br><span class="note">If this is a CORS/401 error, check the key and that the provider allows browser calls (Gemini is the most browser-friendly).</span>'});
 };
 liveState();
+
+/* ---- live billing (Stripe payment links) ---- */
+function payState(){var c=window.SYBill&&SYBill.cfg&&SYBill.cfg();var n=c&&c.links?Object.keys(c.links).length:0;
+  $('pay-state').innerHTML=n?'<span style="color:var(--good)">● Live — '+n+' plan link(s)</span>':'<span style="color:var(--ink-3)">Off — preview activation</span>'}
+(function(){var c=window.SYBill&&SYBill.cfg&&SYBill.cfg();if(c&&c.links){$('pay-links').value=Object.keys(c.links).map(function(k){return k+' '+c.links[k]}).join('\n')}})();
+$('pay-save').onclick=function(){
+  var links={};($('pay-links').value||'').split('\n').forEach(function(l){var m=l.trim().match(/^(\S+)\s+(\S+)$/);if(m)links[m[1]]=m[2]});
+  if(!Object.keys(links).length){toast('Add at least one "planId https://…" line');return}
+  SYBill.setConfig({links:links});SY.log('gateway','Stripe payment links saved',Object.keys(links).length+' plans');toast('Payment links saved — Subscribe now uses real Stripe');payState();
+};
+$('pay-off').onclick=function(){SYBill.clear();$('pay-links').value='';toast('Cleared — subscriptions revert to preview activation');payState()};
+payState();
 })();
 </script>
 </body></html>
