@@ -244,10 +244,45 @@ function linkToSchool(code){
   /* remove any pending invite for me */
   var pend=SY.schoolGet(code,'pending',[]);var np=pend.filter(function(p){return (p.email||'').toLowerCase()!==myEmail()});if(np.length!==pend.length)SY.schoolSet(code,'pending',np);
   data.schoolCode=code;data.schoolName=name||data.schoolName||('School '+code);
+  /* pre-fill teacher sections from the school's published information (only where the teacher hasn't set them) */
+  prefillFromSchool(code);
+  /* feed the teacher's teaching sections up to the school staff record */
+  syncStaffRecord(code);
   SY.log('school','Linked to school',data.schoolName);
   return true;
 }
+/* school -> teacher: fill blank Employment/Teaching fields from the school's curriculum + identity */
+function prefillFromSchool(code){
+  var has=function(v){return v!=null&&String(v).trim()!==''};
+  var schoolName=SY.schoolGet(code,'name','');
+  if(!has(data.school))data.school=schoolName||data.school;
+  var cur=SY.schoolGet(code,'curriculum',null);
+  if(cur){
+    if(!has(data.examBoards)&&has(cur.examBoards))data.examBoards=cur.examBoards;
+    if(!has(data.yearGroups)&&has(cur.yearGroups))data.yearGroups=cur.yearGroups;
+    /* remember the school's offered subjects so the AI tools can constrain to them */
+    if(has(cur.subjectsOffered))data.schoolSubjects=cur.subjectsOffered;
+  }
+}
+/* teacher -> school: keep the staff record in step with the teacher's own sections */
+function syncStaffRecord(code){
+  code=code||data.schoolCode;if(!code)return;
+  var staff=SY.schoolGet(code,'staff',[]);var mine=staff.find(function(t){return (t.email||'').toLowerCase()===myEmail()});
+  if(!mine){mine={email:myEmail(),cohorts:[],students:[]};staff.push(mine)}
+  mine.name=teacherName();
+  var subj=(data.subjects||'').split(',').map(function(s){return s.trim()}).filter(Boolean);
+  mine.subjects=subj;
+  mine.yearGroups=data.yearGroups||'';
+  mine.examBoards=data.examBoards||'';
+  mine.department=data.department||'';
+  mine.position=data.position||'';
+  /* if no explicit cohorts assigned yet, seed them from the teacher's year groups so tools have sections to work with */
+  if((!mine.cohorts||!mine.cohorts.length)&&data.yearGroups)mine.cohorts=String(data.yearGroups).split(/[,;/–-]/).map(function(s){return s.trim()}).filter(Boolean);
+  SY.schoolSet(code,'staff',staff);
+}
 function teacherName(){return ((data.title?data.title+' ':'')+(data.firstName||'')+' '+(data.lastName||'')).trim()||S.name||myEmail()}
+/* push data[] back into the rendered inputs (used after a school pre-fill) */
+function syncInputs(){try{document.querySelectorAll('[data-fk]').forEach(function(inp){var k=inp.dataset.fk;if(data[k]!=null&&inp.value!==data[k])inp.value=data[k]})}catch(e){}}
 function myClassCode(){if(!data.classCode)data.classCode='T'+(myEmail().replace(/[^a-z0-9]/g,'').slice(0,4)||'CLS').toUpperCase()+(''+(Math.abs(hash(myEmail()))%9000+1000));return data.classCode}
 function hash(s){var h=0;for(var i=0;i<s.length;i++){h=((h<<5)-h+s.charCodeAt(i))|0}return h}
 function myStudents(){return data.students=data.students||[]}
@@ -295,9 +330,9 @@ SECTIONS.forEach(function(sec){
     var ag=el('div','agrid');
     TEACHER_AGENTS.forEach(function(a){
       var c=el('div','agent');c.appendChild(el('div','ai-ic',a.i));c.appendChild(el('div','an',a.l));c.appendChild(el('div','ad',a.d));
-      var on=!a.gate||!!data[a.gate];var stt=el('span','stat '+(on?'on':'off'));stt.innerHTML='<span class="dot"></span>'+(on?'Active':'Standby');stt.dataset.gate=a.gate||'';c.appendChild(stt);ag.appendChild(c);
+      var on=true;var stt=el('span','stat '+(on?'on':'off'));stt.innerHTML='<span class="dot"></span>'+(on?'Active':'Standby');stt.dataset.gate=a.gate||'';c.appendChild(stt);ag.appendChild(c);
     });
-    card.appendChild(ag);card.appendChild(el('div','note','Standby agents activate instantly when you enable the matching permission in section 10.'));form.appendChild(card);return;
+    card.appendChild(ag);card.appendChild(el('div','note','Every agent in your AI teaching team is active. The permissions in section 10 govern what each one is allowed to do on your behalf.'));form.appendChild(card);return;
   }
   if(sec.type==='schoollink'){
     card.appendChild(el('div','acu-note','💳 Teachers don’t buy ACUs — every AI action you run draws from your school’s shared ACU pool. Your school manages the balance in ACU command.'));
@@ -333,8 +368,8 @@ SECTIONS.forEach(function(sec){
     if(fl.t==='textarea'){input=el('textarea');input.rows=3}
     else if(fl.t==='select'){input=el('select');var o0=el('option',null,'Select…');o0.value='';input.appendChild(o0);fl.opts.forEach(function(o){var op=el('option',null,o);op.value=o;input.appendChild(op)})}
     else{input=el('input');input.type=(fl.t==='date'?'date':'text')}
-    if(fl.ph)input.placeholder=fl.ph;if(data[fl.k]!=null)input.value=data[fl.k];
-    input.oninput=function(){data[fl.k]=input.value;refresh()};input.onchange=function(){data[fl.k]=input.value;refresh()};
+    if(fl.ph)input.placeholder=fl.ph;if(data[fl.k]!=null)input.value=data[fl.k];input.dataset.fk=fl.k;
+    input.oninput=function(){data[fl.k]=input.value;refresh()};input.onchange=function(){data[fl.k]=input.value;if(data.schoolCode)syncStaffRecord(data.schoolCode);refresh()};
     box.appendChild(input);grid.appendChild(box);
   });
   card.appendChild(grid);form.appendChild(card);
@@ -350,10 +385,10 @@ function renderSchool(lsWrap,studWrap){
   }else{
     var ls=el('div','linkstate');ls.innerHTML='<div class="big">Not linked to a school yet</div><div class="small">Accept an invitation from your school, or enter the school join code.</div>';lsWrap.appendChild(ls);
     var invites=findInvites();
-    invites.forEach(function(iv){var b=el('div','invite');b.innerHTML='<span style="flex:1"><b>'+esc(iv.name)+'</b> invited you to join.</span>';var acc=el('button','btn solid sm','Accept invitation');acc.onclick=function(){if(linkToSchool(iv.code)){SY.set('teacherProfile',data);toast('Joined '+data.schoolName);renderSchool(lsWrap,studWrap);refresh()}};b.appendChild(acc);lsWrap.appendChild(b)});
+    invites.forEach(function(iv){var b=el('div','invite');b.innerHTML='<span style="flex:1"><b>'+esc(iv.name)+'</b> invited you to join.</span>';var acc=el('button','btn solid sm','Accept invitation');acc.onclick=function(){if(linkToSchool(iv.code)){SY.set('teacherProfile',data);syncInputs();toast('Joined '+data.schoolName+' — your sections were pre-filled from the school');renderSchool(lsWrap,studWrap);refresh()}};b.appendChild(acc);lsWrap.appendChild(b)});
     var row=el('div');row.style.cssText='display:flex;gap:8px;margin-top:10px;flex-wrap:wrap';
     var inp=el('input');inp.placeholder='School join code';inp.style.maxWidth='220px';
-    var go=el('button','btn solid sm','Link to school');go.onclick=function(){if(linkToSchool(inp.value)){SY.set('teacherProfile',data);toast('Linked to '+data.schoolName);renderSchool(lsWrap,studWrap);refresh()}};
+    var go=el('button','btn solid sm','Link to school');go.onclick=function(){if(linkToSchool(inp.value)){SY.set('teacherProfile',data);syncInputs();toast('Linked to '+data.schoolName+' — your sections were pre-filled from the school');renderSchool(lsWrap,studWrap);refresh()}};
     row.appendChild(inp);row.appendChild(go);lsWrap.appendChild(row);
   }
   /* students — multiple ways */
@@ -425,7 +460,7 @@ function refresh(){
   var doneCount=SECTIONS.filter(sectionDone).length;
   $('setup-note').textContent=(pct===100?'Core registration complete. ':filled+' of '+REQUIRED.length+' required fields complete. ')+doneCount+' of '+SECTIONS.length+' sections started.';
   SECTIONS.forEach(function(sec){var a=$('rail-'+sec.id);if(a)a.className=sectionDone(sec)?'done':''});
-  document.querySelectorAll('.agent .stat').forEach(function(st){var g=st.dataset.gate;var on=!g||!!data[g];st.className='stat '+(on?'on':'off');st.innerHTML='<span class="dot"></span>'+(on?'Active':'Standby')});
+  document.querySelectorAll('.agent .stat').forEach(function(st){st.className='stat on';st.innerHTML='<span class="dot"></span>Active'});
   var v=$('verify');
   if(pct===100){v.className='verify ok';v.innerHTML='✓ Core details recorded. Submit your Verification documents (section 11) when ready — our team confirms your professional status. You can use every feature meanwhile.';}
   else{v.className='verify';v.innerHTML='⚠ Your profile shows as <b>incomplete</b> until name and email are saved.';}
@@ -451,7 +486,7 @@ $('save').onclick=function(){
   try{SY.set('teacherProfile',data)}catch(e){toast('Storage full — remove a large upload and retry');return}
   var profile=SY.get('profile',{});profile.name=name;if(data.photo)profile.photo=data.photo;SY.set('profile',profile);
   try{var us=JSON.parse(localStorage.getItem('sy-users'))||[];var me=us.find(function(u){return u.email===S.email&&u.role==='teacher'});if(me){me.name=name;localStorage.setItem('sy-users',JSON.stringify(us))}S.name=name;localStorage.setItem('sy-session',JSON.stringify(S))}catch(e){}
-  if(data.schoolCode){var staff=SY.schoolGet(data.schoolCode,'staff',[]);var mine=staff.find(function(t){return (t.email||'').toLowerCase()===myEmail()});if(mine)mine.name=name;SY.schoolSet(data.schoolCode,'staff',staff)}
+  if(data.schoolCode){syncStaffRecord(data.schoolCode)}
   SY.log('profile','Teacher registration saved',name+(data.schoolName?' · '+data.schoolName:''));
   $('saved-at').textContent='Saved '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
   toast('Registration saved');refresh();

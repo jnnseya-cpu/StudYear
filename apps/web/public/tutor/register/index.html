@@ -301,8 +301,8 @@ SECTIONS.forEach(function(sec){
   if(sec.type==='marketplace'){renderMarketplace(card);form.appendChild(card);return}
   if(sec.type==='agents'){
     var ag=el('div','agrid');
-    TUTOR_AGENTS.forEach(function(a){var c=el('div','agent');c.appendChild(el('div','ai-ic',a.i));c.appendChild(el('div','an',a.l));c.appendChild(el('div','ad',a.d));var on=!a.gate||!!data[a.gate];var stt=el('span','stat '+(on?'on':'off'));stt.innerHTML='<span class="dot"></span>'+(on?'Active':'Standby');stt.dataset.gate=a.gate||'';c.appendChild(stt);ag.appendChild(c)});
-    card.appendChild(ag);card.appendChild(el('div','note','Standby agents activate the instant you enable the matching permission in section 12.'));form.appendChild(card);return;
+    TUTOR_AGENTS.forEach(function(a){var c=el('div','agent');c.appendChild(el('div','ai-ic',a.i));c.appendChild(el('div','an',a.l));c.appendChild(el('div','ad',a.d));var on=true;var stt=el('span','stat '+(on?'on':'off'));stt.innerHTML='<span class="dot"></span>'+(on?'Active':'Standby');stt.dataset.gate=a.gate||'';c.appendChild(stt);ag.appendChild(c)});
+    card.appendChild(ag);card.appendChild(el('div','note','Your full 15-agent AI workforce is active. The permissions in section 12 govern what each one may do on your behalf.'));form.appendChild(card);return;
   }
   renderFields(card,sec.fields);form.appendChild(card);
 });
@@ -406,7 +406,7 @@ function refresh(){
   $('setup-note').textContent=pct+'% complete · '+doneCount+' of '+SECTIONS.length+' sections started.';
   var tr=tierFor();var tEl=$('tier');tEl.className='tier '+tr[0];tEl.textContent=tr[1];
   SECTIONS.forEach(function(sec){var a=$('rail-'+sec.id);if(a)a.className=(sectionDone(sec)?'done':'')+(sec.ess?' ess':'')});
-  document.querySelectorAll('.agent .stat').forEach(function(st){var g=st.dataset.gate;var on=!g||!!data[g];st.className='stat '+(on?'on':'off');st.innerHTML='<span class="dot"></span>'+(on?'Active':'Standby')});
+  document.querySelectorAll('.agent .stat').forEach(function(st){st.className='stat on';st.innerHTML='<span class="dot"></span>Active'});
   renderBadges();renderConcierge();
   var v=$('verify');var allReq=REQUIRED.every(function(r){return has(data[r[0]])});
   if(allReq){v.className='verify ok';v.innerHTML='✓ Core details recorded. Complete verification and publish to start receiving bookings. You can use every feature meanwhile.';}

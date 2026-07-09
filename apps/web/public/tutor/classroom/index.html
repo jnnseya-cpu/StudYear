@@ -17,14 +17,18 @@
     <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <div style="flex:1;min-width:220px"><label class="f" style="margin-top:0">Room ID</label><input id="room" readonly style="font-family:var(--serif);font-size:13px"></div>
     </div>
+    <label class="f">Invite students (they join from their Live Classroom)</label>
+    <select id="inv-stu"><option value="">— everyone with a StudYear account —</option></select>
     <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn solid" id="start">Start video room</button>
+      <button class="btn solid" id="start">Start &amp; invite</button>
       <a class="btn" id="open" target="_blank" rel="noopener">Open in new tab ↗</a>
       <button class="btn ghost" id="copy">Copy invite link</button>
       <button class="btn ghost" id="rec" title="Recording">● Record</button>
+      <button class="btn ghost" id="end" style="display:none">End session</button>
     </div>
+    <div id="invite-status" class="note"></div>
     <div id="video" style="margin-top:14px"></div>
-    <div class="note">Jitsi runs across the StudYear OS for video teaching &amp; learning. The invite link works for students, parents and colleagues.</div>
+    <div class="note">Jitsi runs across the StudYear OS for video teaching &amp; learning. Invited students see a “Join now” button in their Live Classroom; the copy link also works for parents and colleagues.</div>
   </div>
 
   <div class="card"><h3>🧑‍🏫 AI-prepared lesson</h3><div class="sub">Explain with AI — StudYear preps the session so you can teach</div><div class="two">
@@ -52,10 +56,31 @@ function roomUrl(){return 'https://meet.jit.si/'+roomName()}
 $('room').value=roomId;
 $('open').href=roomUrl();
 $('label').oninput=function(){$('open').href=roomUrl()};
+/* invite dropdown from tutor's students that have an email on file */
+var invitable=students.filter(function(s){return s.email});
+$('inv-stu').innerHTML='<option value="">— everyone I invite by link —</option>'+invitable.map(function(s){return '<option value="'+esc(s.email)+'">'+esc(s.name)+'</option>'}).join('');
+var liveKey='sy-live:'+(SY.session.email||'tutor');var live=false;
+function publish(active){
+  var one=$('inv-stu').value;var invited=one?[one.toLowerCase()]:invitable.map(function(s){return (s.email||'').toLowerCase()});
+  var rec={host:SY.session.email,hostName:profile.name||SY.session.name||'Your tutor',role:'tutor',
+    roomUrl:roomUrl(),roomId:roomId,label:($('label').value||'').trim(),invited:invited,audience:'list',
+    active:!!active,startedAt:new Date().toISOString()};
+  try{localStorage.setItem(liveKey,JSON.stringify(rec))}catch(e){}
+  return invited.length;
+}
+function updateStatus(){
+  if(live){var one=$('inv-stu').value;var n=one?1:invitable.length;
+    $('invite-status').innerHTML=n?('<span style="color:var(--good)">● Live</span> — invited <b style="color:var(--gold-300)">'+n+'</b> student'+(n===1?'':'s')+'. They join from their Live Classroom.'):'<span style="color:var(--good)">● Live</span> — share the copy link with your student to invite them.';
+    $('end').style.display='inline-block';$('start').textContent='Restart room';}
+  else{$('invite-status').textContent='';$('end').style.display='none';$('start').textContent='Start & invite';}
+}
 $('start').onclick=function(){
-  var url=roomUrl();$('video').innerHTML='<div style="position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#000"><iframe allow="camera; microphone; fullscreen; display-capture; autoplay" style="width:100%;height:460px;border:0" src="'+url+'#config.prejoinPageEnabled=false"></iframe></div>';
-  $('open').href=url;toast('Video room started');
+  var url=roomUrl();var n=publish(true);live=true;
+  $('video').innerHTML='<div style="position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#000"><iframe allow="camera; microphone; fullscreen; display-capture; autoplay" style="width:100%;height:460px;border:0" src="'+url+'#config.prejoinPageEnabled=false"></iframe></div>';
+  $('open').href=url;updateStatus();SY.log('live','Started live session',n+' invited');toast('Live room started'+(n?' — '+n+' invited':''));
 };
+$('end').onclick=function(){publish(false);live=false;$('video').innerHTML='';updateStatus();toast('Session ended — invitations closed')};
+$('inv-stu').onchange=function(){if(live)publish(true);updateStatus()};
 $('copy').onclick=function(){var url=roomUrl();(navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(function(){toast('Invite link copied')},function(){toast(url)})};
 var recording=false;$('rec').onclick=function(){recording=!recording;$('rec').textContent=(recording?'■ Stop':'● Record');$('rec').style.color=recording?'#e66767':'';toast(recording?'Recording (local marker)':'Recording stopped')};
 SY.set('tutorProfile',profile);

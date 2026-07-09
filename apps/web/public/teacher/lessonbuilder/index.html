@@ -11,7 +11,8 @@
   <div class="k">Institutional staff</div><h1>AI Course Generator</h1>
   <p class="lede">Let our AI build a structured course with modules, topics and quizzes based on any topic you choose.</p>
   <div class="card">
-    <div class="three"><div><label class="f">Study level</label><input id="level" placeholder="GCSE"></div><div><label class="f">Topic</label><input id="topic" placeholder="e.g. Forces and motion"></div><div><label class="f">Exam board (optional)</label><input id="board" placeholder="AQA"></div></div>
+    <div class="three"><div><label class="f">Study level</label><span id="level-wrap"></span></div><div><label class="f">Topic</label><input id="topic" placeholder="e.g. Forces and motion"></div><div><label class="f">Exam board</label><span id="board-wrap"></span></div></div>
+    <div class="note" id="ctx-note" style="margin-top:6px"></div>
     <div style="margin-top:12px"><button class="btn solid" id="gen">Generate a course</button></div>
     <div class="note" id="acu-note"></div>
   </div>
@@ -23,6 +24,19 @@
 'use strict';var SY=window.SY;if(!SY)return;var TW=window.TW||{};
 function $(id){return document.getElementById(id)}function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 var tt;function toast(t){var e=$('toast');if(!e)return;e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2200)}
+/* Study level & exam board come from the teacher's school-assigned sections. */
+var SEC=(TW.assignedSections&&TW.assignedSections())||{subjects:[],levels:[],boards:[]};
+function fieldFrom(wrapId,list,fallbackPh,defaults,allowBlank){
+  var wrap=$(wrapId);var opts=(list&&list.length)?list:(defaults||[]);
+  if(opts.length){wrap.innerHTML='<select style="width:100%">'+(allowBlank?'<option value="">— any —</option>':'')+opts.map(function(o){return '<option>'+esc(o)+'</option>'}).join('')+'</select>';return wrap.firstChild}
+  wrap.innerHTML='<input placeholder="'+esc(fallbackPh)+'" style="width:100%">';return wrap.firstChild;
+}
+var levelEl=fieldFrom('level-wrap',SEC.levels,'GCSE',['Primary','KS3','GCSE','IGCSE','AS','A-level','BTEC','IB']);
+var boardEl=fieldFrom('board-wrap',SEC.boards,'AQA',['AQA','Edexcel','OCR','WJEC','Eduqas','CIE','SQA'],true);
+levelEl.id='level';boardEl.id='board';
+$('ctx-note').innerHTML=(SEC.levels.length||SEC.boards.length)
+  ? ('Level &amp; exam board are drawn from your school-assigned sections'+(SEC.schoolName?' at <b style="color:var(--gold-300)">'+esc(SEC.schoolName)+'</b>':'')+'.')
+  : ('No school-assigned sections yet — <a href="../register/#sec-school" style="color:var(--gold-300)">link your school</a> to tailor these to what you teach.');
 function schoolAcu(){return TW.schoolCode?(SY.schoolGet(TW.schoolCode,'acu',{balance:0}).balance||0):0}
 $('acu-note').textContent='Uses 15 ACUs per course — no premium plan required. School pool: '+schoolAcu().toLocaleString()+' ACUs.';
 $('gen').onclick=function(){

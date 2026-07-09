@@ -11,7 +11,8 @@
   <div class="k">Institutional staff</div><h1>AI Teaching Assistant</h1>
   <p class="lede">Your AI teaching partner — lesson plans, differentiated work, homework, quizzes, marking, feedback, parent emails and more, in seconds.</p>
   <div class="card">
-    <div class="two"><div><label class="f">Subject</label><input id="subj" placeholder="Mathematics"></div><div><label class="f">Level</label><input id="level" placeholder="GCSE"></div></div>
+    <div class="two"><div><label class="f">Subject</label><span id="subj-wrap"></span></div><div><label class="f">Level</label><span id="level-wrap"></span></div></div>
+    <div class="note" id="ctx-note" style="margin-top:6px"></div>
     <label class="f">Topic / question</label><input id="topic" placeholder="e.g. Quadratic equations">
     <div class="sugg"><button data-s="Explain photosynthesis like I'm 10">Explain like I'm 10</button><button data-s="Give me a step-by-step plan to solve a quadratic equation">Step-by-step plan</button><button data-s="Ask me 3 warm-up questions about World War 2">3 warm-up questions</button></div>
     <div class="tools" id="tools"><span class="t on" data-t="plan">Lesson plan</span><span class="t" data-t="diff">Differentiated work</span><span class="t" data-t="quiz">Quiz</span><span class="t" data-t="homework">Homework</span><span class="t" data-t="explain">Explain</span><span class="t" data-t="mark">Marking &amp; feedback</span><span class="t" data-t="parent">Parent email</span><span class="t" data-t="behaviour">Behaviour strategy</span></div>
@@ -23,8 +24,25 @@
 <script src="../nav.js" data-base="../" data-cur="assistant/"></script>
 <script>
 (function(){
-'use strict';var SY=window.SY;if(!SY)return;
+'use strict';var SY=window.SY;if(!SY)return;var TW=window.TW||{};
 function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+/* Subject & Level come from the teacher's school-assigned sections. */
+var SEC=(TW.assignedSections&&TW.assignedSections())||{subjects:[],levels:[],boards:[]};
+function fieldFrom(wrapId,list,fallbackPh,defaults){
+  var wrap=$(wrapId);var opts=(list&&list.length)?list:(defaults||[]);
+  if(opts.length){
+    var sel='<select style="width:100%">'+opts.map(function(o){return '<option>'+esc(o)+'</option>'}).join('')+(list&&list.length?'':'')+'</select>';
+    wrap.innerHTML=sel;return wrap.firstChild;
+  }
+  wrap.innerHTML='<input placeholder="'+esc(fallbackPh)+'" style="width:100%">';return wrap.firstChild;
+}
+var subjEl=fieldFrom('subj-wrap',SEC.subjects,'Mathematics',[]);
+var levelEl=fieldFrom('level-wrap',SEC.levels,'GCSE',['Primary','KS3','GCSE','IGCSE','AS','A-level','BTEC','IB']);
+subjEl.id='subj';levelEl.id='level';
+$('ctx-note').innerHTML=(SEC.subjects.length||SEC.levels.length)
+  ? ('Subject &amp; level are drawn from your school-assigned sections'+(SEC.schoolName?' at <b style="color:var(--gold-300)">'+esc(SEC.schoolName)+'</b>':'')+'. Update them in your <a href="../register/#sec-school" style="color:var(--gold-300)">profile</a>.')
+  : ('No school-assigned sections yet — <a href="../register/#sec-school" style="color:var(--gold-300)">link your school</a> or add your subjects &amp; year groups in your profile to tailor these to your classes.');
 var mode='plan';
 $('tools').querySelectorAll('.t').forEach(function(el){el.onclick=function(){$('tools').querySelectorAll('.t').forEach(function(x){x.classList.remove('on')});el.classList.add('on');mode=el.dataset.t}});
 document.querySelectorAll('.sugg button').forEach(function(b){b.onclick=function(){$('topic').value=b.dataset.s;mode='explain';$('tools').querySelectorAll('.t').forEach(function(x){x.classList.toggle('on',x.dataset.t==='explain')});gen()}});

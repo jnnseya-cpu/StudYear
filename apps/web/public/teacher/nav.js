@@ -71,6 +71,19 @@
       var pending=total-doneN;
       return {email:email,overall:overall,hw:hw,risk:diag?diag.risk:(overall<42?'HIGH':overall<58?'MEDIUM':'LOW'),weak:weak,level:pf.level||'—',pending:pending>0?pending:0,updated:(SY.readAccount(email,'activity',[])[0]||{}).when};
     }
-    return {SY:SY,profile:profile,schoolCode:schoolCode,schoolName:schoolName,verified:verified,roster:roster,myStudents:myStudents,myCohorts:myCohorts,metrics:metrics};
+    /* the teacher's assigned sections — subjects, levels/year-groups and exam boards.
+       Sourced from the teacher's own profile, then their school staff record, then the
+       school's published curriculum, so AI tools work within what the school assigned. */
+    function splitList(v){return String(v||'').split(/[,;/\n]|–|—| - /).map(function(s){return s.trim()}).filter(Boolean)}
+    function uniq(a){var seen={},out=[];a.forEach(function(x){var k=x.toLowerCase();if(x&&!seen[k]){seen[k]=1;out.push(x)}});return out}
+    function assignedSections(){
+      var staff=staffMe()||{};
+      var cur=schoolCode?SY.schoolGet(schoolCode,'curriculum',{}):{};
+      var subjects=uniq([].concat(staff.subjects||[],splitList(profile.subjects),splitList(cur.subjectsOffered)));
+      var levels=uniq([].concat(staff.cohorts||[],splitList(profile.yearGroups),splitList(staff.yearGroups),splitList(cur.yearGroups)));
+      var boards=uniq([].concat(splitList(profile.examBoards),splitList(staff.examBoards),splitList(cur.examBoards)));
+      return {subjects:subjects,levels:levels,boards:boards,fromSchool:!!schoolCode,schoolName:schoolName};
+    }
+    return {SY:SY,profile:profile,schoolCode:schoolCode,schoolName:schoolName,verified:verified,roster:roster,myStudents:myStudents,myCohorts:myCohorts,metrics:metrics,assignedSections:assignedSections};
   })();
 })();

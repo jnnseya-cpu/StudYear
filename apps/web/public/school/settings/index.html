@@ -281,7 +281,7 @@ var SECTIONS=[
    {k:'consentAI',l:'AI consent',d:'We consent to AI processing as configured in section 11.'},
    {k:'consentSafeguard',l:'Safeguarding declaration',d:'We confirm safeguarding policies and a named DSL are in place.'}
  ]},
- {id:'agents',n:16,t:'AI agents created for your school',s:'StudYear automatically provisions a full AI leadership team the moment your institution goes live. Each agent operates strictly within the governance you set in section 11 — agents that need a permission stay on standby until you enable it.',type:'agents'}
+ {id:'agents',n:16,t:'AI agents created for your school',s:'StudYear automatically provisions a full AI leadership team the moment your institution goes live. Each agent operates strictly within the governance you set in section 11 — every agent is active, and the permissions you set decide what each one may do.',type:'agents'}
 ];
 
 /* ---------- image / doc pickers ---------- */
@@ -366,12 +366,12 @@ SECTIONS.forEach(function(sec){
       c.appendChild(el('div','ai-ic',a.i));
       c.appendChild(el('div','an',a.l));
       c.appendChild(el('div','ad',a.d));
-      var on=!a.gate||!!data[a.gate];
+      var on=true;
       var st=el('span','stat '+(on?'on':'off'));st.innerHTML='<span class="dot"></span>'+(on?'Active':'Standby');
       st.dataset.gate=a.gate||'';c.appendChild(st);ag.appendChild(c);
     });
     card.appendChild(ag);
-    card.appendChild(el('div','note','Standby agents activate instantly when you switch on the matching permission in section 11 — no re-registration needed.'));
+    card.appendChild(el('div','note','Your full AI leadership team is active. The permissions in section 11 govern what each agent is allowed to do across your school.'));
     form.appendChild(card);return;
   }
 
@@ -442,7 +442,7 @@ function refresh(){
   var doneCount=SECTIONS.filter(sectionDone).length;
   $('setup-note').textContent=(pct===100?'Core registration complete. ':filled+' of '+REQUIRED.length+' required fields complete. ')+doneCount+' of '+SECTIONS.length+' sections started.';
   SECTIONS.forEach(function(sec){var a=$('rail-'+sec.id);if(a)a.className=sectionDone(sec)?'done':''});
-  document.querySelectorAll('.agent .stat').forEach(function(st){var g=st.dataset.gate;var on=!g||!!data[g];st.className='stat '+(on?'on':'off');st.innerHTML='<span class="dot"></span>'+(on?'Active':'Standby')});
+  document.querySelectorAll('.agent .stat').forEach(function(st){st.className='stat on';st.innerHTML='<span class="dot"></span>Active'});
   var v=$('verify');
   if(pct===100){v.className='verify ok';v.innerHTML='✓ Core details recorded — your institution is active. Submit your Verification documents (section 13) when ready and our team will confirm full accreditation. You can use every feature meanwhile.';}
   else{v.className='verify';v.innerHTML='⚠ Your institution shows as <b>pending</b> until the required fields are saved (school name, type, country, current students). You can use the Command Centre, onboarding and ACU tools while registration is in progress.';}
@@ -465,6 +465,8 @@ $('save').onclick=function(){
   var profile=SY.get('profile',{});profile.name=name;if(data.logo)profile.photo=data.logo;if(data.banner)profile.cover=data.banner;SY.set('profile',profile);
   try{var us=JSON.parse(localStorage.getItem('sy-users'))||[];var me=us.find(function(u){return u.email===S.email&&u.role==='school'});if(me){me.name=name;localStorage.setItem('sy-users',JSON.stringify(us))}S.name=name;localStorage.setItem('sy-session',JSON.stringify(S))}catch(e){}
   SY.schoolSet(code,'name',name);if(data.logo)SY.schoolSet(code,'logo',data.logo);
+  /* publish curriculum to the shared school store so linked teachers pre-fill their sections from it */
+  SY.schoolSet(code,'curriculum',{subjectsOffered:data.subjectsOffered||'',yearGroups:data.yearGroups||'',examBoards:data.examBoards||'',curriculumType:data.curriculumType||[]});
   SY.log('settings','School registration saved',name+' · '+(data.type||''));
   $('saved-at').textContent='Saved '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
   toast('School registration saved');refresh();

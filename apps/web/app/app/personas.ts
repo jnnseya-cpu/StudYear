@@ -49,6 +49,7 @@ export const PERSONAS: Persona[] = [
       { agent: AgentId.ContentForge, label: 'Resource Maker', desc: 'Flashcards, quizzes, notes, mindmaps — generated or your own.', tariff: 'flashcards', href: 'study/' },
       { agent: AgentId.Examiner, label: 'Predicted Grade', desc: 'Live grade trajectory with confidence band vs your target.', tariff: 'predicted_grade', href: 'dashboards/student/' },
       { agent: AgentId.Motivation, label: 'Streaks & Points', desc: 'Momentum you can see — streaks, points, mastery per subject.', href: 'account/achievements/' },
+      { agent: AgentId.Tutor, label: 'Live Classroom', desc: 'Join a live video lesson when your teacher or tutor invites you.', href: 'live/' },
     ],
   },
   {
