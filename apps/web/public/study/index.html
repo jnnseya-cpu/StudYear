@@ -1005,7 +1005,11 @@ const PROFILE=store.get("profile",{});
 const LEARN=store.get("learning",{}); /* accessibility + pace + style + session length */
 function logEvent(k,t,d){ if(SY&&SY.log) SY.log(k,t,d) }
 function latestMood(){ const m=store.get("moods",[]); return m.length?m[0]:null }
-function allResources(){ return LIB.concat(store.get("mine",[])) }
+function curatedResources(){
+  /* admin-approved ingestion-pipeline items — published workspace-wide */
+  try{return (JSON.parse(localStorage.getItem("sy-curated"))||[]).map(r=>Object.assign({board:"",uses:r.uses||0,rating:r.rating||5},r))}catch(e){return []}
+}
+function allResources(){ return LIB.concat(curatedResources()).concat(store.get("mine",[])) }
 
 /* ---------- ACU wallet (shared with the account pages) ----------
    Paid monthly plans stop automatically after 30 days (owner policy 2026-07):

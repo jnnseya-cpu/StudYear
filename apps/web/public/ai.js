@@ -25,10 +25,26 @@
      the provider's vision or document input so models can read uploads.
      PDFs (mime application/pdf) route to each provider's document channel. */
   function splitDataUrl(u){var m=String(u).match(/^data:([^;]+);base64,(.*)$/);return m?{mime:m[1],data:m[2]}:null}
+  /* usage log for the admin console (production reads Firestore aiUsageLogs):
+     every live call records provider, model, latency, outcome and a rough GBP
+     cost hint (chars→tokens estimate × list price × USD→GBP 0.79). */
+  function logUsage(c,model,t0,ok,inChars,outChars){
+    try{
+      var sess=null;try{sess=JSON.parse(localStorage.getItem('sy-session'))}catch(e){}
+      var tokens=Math.round((inChars+outChars)/4);
+      var usd=tokens/1e6*2.5;
+      var log=[];try{log=JSON.parse(localStorage.getItem('sy-ai-usage'))||[]}catch(e){}
+      log.unshift({email:sess&&sess.email||'',name:sess&&sess.name||'',provider:c.provider,model:model,
+        ms:Date.now()-t0,ok:ok,gbp:+(usd*0.79).toFixed(4),when:new Date().toISOString()});
+      localStorage.setItem('sy-ai-usage',JSON.stringify(log.slice(0,200)));
+    }catch(e){}
+  }
   async function ask(system, user, opts){
     var c=cfg();if(!c||!c.key)throw new Error('No AI key configured');
     opts=opts||{};var model=modelFor(c);var maxTokens=opts.maxTokens||1024;
     var img=opts.image?splitDataUrl(opts.image):null;
+    var t0=Date.now(),inChars=String(system||'').length+String(user||'').length;
+    var rawAsk=async function(){
     if(c.provider==='gemini'){
       var parts=[{text:user}];if(img)parts.push({inlineData:{mimeType:img.mime,data:img.data}});
       var url='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent?key='+encodeURIComponent(c.key);
@@ -65,6 +81,15 @@
       var j3=await r3.json();return (j3.content||[]).map(function(b){return b.text||''}).join('');
     }
     throw new Error('Unknown provider '+c.provider);
+    };
+    try{
+      var out=await rawAsk();
+      logUsage(c,model,t0,true,inChars,String(out||'').length);
+      return out;
+    }catch(e){
+      logUsage(c,model,t0,false,inChars,0);
+      throw e;
+    }
   }
   /* light markdown -> HTML for rendering model output safely */
   function render(md){
