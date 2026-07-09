@@ -8,6 +8,8 @@
 </style></head><body>
 <script src="../../guard.js" data-role="teacher" data-base="../../"></script>
 <script src="../../ai.js"></script>
+<script src="../../export.js"></script>
+<script src="../../exam.js"></script>
 <div class="shell"><main>
   <div class="k">Institutional staff</div><h1>AI Teaching Assistant</h1>
   <p class="lede">Your AI teaching partner — lesson plans, differentiated work, homework, quizzes, marking, feedback, parent emails and more, in seconds.</p>
@@ -21,6 +23,15 @@
   </div>
   <div class="out" id="out" style="display:none"></div>
   <div class="note">Preview generates from structured templates on-device (no AI credits). Live models adapt to each student's Academic Twin with the backend.</div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="k">Assessment</div><h2 style="font-family:var(--serif);margin:4px 0 2px">Exam Paper Builder</h2>
+    <p class="lede" style="margin:0 0 6px">Build an exam-style paper in any subject — up to 50 questions with a mark-scheme
+      answer sheet for every question, branded to your school, exported as Word or PDF. Costs 1 ACU per question
+      (min. 10) from the school pool.</p>
+    <div class="note" id="exam-pool-note" style="margin:0 0 8px"></div>
+    <div id="exam-mount"></div>
+  </div>
 </main></div>
 <script src="../nav.js" data-base="../" data-cur="assistant/"></script>
 <script>
@@ -80,6 +91,31 @@ function genStatic(s,l,t){
   $('out').style.display='block';$('out').innerHTML=o;
 }
 $('go').onclick=gen;
+
+/* ---- Exam Paper Builder: branded to the school, metered from the school ACU pool ---- */
+if(window.SYExam&&$('exam-mount')){
+  var code=TW.schoolCode||null;
+  var poolNote=$('exam-pool-note');
+  function poolBal(){return code?(SY.schoolGet(code,'acu',{balance:0,burn:[]}).balance||0):null}
+  function refreshPool(){poolNote.innerHTML=code
+    ?('School pool: <b style="color:var(--gold-300)">'+poolBal().toLocaleString()+' ACUs</b> at '+esc(TW.schoolName||'your school')+'.')
+    :'No school linked yet — papers build in preview mode and carry StudYear branding until you <a href="../register/#sec-school" style="color:var(--gold-300)">link your school</a>.';}
+  refreshPool();
+  SYExam.mount($('exam-mount'),{
+    brand:code?{name:TW.schoolName||'Your school',line:'Powered by StudYear'}:{name:'StudYear',line:'AI Academic Operating System'},
+    defaults:{subject:(SEC.subjects&&SEC.subjects[0])||'',level:(SEC.levels&&SEC.levels[0])||'GCSE',board:(SEC.boards&&SEC.boards[0])||''},
+    goId:'exam-go',
+    spend:function(cost,label){
+      if(!code)return true; /* preview mode until a school is linked */
+      var pool=SY.schoolGet(code,'acu',{balance:0,burn:[]});
+      if((pool.balance||0)<cost){poolNote.innerHTML='<span style="color:var(--warn)">Not enough school ACUs — '+(pool.balance||0)+'/'+cost+' needed. Ask your school admin to top up the pool.</span>';return false}
+      pool.balance-=cost;pool.burn=(pool.burn||[]).slice(-6);pool.burn.push(cost);
+      SY.schoolSet(code,'acu',pool);
+      SY.log&&SY.log('billing',label+' — '+cost+' school ACUs',(pool.balance)+' ACUs left in the school pool.');
+      refreshPool();return true;},
+    onBuilt:function(st){SY.log&&SY.log('create','Exam paper built: '+st.meta.title,st.meta.n+' questions · '+st.meta.total+' marks · answer sheet included.')}
+  });
+}
 })();
 </script>
 </body></html>

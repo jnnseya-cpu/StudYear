@@ -208,6 +208,8 @@
 <body>
 <script src="../guard.js" data-role="student" data-base="../"></script>
 <script src="../ai.js"></script>
+<script src="../export.js"></script>
+<script src="../exam.js"></script>
 <div class="wrap">
 
 <header class="page">
@@ -449,6 +451,13 @@
       <div style="margin-top:12px"><button class="btn" id="c-m-save">Save mindmap to library</button></div>
     </div>
 
+    <div class="card c12" id="exam-card">
+      <h3>Exam Paper Builder<span class="badge prem">Premium</span></h3>
+      <div class="sub">Build a real exam-style paper in any subject — up to 50 questions, StudYear-branded, with a
+        mark-scheme answer sheet for every question. Costs 1 ACU per question (min. 10). Export as Word or PDF.</div>
+      <div id="exam-mount"></div>
+    </div>
+
     <div class="card c6">
       <h3>Add a link or media resource</h3><div class="sub">save a video, audio, image, page or document link into your library — YouTube links play inline</div>
       <label class="f">Title</label><input type="text" id="c-l-title" placeholder="e.g. Best walkthrough of titrations I've found">
@@ -581,11 +590,11 @@
       <textarea id="ar-text" rows="9" placeholder="Paste your assignment here (min. 100 characters), or attach a file below."></textarea>
       <div id="ar-drop" style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border:1px dashed rgba(170,182,204,.3);border-radius:10px;padding:10px">
         <button class="btn ghost sm" id="ar-upload">📎 Attach assignment file</button>
-        <input type="file" id="ar-file" accept=".txt,.md,.csv,text/plain,.pdf,application/pdf,image/*" style="display:none">
-        <span class="note" id="ar-filename" style="margin:0">Drag &amp; drop or click — .txt, .pdf, .png, .jpg, .webp (max 25&nbsp;MB PDF / 8&nbsp;MB image)</span>
+        <input type="file" id="ar-file" style="display:none">
+        <span class="note" id="ar-filename" style="margin:0">Drag &amp; drop or click — any document (Word, PDF, PowerPoint, OpenDocument, text) or a photo (max 25&nbsp;MB PDF / 8&nbsp;MB image)</span>
       </div>
       <div style="margin-top:12px"><button class="btn" id="ar-go">Get Feedback</button></div>
-      <div class="note" id="ar-mode-note">Text files load into the box; PDFs and photos of written work (incl. handwriting) are read by the live model when AI is enabled.</div>
+      <div class="note" id="ar-mode-note">Word, PowerPoint, OpenDocument and text files load straight into the box; PDFs and photos of written work (incl. handwriting) are read by the live model when AI is enabled.</div>
     </div>
     <div class="card c7">
       <h3>AI Review &amp; Feedback</h3><div class="sub" id="ar-sub">Feedback, strengths, targets and a scored breakdown appear here.</div>
@@ -1028,7 +1037,7 @@ const PREMIUM_TOOLS={
   "c-e-save":"AI Essay Plan","g-fm-go":"AI Formula Sheet Generator",
   "g-mm-go":"AI Mind Map Generator","c-m-save":"Mindmap creator",
   "c-v-save":"Visual Tools & Graphs","cg-go":"AI Course Generator",
-  "ar-go":"AI Assignment Review"};
+  "ar-go":"AI Assignment Review","exam-go":"Exam Paper Builder"};
 /* capture-phase: the plan check runs before any tool's own handler */
 document.addEventListener("click",function(e){
   const b=e.target.closest("button");if(!b||!PREMIUM_TOOLS[b.id]||hasPremium())return;
@@ -2652,6 +2661,20 @@ document.getElementById("dd-run").onclick = () => {
   };
 };
 
+/* ============================ EXAM PAPER BUILDER ============================ */
+if(window.SYExam&&document.getElementById("exam-mount")){
+  SYExam.mount(document.getElementById("exam-mount"),{
+    brand:{name:"StudYear",line:"AI Academic Operating System"},
+    defaults:{level:(PROFILE.level&&PROFILE.level!=="—")?PROFILE.level:"GCSE",
+      subject:(PROFILE.subjects&&PROFILE.subjects[0]&&PROFILE.subjects[0].s)||"",
+      board:(PROFILE.board&&PROFILE.board!=="—")?PROFILE.board:""},
+    goId:"exam-go",
+    spend:(cost,label)=>spendAcus(cost,label),
+    onBuilt:st=>{addPoints(15);touchStreak();
+      logEvent("create","Exam paper built: "+st.meta.title,st.meta.n+" questions · "+st.meta.total+" marks · mark-scheme answer sheet included.");}
+  });
+}
+
 /* ============================ ASSIGNMENT REVIEW ============================ */
 const AR_PRICE=60;
 fillSelect(document.getElementById("ar-level"),LEVELS);
@@ -2660,26 +2683,79 @@ document.getElementById("ar-level").value=(PROFILE.level&&LEVELS.includes(PROFIL
 document.getElementById("ar-price").textContent=AR_PRICE;
 function refreshArBal(){const b=document.getElementById("ar-bal");if(b)b.textContent="Your balance: "+walletBalance()+" ACUs.";}
 refreshArBal();
-/* ---- file attach: text files fill the box; PDFs and images attach as data-URLs
-   for the live model's document/vision input (reads typed or handwritten work).
+/* ---- file attach: ANY document format is accepted. Office/OpenDocument files
+   (docx/pptx/xlsx/odt/odp/ods) are unzipped in the browser and their text is
+   extracted into the box; plain text/markdown/csv/rtf load directly; PDFs and
+   photos attach as data-URLs for the live model's document/vision input.
    Limits mirror the product copy: 25 MB PDF · 8 MB image. ---- */
 let arImage=null;
+async function arZipText(f){
+  /* minimal OOXML/ODF reader: parse the ZIP central directory, inflate the
+     document XML with DecompressionStream, strip tags to plain text */
+  const buf=new Uint8Array(await f.arrayBuffer()),dv=new DataView(buf.buffer);
+  let e=-1;
+  for(let i=buf.length-22;i>=Math.max(0,buf.length-66000);i--){if(dv.getUint32(i,true)===0x06054b50){e=i;break}}
+  if(e<0)throw new Error("not a zip");
+  const cnt=dv.getUint16(e+10,true);let off=dv.getUint32(e+16,true);
+  const entries=[];
+  for(let i=0;i<cnt&&off+46<=buf.length;i++){
+    if(dv.getUint32(off,true)!==0x02014b50)break;
+    const method=dv.getUint16(off+10,true),csize=dv.getUint32(off+20,true),
+      nlen=dv.getUint16(off+28,true),xlen=dv.getUint16(off+30,true),clen=dv.getUint16(off+32,true),
+      lho=dv.getUint32(off+42,true),
+      name=new TextDecoder().decode(buf.subarray(off+46,off+46+nlen));
+    entries.push({name,method,csize,lho});
+    off+=46+nlen+xlen+clen;
+  }
+  async function inflate(en){
+    const ln=dv.getUint16(en.lho+26,true),lx=dv.getUint16(en.lho+28,true);
+    const data=buf.subarray(en.lho+30+ln+lx,en.lho+30+ln+lx+en.csize);
+    if(en.method===0)return new TextDecoder().decode(data);
+    return await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text();
+  }
+  const want=entries.filter(en=>/^word\/document\.xml$|^content\.xml$|^ppt\/slides\/slide\d+\.xml$|^xl\/sharedStrings\.xml$/.test(en.name)).slice(0,40);
+  if(!want.length)throw new Error("no readable text");
+  let out="";
+  for(const en of want){
+    const xml=await inflate(en);
+    out+=xml.replace(/<\/(w:p|a:p|text:p|text:h|si)>/g,"\n").replace(/<[^>]+>/g,"")
+      .replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&apos;/g,"'")+"\n";
+  }
+  return out.replace(/\n{3,}/g,"\n\n").trim();
+}
+function arLoaded(name,text){
+  document.getElementById("ar-text").value=String(text).slice(0,20000);arImage=null;
+  document.getElementById("ar-filename").innerHTML="📄 <b style='color:var(--gold-300)'>"+esc(name)+"</b> loaded into the box";toast("Document loaded");
+}
 function arTakeFile(f){
   if(!f)return;
+  const fn=document.getElementById("ar-filename");
   const isPdf=f.type==="application/pdf"||/\.pdf$/i.test(f.name);
   if(isPdf||/^image\//.test(f.type)){
     const capMb=isPdf?25:8;
     if(f.size>capMb*1024*1024){toast("Max "+capMb+" MB per "+(isPdf?"PDF":"image"));return}
     const r=new FileReader();
     r.onload=()=>{arImage=r.result;
-      document.getElementById("ar-filename").innerHTML=(isPdf?"📄":"📷")+" <b style='color:var(--gold-300)'>"+esc(f.name)+"</b> attached — the AI will read it"+(window.SYAI&&SYAI.ready()?"":" <span style='color:var(--warn)'>(enable live AI in the Gateway to review attached files)</span>");};
+      fn.innerHTML=(isPdf?"📄":"📷")+" <b style='color:var(--gold-300)'>"+esc(f.name)+"</b> attached — the AI will read it"+(window.SYAI&&SYAI.ready()?"":" <span style='color:var(--warn)'>(enable live AI in the Gateway to review attached files)</span>");};
     r.readAsDataURL(f);
-  }else{
-    const r2=new FileReader();
-    r2.onload=()=>{document.getElementById("ar-text").value=String(r2.result).slice(0,20000);arImage=null;
-      document.getElementById("ar-filename").innerHTML="📄 <b style='color:var(--gold-300)'>"+esc(f.name)+"</b> loaded into the box";toast("Document loaded")};
-    r2.readAsText(f);
+    return;
   }
+  if(/\.(docx|pptx|xlsx|odt|odp|ods)$/i.test(f.name)){
+    fn.textContent="Reading "+f.name+"…";
+    arZipText(f).then(t=>{if(t)arLoaded(f.name,t);else throw new Error("empty")})
+      .catch(()=>{fn.innerHTML="<span style='color:var(--warn)'>Couldn't read "+esc(f.name)+" — export it as PDF or attach a photo instead.</span>"});
+    return;
+  }
+  const r2=new FileReader();
+  r2.onload=()=>{
+    let t=String(r2.result);
+    if(/\.rtf$/i.test(f.name))t=t.replace(/\\'[0-9a-f]{2}/gi," ").replace(/\\[a-z]+-?\d* ?/gi,"").replace(/[{}]/g,"");
+    /* binary sniff: legacy formats (.doc etc.) that aren't text — steer to PDF/photo */
+    const sample=t.slice(0,2000),bad=(sample.match(/[\x00-\x08\x0E-\x1F]/g)||[]).length;
+    if(bad>sample.length*0.02){fn.innerHTML="<span style='color:var(--warn)'>"+esc(f.name)+" is a format we can't read directly — export it as PDF or attach a photo and the AI will read it.</span>";return}
+    arLoaded(f.name,t);
+  };
+  r2.readAsText(f);
 }
 document.getElementById("ar-upload").onclick=()=>document.getElementById("ar-file").click();
 document.getElementById("ar-file").addEventListener("change",function(){arTakeFile(this.files[0]);this.value=""});
