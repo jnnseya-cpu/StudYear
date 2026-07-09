@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StudYear Study — search, plan, practise, track</title>
+<link rel="manifest" href="../manifest.json"><link rel="icon" href="../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
 <style>
   :root{
     --navy-950:#060B18; --navy-900:#0B1220; --navy-800:#101B33;
@@ -690,10 +691,12 @@
   <div class="grid">
     <div class="card c5">
       <h3>AI Interactive Lesson</h3>
-      <div class="sub">Enter any topic and StudYear will generate a structured lesson, walk you through the material,
-        and quiz you at the end.</div>
+      <div class="sub">Enter any topic — or tap one of your personalised picks — and StudYear teaches it in depth:
+        curriculum-accurate content, worked examples you predict line by line, marked practice, retrieval, then a quiz.
+        Every lesson is pitched to <b>your</b> level, board, pace and learning style.</div>
       <label class="f">What would you like to learn about today?</label>
       <input type="text" id="il-topic" placeholder="e.g. Quantum Physics, The French Revolution…">
+      <div id="il-sugg" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
         <div><label class="f">Study level</label><select id="il-level"></select></div>
         <div><label class="f">Subject (optional)</label><select id="il-subj"><option value="">Auto</option></select></div>
@@ -2952,6 +2955,25 @@ document.getElementById("cg-level").value=(PROFILE.level&&LEVELS.includes(PROFIL
 try{applyProfileDefaults()}catch(e){}
 document.getElementById("il-price").textContent=IL_PRICE;
 document.getElementById("cg-price").textContent=CG_PRICE;
+/* ---- personalised lesson picks: StudYear learns you — weakest subjects from
+   your quiz history + diagnostic, plus the thread you last pulled ---- */
+(function(){
+  const box=document.getElementById("il-sugg");if(!box)return;
+  const picks=[];
+  const by={};store.get("quizzes",[]).forEach(q=>{(by[q.subj]=by[q.subj]||[]).push(q.pct)});
+  const avg=Object.entries(by).map(([s,a])=>[s,Math.round(a.reduce((x,y)=>x+y,0)/a.length)]).sort((a,b)=>a[1]-b[1]);
+  avg.slice(0,2).forEach(([s,a])=>picks.push({t:"Rescue "+s+" ("+a+"%)",subj:s,topic:s+" — my weakest areas"}));
+  const lastLesson=(store.get("activity",[])||[]).find(a=>a.k==="lesson");
+  if(lastLesson)picks.push({t:"Continue: "+lastLesson.t.replace(/^Interactive lesson: /,""),topic:lastLesson.t.replace(/^Interactive lesson: /,"")});
+  (PROFILE.subjects||[]).slice(0,3).forEach(x=>{if(!picks.some(p=>p.subj===x.s))picks.push({t:"Push "+x.s+" to grade "+(x.target||"9"),subj:x.s,topic:x.s+" — next topic toward my target"})});
+  box.innerHTML=picks.slice(0,4).map((p,i)=>'<button class="btn ghost sm" data-i="'+i+'" style="font-size:11.5px">✨ '+esc(p.t)+'</button>').join("")||
+    '<span class="note" style="margin:0">Complete your profile & diagnostic and StudYear personalises these picks to you.</span>';
+  box.querySelectorAll("button").forEach(b=>{b.onclick=()=>{const p=picks[+b.dataset.i];
+    document.getElementById("il-topic").value=p.topic;
+    if(p.subj)setSelect("il-subj",p.subj);
+    document.getElementById("il-go").scrollIntoView({behavior:"smooth",block:"center"});
+    toast("Personalised pick loaded — press Generate Lesson");};});
+})();
 function refreshBalances(){
   const b=walletBalance();
   const ilb=document.getElementById("il-bal"), cgb=document.getElementById("cg-bal");
@@ -3117,7 +3139,9 @@ function renderLesson(){
       <p style="font-size:14px;color:var(--ink-2);margin-top:10px"><b>Next step:</b> ${rec}</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
         <button class="btn sm" id="il-again">Practise more (new questions)</button>
-        <button class="btn ghost sm" id="il-restart">Restart lesson</button></div>`;
+        <button class="btn ghost sm" id="il-restart">Restart lesson</button>
+        <button class="btn ghost sm" id="il-save-notes">💾 Save notes to My resources</button>
+        <button class="btn ghost sm" id="il-export">⬇ Export lesson</button></div>`;
   }
   out.innerHTML=head+body+nav;
   wireStep(st);
@@ -3142,7 +3166,28 @@ function wireStep(st){
   if(st.type==="quiz"){runLessonQuiz(st.qs,$("il-quizbox"));}
   if(st.type==="summary"){
     if($("il-again"))$("il-again").onclick=()=>{const L=buildLesson(_L.topic,_L.level,_L.subj);_L=L;_ls={i:_L.type?2:2,correct:0,practiceTotal:0,quizScore:0,confidence:null};/* jump to first practice/example */_ls.i=_L.steps.findIndex(s=>s.type==="practice"||s.type==="example");if(_ls.i<0)_ls.i=1;renderLesson()};
-    if($("il-restart"))$("il-restart").onclick=()=>{_ls={i:0,correct:0,practiceTotal:0,quizScore:0,confidence:null};renderLesson()};}
+    if($("il-restart"))$("il-restart").onclick=()=>{_ls={i:0,correct:0,practiceTotal:0,quizScore:0,confidence:null};renderLesson()};
+    /* the lesson is a real study asset: save it to My resources / export it */
+    const lessonNotesHtml=()=>{
+      let h='<h5>'+esc(_L.topic)+' — '+esc(_L.level)+' interactive lesson</h5>';
+      _L.steps.forEach(s=>{
+        if(s.type==="intro")h+='<h5>Learning objectives</h5><ul>'+s.objectives.map(o=>'<li>'+esc(o)+'</li>').join('')+'</ul>';
+        else if(s.type==="teach")h+='<h5>'+esc(s.h)+'</h5><div>'+s.html+'</div>';
+        else if(s.type==="example")h+='<h5>'+esc(s.h)+'</h5><p><b>Q.</b> '+esc(s.ex.q)+'</p>'+s.ex.steps.map(x=>'<p>· '+x+'</p>').join('');
+        else if(s.type==="recall"&&s.model)h+='<h5>'+esc(s.h||"Retrieval")+'</h5><p>'+esc(s.model)+'</p>';
+      });
+      return h;
+    };
+    if($("il-save-notes"))$("il-save-notes").onclick=()=>{
+      saveMine({type:"Revision Notes",title:_L.topic+" — lesson notes",subj:_L.subj||"",level:_L.level,body:lessonNotesHtml()},"il","Lesson notes saved",[]);
+    };
+    if($("il-export"))$("il-export").onclick=function(){
+      if(!window.SYExport)return toast("Exports load with the page — try again");
+      const plain=lessonNotesHtml().replace(/<h5>/g,"\n## ").replace(/<\/h5>/g,"\n").replace(/<[^>]+>/g,"");
+      SYExport.menu(this,{
+        word:()=>SYExport.word(_L.topic+" — lesson",{title:_L.topic+" — "+_L.level+" lesson",blocks:plain.split("\n").filter(Boolean).map(l=>l.startsWith("## ")?{h:l.slice(3)}:{p:l})}),
+        pdf:()=>SYExport.pdf(_L.topic+" — lesson",'<h1>'+esc(_L.topic)+'</h1>'+lessonNotesHtml())});
+    };}
 }
 function runLessonQuiz(qs,box){
   let i=0,score=0;
@@ -3185,7 +3230,9 @@ document.getElementById("il-go").onclick=()=>{
     const board=PROFILE.board&&PROFILE.board!=="—"?PROFILE.board:"";
     const curric=/ib|baccal/i.test(level)?"the IB curriculum":/national 5|highers/i.test(level)?"the Scottish (SQA) curriculum":/igcse|cie/i.test(level+board)?"the international (CIE/IGCSE) curriculum":"the UK national curriculum";
     document.getElementById("il-sub").textContent=_L.topic+" · "+level+" · writing your curriculum-aligned lesson with "+SYAI.provider()+"…";
-    SYAI.ask("You are StudYear's curriculum lesson author. Write an EXTREMELY detailed, curriculum-accurate lesson on the topic for a "+level+(subj?" "+subj:"")+" student, aligned to "+curric+(board?" and the "+board+" specification":"")+". Return EXACTLY six sections separated by lines containing only '---':\n1) 4–6 learning objectives, one per line, each tied to the curriculum/specification point it serves (name the spec area, e.g. 'AQA 4.4.1' style where known, otherwise the curriculum strand);\n2) Key vocabulary: 6–8 terms, each as '**term** — precise definition';\n3) The core teaching: a genuinely educational, detailed explanation with sub-points, **bold key terms** and at least two concrete examples — real subject content, not study advice;\n4) Going deeper: the mechanisms (how and why), links to related spec topics, one more worked micro-example, and the single most common misunderstanding corrected;\n5) A worked exam-style question: the question on the first line (with mark allocation), then the full model answer as numbered mark-scheme-style steps showing where each mark is earned;\n6) Exam technique for this level"+(board?" and "+board:"")+": the command words that appear on this topic and what each demands, typical mark allocations, and the 3 most common traps with fixes.\nUse markdown throughout. Depth and accuracy over brevity.",
+    SYAI.ask("You are StudYear's curriculum lesson author. Write an EXTREMELY detailed, curriculum-accurate lesson on the topic for a "+level+(subj?" "+subj:"")+" student, aligned to "+curric+(board?" and the "+board+" specification":"")+". Return EXACTLY six sections separated by lines containing only '---':\n1) 4–6 learning objectives, one per line, each tied to the curriculum/specification point it serves (name the spec area, e.g. 'AQA 4.4.1' style where known, otherwise the curriculum strand);\n2) Key vocabulary: 6–8 terms, each as '**term** — precise definition';\n3) The core teaching: a genuinely educational, detailed explanation with sub-points, **bold key terms** and at least two concrete examples — real subject content, not study advice;\n4) Going deeper: the mechanisms (how and why), links to related spec topics, one more worked micro-example, and the single most common misunderstanding corrected;\n5) A worked exam-style question: the question on the first line (with mark allocation), then the full model answer as numbered mark-scheme-style steps showing where each mark is earned;\n6) Exam technique for this level"+(board?" and "+board:"")+": the command words that appear on this topic and what each demands, typical mark allocations, and the 3 most common traps with fixes.\nUse markdown throughout. Depth and accuracy over brevity."+
+      (LEARN.style?" The student's learning style is "+LEARN.style+" — shape explanations accordingly (diagrams described in words for visual learners, spoken-rhythm mnemonics for auditory, do-it steps for kinaesthetic).":"")+
+      (LEARN.pace==="gentle"?" The student prefers a gentle pace: smaller steps, more recaps.":LEARN.pace==="fast"?" The student moves fast: denser content, fewer recaps.":""),
       "Topic: "+topic,{maxTokens:2800}).then(t=>{
       const parts=String(t).split(/\n-{3,}\n?/);
       const quiz=_L.steps.find(s=>s.type==="quiz");

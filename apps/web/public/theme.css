@@ -1,0 +1,48 @@
+/* StudYear premium colour lift — additive enhancement layer, injected by
+   guard.js on every signed-in console (and included on auth/demo). Lifts the
+   near-black base with layered colour glows, gives cards rotating accent
+   hairlines and KPI numbers a gold→sky gradient. Pure CSS on shared classes:
+   no page markup changes, nothing breaks if a class is absent. */
+body{
+  background:
+    radial-gradient(1100px 700px at 88% -12%, rgba(99,102,241,.20), transparent 60%),
+    radial-gradient(950px 650px at -12% 18%, rgba(20,184,166,.14), transparent 55%),
+    radial-gradient(1000px 800px at 55% 112%, rgba(168,85,247,.13), transparent 62%),
+    radial-gradient(700px 500px at 30% -8%, rgba(242,206,123,.07), transparent 55%),
+    linear-gradient(180deg,#0A1330 0%,#081026 45%,#070D20 100%) !important;
+}
+.card,.res,.snap{
+  position:relative;
+  background:linear-gradient(180deg,rgba(32,44,80,.46),rgba(11,20,40,.82)) !important;
+  border-color:rgba(126,148,198,.30) !important;
+}
+.card::before,.res::before,.snap::before{
+  content:"";position:absolute;left:0;right:0;top:0;height:2px;
+  border-radius:inherit;border-bottom-left-radius:0;border-bottom-right-radius:0;
+  background:linear-gradient(90deg,var(--sy-acc1,#4FA6E0),var(--sy-acc2,#8B5CF6));
+  opacity:.9;pointer-events:none;
+}
+.card:nth-of-type(6n+1),.res:nth-of-type(6n+1),.snap:nth-of-type(6n+1){--sy-acc1:#4FA6E0;--sy-acc2:#8B5CF6}
+.card:nth-of-type(6n+2),.res:nth-of-type(6n+2),.snap:nth-of-type(6n+2){--sy-acc1:#F2CE7B;--sy-acc2:#F97362}
+.card:nth-of-type(6n+3),.res:nth-of-type(6n+3),.snap:nth-of-type(6n+3){--sy-acc1:#34D399;--sy-acc2:#22D3EE}
+.card:nth-of-type(6n+4),.res:nth-of-type(6n+4),.snap:nth-of-type(6n+4){--sy-acc1:#F472B6;--sy-acc2:#A78BFA}
+.card:nth-of-type(6n+5),.res:nth-of-type(6n+5),.snap:nth-of-type(6n+5){--sy-acc1:#F59E0B;--sy-acc2:#F2CE7B}
+.card:nth-of-type(6n),.res:nth-of-type(6n),.snap:nth-of-type(6n)  {--sy-acc1:#22D3EE;--sy-acc2:#34D399}
+.card:hover,.res:hover,.snap:hover{border-color:rgba(150,175,230,.45) !important}
+/* KPI / stat numbers glow gold→sky */
+.tile .v,.tele .num,.kpi .v,.stat .v{
+  background:linear-gradient(92deg,#F6D992 10%,#8FC2EC 90%);
+  -webkit-background-clip:text;background-clip:text;color:transparent !important;
+}
+/* pills & badges pick up a soft tint instead of flat grey */
+.badge,.pill{background:rgba(79,166,224,.10)}
+.badge.prem{background:rgba(242,206,123,.12)}
+/* links & focus states are livelier */
+a{transition:color .15s}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:2px solid #8B5CF6;outline-offset:2px;
+}
+/* scrollbar joins the theme */
+::-webkit-scrollbar{width:11px;height:11px}
+::-webkit-scrollbar-track{background:rgba(10,18,40,.6)}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#3D6BB0,#6D5CC9);border-radius:8px;border:2px solid rgba(10,18,40,.6)}

@@ -43,9 +43,11 @@ export const PERSONAS: Persona[] = [
     account: { name: 'Amara O.', detail: 'Year 11 · Student Premium' },
     plans: STUDENT_PLANS,
     modules: [
+      { agent: AgentId.Examiner, label: 'Academic Diagnostic', desc: 'Start here — your compulsory baseline right after your profile. Finds exactly what you know, forget and need next.', tariff: 'academic_diagnostic', href: 'study/#diag' },
+      { agent: AgentId.Examiner, label: 'Diagnostic Results', desc: 'Your baseline per subject — the point every StudYear tool personalises from.', tariff: 'diagnostic_results', href: 'study/#diag-results' },
+      { agent: AgentId.Planner, label: 'Personal Recovery Plan', desc: 'Built from your diagnostic — the exact sessions that close your gaps.', href: 'study/#recovery' },
       { agent: AgentId.Planner, label: 'Study Planner', desc: 'A personalised plan in under 5 minutes — weak topics weighted heaviest.', tariff: 'study_planner', href: 'study/' },
       { agent: AgentId.Tutor, label: 'AI Tutor', desc: 'Homework & exam help, 24/7. Teaches the method, never just the answer.', tariff: 'homework_help', href: 'study/' },
-      { agent: AgentId.Examiner, label: 'Academic Diagnostic', desc: 'Find exactly what you know, forget and need next.', tariff: 'academic_diagnostic', href: 'study/' },
       { agent: AgentId.ContentForge, label: 'Resource Maker', desc: 'Flashcards, quizzes, notes, mindmaps — generated or your own.', tariff: 'flashcards', href: 'study/' },
       { agent: AgentId.Examiner, label: 'Predicted Grade', desc: 'Live grade trajectory with confidence band vs your target.', tariff: 'predicted_grade', href: 'dashboards/student/' },
       { agent: AgentId.Motivation, label: 'Streaks & Points', desc: 'Momentum you can see — streaks, points, mastery per subject.', href: 'account/achievements/' },

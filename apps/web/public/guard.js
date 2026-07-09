@@ -44,6 +44,13 @@
     }
   } catch (e) {}
 
+  // premium colour theme: one shared enhancement layer across every console
+  try {
+    var th = document.createElement('link');
+    th.rel = 'stylesheet'; th.href = base + 'theme.css';
+    (document.head || document.documentElement).appendChild(th);
+  } catch (e) {}
+
   window.SY = {
     session: s,
     base: base,

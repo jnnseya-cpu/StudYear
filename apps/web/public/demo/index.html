@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>StudYear — Test our demo</title><link rel="manifest" href="../manifest.json"><link rel="icon" href="../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<title>StudYear — Test our demo</title><link rel="manifest" href="../manifest.json"><link rel="icon" href="../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18"><link rel="stylesheet" href="../theme.css">
 <style>
   :root{--bg:#060B18;--panel:#0B1428;--line:rgba(170,182,204,.16);--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#77839B;
     --gold-300:#F2CE7B;--gold-400:#D9AE55;--gold-500:#B98A2F;--blue-300:#8FC2EC;--blue-500:#2E6BC4;--good:#5CBB7B;--warn:#E0A93F;
@@ -96,7 +96,8 @@ function seedSchoolStore(){
   set(P+'name','Riverside Academy (Demo)');
   set(P+'verified',true);
   set(P+'acu',{balance:5000,burn:[120,90,140,110,160,95,130]});
-  set(P+'staff',[{email:'teacher@demo.studyear',name:'Daniel Mensah',role:'Teacher',cohorts:['10A','11B']},
+  /* cohorts must match roster `year` values — myStudents() filters on them */
+  set(P+'staff',[{email:'teacher@demo.studyear',name:'Daniel Mensah',role:'Teacher',cohorts:['Year 10','Year 11']},
                  {email:'school@demo.studyear',name:'Priya Sharma',role:'Headteacher',cohorts:[]}]);
   set(P+'roster',[
     {email:'student@demo.studyear',name:'Emily Carter',cohort:'10A',year:'Year 10'},
@@ -106,6 +107,7 @@ function seedSchoolStore(){
     {email:'aisha@demo.studyear',name:'Aisha Rahman',cohort:'11B',year:'Year 11'},
     {email:'tomas@demo.studyear',name:'Tomas Kovacs',cohort:'11B',year:'Year 11'}]);
   /* light live accounts behind the roster so drill-downs show real data */
+  seedStudent('student@demo.studyear','Emily Carter',{});
   seedStudent('jayden@demo.studyear','Jayden Osei',{acus:500,points:980,base:48});
   seedStudent('sofia@demo.studyear','Sofia Almeida',{acus:700,points:1730,base:66});
   seedStudent('liam@demo.studyear','Liam Whitfield',{acus:500,points:640,base:41,level:'GCSE'});

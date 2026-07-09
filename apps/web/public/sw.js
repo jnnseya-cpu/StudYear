@@ -3,7 +3,7 @@
  * network-first for HTML navigations (so deploys show up), offline fallback to
  * the cached page. Scope-relative so it works at / (Vercel) and /StudYear/ (Pages).
  */
-const CACHE = 'studyear-v3';
+const CACHE = 'studyear-v4';
 const PRECACHE = ['./', './app/', './study/', './auth/', './manifest.json', './logo.svg', './icon.svg',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 
@@ -31,10 +31,16 @@ self.addEventListener('fetch', (e) => {
         .catch(() => caches.match(req).then((hit) => hit || caches.match('./')))
     );
   } else {
+    // stale-while-revalidate: serve the cache instantly, refresh it in the
+    // background so updated platform JS (guard/ai/billing/export/exam) reaches
+    // returning visitors on their next load without a cache-name bump
     e.respondWith(
-      caches.match(req).then((hit) => hit || fetch(req).then((res) => {
-        const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); return res;
-      }))
+      caches.match(req).then((hit) => {
+        const refresh = fetch(req).then((res) => {
+          const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); return res;
+        }).catch(() => hit);
+        return hit || refresh;
+      })
     );
   }
 });

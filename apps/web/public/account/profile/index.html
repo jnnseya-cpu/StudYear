@@ -82,12 +82,12 @@
 <aside class="side">
   <a class="slogo" href="../../">⌂ <b class="wm">StudYear</b></a>
   <nav>
+    <a href="../../study/#diag">Academic Diagnostic</a>
+    <a href="../../study/#diag-results">Diagnostic Results</a>
+    <a href="../../study/#recovery">Personal Recovery Plan</a>
     <a href="../../dashboards/student/">Dashboard</a>
     <a href="../../tutors/">Find tutors</a>
     <a href="../#parent-link">Parent link code</a>
-    <a href="../../study/#diag">Academic Diagnostic</a>
-    <a href="../../study/#diag">Diagnostic Results</a>
-    <a href="../../study/#planner">Personal Recovery Plan</a>
     <a href="../../study/#planner">AI Study Planner</a>
     <a href="../../study/#tutor">AI Tutor</a>
     <a href="../../study/#lesson">Interactive Lesson</a>
@@ -381,10 +381,27 @@ $('save').onclick=function(){
     S.name=name;localStorage.setItem('sy-session',JSON.stringify(S));
   }catch(e){}
   SY.log('profile','Profile updated','Personal and academic details saved.');
-  var onboarding=new URLSearchParams(location.search).get('welcome')==='1'&&!SY.get('baseline',null);
-  toast(onboarding?'Profile saved — next, set your baseline with a quick diagnostic':'Profile saved');
-  // new students go straight to the Academic Diagnostic — their baseline to build from
-  setTimeout(function(){location.href=onboarding?'../../study/#diag':'../'},800);
+  /* compulsory flow: the moment the profile is complete, the Academic
+     Diagnostic pops — it is the baseline every StudYear tool personalises from */
+  var needsDiag=!SY.get('baseline',null)&&!(SY.get('diagnostics',[])||[]).length;
+  if(needsDiag){
+    var ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:rgba(4,8,18,.82);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.innerHTML='<div style="background:#0B1428;border:1px solid #B98A2F;border-radius:16px;max-width:460px;padding:28px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.6)">'+
+      '<div style="font-size:34px">✅</div>'+
+      '<h2 style="font-family:Georgia,serif;font-size:22px;margin:10px 0 8px;color:#EDF1F8">Profile complete</h2>'+
+      '<p style="color:#AAB6CC;font-size:14px;line-height:1.7;margin:0 0 6px">One step left — your <b style="color:#F2CE7B">Academic Diagnostic</b>. '+
+      'It sets your baseline so every tool (tutor, planner, lessons, predicted grades) personalises to you. It takes minutes and it\'s how StudYear learns you.</p>'+
+      '<button id="pop-diag" style="margin-top:14px;appearance:none;border:1px solid #B98A2F;border-radius:10px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;background:linear-gradient(180deg,#F2CE7B,#D9AE55);color:#1a1405">Start my Academic Diagnostic →</button>'+
+      '<div style="margin-top:10px;font-size:11.5px;color:#77839B">Opening automatically…</div></div>';
+    document.body.appendChild(ov);
+    var go=function(){location.href='../../study/#diag'};
+    ov.querySelector('#pop-diag').onclick=go;
+    setTimeout(go,3200);
+    return;
+  }
+  toast('Profile saved');
+  setTimeout(function(){location.href='../'},800);
 };
 
 $('signout').onclick=function(e){e.preventDefault();SY.signOut()};
