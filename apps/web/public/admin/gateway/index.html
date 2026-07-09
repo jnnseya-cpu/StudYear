@@ -189,7 +189,7 @@ function renderNatBoard(){
   box.innerHTML=Object.keys(byLevel).map(function(lv){
     var top=byLevel[lv].slice().sort(function(a,b){return (b.right||0)-(a.right||0)}).slice(0,5);
     return '<div style="margin-top:10px"><b style="color:var(--gold-300)">'+esc(lv)+'</b> — top 5 (of '+byLevel[lv].length+')'+
-      top.map(function(e,i){return '<div class="row"><b style="width:24px">'+(i+1)+'</b><span style="width:24px">'+esc(e.av||'🎸')+'</span><span style="flex:1">'+esc(e.name)+' <span class="note" style="margin:0">'+esc(e.email)+'</span></span><span>'+e.right+'/25</span></div>'}).join('')+
+      top.map(function(e,i){return '<div class="row"><b style="width:24px">'+(i+1)+'</b><span style="width:24px">'+esc(e.av||'🦸')+'</span><span style="flex:1">'+esc(e.name)+' <span class="note" style="margin:0">'+esc(e.email)+'</span></span><span>'+e.right+'/25</span></div>'}).join('')+
       '<button class="btn sm" data-award="'+esc(lv)+'" style="margin-top:6px">🏅 Award year-free access to these 5 (+ parents)</button></div>';
   }).join('');
   box.querySelectorAll('[data-award]').forEach(function(b){b.onclick=function(){

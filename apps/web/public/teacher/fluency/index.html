@@ -41,7 +41,7 @@
     <div class="card c6"><h3>⚔️ Class battle manager</h3><div class="sub" id="battle-sub">This week's battle</div><div id="battle"></div>
       <div style="margin-top:8px"><button class="btn ghost sm" id="battle-reset">Reset this week's battle</button></div></div>
 
-    <div class="card c12"><h3>🏆 School league</h3><div class="sub">Anonymous rock-names — school-wide, resets weekly</div><div id="board"></div></div>
+    <div class="card c12"><h3>🏆 School league</h3><div class="sub">Anonymous hero names — school-wide, resets weekly</div><div id="board"></div></div>
   </div>
 </main></div>
 <script src="../nav.js" data-base="../" data-cur="fluency/"></script>
@@ -167,7 +167,7 @@ renderBattle();
 function renderBoard(){
   if(!code){$('board').innerHTML='<div class="empty">Link your school to see the school league.</div>';return}
   var bd=SY.schoolGet(code,'skillrush-board',[]).slice().sort(function(a,b){return (b.xp||0)-(a.xp||0)});
-  $('board').innerHTML=bd.length?bd.slice(0,12).map(function(x,i){return '<div class="row"><b style="width:26px">'+(i+1)+'</b><span style="width:26px">'+esc(x.av||'🎸')+'</span><span style="flex:1">'+esc(x.name)+'</span><span>'+(x.xp||0).toLocaleString()+' XP</span></div>'}).join(''):'<div class="empty">No league entries yet.</div>';
+  $('board').innerHTML=bd.length?bd.slice(0,12).map(function(x,i){return '<div class="row"><b style="width:26px">'+(i+1)+'</b><span style="width:26px">'+esc(x.av||'🦸')+'</span><span style="flex:1">'+esc(x.name)+'</span><span>'+(x.xp||0).toLocaleString()+' XP</span></div>'}).join(''):'<div class="empty">No league entries yet.</div>';
 }
 renderBoard();
 })();

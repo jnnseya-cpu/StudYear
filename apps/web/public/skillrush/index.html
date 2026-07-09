@@ -12,8 +12,8 @@
   a{color:inherit}h1{font-family:var(--serif);font-weight:500;font-size:30px}.k{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-400)}p.lede{color:var(--ink-2);font-weight:300;margin-top:4px;max-width:78ch}
   .idrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:14px}
   .av{width:54px;height:54px;border-radius:14px;display:grid;place-items:center;font-size:30px;background:linear-gradient(135deg,rgba(79,166,224,.25),rgba(46,107,196,.25));border:1px solid var(--gold-500);cursor:pointer}
-  .rock{font-family:var(--serif);font-size:18px;color:var(--gold-300)}
-  .rock small{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-family:var(--sans)}
+  .heroid{font-family:var(--serif);font-size:18px;color:var(--gold-300)}
+  .heroid small{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-family:var(--sans)}
   #avpick{display:none;gap:6px;flex-wrap:wrap}#avpick button{font-size:22px;background:none;border:1px solid var(--line);border-radius:10px;padding:5px 8px;cursor:pointer}
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:10px;margin-top:16px}
   .stat{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:rgba(16,27,51,.5)}.stat .v{font-family:var(--serif);font-size:22px;color:var(--gold-300);line-height:1}.stat .l{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-top:5px}
@@ -52,7 +52,7 @@
 
   <div class="idrow">
     <div class="av" id="avatar" title="Change avatar">🦊</div>
-    <div class="rock"><span id="rockname">—</span><small>Your rock name · anonymous on leaderboards · <a href="#" id="edit-name" style="color:var(--gold-400)">edit</a></small></div>
+    <div class="heroid"><span id="heroname">—</span><small>Your hero name · anonymous on leaderboards · <a href="#" id="edit-name" style="color:var(--gold-400)">edit</a></small></div>
     <div id="avpick"></div>
   </div>
 
@@ -74,7 +74,7 @@
   <div class="card" id="mission-card"><h3>🎯 Today's mission</h3><div class="sub" id="mission-sub">Your daily workout — teacher-set when your class has a focus, otherwise your weakest skill</div>
     <div id="mission"></div></div>
 
-  <div class="card" id="heroes-card"><h3>🎸 Number Rock Stars™ <span style="font-size:11px;color:var(--ink-3);letter-spacing:.08em">· MATHS HEROES</span></h3>
+  <div class="card" id="heroes-card"><h3>🦸 Maths Heroes™ <span style="font-size:11px;color:var(--ink-3);letter-spacing:.08em">· FOUR-OPERATION MASTERY</span></h3>
     <div class="sub">The four-operation arithmetic fluency module. Addition. Subtraction. Multiplication. Division. <b>Mastered.</b> From counting mistakes to confident maths mastery — one smart question at a time.</div>
     <div id="heroes" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:6px"></div>
     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -132,7 +132,7 @@
   <div class="card" id="result" style="display:none"></div>
 
   <div class="card"><h3>⚔️ Class battle — this week</h3><div class="sub" id="battle-sub">Every player's correct answers add to the class total</div><div id="battle"></div></div>
-  <div class="card"><h3>🏆 League — this week</h3><div class="sub" id="lb-sub">Anonymous rock-names · your school when linked, this device otherwise</div><div id="board"></div></div>
+  <div class="card"><h3>🏆 League — this week</h3><div class="sub" id="lb-sub">Anonymous hero names · your school when linked, this device otherwise</div><div id="board"></div></div>
 </div>
 <div id="toast"></div>
 <script>
@@ -148,21 +148,22 @@ function todayKey(){return new Date().toISOString().slice(0,10)}
 function weekKey(){var d=new Date();var on=new Date(d.getFullYear(),0,1);var wk=Math.ceil((((d-on)/864e5)+on.getDay()+1)/7);return d.getFullYear()+'-W'+wk}
 
 /* ---- state & identity ---- */
-var SR=SY.get('skillrush',{coins:0,xp:0,days:[],history:[],skill:{},rockName:null,avatar:null});
-if(!SR.rockName){var A=['Turbo','Mega','Rocket','Neon','Cosmic','Blaze','Quantum','Thunder'],B=['Fox','Falcon','Panda','Tiger','Comet','Wolf','Dragon','Otter'];SR.rockName=pick(A)+' '+pick(B)+' '+ri(10,99);SY.set('skillrush',SR)}
+var SR=SY.get('skillrush',{coins:0,xp:0,days:[],history:[],skill:{},heroName:null,avatar:null});
+if(!SR.heroName&&SR.rockName){SR.heroName=SR.rockName;delete SR.rockName;SY.set('skillrush',SR)}
+if(!SR.heroName){var A=['Turbo','Mega','Rocket','Neon','Cosmic','Blaze','Quantum','Thunder'],B=['Fox','Falcon','Panda','Tiger','Comet','Wolf','Dragon','Otter'];SR.heroName=pick(A)+' '+pick(B)+' '+ri(10,99);SY.set('skillrush',SR)}
 if(!SR.avatar)SR.avatar='🦊';
-var AVATARS=['🦊','🐼','🦁','🐯','🐸','🦉','🐙','🦄','🤖','👾','🚀','🎸','⚡','🔥','🌟','🎧'];
-$('avatar').textContent=SR.avatar;$('rockname').textContent=SR.rockName;
+var AVATARS=['🦊','🐼','🦁','🐯','🐸','🦉','🐙','🦄','🤖','👾','🚀','🧠','⚡','🔥','🌟','🎧'];
+$('avatar').textContent=SR.avatar;$('heroname').textContent=SR.heroName;
 $('avpick').innerHTML=AVATARS.map(function(a){return '<button data-av="'+a+'">'+a+'</button>'}).join('');
 $('avatar').onclick=function(){var p=$('avpick');p.style.display=p.style.display==='flex'?'none':'flex'};
 $('avpick').querySelectorAll('button').forEach(function(b){b.onclick=function(){SR.avatar=b.dataset.av;$('avatar').textContent=SR.avatar;SY.set('skillrush',SR);$('avpick').style.display='none';toast('Avatar updated')}});
-$('edit-name').onclick=function(e){e.preventDefault();var n=prompt('Choose your rock name (shown anonymously on leaderboards):',SR.rockName);if(n&&n.trim().length>=3){SR.rockName=n.trim().slice(0,24);SY.set('skillrush',SR);$('rockname').textContent=SR.rockName;toast('Rock name updated')}};
+$('edit-name').onclick=function(e){e.preventDefault();var n=prompt('Choose your hero name (shown anonymously on leaderboards):',SR.heroName);if(n&&n.trim().length>=3){SR.heroName=n.trim().slice(0,24);SY.set('skillrush',SR);$('heroname').textContent=SR.heroName;toast('Hero name updated')}};
 
 /* ---- fluency engine: 14 skills ---- */
-/* ---- localisation seam (the "Hip Hoppers" playbook: keep the engine, localise
-   the fantasy). LANG swaps the motivational wrapper + language-sensitive banks;
-   the adaptive engine, modes, economy and boards are identical. Owned by the
-   Localisation agent; FR is the first pack for the DRC/francophone corridor. */
+/* ---- localisation seam: keep the engine, localise the wrapper. LANG swaps the
+   motivational shell + language-sensitive banks; the adaptive engine, modes,
+   economy and boards are identical. Owned by the Localisation agent; FR is the
+   first pack for the DRC/francophone corridor. */
 var LANG=SR.lang||'en';
 var SPELL_FR=[['recevior','recevoir'],['boujour','bonjour'],['ecolle','école'],['mersi','merci'],['famile','famille'],['toujour','toujours'],['apres','après'],['tres','très'],['garcon','garçon'],['francais','français']];
 var GRAMMAR_FR=[['le / la — ___ maison','la'],['le / la — ___ livre','le'],['un / une — ___ pomme','une'],['un / une — ___ chien','un'],['est / sont — Ils ___ contents.','sont'],['est / sont — Elle ___ ici.','est'],['a / à — Il ___ un vélo.','a'],['a / à — Je vais ___ Paris.','à']];
@@ -175,10 +176,10 @@ var SCIFACT=[['Chemical symbol for iron','fe'],['Chemical formula for water','h2
 var GEOFACT=[['Capital of France','paris'],['Capital of Spain','madrid'],['Capital of Japan','tokyo'],['Capital of Italy','rome'],['Capital of Egypt','cairo'],['Longest river in the world','nile'],['Largest ocean','pacific'],['Highest mountain in the UK','ben nevis']];
 var HISTDATE=[['Year WW2 began in Europe',1939],['Year WW1 began',1914],['Battle of Hastings',1066],['Great Fire of London',1666],['Magna Carta signed',1215],['Year WW2 ended',1945],['Titanic sank',1912],['First Moon landing',1969]];
 function bankGen(bank,text){return function(){var it=pick(bank);return {q:it[0],a:it[1],text:text!==false}}}
-/* ---- Number Rock Stars™ fact engine: every core fact (≈530: 0+0…20+20,
+/* ---- Maths Heroes™ fact engine: every core fact (≈530: 0+0…20+20,
    within-20 differences, 1×1…12×12 and exact quotients) is a tracked node.
    biasPair() re-weights toward the learner's weakest/slowest facts in Focus &
-   Comeback (the Garage loop); inverse pairs (+↔−, ×↔÷) are linked nodes. ---- */
+   Comeback (the adaptive practice loop); inverse pairs (+↔−, ×↔÷) are linked nodes. ---- */
 function biasPair(op,rand){
   try{
     if(S&&(S.mode==='focus'||S.mode==='comeback')&&SR.facts){
@@ -324,8 +325,8 @@ var MODES={focus:{n:20,perQ:8,label:'Focus',lv:1},confidence:{n:12,perQ:0,label:
 
 /* ---- Maths Heroes: four-operation mastery, trophies & readiness ---- */
 var HERO_OPS=[['addition','Addition','Addition Hero','➕','add','#5CBB7B'],['subtraction','Subtraction','Subtraction Sniper','➖','sub','#5FA8E0'],['tables','Multiplication','Multiplication Boss','✖️','mul','#b48fe0'],['division','Division','Division Master','➗','div','#e0a75f']];
-/* Number Rank ladder — speed-derived per operation (TTRS Rock Status, ×4) */
-var NR_RANKS=[[1,'Number God'],[2,'Number Legend'],[3,'Number Star'],[4,'Headliner'],[5,'Support Act'],[6,'Breakthrough'],[7,'Rising Act'],[8,'Gigger'],[9,'Busker'],[10,'Garage Act'],[1e9,'Newcomer']];
+/* Number Rank ladder — speed-derived per operation */
+var NR_RANKS=[[1,'Lightning Hero'],[2,'Number Legend'],[3,'Number Star'],[4,'Champion'],[5,'Challenger'],[6,'Climber'],[7,'Riser'],[8,'Improver'],[9,'Explorer'],[10,'Starter'],[1e9,'Newcomer']];
 function opFacts(pre){var out=[];Object.keys(SR.facts||{}).forEach(function(k){if(k.indexOf(pre+':')===0)out.push(SR.facts[k])});return out}
 function opRank(pre){
   var fs=opFacts(pre).filter(function(f){return f.ms!=null&&f.t>=1});
@@ -486,13 +487,13 @@ function finish(quit){
   try{var stk=SY.get('streak',{days:[],best:0});if(stk.days.indexOf(todayKey())<0)stk.days.push(todayKey());SY.set('streak',stk)}catch(e){}
   SY.log('skillrush','SkillRush session',(SKILLS.find(function(s){return s[0]===curSkill})||[])[1]+' · '+acc+'% · '+avg+'s avg');
   var link=SY.get('schoolLink',null);var wk=weekKey();
-  var entry={name:SR.rockName,av:SR.avatar,xp:SR.xp,coins:SR.coins,acc:acc,week:wk};
-  if(link&&link.code){var bd=SY.schoolGet(link.code,'skillrush-board',[]);bd=bd.filter(function(x){return x.name!==SR.rockName});bd.push(entry);SY.schoolSet(link.code,'skillrush-board',bd)}
-  else{var bd2=[];try{bd2=JSON.parse(localStorage.getItem('sy-skillrush-board'))||[]}catch(e){}bd2=bd2.filter(function(x){return x.name!==SR.rockName});bd2.push(entry);try{localStorage.setItem('sy-skillrush-board',JSON.stringify(bd2))}catch(e){}}
+  var entry={name:SR.heroName,av:SR.avatar,xp:SR.xp,coins:SR.coins,acc:acc,week:wk};
+  if(link&&link.code){var bd=SY.schoolGet(link.code,'skillrush-board',[]);bd=bd.filter(function(x){return x.name!==SR.heroName});bd.push(entry);SY.schoolSet(link.code,'skillrush-board',bd)}
+  else{var bd2=[];try{bd2=JSON.parse(localStorage.getItem('sy-skillrush-board'))||[]}catch(e){}bd2=bd2.filter(function(x){return x.name!==SR.heroName});bd2.push(entry);try{localStorage.setItem('sy-skillrush-board',JSON.stringify(bd2))}catch(e){}}
   /* class battle: correct answers score for the class this week */
   if(S.mode==='battle'&&link&&link.code){
     var bt=SY.schoolGet(link.code,'skillrush-battle',[]);
-    bt.push({name:SR.rockName,right:S.right,week:wk,when:new Date().toISOString()});
+    bt.push({name:SR.heroName,right:S.right,week:wk,when:new Date().toISOString()});
     SY.schoolSet(link.code,'skillrush-battle',bt);
   }
   /* arithmetic diagnostic: per-operation readiness (Ready / At risk / Critical) */
@@ -508,7 +509,7 @@ function finish(quit){
     if(nat&&nat.active){
       var nb=[];try{nb=JSON.parse(localStorage.getItem('sy-national-board:'+nat.id))||[]}catch(e){}
       if(!nb.some(function(x){return x.email===(SY.session.email||'')})){
-        nb.push({email:SY.session.email||'',name:SR.rockName,av:SR.avatar,level:LEVEL,right:S.right,acc:acc,when:new Date().toISOString()});
+        nb.push({email:SY.session.email||'',name:SR.heroName,av:SR.avatar,level:LEVEL,right:S.right,acc:acc,when:new Date().toISOString()});
         try{localStorage.setItem('sy-national-board:'+nat.id,JSON.stringify(nb))}catch(e){}
       }
       toast('Official attempt recorded: '+S.right+'/25 — good luck! 🏆');
@@ -520,7 +521,7 @@ function finish(quit){
     duelHtml='<div class="stats" style="margin-top:10px"><div class="stat"><div class="v">'+p1+'</div><div class="l">You (P1)</div></div><div class="stat"><div class="v">'+p2+'</div><div class="l">Parent (P2)</div></div></div>'+
     '<p style="font-family:var(--serif);font-size:20px;color:var(--gold-300);margin-top:10px">'+(p1>p2?'🏆 You win!':p2>p1?'👏 Parent wins — rematch?':'🤝 A draw!')+'</p>';}
   $('result').style.display='block';
-  $('result').innerHTML='<h3>'+(quit?'Session ended':'Session complete! 🎸')+'</h3>'+duelHtml+
+  $('result').innerHTML='<h3>'+(quit?'Session ended':'Session complete! 🏁')+'</h3>'+duelHtml+
     '<div class="stats" style="margin-top:10px">'+
     '<div class="stat"><div class="v">'+S.right+'/'+S.times.length+'</div><div class="l">Correct</div></div>'+
     '<div class="stat"><div class="v">'+acc+'%</div><div class="l">Accuracy</div></div>'+
@@ -528,7 +529,7 @@ function finish(quit){
     '<div class="stat"><div class="v" style="color:var(--good)">+'+S.coins+'</div><div class="l">Coins</div></div>'+
     '<div class="stat"><div class="v" style="color:var(--good)">+'+xp+'</div><div class="l">XP</div></div></div>'+
     (S.mode==='battle'?'<p class="note">⚔️ +'+S.right+' points scored for your class battle this week.</p>':'')+
-    '<p class="note">'+(acc>=90?'Rock-solid — try Exam Pressure Mode next.':acc>=70?'Good work — one more session locks it in.':'Keep going — Comeback Mode will rebuild this step by step.')+'</p>'+
+    '<p class="note">'+(acc>=90?'Solid — try Exam Pressure Mode next.':acc>=70?'Good work — one more session locks it in.':'Keep going — Comeback Mode will rebuild this step by step.')+'</p>'+
     '<div style="margin-top:10px"><button class="btn solid sm" id="again">Go again →</button></div>';
   var savedMode=S.mode;$('again').onclick=function(){startSession(savedMode)};
   S=null;renderTop();renderBoard();renderBattle();renderMission();renderHeroes();
@@ -536,11 +537,11 @@ function finish(quit){
 
 /* ---- stats / boards ---- */
 function streakLen(){var set={};(SR.days||[]).forEach(function(d){set[d]=1});var n=0,d=new Date();while(set[d.toISOString().slice(0,10)]){n++;d.setDate(d.getDate()-1)}return n}
-var TITLES=[[0,'Rookie'],[100,'Rising Star'],[300,'Performer'],[700,'Headliner'],[1500,'Virtuoso'],[3000,'Legend'],[6000,'Grandmaster']];
+var TITLES=[[0,'Rookie'],[100,'Rising Star'],[300,'Performer'],[700,'Achiever'],[1500,'Virtuoso'],[3000,'Legend'],[6000,'Grandmaster']];
 function titleFor(xp){var t=TITLES[0][1];TITLES.forEach(function(x){if(xp>=x[0])t=x[1]});return t}
 function renderTop(){
   $('s-coins').textContent=SR.coins.toLocaleString();$('s-xp').textContent=SR.xp.toLocaleString();$('s-streak').textContent=streakLen();
-  $('rockname').textContent=SR.rockName+' · '+titleFor(SR.xp);
+  $('heroname').textContent=SR.heroName+' · '+titleFor(SR.xp);
   var best=null,tot=0,right=0;Object.keys(SR.skill).forEach(function(k){var st=SR.skill[k];tot+=st.total;right+=st.right;if(st.bestSpeed&&(!best||st.bestSpeed<best))best=st.bestSpeed});
   $('s-best').textContent=best?best+'s':'—';$('s-acc').textContent=tot?Math.round(100*right/tot)+'%':'—';
   /* confidence = accuracy in no-pressure modes */
@@ -554,19 +555,19 @@ function renderTop(){
 }
 function renderBoard(){
   var link=SY.get('schoolLink',null);var bd=[];
-  if(link&&link.code){bd=SY.schoolGet(link.code,'skillrush-board',[]);$('lb-sub').textContent='Anonymous rock-names · your class at '+(SY.schoolGet(link.code,'name','your school'))}
+  if(link&&link.code){bd=SY.schoolGet(link.code,'skillrush-board',[]);$('lb-sub').textContent='Anonymous hero names · your class at '+(SY.schoolGet(link.code,'name','your school'))}
   else{try{bd=JSON.parse(localStorage.getItem('sy-skillrush-board'))||[]}catch(e){}}
   bd=bd.slice().sort(function(a,b){return (b.xp||0)-(a.xp||0)});
-  var myIdx=bd.findIndex(function(x){return x.name===SR.rockName});
+  var myIdx=bd.findIndex(function(x){return x.name===SR.heroName});
   $('s-rank').textContent=myIdx>=0?('#'+(myIdx+1)):'—';
-  $('board').innerHTML=bd.length?bd.slice(0,10).map(function(x,i){return '<div class="row"><b style="width:30px">'+(i+1)+'</b><span style="width:26px">'+esc(x.av||'🎸')+'</span><span style="flex:1">'+esc(x.name)+(x.name===SR.rockName?' <span style="color:var(--gold-400)">(you)</span>':'')+'</span><span>'+(x.xp||0).toLocaleString()+' XP</span></div>'}).join(''):'<div class="empty">No sessions yet this week — be first on the board!</div>';
+  $('board').innerHTML=bd.length?bd.slice(0,10).map(function(x,i){return '<div class="row"><b style="width:30px">'+(i+1)+'</b><span style="width:26px">'+esc(x.av||'🦸')+'</span><span style="flex:1">'+esc(x.name)+(x.name===SR.heroName?' <span style="color:var(--gold-400)">(you)</span>':'')+'</span><span>'+(x.xp||0).toLocaleString()+' XP</span></div>'}).join(''):'<div class="empty">No sessions yet this week — be first on the board!</div>';
 }
 function renderBattle(){
   var link=SY.get('schoolLink',null);
   if(!link||!link.code){$('battle').innerHTML='<div class="empty">Link your school (My Account → Link to your school) to battle for your class.</div>';return}
   var wk=weekKey();var bt=SY.schoolGet(link.code,'skillrush-battle',[]).filter(function(x){return x.week===wk});
   var total=bt.reduce(function(a,x){return a+(x.right||0)},0);
-  var mine=bt.filter(function(x){return x.name===SR.rockName}).reduce(function(a,x){return a+(x.right||0)},0);
+  var mine=bt.filter(function(x){return x.name===SR.heroName}).reduce(function(a,x){return a+(x.right||0)},0);
   $('battle-sub').textContent='Week '+wk+' · '+SY.schoolGet(link.code,'name','your school');
   $('battle').innerHTML='<div class="stats"><div class="stat"><div class="v">'+total.toLocaleString()+'</div><div class="l">Class points</div></div><div class="stat"><div class="v">'+mine.toLocaleString()+'</div><div class="l">Your points</div></div><div class="stat"><div class="v">'+bt.length+'</div><div class="l">Battle sessions</div></div></div>'+
     (total?'':'<div class="note">Play ⚔️ Class Battle mode — every correct answer adds a point for your class.</div>');

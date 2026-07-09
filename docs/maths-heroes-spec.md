@@ -1,24 +1,24 @@
 # StudYear AI-OS · Product Specification
 
-# Number Rock Stars™
+# Maths Heroes™
 ### The Four-Operation Arithmetic Fluency Module
-*The complete TT Rock Stars mechanic set, replicated across addition, subtraction, multiplication and division.*
+*Addition. Subtraction. Multiplication. Division. Mastered — one smart question at a time.*
 
 **Prepared for:** Justin Nseya · Directeur Général, Groupe Nseya Digital / JNN Global Ltd
 **Platform:** StudYear AI-OS — powered by the Personalisation Engine & agent registry · UK + DRC/francophone-Africa corridors
-**Status:** v1 SHIPPED in the SkillRush™ Fluency Arena (`/skillrush/`), teacher layer at `/teacher/fluency/`, parent layer in the Parent Command Centre.
+**Status:** v1 SHIPPED inside the SkillRush™ Fluency Arena (`/skillrush/`), teacher layer at `/teacher/fluency/`, parent layer in the Parent Command Centre.
 
 ---
 
 ## 00 · What this module is
 
-A narrow-domain, gamified, adaptive fluency loop — the proven TTRS model — generalised from one
-operation (×) to all four. It is StudYear's foundational-numeracy on-ramp (Year 1 → KS3) feeding
-the full GCSE/A-Level/IB platform, and the natural DRC entry product (TENAFEP-aligned).
+A narrow-domain, gamified, adaptive fluency loop covering all four arithmetic operations. It is
+StudYear's foundational-numeracy on-ramp (Year 1 → KS3) feeding the full GCSE/A-Level/IB platform,
+and the natural DRC entry product (TENAFEP-aligned).
 
 **Design principle:** one legible metric, one visible next rung, a forgiving adaptive grind, zero
-teacher labour — applied four times over, with a fact graph of ~530 core facts (extensible to
-1,000+) instead of 144, while the learner-facing surface stays exactly as simple.
+teacher labour — applied four times over, across a fact graph of ~530 core facts (extensible to
+1,000+), while the learner-facing surface stays radically simple.
 
 ### The fact universe — implemented
 | Operation | Fact space | Bounds (level-pitched) | Inverse pair |
@@ -31,80 +31,86 @@ teacher labour — applied four times over, with a fact graph of ~530 core facts
 Inverse relationships are first-class: every generated fact carries its inverse key, and a correct
 answer propagates half-credit to the inverse node (`7×8` ✓ raises the prior on `56÷8`).
 
-## 01 · Game modes (shipped mapping)
+## 01 · Game modes (shipped)
 
-| Spec mode | TTRS origin | Shipped as |
+A pressure ladder from timer-free confidence-building to honest assessment and competition:
+
+| Mode | Mechanic | Reward weighting |
 |---|---|---|
-| Warm-Up | Jamming | 🌱 Confidence Mode (no timer, learner-chosen skill, hints) |
-| Practice Bay | Garage | ⚡ Focus Mode (adaptive re-weight to weakest/slowest facts, richest coins) |
-| Studio | Studio | Speed/accuracy tracking per session; Number Rank derived from fact latency |
-| Checkpoint | Soundcheck | ⏱ Exam Pressure (25 Q × 6 s — MTC-faithful) |
-| Monthly Gig | Gig | 🩺 Arithmetic Diagnostic (12 Q across the four ops, readiness statuses) + admin-triggered National Test (one attempt) |
-| Battles | Battles | ⚔️ Class Battle (weekly class totals via the school store) |
-| Number Slam | Rock Slam | 👨‍👧 Parent Challenge (async/pass-the-device duel) |
-| Arena / Festival | Arena/Festival | League boards (school + device); live-realtime arrives with the Firebase backend |
-| **Four-Op Gauntlet** *(TTRS lacks)* | — | Diagnostic rotates all four operations in one run |
-| Comeback / Streak Rescue | — | Recovery ramp + gentle-return session (StudYear exclusive) |
-| 🤖 AI Coach | — | Why-you're-stuck + targeted mini-lesson (live model, premium tier) |
+| 🌱 Confidence | No timer, learner-chosen skill, hints — rebuild self-belief first | standard |
+| ⚡ Focus | Adaptive: re-weights to the learner's weakest/slowest facts · 3 min | **richest** (steers volume to smart practice) |
+| 🚀 Comeback | Starts easy, ramps up — recovery after a dip | standard |
+| ⏱ Exam Pressure | 25 questions · 6 s each — mirrors the statutory Multiplication Tables Check | reduced |
+| 🩺 Arithmetic Diagnostic | 12 questions rotating all four operations — the full-numeracy check | minimal (honest signal) |
+| ⚔️ Class Battle | Every correct answer scores for the class week (school store) | boosted |
+| 👨‍👧 Parent Challenge | Pass-the-device duel: learner vs parent, 6 questions each | standard |
+| 🏆 National Test | Admin-triggered, one official attempt, grouped by education level; top 5 per level win a year of full access for learner + parent | minimal |
+| 🛟 Streak Rescue | Gentle 8-question return session after missed days | standard |
+| 🤖 AI Coach | Why-you're-stuck + targeted mini-lesson (live model; premium tier) | — |
 
 ## 02 · Progression — the Number Rank ladder (shipped)
 
 Per-operation speed rank from rolling fact latency, colour-coded per operation
 (＋green · −blue · ×purple · ÷orange), shown on each operation tile:
 
-`Number God (≤1s) → Number Legend (≤2s) → Number Star (≤3s) → Headliner → Support Act →
-Breakthrough → Rising Act → Gigger → Busker → Garage Act → Newcomer` · *Unranked* below 10 tracked facts.
+`Lightning Hero (≤1s) → Number Legend (≤2s) → Number Star (≤3s) → Champion → Challenger →
+Climber → Riser → Improver → Explorer → Starter → Newcomer` · *Unranked* below 10 tracked facts.
 
-Plus mastery trophies at ≥90% over 20+ attempts: **Addition Hero · Subtraction Sniper ·
-Multiplication Boss · Division Master**, XP level titles (Rookie → Grandmaster), coins, streaks,
-badges and certificates (Achievements page).
+Plus mastery trophies at ≥90% over 20+ attempts — **Addition Hero · Subtraction Sniper ·
+Multiplication Boss · Division Master** — XP level titles (Rookie → Grandmaster), coins, streaks,
+badges and certificates (Achievements page). Rank derives only from honest assessment-grade play;
+practice is rewarded generously in coins but never mints status.
 
 ## 03 · The adaptive engine (shipped)
 
 - **Unit of mastery:** one fact node (`add:7+8`, `sub:15-6`, `mul:7x8`, `div:56/8`) with accuracy,
   attempts and rolling latency (EWMA).
 - **Adaptive selection:** Focus & Comeback bias question generation to the 6 weakest/slowest facts
-  in scope (mastery <85% or latency >4 s); falls back to random until ≥3 candidates exist.
+  in scope (mastery <85% or latency >4 s); random until enough signal exists.
 - **Inverse linking:** correct answers propagate half-credit across +↔− and ×↔÷.
 - **Learner view:** four red→green fact heatmaps (12×12 for ×/÷; 0–10 grids for +/−) with
   per-cell tooltips; "gone green" per operation. Ready / At-risk / Critical status per operation.
-- **Cross-operation diagnosis:** the four-op diagnostic exposes relational gaps (× strong, ÷ weak)
-  the single-op incumbent structurally cannot see.
+- **Cross-operation diagnosis:** the four-op diagnostic exposes relational gaps (× strong, ÷ weak
+  = relational gap; + strong, − weak = bridging/place-value issue) — signal a single-operation
+  product structurally cannot see.
 
 ## 04 · Assessment & the statutory wedge
 
-- **× Checkpoint** — Exam Pressure mode mirrors the UK MTC (25 questions, ~6 s).
+- **× Checkpoint** — Exam Pressure mode mirrors the UK Multiplication Tables Check (25 Q, ~6 s).
 - **Four-Op Gauntlet** — the Arithmetic Diagnostic (KS2-SATs-style mixed check).
 - **National Test** — admin-triggered, one official attempt, grouped by education level; top 5 per
   level win a year of full access for learner + parent.
-- **TENAFEP Numeracy** — *pending source material:* board-faithful DRC papers slot into the same
-  Checkpoint engine once curriculum documents are supplied.
-- **Readiness Hub** — teacher fluency console shows MTC-ready count, at-risk list and per-class
-  gap heatmap.
+- **TENAFEP Numeracy** — *pending source material:* DRC-faithful papers slot into the same
+  checkpoint engine once curriculum documents are supplied.
+- **Readiness Hub** — teacher fluency console: check-ready count, at-risk list, per-class gap
+  heatmap.
 
 ## 05 · Teacher & admin layer (shipped)
 
 Class fluency heatmap (students × skills, mastery by colour) · at-risk + fastest-improving with AI
 intervention suggestions · teacher-directed practice (class focus = every student's daily mission)
 · printable practice sheets with answer keys (PDF/Word) · parent-update generator (live AI) ·
-class-battle manager · school league · MTC-readiness KPI.
-*Pending backend:* spreadsheet→auto-credential onboarding, live Arena spectate, MAT rollups
+class-battle manager · school league · check-readiness KPI.
+*Pending backend:* spreadsheet→auto-credential onboarding, live real-time class races, MAT rollups
 (the LA console already provides multi-school benchmarking + exportable evidence packs).
+
+**Teacher-time-to-value guarantee:** from setup to a live, adaptive, four-operation class in under
+5 minutes, with zero marking thereafter.
 
 ## 06 · Economy, accessibility & wellbeing (shipped)
 
 Mode-weighted coins (Focus 4 → Exam/Battle 3 → standard 2 → assessment 1) keep status honest;
 spend is cosmetic (avatars). Accessibility: huge font, dyslexia-friendly font, hide timer,
-read-aloud (speech synthesis), voice answers (speech recognition where supported), anonymous rock
+read-aloud (speech synthesis), voice answers (speech recognition where supported), anonymous hero
 names, parent-set curfew/quiet hours, no ads/chat/purchases.
 
 ## 07 · Go-to-market & the Africa on-ramp
 
 Land (free tier + simple school SKU) → wedge (statutory checkpoints) → expand (trust dashboards →
-full StudYear) → consumer on-ramp (family/tutor tiers). **Hip Hoppers playbook executed from day
-one:** the FR localisation pack ships in v1 (wrapper + French spelling/grammar banks, engine
-untouched); Lingala/Swahili packs, TENAFEP-faithful papers and BitriPay rails are the next
-corridor steps (require curriculum sources + payment rail).
+full StudYear) → consumer on-ramp (family/tutor tiers). **Bi-corridor by design:** the FR
+localisation pack ships in v1 (wrapper + French spelling/grammar banks, engine untouched);
+Lingala/Swahili packs, TENAFEP-faithful papers and BitriPay rails are the next corridor steps
+(require curriculum sources + payment rail).
 
 ## 08 · Engine mapping — mechanic → agent
 
@@ -116,7 +122,7 @@ corridor steps (require curriculum sources + payment rail).
 | Misconception inference | Cross-operation pattern analysis (diagnostic) | Learner-Profiling |
 | Number Rank ladder | Per-op rolling-latency estimate | Progression / Gamification |
 | Coins & cosmetics | Mode-weighted engagement economy | Motivation / Rewards |
-| Checkpoints (MTC / TENAFEP) | Exam-format simulation | Assessment / Papers |
+| Checkpoints (UK / TENAFEP) | Exam-format simulation | Assessment / Papers |
 | Diagnostic + National Test | Baseline cadence, one honest attempt | Scheduling / Baseline |
 | Class focus / homework | Teacher-scoped mission override | Assignment / Teacher-Console |
 | Class + LA analytics | Aggregated mastery rollups, evidence packs | Analytics / Reporting |
@@ -129,10 +135,10 @@ corridor steps (require curriculum sources + payment rail).
 ## 09 · Build sequence — status
 
 **Phase 1 (SHIPPED):** fact graph + adaptive engine with inverse linking; four heatmaps; Number
-Rank ladder; teacher layer (class focus, worksheets, heatmap); × Checkpoint (MTC-faithful Exam
+Rank ladder; teacher layer (class focus, worksheets, heatmap); × Checkpoint (check-faithful Exam
 Pressure).
 **Phase 2 (SHIPPED core):** battles + leagues + Parent Challenge; mode-weighted economy;
-Four-Op Gauntlet diagnostic; class analytics + readiness. *(Live-realtime Arena/Festival and MAT
+Four-Op Gauntlet diagnostic; class analytics + readiness. *(Live-realtime class races and MAT
 rollups arrive with the Firebase backend.)*
 **Phase 3 (STARTED):** FR localisation pack shipped; TENAFEP papers, Lingala/Swahili themes,
 offline packs and BitriPay await source material and the payment rail; the upsell bridge exists —
@@ -140,6 +146,6 @@ SkillRush results already feed My Progress, the parent command centre and predic
 
 ---
 
-*Everything above marked "shipped" is live and Playwright-verified in the static preview build;
-items marked "pending" require external inputs (Firebase backend, DRC curriculum documents,
-BitriPay) and slot into seams already built (`ai.js`, `billing.js`, school store).*
+*Everything marked "shipped" is live and Playwright-verified in the static preview build; items
+marked "pending" require external inputs (Firebase backend, DRC curriculum documents, BitriPay)
+and slot into seams already built (`ai.js`, `billing.js`, school store).*
