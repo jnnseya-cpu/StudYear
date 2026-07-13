@@ -117,6 +117,7 @@
 <body>
 <script src="../guard.js" data-role="parent" data-base="../"></script>
 <script src="../ai.js"></script>
+<script src="../record.js"></script>
 <div class="wrap">
 
 <div class="top">
@@ -179,6 +180,9 @@
 </div>
 
 <div class="grid">
+  <div class="card c12" id="pc-schoolrec" style="display:none"><h3>🏫 School record &amp; learning model</h3>
+    <div class="sub">Your child's dedicated school record — visible to you because their school granted access. Built by the learning model from everything they do in the OS.</div>
+    <div id="schoolrec-body"></div></div>
   <div class="card c12" id="pc-skillrush"><h3>⚡ SkillRush™ — daily fluency</h3><div class="sub">The 5-minute academic gym: safe, anonymous, no ads or chat. Here's what it means for your child.</div>
     <div id="sr-parent"></div>
   </div>
@@ -803,6 +807,33 @@ document.querySelectorAll('#elite-suite [data-tab]').forEach(function(a){a.oncli
 })();
 
 render();
+})();
+</script>
+<script>
+(function(){
+  try{
+    if(!window.SYRecord||!window.SY)return;
+    var kids=SY.get('children',[])||[];if(!kids.length)return;
+    for(var i=0;i<kids.length;i++){
+      var child=kids[i].email;
+      var link=SY.readAccount(child,'schoolLink',null);
+      if(!link||!link.code)continue;
+      var acc=SYRecord.access(link.code,child,SY.session.email,'parent');
+      if(!acc.allowed)continue;
+      SYRecord.logAccess(link.code,child,SY.session.email,'parent');
+      var rec=SYRecord.collect(child),m=SYRecord.model(rec),strat=SYRecord.strategy(rec,m);
+      var esc=function(x){return String(x==null?'':x).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})};
+      var card=document.getElementById('pc-schoolrec');if(!card)return;
+      card.style.display='block';
+      document.getElementById('schoolrec-body').innerHTML=
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:6px">'+
+        [['Study style & model',m.styleLabel],['Rhythm',m.rhythm],['Pace',m.weekly+' activities/week'],['Overall',(m.overall||0)+'% · risk '+m.risk.toLowerCase()]].map(function(x){
+          return '<div style="border:1px solid rgba(170,182,204,.16);border-radius:10px;padding:10px 12px"><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#77839B">'+x[0]+'</div><div style="font-size:13px;margin-top:3px">'+esc(x[1])+'</div></div>'}).join('')+'</div>'+
+        '<div style="margin-top:10px">'+strat.slice(0,3).map(function(x){return '<div style="padding:7px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:12.5px"><b>'+esc(x.h)+'</b><div class="note" style="margin-top:2px">'+esc(x.p)+'</div></div>'}).join('')+'</div>'+
+        '<div class="note" style="margin-top:8px">Provided by '+esc(link.name||'the school')+' · your access is school-granted and logged.</div>';
+      break;
+    }
+  }catch(e){}
 })();
 </script>
 </body>

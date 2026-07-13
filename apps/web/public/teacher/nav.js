@@ -33,7 +33,7 @@
   '#toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}';
   var st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
   var items=[
-    ['','Command Centre'],['attendance/','Take the register'],['fluency/','Fluency heatmap'],['classes/','Classes'],['interventions/','Interventions'],['assignments/','Assignments'],
+    ['','Command Centre'],['attendance/','Take the register'],['students/','Student records'],['fluency/','Fluency heatmap'],['classes/','Classes'],['interventions/','Interventions'],['assignments/','Assignments'],
     ['classroom/','Classroom · teach live'],['analytics/','Analytics'],['communications/','Communications'],
     ['assistant/','AI Teaching Assistant'],['lessonbuilder/','AI lesson builder'],['register/','Profile &amp; school link']
   ];

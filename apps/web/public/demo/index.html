@@ -113,6 +113,12 @@ function seedSchoolStore(){
   seedStudent('liam@demo.studyear','Liam Whitfield',{acus:500,points:640,base:41,level:'GCSE'});
   seedStudent('aisha@demo.studyear','Aisha Rahman',{acus:700,points:2210,base:70});
   seedStudent('tomas@demo.studyear','Tomas Kovacs',{acus:500,points:1120,base:55});
+  /* every rostered child carries their school link; Emily's parent is granted
+     access to her school record so the parent-view demo shows the model */
+  ['student','jayden','sofia','liam','aisha','tomas'].forEach(function(u){
+    set('sy-u:'+u+'@demo.studyear:schoolLink',{code:SCH,name:'Riverside Academy (Demo)',when:iso(-30)});
+  });
+  set('sy-school:'+SCH+':recordAccess',{'student@demo.studyear':{parent:true,by:'school@demo.studyear',when:iso(-7)}});
 }
 var ROLES=[
  {role:'student',ic:'🎓',t:'Student',who:'Emily Carter · Year 10 · GCSE (AQA)',dest:'../study/',
