@@ -108,8 +108,15 @@
     opts=opts||{};var brand=opts.brand||{name:'StudYear',line:'AI Academic Operating System'};
     var levels=opts.levels||LEVELS,boards=opts.boards||BOARDS;
     var d=opts.defaults||{};var goId=opts.goId||'sx-go';
+    /* one-tap handoff from the student record / interventions: another page
+       stages sy-prefill-exam and the builder arrives pre-filled — teachers
+       never re-type what the OS already knows */
+    try{
+      var pf=JSON.parse(localStorage.getItem('sy-prefill-exam'));
+      if(pf){d=Object.assign({},d,pf);localStorage.removeItem('sy-prefill-exam');}
+    }catch(e){}
     el.innerHTML=
-      '<label class="f">Paper title</label><input type="text" id="sx-title" placeholder="e.g. End of Unit Test — Forces & Motion">'+
+      '<label class="f">Paper title</label><input type="text" id="sx-title" value="'+esc(d.title||'')+'" placeholder="e.g. End of Unit Test — Forces & Motion">'+
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px">'+
       '<div><label class="f">Subject</label><input type="text" id="sx-subj" placeholder="Any subject" value="'+esc(d.subject||'')+'"></div>'+
       '<div><label class="f">Level</label><select id="sx-level">'+levels.map(function(l){return '<option'+(l===d.level?' selected':'')+'>'+esc(l)+'</option>'}).join('')+'</select></div>'+
@@ -118,7 +125,7 @@
       '<div><label class="f">Questions (1–50)</label><input type="number" id="sx-n" value="10" min="1" max="50"></div>'+
       '<div><label class="f">Difficulty</label><select id="sx-diff"><option>Foundation</option><option selected>Standard</option><option>Higher / stretch</option></select></div></div>'+
       '<label class="f" style="margin-top:10px">Topics (optional, comma-separated)</label>'+
-      '<input type="text" id="sx-topics" placeholder="e.g. speed and velocity, Newton’s laws, terminal velocity">'+
+      '<input type="text" id="sx-topics" value="'+esc(d.topics||'')+'" placeholder="e.g. speed and velocity, Newton’s laws, terminal velocity">'+
       '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
       '<button class="btn" id="'+goId+'">Build exam paper</button><span class="note" id="sx-status" style="margin:0">'+esc(opts.note||'')+'</span></div>'+
       '<div id="sx-outwrap" style="display:none;margin-top:14px">'+

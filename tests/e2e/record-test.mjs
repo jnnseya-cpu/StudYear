@@ -33,6 +33,11 @@ async function fresh(seedRole,seedEmail){
     const acts=[];for(let j=0;j<12;j++)acts.push({k:['lesson','quiz','resource'][j%3],t:'Event '+j,d:'',when:iso(-j)});
     localStorage.setItem('sy-u:kid@rec.test:activity',JSON.stringify(acts));
     localStorage.setItem('sy-u:kid@rec.test:streak',JSON.stringify({days:[day(-1),day(-2),day(-3),day(-4),day(-5)],best:9}));
+    localStorage.setItem('sy-school:RECSCH:attendance',JSON.stringify({
+      [day(-1)+'|10A|AM']:{records:{'kid@rec.test':'present'}},
+      [day(-2)+'|10A|AM']:{records:{'kid@rec.test':'absent'}},
+      [day(-3)+'|10A|AM']:{records:{'kid@rec.test':'present'}},
+      [day(-4)+'|10A|AM']:{records:{'kid@rec.test':'present'}}}));
     if(role)localStorage.setItem('sy-session',JSON.stringify({role,name:'V',email}));
   },{role:seedRole,email:seedEmail});
   return {ctx,p};
@@ -54,10 +59,20 @@ ok('Record: individual plan generated (2 weeks)', /Individual plan/.test(t)&&/We
 ok('Record: improvement strategy present', /improvement strategy/i.test(t)&&/Close the/.test(t));
 ok('Record: complete OS trail listed', /Complete OS record/.test(t)&&/12 events/.test(t));
 ok('Record: opened as senior leadership + logged notice', /senior leadership/.test(t)&&/access logged/.test(t));
+ok('Record: attendance auto-fed from the register (75%)', /75% \(auto-fed from the register\)/.test(t));
+ok('Record: strategy items carry one-tap actions', /Log as intervention/.test(t)&&/Build practice paper/.test(t)===false);
 /* push the plan to the child */
 await p.click('#rec-push-plan');await p.waitForTimeout(200);
 const kidPlan=await p.evaluate(()=>JSON.parse(localStorage.getItem('sy-u:kid@rec.test:plan')));
 ok('Record: plan pushes into the child planner', !!(kidPlan&&kidPlan.plan&&kidPlan.plan.length===2));
+const ivs=await p.evaluate(()=>JSON.parse(localStorage.getItem('sy-school:RECSCH:interventions')||'[]'));
+ok('Record: pushing the plan auto-logs a war-room intervention (no double entry)',
+  ivs.length===1&&ivs[0].source==='learning-model'&&ivs[0].email==='kid@rec.test');
+await p.evaluate(()=>{const b=[...document.querySelectorAll('button[data-iv]')][0];if(b)b.click()});
+await p.waitForTimeout(150);
+const ivs2=await p.evaluate(()=>JSON.parse(localStorage.getItem('sy-school:RECSCH:interventions')||'[]'));
+ok('Record: strategy one-tap logs an intervention with de-dupe',
+  ivs2.length===2&&ivs2.filter(x=>x.email==='kid@rec.test').length===2);
 await grabState(p);await ctx.close();
 
 /* ---- 2. cohort teacher allowed; outside-cohort teacher denied ---- */
@@ -66,7 +81,16 @@ await p.addInitScript(()=>localStorage.setItem('sy-session',JSON.stringify({role
 await p.goto(B+'/teacher/students/',{waitUntil:'networkidle'});
 ok('Teacher (cohort): sees the child', /Kid Example/.test(await p.evaluate(()=>document.body.innerText)));
 await p.click('.kid');await p.waitForTimeout(300);
-ok('Teacher (cohort): record opens as cohort teacher', /cohort teacher/.test(await p.evaluate(()=>document.body.innerText)));
+const tt=await p.evaluate(()=>document.body.innerText);
+ok('Teacher (cohort): record opens as cohort teacher', /cohort teacher/.test(tt));
+ok('Teacher: sees interventions in flight auto-fed from the war room', /Interventions in flight/.test(tt)&&/learning model/i.test(tt));
+ok('Teacher: build-practice-paper action available', /Build practice paper/.test(tt));
+/* one-tap paper: stages prefill and lands on the exam builder pre-filled */
+await p.evaluate(()=>{const b=[...document.querySelectorAll('button[data-paper]')][0];if(b)b.click()});
+await p.waitForURL(u=>/\/teacher\/assistant\//.test(u.pathname),{timeout:8000});
+await p.waitForLoadState('networkidle');
+ok('Exam builder arrives pre-filled from the record',
+  await p.evaluate(()=>document.getElementById('sx-subj')&&document.getElementById('sx-subj').value==='Mathematics'&&/Recovery paper/.test(document.getElementById('sx-title').value)));
 await grabState(p);await ctx.close();
 
 ({ctx,p}=await fresh(null));await withState(p);

@@ -42,7 +42,7 @@ const server = createServer((req, res) => {
 await new Promise((r) => server.listen(PORT, r));
 console.log('Serving ' + OUT + ' at http://localhost:' + PORT + '/StudYear');
 
-const SUITES = ['auth-test', 'e2ee-test', 'prem-test', 'exam-test', 'demo-test', 'admin-test', 'record-test', 'crawl'];
+const SUITES = ['auth-test', 'e2ee-test', 'prem-test', 'exam-test', 'demo-test', 'admin-test', 'record-test', 'data-test', 'crawl'];
 let failed = 0;
 for (const s of SUITES) {
   const file = join(ROOT, 'tests/e2e', s + '.mjs');

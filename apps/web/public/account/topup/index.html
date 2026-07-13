@@ -172,6 +172,22 @@ function toast(t){var el=$('toast');el.textContent=t;el.style.opacity=1;
 function fmt(n){return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,',')}
 
 /* mirrors @studyear/shared TOPUPS + STUDENT_PLANS */
+
+/* what an allowance buys in real study terms: a typical AI study hour blends
+   tutor questions (~5 ACUs each), an interactive lesson (25) or quiz (10)
+   and retrieval — about 30 ACUs per focused hour. */
+function studyEstimate(acus,monthly){
+  var hours=acus/30;
+  var line='≈ '+(hours>=20?Math.round(hours):Math.round(hours*2)/2)+' hours of AI-powered study';
+  if(monthly){
+    var perDay=hours*60/30; // minutes/day over 30 days
+    line+=' every month — about '+(perDay>=55?Math.round(perDay/60*4)/4+' hr':Math.round(perDay/5)*5+' min')+' a day';
+  }else{
+    var weeks=hours/3.5; // at ~30 min/day
+    line+=' — about '+(weeks>=7?Math.round(weeks/4.3)+' months':Math.round(weeks)+' weeks')+' of daily 30-minute sessions';
+  }
+  return line;
+}
 var PACKS=[
   {id:'mini_boost',label:'Mini Boost pack',acus:250,pounds:3,pop:false},
   {id:'core_boost',label:'Core Boost pack',acus:500,pounds:5,pop:true},
@@ -189,6 +205,7 @@ var PLANS=[
    feats:['Everything in Student Premium','1,650 ACUs added on each successful monthly payment','Built for GCSE, A-Level, 11+, and intensive exam periods']},
   {id:'student_max',label:'Student Max',pounds:30,acus:2750,cta:'Subscribe with Stripe',
    feats:['Everything in Student Premium+','2,750 ACUs added on each successful monthly payment','Heavy daily usage — GCSE, A-Level, 11+, SATs, university prep']}];
+PLANS.forEach(function(p){p.feats=p.feats.concat(['⏱ '+studyEstimate(p.acus,true)])});
 var LABELS={};PLANS.forEach(function(p){LABELS[p.id]=p.label});
 
 function monthKey(){return new Date().toISOString().slice(0,7)}
@@ -220,6 +237,7 @@ $('packs').innerHTML=PACKS.map(function(p){return '\
     <h4>'+p.label+'</h4>\
     <div class="pv">'+fmt(p.acus)+' ACUs</div>\
     <div class="pa">£'+p.pounds+'.00 one-time · '+fmt(p.acus)+' ACUs</div>\
+    <div class="pa" style="color:#8ee0a5;font-size:11px">⏱ '+studyEstimate(p.acus,false)+'</div>\
     <button class="btn solid" data-pack="'+p.id+'">Purchase now</button>\
   </div>'}).join('');
 $('plans').innerHTML=PLANS.map(function(p){return '\

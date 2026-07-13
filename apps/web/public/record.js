@@ -98,7 +98,7 @@
     for (var i = 0; i < n; i++) { sx += i; sy += ys[i]; sxy += i * ys[i]; sxx += i * i; }
     var d = n * sxx - sx * sx; return d ? (n * sxy - sx * sy) / d : 0;
   }
-  function model(rec) {
+  function model(rec, code) {
     var acts = rec.activity, qz = rec.quizzes;
     // modality mix
     var mix = {}; acts.forEach(function (a) { mix[a.k] = (mix[a.k] || 0) + 1; });
@@ -134,12 +134,24 @@
     var risk = overall && overall < 45 ? 'HIGH' : overall < 60 || declining.length >= 2 ? 'MEDIUM' : 'LOW';
     var style = (rec.learning && rec.learning.style) || (making > practice ? 'kinaesthetic-leaning' : 'visual-leaning');
     var evidence = acts.length + qz.length;
+    /* attendance auto-feeds from the teacher's register — no re-entry */
+    var attendance = null;
+    if (code) {
+      var att = $j('sy-school:' + code + ':attendance', {}), counted = 0, present = 0;
+      Object.keys(att).forEach(function (k) {
+        var st = (att[k].records || {})[rec.email];
+        if (st == null) return; counted++;
+        if (st === 'present' || st === 'late' || st === 'authorised') present++;
+      });
+      if (counted) attendance = Math.round(100 * present / counted);
+      if (attendance !== null && attendance < 85 && risk === 'LOW') risk = 'MEDIUM';
+    }
     return {
       styleLabel: style + ' · ' + domMode,
       rhythm: rhythm, weekly: weekly, consistency: consistency,
       peakHour: peak, mix: mix, subjects: subjects, overall: overall,
       weakest: subjects[0] || null, strongest: subjects[subjects.length - 1] || null,
-      declining: declining, risk: risk,
+      declining: declining, risk: risk, attendance: attendance,
       confidence: evidence >= 40 ? 'high' : evidence >= 15 ? 'medium' : 'low (needs more recorded activity)',
       evidence: evidence
     };
@@ -220,18 +232,34 @@
       return null;
     }
     logAccess(code, child, viewer.email, viewer.role);
-    var rec = collect(child), m = model(rec), plan = individualPlan(rec, m), strat = strategy(rec, m);
+    var rec = collect(child), m = model(rec, code), plan = individualPlan(rec, m), strat = strategy(rec, m);
+    var canAct = viewer.role === 'school' || viewer.role === 'teacher';
+    var ivs = ($j('sy-school:' + code + ':interventions', []) || []).filter(function (x) { return x.email === child; });
+    /* auto-fed from the school's Data intake hub — flags, groups, pastoral */
+    var meta = ($j('sy-school:' + code + ':studentMeta', {}) || {})[child] || {};
+    var wbs = ($j('sy-school:' + code + ':wellbeing', []) || []).filter(function (x) { return x.email === child; });
+    var behs = ($j('sy-school:' + code + ':behaviour', []) || []).filter(function (x) { return x.email === child; });
+    var chipDefs = [['send', 'SEND'], ['pp', 'Pupil Premium'], ['eal', 'EAL'], ['lac', 'Looked-after'], ['refugee', 'Refugee'], ['migrant', 'Recent migrant'], ['lowIncome', 'Low income'], ['youngCarer', 'Young carer']];
+    var metaChips = chipDefs.filter(function (c) { return meta[c[0]]; }).map(function (c) {
+      return '<span style="display:inline-block;border:1px solid rgba(143,194,236,.4);color:#8FC2EC;border-radius:14px;padding:2px 9px;font-size:10.5px;margin:2px 4px 2px 0">' + c[1] + '</span>';
+    }).join('') +
+      (meta.readingAge ? '<span style="display:inline-block;border:1px solid rgba(242,206,123,.4);color:#F2CE7B;border-radius:14px;padding:2px 9px;font-size:10.5px;margin:2px 4px 2px 0">Reading age ' + meta.readingAge + '</span>' : '') +
+      (meta.destination ? '<span style="display:inline-block;border:1px solid rgba(92,187,123,.4);color:#8ee0a5;border-radius:14px;padding:2px 9px;font-size:10.5px;margin:2px 4px 2px 0">→ ' + esc(meta.destination) + '</span>' : '') +
+      (wbs.length ? '<span style="display:inline-block;border:1px solid rgba(244,114,182,.4);color:#F4A8CE;border-radius:14px;padding:2px 9px;font-size:10.5px;margin:2px 4px 2px 0">Wellbeing ' + wbs[0].score + '</span>' : '') +
+      (behs.length ? '<span style="display:inline-block;border:1px solid rgba(224,169,63,.4);color:#e8c07a;border-radius:14px;padding:2px 9px;font-size:10.5px;margin:2px 4px 2px 0">' + behs.length + ' behaviour entr' + (behs.length === 1 ? 'y' : 'ies') + '</span>' : '');
     var name = rec.profile.name || (window.SY ? SY.accountName(child) : child);
     var rr = rosterRec(code, child) || {};
     var html = '';
     html += '<div class="card" style="margin-bottom:12px"><div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">' +
       '<div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#4FA6E0,#8B5CF6);display:grid;place-items:center;font-size:20px;font-weight:700;color:#fff">' + esc((name || '?')[0]) + '</div>' +
-      '<div style="flex:1"><h3 style="margin:0">' + esc(name) + '</h3><div class="note">' + esc(rr.year || '') + (rr.cohort ? ' · ' + esc(rr.cohort) : '') + ' · ' + esc(rec.profile.level || '—') + ' · record opened as <b style="color:#F2CE7B">' + esc(acc.via) + '</b> · access logged</div></div>' +
+      '<div style="flex:1"><h3 style="margin:0">' + esc(name) + '</h3><div class="note">' + esc(rr.year || '') + (rr.cohort ? ' · ' + esc(rr.cohort) : '') + ' · ' + esc(rec.profile.level || '—') + ' · record opened as <b style="color:#F2CE7B">' + esc(acc.via) + '</b> · access logged</div>' +
+      (metaChips ? '<div style="margin-top:5px">' + metaChips + '</div>' : '') + '</div>' +
       '<div style="text-align:right"><div style="font-family:Georgia,serif;font-size:24px;color:' + (m.risk === 'HIGH' ? '#E06060' : m.risk === 'MEDIUM' ? '#E0A93F' : '#5CBB7B') + '">' + m.overall + '%</div><div class="note">overall · risk ' + m.risk.toLowerCase() + '</div></div></div></div>';
     // learning model
     html += '<div class="card" style="margin-bottom:12px"><h3>🧠 Learning model <span class="note" style="font-weight:400">machine-learned from ' + m.evidence + ' recorded events · confidence ' + esc(m.confidence) + '</span></h3>' +
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:8px">' +
-      [['Study style & model', m.styleLabel], ['Rhythm', m.rhythm + ' (peak ' + m.peakHour + ':00)'], ['Pace', m.weekly + ' activities/week'], ['Consistency', m.consistency]].map(function (x) {
+      [['Study style & model', m.styleLabel], ['Rhythm', m.rhythm + ' (peak ' + m.peakHour + ':00)'], ['Pace', m.weekly + ' activities/week'], ['Consistency', m.consistency],
+       ['Attendance', m.attendance === null ? 'no register data yet' : m.attendance + '% (auto-fed from the register)']].map(function (x) {
         return '<div style="border:1px solid rgba(170,182,204,.16);border-radius:10px;padding:10px 12px"><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#77839B">' + x[0] + '</div><div style="font-size:13px;color:#EDF1F8;margin-top:3px">' + esc(x[1]) + '</div></div>';
       }).join('') + '</div>' +
       (m.subjects.length ? '<div style="margin-top:10px">' + m.subjects.map(function (x) {
@@ -246,10 +274,28 @@
           w.days.map(function (d) { return '<div style="border:1px solid rgba(170,182,204,.14);border-radius:8px;padding:7px 9px;font-size:11px"><b style="color:#8FC2EC">' + d.d + '</b> · ' + esc(d.s) + '<div style="color:#77839B;margin-top:2px">' + esc(d.task) + ' · ' + d.mins + 'm</div></div>'; }).join('') + '</div></div>';
       }).join('') +
       '<div style="margin-top:10px"><button class="btn" id="rec-push-plan">Push this plan to ' + esc((name || '').split(' ')[0] || 'the student') + '’s planner</button></div></div>';
-    // strategy
+    // strategy — each subject-bearing item carries one-tap actions so the
+    // teacher never re-enters what the record already knows
     html += '<div class="card" style="margin-bottom:12px"><h3>🚀 Learning & improvement strategy</h3>' +
-      strat.map(function (x) { return '<div style="padding:8px 0;border-bottom:1px solid rgba(170,182,204,.08)"><b style="color:#EDF1F8;font-size:13px">' + esc(x.h) + '</b><div class="note" style="margin-top:2px">' + esc(x.p) + '</div></div>'; }).join('') +
+      strat.map(function (x, si) {
+        var subj = (x.h.match(/(?:gap|decline in|Stretch) (?:the )?([A-Za-z &]+?)(?: gap)?(?: \(|$)/) || [])[1] || '';
+        var acts2 = '';
+        if (canAct && subj) {
+          acts2 = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px">' +
+            '<button class="btn ghost sm" data-iv="' + esc(subj) + '" data-note="' + esc(x.p.slice(0, 120)) + '">＋ Log as intervention</button>' +
+            (viewer.role === 'teacher' ? '<button class="btn ghost sm" data-paper="' + esc(subj) + '">📄 Build practice paper</button>' : '') +
+            '</div>';
+        }
+        return '<div style="padding:8px 0;border-bottom:1px solid rgba(170,182,204,.08)"><b style="color:#EDF1F8;font-size:13px">' + esc(x.h) + '</b><div class="note" style="margin-top:2px">' + esc(x.p) + '</div>' + acts2 + '</div>';
+      }).join('') +
       '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" id="rec-deep">🤖 Deep AI strategy</button><button class="btn ghost" id="rec-export">⬇ Export record</button></div><div id="rec-deep-out" style="margin-top:8px"></div></div>';
+    // interventions already in flight (auto-fed from the war room — no duplicates)
+    html += '<div class="card" style="margin-bottom:12px"><h3>🛠 Interventions in flight <span class="note" style="font-weight:400">auto-fed from the intervention war room</span></h3>' +
+      (ivs.length ? ivs.slice(0, 6).map(function (x) {
+        return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid rgba(170,182,204,.07);font-size:12.5px">' +
+          '<span><b style="color:#EDF1F8">' + esc(x.subject || '') + '</b> <span class="note">' + esc(x.notes || '') + '</span></span>' +
+          '<span class="note" style="white-space:nowrap">' + esc(x.status || '') + ' · ' + esc(String(x.when || '').slice(0, 10)) + '</span></div>';
+      }).join('') : '<div class="note">None yet — log one from a strategy item above or push the individual plan.</div>') + '</div>';
     // full activity record
     html += '<div class="card"><h3>📚 Complete OS record <span class="note" style="font-weight:400">' + rec.activity.length + ' events · everything ' + esc((name || '').split(' ')[0] || 'they') + ' does in StudYear</span></h3>' +
       (rec.activity.slice(0, 30).map(function (a) {
@@ -257,6 +303,15 @@
       }).join('') || '<div class="note">No recorded activity yet — it appears here the moment they use the OS.</div>') + '</div>';
     container.innerHTML = html;
     // wire actions
+    function logIntervention(subject, notes) {
+      var iv = $j('sy-school:' + code + ':interventions', []);
+      /* de-dupe: one active learning-model intervention per subject per child */
+      if (iv.some(function (x) { return x.email === child && x.subject === subject && x.status !== 'complete'; })) return false;
+      iv.unshift({ email: child, name: name, subject: subject, notes: notes, status: 'active',
+        when: new Date().toISOString(), by: viewer.email, source: 'learning-model' });
+      $s('sy-school:' + code + ':interventions', iv.slice(0, 100));
+      return true;
+    }
     var pushBtn = container.querySelector('#rec-push-plan');
     if (pushBtn) pushBtn.onclick = function () {
       var existing = read(child, 'plan', { plan: [], done: {} }) || { plan: [], done: {} };
@@ -268,8 +323,32 @@
       var feed = read(child, 'activity', []) || [];
       feed.unshift({ k: 'plan', t: 'Individual plan from your school', d: plan.focus.join(', ') + ' — built from your learning model by ' + viewer.name + '.', when: new Date().toISOString() });
       SY.writeAccount(child, 'activity', feed.slice(0, 100));
-      pushBtn.textContent = '✓ Plan pushed to their planner'; pushBtn.disabled = true;
+      /* auto-feed the intervention war room — the plan IS the intervention,
+         logged once, visible to the whole school, no double entry */
+      logIntervention(plan.focus[0] || 'Individual plan',
+        'Individual plan (learning model): ' + plan.focus.join(', ') + ' · ' + plan.sessionMins + '-min sessions, best time ' + plan.bestTime + '.');
+      pushBtn.textContent = '✓ Pushed to their planner + logged in the intervention war room'; pushBtn.disabled = true;
     };
+    /* strategy one-tap actions */
+    container.querySelectorAll('button[data-iv]').forEach(function (b) {
+      b.onclick = function () {
+        var okd = logIntervention(b.dataset.iv, b.dataset.note || 'From the learning-model strategy.');
+        b.textContent = okd ? '✓ Logged in the war room' : '✓ Already an active intervention';
+        b.disabled = true;
+      };
+    });
+    container.querySelectorAll('button[data-paper]').forEach(function (b) {
+      b.onclick = function () {
+        var weak = (m.subjects.filter(function (x) { return x.s === b.dataset.paper; })[0] || {});
+        try {
+          localStorage.setItem('sy-prefill-exam', JSON.stringify({
+            subject: b.dataset.paper, level: rec.profile.level || 'GCSE',
+            title: 'Recovery paper — ' + b.dataset.paper + ' (' + name + ')',
+            topics: '' }));
+        } catch (e) {}
+        location.href = (location.pathname.indexOf('/teacher/') >= 0 ? '../assistant/' : '../../teacher/assistant/') + '#exam';
+      };
+    });
     var deepBtn = container.querySelector('#rec-deep');
     if (deepBtn) deepBtn.onclick = function () {
       var out = container.querySelector('#rec-deep-out');

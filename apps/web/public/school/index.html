@@ -85,6 +85,7 @@
     <a href="./" class="on">Command Centre</a>
     <a href="#risk">Risk intelligence</a>
     <a href="students/">Student records</a>
+    <a href="data/">Data intake</a>
     <a href="interventions/">Intervention war room</a>
     <a href="people/">People management</a>
     <a href="analytics/">Analytics</a>
@@ -307,9 +308,29 @@ function metrics(email){
   var parentLinks=(SY.readAccount(email,'parentLinks',[])||[]).length;
   return {email:email,profile:pf,mastery:mast,overall:overall,risk:diag?diag.risk:(overall<40?'HIGH':overall<60?'MEDIUM':'LOW'),hw:hw,parentLinks:parentLinks,year:pf.level||'—'};
 }
+/* the Data intake hub + automatic feeds enrich every real student the same
+   way the demo dataset does — one entry, every dashboard */
+var META=SY.schoolGet(code,'studentMeta',{});
+var BEHLOG=SY.schoolGet(code,'behaviour',[]);
+var WELLLOG=SY.schoolGet(code,'wellbeing',[]);
+var ATTSTORE=SY.schoolGet(code,'attendance',{});
+function enrich(base,email){
+  var out=Object.assign({},base,META[email]||{});
+  var inc=BEHLOG.filter(function(e){return e.email===email});
+  if(inc.length){var idx=82;inc.forEach(function(e){idx+=e.kind==='positive'?2:e.kind==='serious'?-8:-3});out.behaviour=clamp(idx,0,100)}
+  var ws=WELLLOG.filter(function(e){return e.email===email});
+  if(ws.length)out.wellbeing=ws[0].score;
+  if(out.attendance==null){
+    var counted=0,present=0;
+    Object.keys(ATTSTORE).forEach(function(k){var st=(ATTSTORE[k].records||{})[email];if(st==null)return;counted++;
+      if(st==='present'||st==='late'||st==='authorised')present++});
+    if(counted)out.attendance=Math.round(100*present/counted);
+  }
+  return out;
+}
 var M=roster.map(function(r){
   if(r.m){return Object.assign({email:r.email,name:r.name,year:r.year,profile:{level:r.year},parentLinks:r.m.parentLinks||0},r.m)}
-  return metrics(r.email);
+  return enrich(metrics(r.email),r.email);
 });
 var DEMO=roster.some(function(r){return r.demo});
 var atRisk=M.filter(function(m){return m.risk==='HIGH'||m.risk==='CRITICAL'});
@@ -415,15 +436,21 @@ function renderLeadership(){
   $('health-note').textContent=health>=70?'Strong — world-class trajectory':health>=55?'Stable — targeted focus needed':'Needs leadership attention';
   $('m-examready').textContent=examReady+'%';$('m-uniready').textContent=uniReady+'%';
   $('m-gifted').textContent=gifted.length;$('m-attend').textContent=attendance+'%';$('m-behav').textContent=behaviour;
-  var safeguard=SY.schoolGet(code,'safeguard',[]).length||M.filter(function(m){return m.risk==='CRITICAL'}).length;
+  var sgList=SY.schoolGet(code,'safeguard',[]);
+  var safeguard=sgList.filter(function(x){return typeof x!=='object'||x.status!=='resolved'}).length||M.filter(function(m){return m.risk==='CRITICAL'}).length;
   $('m-safeguard').textContent=safeguard;
 
   /* AI School Brain signals */
   var activeInterv=interventions.filter(function(i){return i.status==='active'||i.status==='identified'}).length;
-  var wellbeing=Math.round(clamp((behaviour+attendance)/2,0,100));
+  var wbs=M.map(function(m){return m.wellbeing}).filter(function(v){return v!=null});
+  var wellbeing=wbs.length?Math.round(avg(wbs)):Math.round(clamp((behaviour+attendance)/2,0,100));
   var predAvg=Math.round(avg(M.map(function(m){return fld(m,'predicted',gradeFor(m.overall))})));
-  var workload=staff.length?Math.round(clamp(M.length/staff.length*4,0,100)):0;
-  var curriculum=Math.round(avg(M.map(function(m){return fld(m,'curriculum', clamp(m.overall+8,0,100))})));
+  var SMETA=SY.schoolGet(code,'staffMeta',{});
+  var hrs=staff.map(function(t){return (SMETA[t.email]||{}).hours}).filter(function(h){return h>0});
+  var workload=hrs.length?Math.round(clamp(avg(hrs)/45*100,0,100)):(staff.length?Math.round(clamp(M.length/staff.length*4,0,100)):0);
+  var COV=SY.schoolGet(code,'curriculumCoverage',{});
+  var covVals=Object.keys(COV).map(function(k){return +COV[k]}).filter(function(v){return !isNaN(v)});
+  var curriculum=covVals.length?Math.round(avg(covVals)):Math.round(avg(M.map(function(m){return fld(m,'curriculum', clamp(m.overall+8,0,100))})));
   var signals=[
     {k:'Attendance',v:attendance+'%',s:attendance>=92?1:attendance>=88?0:-1},
     {k:'Homework',v:hwAvg+'%',s:hwAvg>=75?1:hwAvg>=55?0:-1},
