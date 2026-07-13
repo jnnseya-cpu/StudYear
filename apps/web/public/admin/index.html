@@ -427,8 +427,9 @@ var PLAN_NAMES={child_free:'Child Free',student_access:'Student Access',student_
   parent_elite:'Parent Elite',teacher_pro:'Teacher Pro',tutor_pro:'Tutor Pro',school:'School staff',admin:'Admin'};
 var LEVELS=['Reception','KS1','KS2','11+','KS3','GCSE','IGCSE','National 5','AS','A-level','Highers','IB','BTEC','University'];
 var SUBJECTS=['Accounting','Art','Biology','Business','Chemistry','Computer Science','Design & Technology','Drama','Economics','English Language','English Literature','French','Further Maths','Geography','German','History','Mathematics','Music','Physical Education','Physics','Politics','Psychology','Religious Studies','Sociology','Spanish'];
-function acct(email,k,d){try{var v=JSON.parse(localStorage.getItem('sy-u:'+email+':'+k));return v==null?d:v}catch(e){return d}}
-function acctSet(email,k,v){localStorage.setItem('sy-u:'+email+':'+k,JSON.stringify(v))}
+/* read/write through the guard so end-to-end-encrypted accounts stay sealed */
+function acct(email,k,d){return SY.readAccount(email,k,d)}
+function acctSet(email,k,v){SY.writeAccount(email,k,v)}
 function users(){return store('sy-users',[])}
 function uniqUsers(){var seen={},out=[];users().forEach(function(u){var k=(u.email||'')+'|'+(u.role||'');if(u.email&&!seen[k]){seen[k]=1;out.push(u)}});return out}
 function schools(){

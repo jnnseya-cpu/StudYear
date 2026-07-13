@@ -325,3 +325,33 @@ export interface ConsentGrant {
   revocable: true;
   expiresAt?: string;
 }
+
+// ------------------------------------------------------- end-to-end crypto ----
+/** E2EE envelope — the ONLY shape the sync backend accepts for personal data.
+ *  Sealed client-side with the account's data key (XSalsa20-Poly1305);
+ *  the data key itself travels only wrapped by a password-derived key. */
+export interface E2EEnvelope {
+  __e2e: 1;
+  v: 1;
+  n: string; // base64 nonce (24 bytes)
+  c: string; // base64 ciphertext+tag
+}
+
+/** Account key record as synced: NO device wrap, ever. */
+export interface E2EKeyRecord {
+  v: 1;
+  salt: string;           // base64 PBKDF2 salt (16 bytes)
+  wrapPw: { n: string; c: string }; // data key wrapped by PBKDF2(password, salt)
+}
+
+export const E2E = {
+  VERSION: 1 as const,
+  KDF: 'PBKDF2-SHA256' as const,
+  KDF_ITERATIONS: 150000,
+  CIPHER: 'XSalsa20-Poly1305' as const,
+} as const;
+
+export function isE2EEnvelope(v: unknown): v is E2EEnvelope {
+  return !!v && typeof v === 'object' && (v as E2EEnvelope).__e2e === 1
+    && typeof (v as E2EEnvelope).n === 'string' && typeof (v as E2EEnvelope).c === 'string';
+}

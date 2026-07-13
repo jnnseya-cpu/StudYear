@@ -196,10 +196,10 @@ function renderNatBoard(){
     var lv=b.dataset.award;var top=byLevel[lv].slice().sort(function(x,y){return (y.right||0)-(x.right||0)}).slice(0,5);
     var until=new Date(Date.now()+365*864e5).toISOString();
     top.forEach(function(e){
-      try{var w=JSON.parse(localStorage.getItem('sy-u:'+e.email+':wallet'))||{acus:0};
+      try{var w=SY.readAccount(e.email,'wallet',{acus:0});
         w.plan='student_max';w.planExpires=until;w.nationalWinner=true;w.acus=(w.acus||0)+1000;
-        localStorage.setItem('sy-u:'+e.email+':wallet',JSON.stringify(w));
-        localStorage.setItem('sy-u:'+e.email+':nationalWinner',JSON.stringify({level:lv,year:new Date().getFullYear(),parentIncluded:true,until:until}));
+        SY.writeAccount(e.email,'wallet',w);
+        SY.writeAccount(e.email,'nationalWinner',{level:lv,year:new Date().getFullYear(),parentIncluded:true,until:until});
       }catch(err){}
     });
     SY.log('national','Championship prizes awarded',lv+' — '+top.length+' winners + parents, 1 year full access');

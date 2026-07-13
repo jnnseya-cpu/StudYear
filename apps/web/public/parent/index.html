@@ -671,11 +671,11 @@ function generateIntervention(m,target){
   })};
   plan.plan=(plan.plan||[]).concat([week]);
   /* write back to the child's account (consent-gated: parent access already granted) */
-  try{localStorage.setItem('sy-u:'+m.email+':plan',JSON.stringify(plan))}catch(e){}
+  try{SY.writeAccount(m.email,'plan',plan)}catch(e){}
   try{
-    var feed=JSON.parse(localStorage.getItem('sy-u:'+m.email+':activity'))||[];
+    var feed=SY.readAccount(m.email,'activity',[]);
     feed.unshift({k:'plan',t:'Recovery plan from your parent',d:target.s+' — 5 sessions added by '+SY.session.name+'.',when:new Date().toISOString()});
-    localStorage.setItem('sy-u:'+m.email+':activity',JSON.stringify(feed.slice(0,100)));
+    SY.writeAccount(m.email,'activity',feed.slice(0,100));
   }catch(e){}
   SY.log('family','Intervention created for '+nm,target.s+' recovery week added to their planner.');
   toast('Intervention created — a '+target.s+' recovery week was added to '+nm.split(' ')[0]+"'s planner");
@@ -736,8 +736,8 @@ $('link-go').onclick=function(){
   if(kids.some(function(k){return k.email===email})){toast('That child is already linked.');$('link-code').value='';return}
   kids.push({email:email,name:SY.accountName(email),when:new Date().toISOString()});
   SY.set('children',kids);
-  try{var pl=JSON.parse(localStorage.getItem('sy-u:'+email+':parentLinks'))||[];
-    if(!pl.some(function(p){return p.email===SY.session.email})){pl.push({email:SY.session.email,name:SY.session.name});localStorage.setItem('sy-u:'+email+':parentLinks',JSON.stringify(pl))}}catch(e){}
+  try{var pl=SY.readAccount(email,'parentLinks',[]);
+    if(!pl.some(function(p){return p.email===SY.session.email})){pl.push({email:SY.session.email,name:SY.session.name});SY.writeAccount(email,'parentLinks',pl);}}catch(e){}
   SY.log('family','Linked child: '+SY.accountName(email),'Live monitoring active.');
   $('link-code').value=''; toast('Linked — live intelligence active'); render();
 };
@@ -797,7 +797,7 @@ document.querySelectorAll('#elite-suite [data-tab]').forEach(function(a){a.oncli
   box.innerHTML=html;
   document.getElementById('cf-save').onclick=function(){
     var f=document.getElementById('cf-from').value,t=document.getElementById('cf-to').value;
-    try{localStorage.setItem('sy-u:'+kid.email+':skillrushCurfew',JSON.stringify(f===''?null:{from:+f,to:+t}))}catch(e){}
+    try{SY.writeAccount(kid.email,'skillrushCurfew',f===''?null:{from:+f,to:+t});}catch(e){}
     toast(f===''?'Quiet hours off':'Quiet hours saved — SkillRush pauses '+f+':00–'+t+':00');
   };
 })();

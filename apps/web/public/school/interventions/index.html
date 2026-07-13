@@ -137,16 +137,16 @@ $('iv-log').onclick=function(){
   /* personalise the student: push a recovery week to their planner + notify them */
   if($('iv-push').checked&&subject){
     try{
-      var plan=JSON.parse(localStorage.getItem('sy-u:'+email+':plan'))||{plan:[],done:{}};
+      var plan=SY.readAccount(email,'plan',{plan:[],done:{}});
       var wkN=(plan.plan&&plan.plan.length)?plan.plan[plan.plan.length-1].n+1:1;
       var topics=['Foundations & key terms','Active-recall drill','Timed practice','Review & retest'];
       var lvl=SY.readAccount(email,'profile',{}).level||'GCSE';
       plan.plan=(plan.plan||[]).concat([{n:wkN,days:['Mon','Tue','Wed','Thu','Fri'].map(function(d,i){
         return {date:null,d:d,dow:d,subj:subject,level:lvl,topic:topics[i%topics.length],slot:2,time:'16:30',mins:30,priority:'HIGH',mode:'School intervention · '+topics[i%topics.length]};})}]);
-      localStorage.setItem('sy-u:'+email+':plan',JSON.stringify(plan));
-      var feed=JSON.parse(localStorage.getItem('sy-u:'+email+':activity'))||[];
+      SY.writeAccount(email,'plan',plan);
+      var feed=SY.readAccount(email,'activity',[]);
       feed.unshift({k:'plan',t:'Intervention from your school',d:subject+' — a recovery week was added by '+SY.get('profile',{}).name+'.',when:new Date().toISOString()});
-      localStorage.setItem('sy-u:'+email+':activity',JSON.stringify(feed.slice(0,100)));
+      SY.writeAccount(email,'activity',feed.slice(0,100));
     }catch(e){}
   }
   SY.log('intervention','Intervention logged: '+name,subject?(subject+' — '+status):status);

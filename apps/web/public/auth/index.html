@@ -7,6 +7,8 @@
 <link rel="manifest" href="../manifest.json">
 <link rel="icon" href="../icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="../theme.css">
+<script src="../vendor/nacl-fast.min.js"></script>
+<script src="../e2e.js"></script>
 <meta name="theme-color" content="#060B18">
 <style>
   :root{--navy-950:#060B18;--navy-800:#101B33;--blue-300:#A9CFF2;--blue-400:#5FA8E0;--blue-500:#3D8FD1;
@@ -209,6 +211,9 @@ $('f').addEventListener('submit',async function(e){
     users.push({name:name,email:email,role:role,salt:salt,hash:await hash(salt,pw)});
     save('sy-users',users);
     _pass();
+    /* end-to-end encryption: mint the account's data key, wrapped by a
+       password-derived key — servers only ever see ciphertext */
+    try{if(window.SYE2E)await SYE2E.setupAccount(email,pw)}catch(err){}
     save('sy-session',{name:name,email:email,role:role,ts:new Date().toISOString()});
     // new students onboard by building their personalised profile first
     if(role==='student'&&!next){location.replace('../account/profile/?welcome=1');return}
@@ -223,6 +228,8 @@ $('f').addEventListener('submit',async function(e){
     }
     if(!authed){say('Wrong password.','err');_fail();_resetHuman();return}
     _pass();
+    /* unlock (or backfill) the account's end-to-end encryption keys */
+    try{if(window.SYE2E)await SYE2E.setupAccount(email,pw)}catch(err){}
     if(wantRole&&authed.role!==wantRole){
       save('sy-session',{name:authed.name,email:authed.email,role:authed.role,ts:new Date().toISOString()});
       say('Signed in — but this account is a <b>'+(LABELS[authed.role]||authed.role)+'</b> account, and this area needs a <b>'+

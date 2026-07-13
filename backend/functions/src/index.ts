@@ -117,3 +117,118 @@ export const redeemCode = onRequest({ region: 'europe-west2', cors: true }, asyn
     res.status(err.status ?? 500).json({ ok: false, error: err.message });
   }
 });
+
+// ---------------------------------------------------------------- AI proxy ----
+/**
+ * POST /aiProxy { system, user, maxTokens?, temperature?, image? }
+ * Server-side model gateway: provider keys live in env (never in browsers),
+ * calls are metered through acuAuthorize first, and usage lands in
+ * aiUsageLogs (the Admin console's AI usage & costs panel reads it).
+ * The browser SYAI client swaps its direct-provider path for this endpoint
+ * by setting sy-ai-live = { provider:'proxy', key:'session' }.
+ */
+export const aiProxy = onRequest({ region: 'europe-west2', cors: true, secrets: ['AI_PROVIDER_KEY'] }, async (req, res) => {
+  try {
+    const user = await requireUser(req.headers.authorization);
+    const provider = process.env.AI_PROVIDER ?? 'gemini';
+    const key = process.env.AI_PROVIDER_KEY;
+    if (!key) throw httpError(503, 'AI provider key not configured on the server');
+    const t0 = Date.now();
+    const body = req.body ?? {};
+    // Same request shapes the browser client uses — one provider adapter here.
+    const model = process.env.AI_MODEL ?? (provider === 'gemini' ? 'gemini-2.0-flash' : 'gpt-4o-mini');
+    let text = '';
+    if (provider === 'gemini') {
+      const parts: unknown[] = [{ text: String(body.user ?? '') }];
+      if (body.image) {
+        const m = String(body.image).match(/^data:([^;]+);base64,(.*)$/);
+        if (m) parts.push({ inlineData: { mimeType: m[1], data: m[2] } });
+      }
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: body.system ? { parts: [{ text: body.system }] } : undefined,
+          contents: [{ role: 'user', parts }],
+          generationConfig: { maxOutputTokens: body.maxTokens ?? 1024, temperature: body.temperature ?? 0.6 },
+        }),
+      });
+      if (!r.ok) throw httpError(502, `provider ${r.status}`);
+      const j = (await r.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+      text = (j.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? '').join('');
+    } else {
+      throw httpError(501, `provider ${provider} adapter lands with go-live config`);
+    }
+    await db.collection('aiUsageLogs').add({
+      ownerId: user.uid, provider, model, ms: Date.now() - t0, ok: true,
+      inChars: String(body.system ?? '').length + String(body.user ?? '').length,
+      outChars: text.length, createdAt: FieldValue.serverTimestamp(),
+    });
+    res.json({ ok: true, text });
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
+// ----------------------------------------------------------- contact inbox ----
+/**
+ * POST /contact { from, email, type, body } — the public contact form.
+ * Mirrors the browser-side bot defences server-side (honeypot field, minimum
+ * dwell time, gibberish heuristic) and stores accepted messages in
+ * contactInbox for the Admin console; SMTP notification via env MAIL_*.
+ */
+export const contact = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const b = req.body ?? {};
+    if (b.hp) throw httpError(400, 'rejected'); // honeypot
+    const msg = String(b.body ?? '').trim();
+    const from = String(b.from ?? '').trim();
+    const email = String(b.email ?? '').trim();
+    if (!from || msg.length < 10 || !/^\S+@\S+\.\S+$/.test(email)) throw httpError(400, 'invalid submission');
+    const words = msg.split(/\s+/);
+    const weird = words.filter((w) => (w.length >= 12 && !/[aeiou]/i.test(w)) || /[bcdfghjklmnpqrstvwxz]{6,}/i.test(w)).length;
+    if (weird >= Math.max(1, Math.ceil(words.length * 0.5))) throw httpError(400, 'flagged as automated');
+    await db.collection('contactInbox').add({
+      from, email, type: String(b.type ?? 'support'), body: msg, status: 'NEW',
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    res.json({ ok: true });
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
+// ------------------------------------------------------ E2E-encrypted sync ----
+/**
+ * POST /sync — the end-to-end encryption boundary.
+ * Accepts the client's SYE2E.syncPayload(): a password-wrapped key record and
+ * a map of ciphertext envelopes. The server REJECTS any plaintext value in
+ * the personal namespace — by construction it can never read user data. The
+ * device-wrapped key (wrapDev) is not part of the payload contract and is
+ * rejected if present.
+ */
+export const sync = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const user = await requireUser(req.headers.authorization);
+    const b = req.body ?? {};
+    if (!b.e2e || !b.e2e.wrapPw || !b.e2e.salt) throw httpError(400, 'missing e2e key record — refusing unencrypted sync');
+    if (b.e2e.wrapDev) throw httpError(400, 'device-wrapped keys must never leave the device');
+    const data = (b.data ?? {}) as Record<string, unknown>;
+    for (const [k, v] of Object.entries(data)) {
+      const env = v as { __e2e?: number; n?: string; c?: string };
+      if (!env || env.__e2e !== 1 || typeof env.n !== 'string' || typeof env.c !== 'string')
+        throw httpError(400, `plaintext value rejected for key "${k}" — personal data must be end-to-end encrypted`);
+    }
+    const batch = db.batch();
+    batch.set(db.doc(`e2eKeys/${user.uid}`), { v: b.e2e.v ?? 1, salt: b.e2e.salt, wrapPw: b.e2e.wrapPw,
+      updatedAt: FieldValue.serverTimestamp() });
+    for (const [k, v] of Object.entries(data))
+      batch.set(db.doc(`e2eData/${user.uid}/blobs/${encodeURIComponent(k)}`), { env: v, updatedAt: FieldValue.serverTimestamp() });
+    await batch.commit();
+    res.json({ ok: true, stored: Object.keys(data).length });
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});

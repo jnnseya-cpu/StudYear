@@ -1,0 +1,30 @@
+name: Verify StudYear OS
+
+on:
+  push:
+    branches: [main, claude/continue-from-here-y37pvu]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install workspaces
+        run: npm install
+      - name: Typecheck shared + web + backend functions
+        run: |
+          npm run typecheck --workspace apps/web
+          npm run typecheck --workspace backend/functions
+      - name: Build static OS
+        run: npm run build:pages
+      - name: Install Chromium for e2e
+        run: |
+          npx --yes playwright@1.49.0 install --with-deps chromium
+          echo "CHROMIUM_PATH=$(npx --yes playwright@1.49.0 --version >/dev/null 2>&1; node -e "console.log(require('playwright-core').chromium.executablePath())")" >> "$GITHUB_ENV"
+      - name: Run e2e verification (7 suites + 82-page crawl)
+        run: node tests/run.mjs

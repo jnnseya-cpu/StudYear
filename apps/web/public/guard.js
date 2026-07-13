@@ -51,16 +51,63 @@
     (document.head || document.documentElement).appendChild(th);
   } catch (e) {}
 
+  // end-to-end encryption layer: TweetNaCl (synchronous secretbox) + the
+  // SYE2E key manager load parser-blocking so they are ready before any page
+  // script touches the store. e2e.js runs the one-time migration sweep.
+  try {
+    document.write('<script src="' + base + 'vendor/nacl-fast.min.js"><\/script>' +
+                   '<script src="' + base + 'e2e.js"><\/script>');
+  } catch (e) {}
+
+  /** true when this session's personal store is being end-to-end encrypted */
+  function canE2E(email) {
+    return !!(window.SYE2E && !s.demo && window.SYE2E.enabled(email || s.email));
+  }
+  function readStored(fullKey, ownerEmail, d) {
+    var raw = localStorage.getItem(fullKey);
+    if (raw === null || raw === undefined) return d;
+    if (window.SYE2E && window.SYE2E.isEnvelope(raw)) {
+      var r = window.SYE2E.decryptValue(raw, ownerEmail);
+      return r.ok ? (r.value === null || r.value === undefined ? d : r.value) : d;
+    }
+    try { var v = JSON.parse(raw); return v === null || v === undefined ? d : v; }
+    catch (e) { return d; }
+  }
+
   window.SY = {
     session: s,
     base: base,
     ns: NS,
+    e2eActive: function () { return canE2E(s.email); },
     get: function (k, d) {
-      try { var v = JSON.parse(localStorage.getItem(NS + k)); return v === null || v === undefined ? d : v; }
-      catch (e) { return d; }
+      try { return readStored(NS + k, s.email, d); } catch (e) { return d; }
     },
-    set: function (k, v) { localStorage.setItem(NS + k, JSON.stringify(v)); },
+    set: function (k, v) {
+      if (canE2E(s.email)) {
+        var env = window.SYE2E.encryptValue(v, s.email);
+        if (env) { localStorage.setItem(NS + k, env); return; }
+      }
+      localStorage.setItem(NS + k, JSON.stringify(v));
+    },
     remove: function (k) { localStorage.removeItem(NS + k); },
+    /** one-time sweep: seal any plaintext personal values once keys exist */
+    _e2eMigrate: function () {
+      try {
+        if (!canE2E(s.email)) return;
+        var flag = 'sy-e2e-mig:' + s.email;
+        if (localStorage.getItem(flag)) return;
+        for (var i = localStorage.length - 1; i >= 0; i--) {
+          var k = localStorage.key(i);
+          if (!k || k.indexOf(NS) !== 0) continue;
+          var raw = localStorage.getItem(k);
+          if (window.SYE2E.isEnvelope(raw)) continue;
+          var val; try { val = JSON.parse(raw); } catch (e) { continue; }
+          var env = window.SYE2E.encryptValue(val, s.email);
+          if (env) localStorage.setItem(k, env);
+        }
+        localStorage.setItem(flag, new Date().toISOString());
+      } catch (e) {}
+    },
     /** every key belonging to this account (for export / delete) */
     keys: function () {
       var out = [];
@@ -110,10 +157,23 @@
         return u ? u.name : email;
       } catch (e) { return email; }
     },
-    /** read another account's namespaced key (read-only) */
+    /** read another account's namespaced key (read-only; decrypts via the
+        device keyring for consented same-device links — parent↔child,
+        school↔student, admin support) */
     readAccount: function (email, k, d) {
-      try { var v = JSON.parse(localStorage.getItem('sy-u:' + email + ':' + k)); return v === null || v === undefined ? d : v; }
+      try { return readStored('sy-u:' + email + ':' + k, email, d); }
       catch (e) { return d; }
+    },
+    /** write into another account's namespace (consented flows: parent
+        pushes a recovery plan, admin adjusts a wallet) — sealed with the
+        TARGET account's key when it has one */
+    writeAccount: function (email, k, v) {
+      var full = 'sy-u:' + email + ':' + k;
+      if (window.SYE2E && window.SYE2E.enabled(email)) {
+        var env = window.SYE2E.encryptValue(v, email);
+        if (env) { localStorage.setItem(full, env); return; }
+      }
+      localStorage.setItem(full, JSON.stringify(v));
     },
     /** shared school data store, keyed by the school join code */
     schoolGet: function (code, k, d) {

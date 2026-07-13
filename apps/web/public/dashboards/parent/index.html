@@ -348,9 +348,9 @@ el('link-go').onclick=function(){
   SY.set('children',kids);
   /* record the link on the child's side so they can see who's linked */
   try{
-    var pl=JSON.parse(localStorage.getItem('sy-u:'+email+':parentLinks'))||[];
+    var pl=SY.readAccount(email,'parentLinks',[]);
     if(!pl.some(function(p){return p.email===SY.session.email})){pl.push({email:SY.session.email,name:SY.session.name,when:new Date().toISOString()});
-      localStorage.setItem('sy-u:'+email+':parentLinks',JSON.stringify(pl))}
+      SY.writeAccount(email,'parentLinks',pl);}
   }catch(e){}
   SY.log('family','Linked child: '+SY.accountName(email),'You can now see their shared progress.');
   el('link-code').value='';

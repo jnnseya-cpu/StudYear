@@ -2,7 +2,7 @@
   "name": "studyear",
   "private": true,
   "version": "0.1.0",
-  "description": "StudYear — The AI Academic Operating System (monorepo)",
+  "description": "StudYear \u2014 The AI Academic Operating System (monorepo)",
   "workspaces": [
     "apps/*",
     "packages/*",
@@ -14,7 +14,15 @@
     "build:functions": "npm run build --workspace backend/functions",
     "deploy:web": "vercel deploy apps/web --prod",
     "deploy:backend": "firebase deploy --config backend/firebase.json",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "build:pages": "STATIC_EXPORT=1 PAGES_BASE_PATH=/StudYear npm run build --workspace apps/web",
+    "verify": "npm run build:pages && node tests/run.mjs",
+    "test:e2e": "node tests/run.mjs"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.49.0"
+  }
 }

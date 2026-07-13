@@ -199,7 +199,7 @@ $('stu-go').onclick=function(){var e=$('stu-email').value.trim().toLowerCase();
   var acc=us.find(function(u){return u.email===e&&u.role==='student'});
   r.push({email:e,name:acc?acc.name:e.split('@')[0],year:acc?(SY.readAccount(e,'profile',{}).level||''):''});SY.schoolSet(code,'roster',r);
   /* also record the school link on the student side if that account exists locally */
-  try{if(acc){var sl={code:code,name:schoolName,when:new Date().toISOString()};localStorage.setItem('sy-u:'+e+':schoolLink',JSON.stringify(sl))}}catch(x){}
+  try{if(acc){var sl={code:code,name:schoolName,when:new Date().toISOString()};SY.writeAccount(e,'schoolLink',sl);}}catch(x){}
   $('stu-email').value='';SY.log('people','Added student '+e,'Linked to the school roll.');
   toast(acc?'Student added to roll':'Added — they will fully link once they sign up / accept');draw();};
 })();
