@@ -761,7 +761,7 @@
   </div>
   <div class="grid">
     <div class="card c7"><h3>Quiz scores over time</h3><div class="sub">every quiz you finish lands here</div><div id="score-chart"><div class="empty">Take a quiz in 🔎 Find resources to start the chart.</div></div></div>
-    <div class="card c5"><h3>Subject progress</h3><div class="sub">mastery per subject — quizzes + your latest diagnostic</div><div id="mastery"></div></div>
+    <div class="card c5"><h3>🗺 Mastery Map™</h3><div class="sub">curriculum states per subject — every weak concept has a recovery route</div><div id="mastery"></div><div class="note" style="margin-top:8px">States: Not assessed · Emerging (&lt;40%) · Developing (&lt;60%) · Secure (&lt;80%) · Mastered (≥80%) · At risk of forgetting (no practice for 14+ days)</div></div>
     <div class="card c6"><h3>Improvement — are you getting better?</h3><div class="sub">your earlier scores vs your most recent, per subject</div><div id="prog-improve"></div></div>
     <div class="card c6"><h3>Activity &amp; consistency</h3><div class="sub">everything you've done — the whole picture</div><div id="prog-activity"></div></div>
     <div class="card c12"><h3>Strengths &amp; what to focus on next</h3><div class="sub">from your live mastery and diagnostics</div><div id="prog-focus"></div></div>
@@ -2312,8 +2312,17 @@ function renderProgress(){
   /* subject progress: quizzes blended with the latest diagnostic */
   const mast=document.getElementById("mastery");
   const rows=subjectMastery();
+  const MM_LAST={};store.get("quizzes",[]).forEach(q=>{if(!MM_LAST[q.subj]||q.t>MM_LAST[q.subj])MM_LAST[q.subj]=q.t});
+  function mmState(s,m){
+    const stale=MM_LAST[s]&&(Date.now()-new Date(MM_LAST[s]).getTime()>14*864e5);
+    if(m>=80&&stale)return ["At risk of forgetting","#E0A93F"];
+    if(m>=80)return ["Mastered","#5CBB7B"];
+    if(m>=60)return ["Secure","#8ee0a5"];
+    if(m>=40)return ["Developing","#F2CE7B"];
+    return ["Emerging","#E06060"];
+  }
   mast.innerHTML=rows.length?rows.map(([s,m])=>`
-    <div class="mrow"><span>${esc(s)}</span><div class="bar"><i style="width:${m}%;background:${SUBJ_COLOURS[s]||"#3D8FD1"}"></i></div><span class="pc">${m}%</span></div>`).join("")
+    <div class="mrow"><span>${esc(s)} <i style="font-style:normal;font-size:9.5px;letter-spacing:.05em;border:1px solid ${mmState(s,m)[1]}66;color:${mmState(s,m)[1]};border-radius:10px;padding:1px 7px;margin-left:5px">${mmState(s,m)[0]}</i>${mmState(s,m)[0]==="Emerging"||mmState(s,m)[0]==="Developing"?` <a href="#recovery" style="font-size:9.5px;color:#8FC2EC">recovery route →</a>`:""}</span><div class="bar"><i style="width:${m}%;background:${SUBJ_COLOURS[s]||"#3D8FD1"}"></i></div><span class="pc">${m}%</span></div>`).join("")
     :'<div class="empty">Finish a quiz or run a diagnostic to see subject progress.</div>';
   renderProgressDeep(qz,dg,plan);
 }
