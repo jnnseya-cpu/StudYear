@@ -44,6 +44,9 @@
 
   <div class="grid">
     <div class="card c6 feed"><h3>Live session feed</h3><div class="sub">Real bookings from your pipeline — accept or decline in place</div><div id="feed"></div></div>
+    <div class="card c12" id="psb-card"><h3>🎯 Pre-Session Intelligence Brief</h3>
+      <div class="sub">Before every session — what happened since last time, what they've forgotten, and the recommended objective. No prep re-work.</div>
+      <div id="psb"></div></div>
     <div class="card c6"><h3>Linked students (live)</h3><div class="sub">Profile, dashboard progress and quiz activity</div><div id="students"></div></div>
 
     <div class="card c6"><h3>Revenue &amp; performance</h3><div class="sub">From sessions, rates and student dashboard data · <a href="earnings/" style="color:var(--gold-300)">full analytics</a></div>
@@ -194,6 +197,32 @@ $('demo-btn').onclick=function(){
   var pf=SY.get('tutorProfile',{});pf.published=true;if(!pf.hourlyRate)pf.hourlyRate='35';if(!pf.subjects)pf.subjects='Mathematics, Physics';SY.set('tutorProfile',pf);
   SY.log('demo','Tutor demo loaded','Sample student & session — no AI cost');location.reload();
 };
+})();
+</script>
+<script>
+(function(){
+  try{
+    var box=document.getElementById('psb');if(!box)return;
+    var studs=SY.get('tutorStudents',[])||[];
+    if(!studs.length){box.innerHTML='<div class="note">Link a student — their brief builds itself from their live OS record.</div>';return}
+    var esc=function(x){return String(x==null?'':x).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})};
+    box.innerHTML=studs.slice(0,3).map(function(st){
+      var email=st.email;var nm=(st.name||SY.accountName(email)||email).split(' ')[0];
+      var qz=SY.readAccount(email,'quizzes',[])||[];
+      var by={};qz.forEach(function(q){(by[q.subj]=by[q.subj]||[]).push(q.pct)});
+      var subs=Object.keys(by).map(function(s2){var a=by[s2];return [s2,Math.round(a.reduce(function(x,y){return x+y},0)/a.length)]}).sort(function(a,b){return a[1]-b[1]});
+      var weak=subs[0];
+      var acts=SY.readAccount(email,'activity',[])||[];
+      var recent=acts.slice(0,3).map(function(a){return a.t}).join(' · ')||'no recent activity';
+      var plan=SY.readAccount(email,'plan',null);var missed=0;
+      if(plan&&plan.plan){var total=plan.plan.reduce(function(a,w){return a+w.days.length},0);missed=total-Object.keys(plan.done||{}).length}
+      var old=subs.filter(function(x){return x[1]<60}).map(function(x){return x[0]}).slice(0,2).join(', ');
+      return '<div style="padding:10px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:12.5px">'+
+        '<b style="color:#EDF1F8">'+esc(nm)+'</b>'+(weak?' <span style="color:#e8c07a">· weakest: '+esc(weak[0])+' '+weak[1]+'%</span>':'')+
+        '<div class="note" style="margin-top:3px">Since last session: '+esc(recent)+(missed>0?' · <b style="color:#E0A93F">'+missed+' plan items outstanding</b>':'')+'</div>'+
+        '<div style="color:#8ee0a5;font-size:12px;margin-top:3px">Recommended objective: '+(weak?'rebuild '+esc(weak[0])+' fundamentals with 2 worked examples, then a marked mini-quiz':'consolidation + stretch — run an exam-style challenge')+(old?' · likely forgotten: '+esc(old):'')+'</div></div>';
+    }).join('');
+  }catch(e){}
 })();
 </script>
 </body></html>

@@ -180,6 +180,9 @@
 </div>
 
 <div class="grid">
+  <div class="card c12" id="pc-actions"><h3>🎴 Parent Action Cards™</h3>
+    <div class="sub">You never have to interpret the data alone — these are this week's actions, computed from your child's live learning model.</div>
+    <div id="action-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:8px"></div></div>
   <div class="card c12" id="pc-schoolrec" style="display:none"><h3>🏫 School record &amp; learning model</h3>
     <div class="sub">Your child's dedicated school record — visible to you because their school granted access. Built by the learning model from everything they do in the OS.</div>
     <div id="schoolrec-body"></div></div>
@@ -833,6 +836,40 @@ render();
         '<div class="note" style="margin-top:8px">Provided by '+esc(link.name||'the school')+' · your access is school-granted and logged.</div>';
       break;
     }
+  }catch(e){}
+})();
+</script>
+<script>
+(function(){
+  try{
+    var kids=SY.get('children',[])||[];var box=document.getElementById('action-cards');if(!box)return;
+    if(!kids.length){box.innerHTML='<div class="note" style="font-style:normal">Link a child — action cards appear the moment live data flows.</div>';return}
+    var esc=function(x){return String(x==null?'':x).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})};
+    var cards=[];
+    kids.slice(0,2).forEach(function(k){
+      var nm=(SY.accountName(k.email)||'').split(' ')[0]||'them';
+      var qz=SY.readAccount(k.email,'quizzes',[])||[];
+      var by={};qz.forEach(function(q){(by[q.subj]=by[q.subj]||[]).push(q.pct)});
+      var subs=Object.keys(by).map(function(s2){var a=by[s2];return [s2,Math.round(a.reduce(function(x,y){return x+y},0)/a.length),a.length>1?a[a.length-1]-a[0]:0]}).sort(function(a,b){return a[1]-b[1]});
+      if(subs.length){
+        var w=subs[0];
+        cards.push(['💬','Ask this tonight','Ask '+nm+' to explain one '+w[0]+' problem aloud — teaching it back is the fastest repair at '+w[1]+'%.']);
+        var up=subs.filter(function(x){return x[2]>3}).sort(function(a,b){return b[2]-a[2]})[0];
+        if(up)cards.push(['🌟','Praise this improvement',up[0]+' has climbed '+up[2]+' points — name it specifically; effort praised is effort repeated.']);
+      }
+      var plan=SY.readAccount(k.email,'plan',null);
+      if(plan&&plan.plan&&plan.plan.length){
+        var total=plan.plan.reduce(function(a,wk){return a+wk.days.length},0),done=Object.keys(plan.done||{}).length;
+        if(total&&done/total<0.5)cards.push(['📋','Check this assignment','Plan completion is at '+Math.round(100*done/total)+'% — sit with '+nm+' for the next session rather than adding new work.']);
+      }
+      var acts=SY.readAccount(k.email,'activity',[])||[];
+      if(!acts.some(function(a){return Date.now()-new Date(a.when).getTime()<3*864e5}))
+        cards.push(['🧭','Gentle restart','No StudYear activity for 3+ days — a 10-minute SkillRush session together tonight restarts the habit without pressure.']);
+    });
+    if(!cards.length)cards.push(['✅','No action required','Everything is on track this week — protect their rest and let the system keep monitoring.']);
+    box.innerHTML=cards.slice(0,4).map(function(c){
+      return '<div style="border:1px solid rgba(170,182,204,.18);border-radius:11px;padding:12px 14px;background:rgba(6,11,24,.35)"><div style="font-size:19px">'+c[0]+'</div><b style="color:#EDF1F8;font-size:13px">'+esc(c[1])+'</b><div style="color:#AAB6CC;font-size:12px;margin-top:3px;line-height:1.55">'+esc(c[2])+'</div></div>';
+    }).join('');
   }catch(e){}
 })();
 </script>
