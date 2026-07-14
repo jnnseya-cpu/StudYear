@@ -123,10 +123,11 @@ function seedSchoolStore(){
 var ROLES=[
  {role:'student',ic:'🎓',t:'Student',who:'Emily Carter · Year 10 · GCSE (AQA)',dest:'../study/',
   p:'The full learning OS: diagnostic, AI tutor, planner, interactive lessons, creator toolkit, Assignment Review, SkillRush and My Progress — with a term of history already on the account.',
-  loaded:function(){seedStudent('student@demo.studyear','Emily Carter',{})}},
+  loaded:function(){seedSchoolStore();seedStudent('student@demo.studyear','Emily Carter',{});
+    set('sy-u:student@demo.studyear:schoolLink',{code:SCH,name:'Riverside Academy (Demo)',when:iso(-30)});}},
  {role:'parent',ic:'👨‍👩‍👧',t:'Parent',who:'Marcus Carter · Parent Elite · 1 child linked',dest:'../parent/',
   p:'The Parent Command Centre with a live child linked: stability, momentum, subject progress, early warnings, weekly briefing and the Elite suite.',
-  loaded:function(){seedStudent('student@demo.studyear','Emily Carter',{});
+  loaded:function(){seedSchoolStore();
     var ns='sy-u:parent@demo.studyear:';del(ns);
     set(ns+'profile',{name:'Marcus Carter'});
     set(ns+'wallet',{plan:'parent_elite',acus:900,month:MONTH,planExpires:iso(30)});
@@ -143,7 +144,9 @@ var ROLES=[
   loaded:function(){var ns='sy-u:tutor@demo.studyear:';del(ns);
     set(ns+'profile',{name:'Amara Okafor'});
     set(ns+'tutorProfile',{name:'Amara Okafor',businessName:'Okafor Tutoring',published:true,subjects:'Mathematics, Physics',levels:'KS3, GCSE, A-level',rate:38});
-    set(ns+'wallet',{acus:1200,plan:'tutor_pro',month:MONTH,planExpires:iso(30)});}},
+    set(ns+'wallet',{acus:1200,plan:'tutor_pro',month:MONTH,planExpires:iso(30)});
+    seedStudent('student@demo.studyear','Emily Carter',{});
+    set(ns+'tutorStudents',[{email:'student@demo.studyear',name:'Emily Carter',subject:'Mathematics',when:iso(-21)}]);}},
  {role:'school',ic:'🏫',t:'School Leadership',who:'Priya Sharma · Headteacher · Riverside Academy',dest:'../school/',
   p:'The AI School Brain: live roster of six students with real learning histories, staff, ACU pool, interventions, assessments, reports and analytics.',
   loaded:function(){seedSchoolStore();
@@ -155,7 +158,21 @@ var ROLES=[
   p:'The Local Authority console: cross-school KPIs, RAG benchmarking with drill-downs, trends, team access on one shared code, and exportable evidence packs.',
   loaded:function(){var ns='sy-u:authority@demo.studyear:';del(ns);
     set(ns+'profile',{name:'Westbridge Council'});
-    set(ns+'authorityCode',LA);}},
+    set(ns+'authorityCode',LA);
+    seedSchoolStore();
+    del('sy-la:'+LA+':school:');
+    [[SCH,'Riverside Academy (Demo)',6,61,14,89,74,0,{'University':2,'Sixth Form / College':2,'Apprenticeship':1,'Needs support':1}],
+     ['WBHS22','Westbridge High',742,63,11,92,71,1,{'University':228,'Sixth Form / College':301,'Apprenticeship':144,'Needs support':69}],
+     ['STMC15','St Margaret\u2019s College',518,68,16,94,77,0,{'University':202,'Sixth Form / College':186,'Apprenticeship':91,'Needs support':39}],
+     ['NPCS08','Northgate Park Community School',611,54,8,87,64,2,{'University':121,'Sixth Form / College':229,'Apprenticeship':167,'Needs support':94}],
+     ['OAKA31','Oakfield Academy',389,59,12,90,69,1,{'University':97,'Sixth Form / College':151,'Apprenticeship':98,'Needs support':43}]]
+    .forEach(function(x,i){set('sy-la:'+LA+':school:'+x[0],{schoolCode:x[0],name:x[1],students:x[2],avg:x[3],progress:x[4],attendance:x[5],wellbeing:x[6],safeguard:x[7],dest:x[8],p8:[0.2,0.4,0.7,-0.3,0.1][i],ppGap:[9,7,5,14,10][i],persistentAbs:[12,9,6,18,13][i],updatedAt:iso(-1)})});
+    set('sy-la:'+LA+':programmes',[
+      {name:'Year 10 Maths Catch-Up',type:'Tutoring',cost:24000,students:120,cohort:'Lowest-attaining schools',status:'active',baseline:52,current:61,reports:[{at:iso(-30),v:55},{at:iso(-7),v:61}]},
+      {name:'Persistent Absence Recovery',type:'Attendance',cost:18000,students:85,cohort:'Persistent absentees',status:'active',baseline:81,current:88,reports:[{at:iso(-21),v:85},{at:iso(-3),v:88}]}]);
+    /* the demo school shows as connected to this authority */
+    set('sy-u:school@demo.studyear:schoolSettings',{authorityCode:LA});
+    set('sy-u:school@demo.studyear:authorityLink',LA);}},
  {role:'admin',ic:'🛠',t:'Platform Admin',who:'Operations console · full oversight',dest:'../admin/',
   p:'The operator view: dashboard, users, tutors, content, billing, AI costs, comms architecture, the AI Gateway and the National Championship trigger.',
   loaded:function(){var ns='sy-u:admin@demo.studyear:';del(ns);
