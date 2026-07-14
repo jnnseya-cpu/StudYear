@@ -123,6 +123,17 @@
   <h1>User Management</h1>
   <p class="lede">View and manage all users on the platform — edit names, change role and subscription, link parents and
     schools, adjust wallets, impersonate for support, or delete. Emails are masked in this static console.</p>
+  <div class="card" style="margin-bottom:12px"><h3>📥 Bulk import — bring your existing users across</h3>
+    <div class="sub">Paste one user per line: <b>name, email, role, plan</b> (role: student/parent/teacher/tutor/school ·
+      plan optional). Accounts are created with secure temporary passwords — export the credential list and email each
+      user their invite. Imported users never touch the public signup, so signup bots can't impersonate them; the
+      human check and throttling still guard every sign-in, and their end-to-end encryption keys mint on first login.</div>
+    <textarea id="imp-csv" rows="4" style="width:100%" placeholder="Jessie Nseya, jessie@example.com, student, student_premium&#10;Marcus Carter, marcus@example.com, parent, parent_elite"></textarea>
+    <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">
+      <button class="btn" id="imp-go">Import users</button>
+      <button class="btn ghost" id="imp-export" style="display:none">⬇ Download invite credentials (CSV)</button>
+      <span class="note" id="imp-note"></span></div>
+  </div>
   <div class="card">
     <h3>All Users</h3><div class="sub">A real-time list of all registered users from this workspace's database.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
@@ -616,6 +627,54 @@ $('ud-save').onclick=function(){
 };
 $('u-search').addEventListener('input',drawUsers);
 $('u-role').addEventListener('input',drawUsers);
+
+/* ---------- bulk import: migrate the existing user base ---------- */
+async function importHash(salt,pw){
+  var data=new TextEncoder().encode(salt+'·'+pw);
+  var buf=await crypto.subtle.digest('SHA-256',data);
+  return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
+}
+function tempPw(){
+  var a=new Uint8Array(9);crypto.getRandomValues(a);
+  return 'SY-'+Array.from(a).map(function(b){return 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'[b%56]}).join('');
+}
+var importedCreds=[];
+$('imp-go').onclick=async function(){
+  var lines=$('imp-csv').value.split('\n').map(function(l){return l.trim()}).filter(Boolean);
+  if(!lines.length){toast('Paste at least one user line');return}
+  var all=users(),added=0,skipped=0;importedCreds=[];
+  var ROLES2=['student','parent','teacher','tutor','school','authority'];
+  for(var i=0;i<lines.length;i++){
+    var parts=lines[i].split(/[,;\t]/).map(function(x){return x.trim()});
+    var nm=parts[0]||'',em=(parts[1]||'').toLowerCase(),role=(parts[2]||'student').toLowerCase(),plan=parts[3]||'';
+    if(!/^\S+@\S+\.\S+$/.test(em)||ROLES2.indexOf(role)<0){skipped++;continue}
+    if(all.some(function(u){return u.email===em&&u.role===role})){skipped++;continue}
+    var pw=tempPw();
+    var salt=Array.from(crypto.getRandomValues(new Uint8Array(12))).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
+    all.push({name:nm||em.split('@')[0],email:em,role:role,salt:salt,hash:await importHash(salt,pw),imported:true,created:new Date().toISOString()});
+    if(plan&&PLAN_NAMES[plan]){
+      var w=acct(em,'wallet',null)||{acus:0};w.plan=plan;
+      w.planExpires=new Date(Date.now()+30*864e5).toISOString();
+      acctSet(em,'wallet',w);
+    }
+    importedCreds.push([nm,em,role,plan||'child_free',pw]);
+    added++;
+  }
+  save('sy-users',all);
+  $('imp-note').textContent=added+' imported, '+skipped+' skipped (invalid or already exist). Download the credentials and email each user their invite — they sign in, set their profile, and their encryption keys mint automatically.';
+  $('imp-export').style.display=added?'inline-block':'none';
+  drawUsers();drawDashboard();drawSupport();
+  toast(added+' users imported');
+};
+$('imp-export').onclick=function(){
+  var csv='Name,Email,Role,Plan,Temporary password,Sign-in link\n'+importedCreds.map(function(r){
+    return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"'}).join(',')+',"https://jnnseya-cpu.github.io/StudYear/auth/?role='+r[2]+'"';
+  }).join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='studyear-invites.csv';a.click();
+  toast('Credentials downloaded — send each user their invite');
+};
 
 /* ---------- tutor applications ---------- */
 function tutorApps(){

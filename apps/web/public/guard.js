@@ -90,6 +90,26 @@
       localStorage.setItem(NS + k, JSON.stringify(v));
     },
     remove: function (k) { localStorage.removeItem(NS + k); },
+    /** billing rule: a paid plan whose monthly payment lapsed falls back to
+        the free account on EVERY console — all free-tier rules re-apply
+        (premium tools lock, Assignment Review gated, free allowance only).
+        One-time pack ACUs are purchases and remain spendable. */
+    _enforcePlanLapse: function () {
+      try {
+        if (s.demo) return;
+        var w = window.SY.get('wallet', null);
+        if (!w || !w.plan || w.plan === 'child_free') return;
+        if (w.planExpires && Date.now() > new Date(w.planExpires).getTime()) {
+          var old = w.plan;
+          w.plan = 'child_free';
+          delete w.planExpires;
+          w.month = new Date().toISOString().slice(0, 7);
+          window.SY.set('wallet', w);
+          window.SY.log('billing', 'Subscription payment not renewed — reverted to the free account',
+            'Your ' + old + ' plan lapsed. Premium tools are locked and free-tier rules apply until you resubscribe. Purchased ACU packs remain yours.');
+        }
+      } catch (e) {}
+    },
     /** one-time sweep: seal any plaintext personal values once keys exist */
     _e2eMigrate: function () {
       try {

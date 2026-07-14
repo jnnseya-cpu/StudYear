@@ -129,6 +129,9 @@
     syncPayload: syncPayload };
 
   /* guard.js loads us parser-blocking right after it defines window.SY —
-     seal any pre-encryption plaintext for the signed-in account now. */
+     seal any pre-encryption plaintext for the signed-in account now, and
+     enforce the lapsed-subscription fallback before any page script reads
+     the wallet. */
   try { if (window.SY && window.SY._e2eMigrate) window.SY._e2eMigrate(); } catch (e) {}
+  try { if (window.SY && window.SY._enforcePlanLapse) window.SY._enforcePlanLapse(); } catch (e) {}
 })();
