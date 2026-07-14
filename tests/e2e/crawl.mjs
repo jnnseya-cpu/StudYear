@@ -34,7 +34,14 @@ for(const [role,urls] of Object.entries(byRole)){
   }
   const errs=[];
   p.on('pageerror',e=>errs.push({type:'jserror',msg:String(e.message).slice(0,200)}));
-  p.on('console',m=>{if(m.type()==='error')errs.push({type:'console',msg:m.text().slice(0,200)})});
+  p.on('console',m=>{
+    if(m.type()!=='error')return;
+    const txt=m.text();
+    /* external analytics (GTM / Meta Pixel) are proxy-blocked in the sandbox —
+       only same-origin resource failures count against the crawl */
+    if(/ERR_TUNNEL_CONNECTION_FAILED|ERR_NAME_NOT_RESOLVED|ERR_INTERNET_DISCONNECTED/.test(txt))return;
+    errs.push({type:'console',msg:txt.slice(0,200)});
+  });
   p.on('response',r=>{
     if(r.status()===404&&r.url().startsWith('http://localhost:8137'))errs.push({type:'404',msg:r.url().replace('http://localhost:8137','')});
   });
