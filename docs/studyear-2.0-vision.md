@@ -186,3 +186,36 @@ what their role permits; the AI agents operate behind the scenes as one coordina
   reduced expectations.** *Equity Engine shipped as the seam.*
 - **9.4 Explainable predictions** — never "Dropout risk: High" alone; always the signals, the confidence
   and "teacher review required". *Learning-model confidence grades shipped in this spirit.*
+
+## 10 · Commercial and Platform Expansion
+- **10.1 Outcome Marketplace™** — buy outcomes, not tools: GCSE Maths Recovery, Y6 SATs Readiness,
+  Y7 Transition Stability, Persistent Absence Recovery, Reading Fluency Accelerator, A-Level Exam
+  Readiness, University Application Programme. Each has an entry diagnostic, personalised pathway,
+  delivery model, verified milestones, outcome dashboard and completion evidence. *Diagnostic → plan →
+  evidence pipeline shipped as the seam.*
+- **10.2 StudYear Certified Network™** — certify tutors, teachers, schools, providers, creators and
+  training partners via training, quality standards, safe-use compliance, verified outcomes, continuous
+  review. *Tutor Quality Passport + World-Class School Certification shipped as the seams.*
+- **10.3 Education Agent Marketplace** — approved developers build specialist agents (GCSE French
+  Speaking, Dyslexia Reading Support, Chemistry Practical, University Interview, 11+ Preparation,
+  Engineering Career) that must pass curriculum validation, safety testing, bias testing, cost controls,
+  evidence requirements and data-permission checks. StudYear earns from approved agent usage while
+  retaining governance.
+- **10.4 Embedded StudYear** — APIs and white-label deployment for schools, MATs, local authorities,
+  governments, tutoring companies, publishers, universities, employers, charities. *Backend functions +
+  shared contracts are the seam.*
+
+## 11 · The Defensibility Moat
+The moat is not "we use AI" — any competitor can access models. StudYear's moat:
+1. **Longitudinal Learner Intelligence** — years of verified, permission-controlled learning and
+   intervention evidence.
+2. **Cross-Stakeholder Coordination** — student, parent, teacher, tutor, school and authority on one
+   intelligence system.
+3. **Verified Outcome Data** — actual mastery, retention, attendance and progression, not clicks.
+4. **Curriculum Knowledge Graph** — concepts ↔ prerequisites ↔ assessments ↔ qualifications ↔ careers.
+5. **Intervention Effectiveness Graph** — which intervention works, for which learner, under which
+   conditions.
+6. **Trust Infrastructure** — consent, explainability, child safety, human approval, auditability by
+   design.
+7. **Global Localisation Engine** — one platform adapting to curricula, languages, examinations and
+   education systems worldwide.
