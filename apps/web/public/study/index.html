@@ -241,6 +241,13 @@
 })();
 </script>
 
+<div id="winning-plan" style="display:none;border:1px solid rgba(242,206,123,.4);border-radius:14px;background:linear-gradient(135deg,rgba(242,206,123,.10),rgba(79,166,224,.08));padding:16px 20px;margin:0 0 16px">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <div style="font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#F2CE7B">🏆 Today's Winning Plan™ · the OS decides your best next action</div>
+    <span id="wp-impact" style="font-size:12px;color:#8ee0a5"></span></div>
+  <div id="wp-steps" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;margin-top:10px"></div>
+  <div style="margin-top:8px;font-size:11.5px;color:#77839B"><span id="wp-min"></span> · <span id="wp-stretch"></span></div>
+</div>
 <nav class="tabs" id="tabs">
   <button data-t="search" class="on">🔎 Find resources</button>
   <button data-t="planner">🗓 Study planner</button>
@@ -665,6 +672,17 @@
   <div class="grid">
     <div class="card c8">
       <h3>AI Tutor <span id="tutor-mode" style="font-size:10px;letter-spacing:.06em;border-radius:20px;padding:2px 9px;vertical-align:middle"></span></h3><div class="sub">Your personal AI-powered academic assistant. Ask questions, get explanations, and test your knowledge.</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0 8px">
+        <label class="f" style="margin:0">Socratic mode</label>
+        <select id="soc-mode" style="max-width:230px">
+          <option value="teach">Teach me</option><option value="guide" selected>Guide me (Socratic)</option>
+          <option value="question">Question me</option><option value="challenge">Challenge me</option>
+          <option value="revise">Revise with me</option><option value="examine">Examine me</option>
+          <option value="mistake">Explain my mistake</option><option value="start">Help me start</option>
+          <option value="reason">Check my reasoning</option><option value="real">Real-world explanation</option>
+        </select>
+        <span class="note" style="margin:0">the tutor never just hands over answers — pick how it works with you</span>
+      </div>
       <div id="chat"></div>
       <div class="chips" id="chips"></div>
       <div class="chatline">
@@ -2189,10 +2207,23 @@ function addMsg(t,who){
   d.innerHTML=(who==="bot"?"<b>Tutor</b> · ":"")+esc(t).replace(/\n/g,"<br>");
   chat.appendChild(d);chat.scrollTop=chat.scrollHeight;
 }
+const SOC_MODES={
+  teach:"TEACH ME mode: give a full, structured explanation with a worked example, then one check question.",
+  guide:"GUIDE ME (Socratic) mode: never give the final answer directly — lead with hints and one question at a time, building on the student's replies.",
+  question:"QUESTION ME mode: quiz the student with one question at a time, mark each answer and explain why.",
+  challenge:"CHALLENGE ME mode: set stretch problems slightly above their level; scaffold only when they are stuck.",
+  revise:"REVISE WITH ME mode: rapid recap of key points, then retrieval questions with spaced difficulty.",
+  examine:"EXAMINE ME mode: act as an examiner — exam-style questions, mark to the mark scheme, give grade-band feedback.",
+  mistake:"EXPLAIN MY MISTAKE mode: the student will show work — find the exact error, classify it (knowledge gap, misread, calculation slip, weak reasoning, exam technique, vocabulary, rushing, confidence, memory) and re-teach only that step.",
+  start:"HELP ME START mode: do not solve anything — help them plan the first step and get moving.",
+  reason:"CHECK MY REASONING mode: the student explains their thinking — probe each step, confirm what is sound, and question what is not. Record their reasoning process in your reply.",
+  real:"REAL-WORLD mode: explain through concrete, real-life examples and analogies before any formal definition."};
 function tutorSystemPrompt(){
   const lvl=(typeof STUDENT_LEVEL!=="undefined"&&STUDENT_LEVEL)||PROFILE.level||"GCSE";
   const subs=(PROFILE.subjects||[]).map(x=>x.s).filter(Boolean).join(", ");
-  return "You are StudYear's AI Tutor for a "+lvl+" student"+(subs?" studying "+subs:"")+". "+
+  const modeSel=document.getElementById("soc-mode");
+  const soc=SOC_MODES[(modeSel&&modeSel.value)||"guide"]||SOC_MODES.guide;
+  return "You are StudYear's AI Tutor for a "+lvl+" student"+(subs?" studying "+subs:"")+". "+soc+" "+
     "Teach the method, never just the final answer. Be clear, encouraging and concise. Use short paragraphs, bold key terms and numbered steps or bullet lists. "+
     "When a diagram is asked for, describe it with clearly labelled parts in a list (you cannot draw). "+
     "End with one quick check-question. Keep it pitched at "+lvl+" level.";
@@ -3331,6 +3362,36 @@ function toast(t){const el=document.getElementById("toast");el.textContent=t;el.
 
 applyProfileDefaults(); /* re-run now every section's selects exist */
 renderResults();renderPapers();renderProgress();applyHash();
+</script>
+<script>
+(function(){
+  try{
+    if(!window.SY)return;
+    var store={get:function(k,d){return SY.get(k,d)}};
+    var qz=SY.get('quizzes',[])||[];var prof=SY.get('profile',{})||{};
+    var wp=document.getElementById('winning-plan');if(!wp)return;
+    var by={};qz.forEach(function(q){(by[q.subj]=by[q.subj]||[]).push(q.pct)});
+    var subs=Object.keys(by).map(function(s2){var a=by[s2];return [s2,Math.round(a.reduce(function(x,y){return x+y},0)/a.length)]}).sort(function(a,b){return a[1]-b[1]});
+    var weak=subs[0]||(prof.subjects&&prof.subjects[0]?[prof.subjects[0].s,null]:null);
+    if(!weak){return}
+    var second=subs[1]||weak;
+    var cur=weak[1]==null?55:weak[1];
+    var target=Math.min(100,cur+9);
+    var steps=[
+      ['10 min','Repair '+weak[0]+' gaps','study/#tutor','Ask the AI Tutor to re-teach your weakest '+weak[0]+' topic — Explain-my-mistake mode.','../study/#tutor'],
+      ['15 min','Personalised '+weak[0]+' practice','#lesson','Run an Interactive Lesson pitched to your level, with marked practice.','#lesson'],
+      ['10 min','Retrieval test — '+second[0],'#search','Take one quick quiz so today\'s learning sticks.','#search']];
+    document.getElementById('wp-steps').innerHTML=steps.map(function(st){
+      return '<a href="'+st[2]+'" style="text-decoration:none;border:1px solid rgba(170,182,204,.18);border-radius:10px;padding:10px 12px;display:block;background:rgba(6,11,24,.35)">'+
+        '<b style="color:#8FC2EC;font-size:12px">'+st[0]+'</b> <b style="color:#EDF1F8;font-size:13px">· '+st[1]+'</b>'+
+        '<div style="color:#77839B;font-size:11.5px;margin-top:3px">'+st[3]+'</div></a>';
+    }).join('');
+    document.getElementById('wp-impact').textContent='Expected impact: '+weak[0]+' readiness '+cur+'% → '+target+'%';
+    document.getElementById('wp-min').textContent='Minimum: the 10-minute repair block';
+    document.getElementById('wp-stretch').textContent='Stretch: all three blocks + save your notes to My resources';
+    wp.style.display='block';
+  }catch(e){}
+})();
 </script>
 </body>
 </html>
