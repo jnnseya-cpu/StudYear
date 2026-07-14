@@ -51,6 +51,17 @@
     (document.head || document.documentElement).appendChild(th);
   } catch (e) {}
 
+  // mobile / PWA shell: installed-app and phone sessions get a drawer, app
+  // bar and bottom tab bar; the desktop look is untouched
+  try {
+    var mc = document.createElement('link');
+    mc.rel = 'stylesheet'; mc.href = base + 'mobile.css';
+    (document.head || document.documentElement).appendChild(mc);
+    var mj = document.createElement('script');
+    mj.src = base + 'mobile.js'; mj.defer = true;
+    (document.head || document.documentElement).appendChild(mj);
+  } catch (e) {}
+
   // end-to-end encryption layer: TweetNaCl (synchronous secretbox) + the
   // SYE2E key manager load parser-blocking so they are ready before any page
   // script touches the store. e2e.js runs the one-time migration sweep.
