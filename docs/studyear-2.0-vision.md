@@ -219,3 +219,37 @@ The moat is not "we use AI" — any competitor can access models. StudYear's moa
    design.
 7. **Global Localisation Engine** — one platform adapting to curricula, languages, examinations and
    education systems worldwide.
+
+## 12 · What StudYear Must NOT Become
+Never: a collection of disconnected AI generators · a homework-answer machine · a surveillance tool ·
+a generic chatbot with education branding · a dashboard that presents problems without resolving them ·
+a platform that rewards screen time · a system that replaces teacher judgement · an AI-detection product
+on unreliable assumptions · a content library with weak personalisation · an expensive system needing
+constant manual configuration. StudYear wins by making every stakeholder work together around a
+continuously improving, evidence-based learner plan — not by offering more tools.
+
+## 13 · Priority Development Roadmap
+- **Phase 1 — Unbeatable Intelligence Foundation:** Learner Intelligence Graph · Academic Digital Twin ·
+  unified curriculum/prerequisite graph · Agent Orchestrator · Mastery Map · Misconception Engine ·
+  Universal Intervention Workflow · role-based permissions & consent · evidence/audit engine · outcome
+  measurement framework. *Records/models/permissions/audit/E2EE shipped as the foundation seams.*
+- **Phase 2 — Daily value:** Today's Winning Plan · Socratic Tutor · Adaptive Practice · Examination War
+  Room · Teacher Tomorrow Brief · Parent Three-Minute Brief · Tutor Pre/Post-Session automation · School
+  Improvement Command Centre · shared intervention rooms.
+- **Phase 3 — Institutional scale:** School Digital Twin · Curriculum Assurance · Intervention
+  Marketplace · Funding Impact Engine · LA Observatory · Provision Planner · Learner Passport · APIs &
+  white-label.
+- **Phase 4 — Global category leadership:** multilingual voice-first · country localisation · Certified
+  Network · Agent Marketplace · government command platform · global verified skills passport ·
+  university/employer pathways · international research partnerships.
+
+## Final category-defining message
+**StudYear — The AI Operating System That Makes Every Learner Visible, Every Intervention Accountable
+and Every Education Decision Smarter.** It does not simply generate learning content: it understands the
+learner, predicts risk, coordinates support, verifies mastery and proves which actions deliver results.
+Other platforms give users AI tools; StudYear gives the entire education ecosystem an intelligent
+operating system.
+
+**Owner's immediate-build priority:** Learner Intelligence Graph + Universal Intervention Workflow +
+role-specific AI command centres — the three layers that turn the existing features into one powerful,
+defensible system.
