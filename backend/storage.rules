@@ -8,7 +8,9 @@ service firebase.storage {
     function signedIn() { return request.auth != null; }
 
     match /uploads/{userId}/{allPaths=**} {
-      allow read, write: if signedIn() && request.auth.uid == userId
+      allow read: if signedIn() && request.auth.uid == userId;
+      // request.resource only exists on writes — checking it on reads would deny them
+      allow write: if signedIn() && request.auth.uid == userId
         && request.resource.size < 25 * 1024 * 1024; // 25MB cap per file
     }
 
