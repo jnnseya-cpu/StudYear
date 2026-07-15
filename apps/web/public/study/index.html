@@ -2649,10 +2649,27 @@ function renderDgReport(rep){
 /* ---------- recovery plans ---------- */
 function makeRecovery(rep){
   const weak=rep.list.filter(x=>x.mastery<60);
+  /* score-banded intensity: the further below secure, the harder the plan
+     drives — and every action is a one-tap deep link into the real tool,
+     pre-focused on that subject's actual spec topics. */
+  const steps=weak.map(w=>{
+    const m=w.mastery;
+    const topics=(typeof DIAG_TOPICS!=="undefined"&&DIAG_TOPICS[w.s])?DIAG_TOPICS[w.s]:[];
+    const ph=m<30?{name:"Rebuild the foundations",daily:"25 min every day",rate:13}
+            :m<45?{name:"Close the core gaps",daily:"20 min every day",rate:11}
+            :{name:"Consolidate to secure",daily:"15 min every day",rate:9};
+    const weeks=Math.max(1,Math.ceil((70-m)/ph.rate));
+    return {s:w.s,from:m,aim:70,phase:ph.name,daily:ph.daily,weeks:weeks,topics:topics.slice(0,3),
+      actions:[
+        {t:"Interactive rescue lesson — start on “"+(topics[0]||w.s+" foundations")+"”",href:"#lesson",cta:"Start the lesson"},
+        {t:"AI Tutor: work "+(topics[1]?"“"+topics[1]+"”":"your hardest questions")+" step by step until it clicks",href:"#tutor",cta:"Open AI Tutor"},
+        {t:"Create flashcards + a timed quiz on "+(topics[2]||w.s)+" — review every wrong answer",href:"#create",cta:"Build & drill"},
+        {t:"Past-paper questions on "+w.s+" under exam timing",href:"#papers",cta:"Find past papers"},
+        {t:"Retake the diagnostic after week "+Math.min(2,weeks)+" — measure the climb, re-aim the plan",href:"#diag",cta:"Re-test"}]};
+  });
   const plan={when:new Date().toISOString(),risk:rep.risk,
     title:weak.length>2?"Comprehensive Academic Recovery Plan":"Initial Academic Recovery Plan",
-    steps:weak.map(w=>({s:w.s,from:w.mastery,aim:70,
-      actions:["15-min rescue lesson on the weakest topic","Flashcards + active recall drill","Timed mini-quiz, review every wrong answer","Past-paper questions on "+w.s]}))};
+    steps:steps};
   const hist=store.get("recoveries",[]); hist.unshift(plan); store.set("recoveries",hist.slice(0,30));
   const saved=store.get("plan",{plan:[],done:{}});
   const week={n:(saved.plan&&saved.plan.length?saved.plan[saved.plan.length-1].n+1:1),
@@ -2667,10 +2684,19 @@ function viewRecovery(p){
   modal.classList.add("on");
   mbody.innerHTML=`<h2>${esc(p.title)}</h2>
     <div class="mmeta">Created on ${usDate(p.when)} · Risk Level: <b style="color:${RISK_COLOR[p.risk]}">${p.risk}</b></div>
-    ${p.steps.map((st,i)=>`<div class="card" style="margin-bottom:10px">
+    ${p.steps.map((st,i)=>{
+      const wk=st.weeks?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 2px">${Array.from({length:st.weeks},(x,n)=>{
+        const tgt=Math.min(st.aim,st.from+Math.round((st.aim-st.from)*(n+1)/st.weeks));
+        return `<span style="font-size:10.5px;border:1px solid rgba(77,157,224,.35);border-radius:14px;padding:2px 9px;color:var(--gold-300)">Wk ${n+1} → ${tgt}%</span>`}).join("")}</div>`:"";
+      return `<div class="card" style="margin-bottom:10px">
       <h3 style="color:var(--gold-300);font-family:var(--serif);font-size:16px;font-weight:500">${i+1}. ${esc(st.s)} — ${st.from}% → aim ${st.aim}%+</h3>
-      <ul style="margin:8px 0 0 18px;font-size:13px;color:var(--ink-2)">${st.actions.map(a=>`<li style="margin:4px 0">${esc(a)}</li>`).join("")}</ul>
-    </div>`).join("")}`;
+      ${st.phase?`<div style="font-size:12px;color:var(--ink-2);margin-top:3px"><b style="color:var(--gold-400)">${esc(st.phase)}</b> · ${esc(st.daily)} · about ${st.weeks} week${st.weeks>1?"s":""} to secure${st.topics&&st.topics.length?` · priority topics: ${st.topics.map(esc).join(" · ")}`:""}</div>`:""}
+      ${wk}
+      <div style="margin-top:8px">${st.actions.map(a=>typeof a==="string"
+        ?`<div style="font-size:13px;color:var(--ink-2);margin:4px 0">• ${esc(a)}</div>`
+        :`<div style="display:flex;align-items:center;gap:10px;margin:6px 0;font-size:13px;color:var(--ink-2)"><span style="flex:1">• ${esc(a.t)}</span><a class="btn sm" href="${esc(a.href)}" onclick="document.getElementById('modal').classList.remove('on')">${esc(a.cta)} →</a></div>`).join("")}
+      </div></div>`}).join("")}
+    <p class="note" style="margin-top:6px">Every button opens the real tool. The plan's RECOVERY week is already in your 🗓 Study planner — the fastest climb is the daily short session, not a weekend cram.</p>`;
 }
 function renderDgHistory(){
   const hist=store.get("diagnostics",[]);
