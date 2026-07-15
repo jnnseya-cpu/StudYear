@@ -70,8 +70,18 @@
   <div class="card" style="max-width:560px">
     <label>Your name</label><input id="pp-name" autocomplete="name">
     <label>Email (your StudYear account email if you have one)</label><input id="pp-email" autocomplete="email">
-    <label>Main social profile link (YouTube, TikTok, Instagram, X…)</label><input id="pp-social" placeholder="https://…">
-    <label>Total followers across ALL platforms (verified at approval)</label><input id="pp-followers" type="number" min="0" placeholder="e.g. 12000">
+    <label>Your social platforms — add each one with its real follower count</label>
+    <div id="pp-socials"></div>
+    <button class="btn" type="button" id="pp-addrow" style="margin-top:8px;padding:8px 14px;font-size:13px">＋ Add another platform</button>
+    <div class="card" style="margin-top:12px;padding:14px 16px;background:rgba(6,11,24,.5)">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">Calculated total</span>
+        <b id="pp-total" style="font-family:var(--serif);font-size:24px;color:var(--gold-300)">0</b></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px">
+        <span style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">Your tier</span>
+        <b id="pp-tier" style="color:var(--good)">Referrer · 250 ACUs</b></div>
+      <div class="note" style="font-size:11.5px;margin-top:6px">Follower counts are verified against your profiles at approval — inflated numbers void the application.</div>
+    </div>
     <input id="pp-hp" style="display:none" tabindex="-1" autocomplete="off">
     <div style="margin-top:14px"><button class="btn btn-gold" id="pp-go">Apply to the programme</button></div>
     <div class="msg" id="pp-msg"></div>
@@ -92,20 +102,46 @@
 var $=function(id){return document.getElementById(id)};
 var t0=Date.now();
 function say(t,ok){var m=$('pp-msg');m.textContent=t;m.style.color=ok?'#8ee0a5':'#e59b9b'}
+/* dynamic platform rows: link + real followers each; total auto-computed */
+var PLATS=['YouTube','TikTok','Instagram','X / Twitter','Facebook','LinkedIn','Snapchat','Twitch','Other'];
+function addRow(){
+  var d=document.createElement('div');
+  d.className='pp-row';d.style.cssText='display:grid;grid-template-columns:130px 1fr 110px;gap:8px;margin-top:8px';
+  d.innerHTML='<select aria-label="Platform">'+PLATS.map(function(p){return '<option>'+p+'</option>'}).join('')+'</select>'+
+    '<input aria-label="Profile link" placeholder="https://…" class="pp-url">'+
+    '<input aria-label="Followers" type="number" min="0" placeholder="Followers" class="pp-n">';
+  $('pp-socials').appendChild(d);
+  d.querySelector('.pp-n').addEventListener('input',recalc);
+}
+function tierOf(n){return n>=10000?'partner_1pct':n>=5000?'partner_quarter':'referrer'}
+function tierLabel(t){return t==='partner_1pct'?'⭐ Influencer · 1% lifetime':t==='partner_quarter'?'🌱 Rising creator · 0.25%':'🤝 Referrer · 250 ACUs'}
+function recalc(){
+  var total=0;document.querySelectorAll('.pp-n').forEach(function(i){total+=(+i.value||0)});
+  $('pp-total').textContent=total.toLocaleString();
+  $('pp-tier').textContent=tierLabel(tierOf(total));
+  return total;
+}
+$('pp-addrow').onclick=addRow;
+addRow();
 $('pp-go').onclick=function(){
   if($('pp-hp').value)return;
   if(Date.now()-t0<1500){say('That was too fast — please take a moment and try again.');return}
   var name=$('pp-name').value.trim(),email=$('pp-email').value.trim().toLowerCase();
-  var social=$('pp-social').value.trim(),followers=parseInt($('pp-followers').value,10)||0;
+  var socials=[];document.querySelectorAll('.pp-row').forEach(function(r){
+    var url=r.querySelector('.pp-url').value.trim(),n=+r.querySelector('.pp-n').value||0;
+    if(url)socials.push({platform:r.querySelector('select').value,url:url,followers:n});
+  });
+  var followers=recalc();
+  var social=socials.length?socials[0].url:'';
   if(name.length<2||!/^\S+@\S+\.\S+$/.test(email)){say('Add your name and a valid email.');return}
-  if(!/^https?:\/\/./.test(social)){say('Add a link to your main social profile.');return}
+  if(!socials.length||!/^https?:\/\/./.test(social)){say('Add at least one platform link with its follower count.');return}
   var apps=[];try{apps=JSON.parse(localStorage.getItem('sy-partner-apps'))||[]}catch(e){}
   if(apps.some(function(a){return a.email===email})){say('An application for this email already exists — our team will be in touch.',true);return}
   var code='SY-'+(name.replace(/[^A-Za-z]/g,'').slice(0,6).toUpperCase()||'PARTNER')+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
   var tier=followers>=10000?'partner_1pct':followers>=5000?'partner_quarter':'referrer';
-  apps.unshift({name:name,email:email,social:social,followers:followers,tier:tier,code:code,status:'pending',when:new Date().toISOString()});
+  apps.unshift({name:name,email:email,social:social,socials:socials,followers:followers,tier:tier,code:code,status:'pending',when:new Date().toISOString()});
   localStorage.setItem('sy-partner-apps',JSON.stringify(apps));
-  $('pp-name').value='';$('pp-email').value='';$('pp-social').value='';$('pp-followers').value='';
+  $('pp-name').value='';$('pp-email').value='';$('pp-socials').innerHTML='';addRow();recalc();
   say('Application received! Proposed code: '+code+' · tier: '+(tier==='partner_1pct'?'Influencer (1%)':tier==='partner_quarter'?'Rising creator (0.25%)':'Referrer (250 ACUs)')+'. Our team verifies your following and confirms by email.',true);
 };
 })();

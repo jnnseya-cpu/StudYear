@@ -34,7 +34,7 @@
 </style>
 </head>
 <body>
-<script src="../../guard.js" data-base="../../"></script>
+<script src="../../guard.js" data-role="any" data-base="../../"></script>
 <main class="wrap">
   <a class="back" href="javascript:history.back()" aria-label="Go back to the previous page">← Back</a>
 
@@ -59,6 +59,22 @@
     </div>
     <div id="role-extra"></div>
     <div style="margin-top:14px"><button class="btn" id="save">Save profile</button></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-ref">
+    <h2 id="h-ref">🤝 My referral code — earn 250 ACUs per new customer</h2>
+    <p class="note">Every StudYear account is a Referrer: share your code or link and receive <b style="color:var(--ink)">250 ACUs</b>
+      for each new customer who joins with it (valid after 14 days and £10+ of cleared spend). Over 5,000 followers on
+      social media? <a href="../../partners/" style="color:#8FC2EC">Apply for a commission tier instead</a>.</p>
+    <div class="row" style="align-items:end">
+      <div><label for="ref-code">Your code</label><input id="ref-code" readonly aria-describedby="h-ref"></div>
+      <div><label for="ref-link">Your share link</label><input id="ref-link" readonly></div>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="ref-copy">Copy link</button>
+      <a class="btn" id="ref-wa" target="_blank" rel="noopener">Share on WhatsApp</a>
+    </div>
+    <div class="note" id="ref-stats" style="margin-top:10px" aria-live="polite"></div>
   </section>
 
   <section class="card" aria-labelledby="h-links">
@@ -171,6 +187,52 @@ $('del').onclick=function(){
   }catch(e){}
   location.href='../../?deleted=1';
 };
+
+/* ---- personal referral code: every account is a Referrer by default ---- */
+(function(){
+  if(!profile.refCode){
+    profile.refCode='SY-'+((S.name||'ME').replace(/[^A-Za-z]/g,'').slice(0,5).toUpperCase()||'ME')+
+      '-'+Math.random().toString(36).slice(2,6).toUpperCase();
+    SY.set('profile',profile);
+  }
+  /* auto-register in the partner registry so purchases with this code attribute */
+  try{
+    var ps=JSON.parse(localStorage.getItem('sy-partners'))||[];
+    if(!ps.some(function(p){return p.code===profile.refCode}))
+      ps.push({name:S.name,email:S.email,code:profile.refCode,followers:0,tier:'referrer',approved:true,auto:true,when:new Date().toISOString()});
+    localStorage.setItem('sy-partners',JSON.stringify(ps));
+  }catch(e){}
+  var link='https://www.studyear.com/auth/?signup=1&ref='+encodeURIComponent(profile.refCode);
+  $('ref-code').value=profile.refCode;
+  $('ref-link').value=link;
+  $('ref-copy').onclick=function(){try{navigator.clipboard.writeText(link);toast('Share link copied')}catch(e){}};
+  $('ref-wa').href='https://wa.me/?text='+encodeURIComponent('Join me on StudYear — the AI study platform 🎓 Sign up with my link: '+link);
+  /* referral stats + 250-ACU crediting once qualified (14 days + £10 cleared) */
+  try{
+    var refs=(JSON.parse(localStorage.getItem('sy-partner-refs'))||[]).filter(function(r){return r.code===profile.refCode&&r.email!==S.email});
+    var byUser={};refs.forEach(function(r){(byUser[r.email]=byUser[r.email]||[]).push(r)});
+    var qualified=0,pending=0,credited=0;
+    Object.keys(byUser).forEach(function(em){
+      var rs=byUser[em];var spend=rs.reduce(function(n,r){return n+(+r.gbp||0)},0);
+      var first=Math.min.apply(null,rs.map(function(r){return new Date(r.when).getTime()||Date.now()}));
+      var ok=spend>=10&&(Date.now()-first)>=14*86400000;
+      if(!ok){pending++;return}
+      qualified++;
+      if(!rs.some(function(r){return r.credited})){
+        rs[0].credited=true;
+        var w=SY.get('wallet',{acus:0,plan:'child_free'});w.acus=(w.acus||0)+250;SY.set('wallet',w);
+        SY.log('billing','Referral reward','250 ACUs — '+em.replace(/(.{3}).*(@.*)/,'$1***$2')+' qualified.');
+        credited++;
+      }
+    });
+    if(credited){
+      var all=JSON.parse(localStorage.getItem('sy-partner-refs'))||[];
+      refs.forEach(function(r){var i=all.findIndex(function(x){return x.code===r.code&&x.email===r.email&&x.when===r.when});if(i>-1)all[i]=r});
+      localStorage.setItem('sy-partner-refs',JSON.stringify(all));
+    }
+    $('ref-stats').textContent=refs.length?('Referrals: '+Object.keys(byUser).length+' · qualified: '+qualified+' · pending (14-day / £10 rule): '+pending+(credited?' · 🎉 '+credited*250+' ACUs just credited!':'')):'No referrals yet — share your link to start earning.';
+  }catch(e){}
+})();
 
 draw();
 })();

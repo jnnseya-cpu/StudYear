@@ -23,9 +23,10 @@
   try { s = JSON.parse(localStorage.getItem('sy-session')); } catch (e) {}
   var here = encodeURIComponent(location.pathname + location.search + location.hash);
   if (!s || !s.role) {
-    location.replace(base + 'auth/?role=' + role + '&next=' + here);
+    location.replace(base + 'auth/?role=' + (role === 'any' ? 'student' : role) + '&next=' + here);
     return;
-  } else if (s.role !== role) {
+  } else if (role !== 'any' && s.role !== role) {
+    // data-role="any" admits every signed-in account (e.g. the universal profile page)
     location.replace(base + 'auth/?role=' + role + '&mismatch=' + encodeURIComponent(s.role) + '&next=' + here);
     return;
   }

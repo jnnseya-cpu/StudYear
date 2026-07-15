@@ -218,6 +218,17 @@ $('f').addEventListener('submit',async function(e){
     /* go-live: mirror the account into Firebase Auth and start encrypted
        cloud sync (silent no-op until firebase-config.json is filled in) */
     try{if(window.SYCloud)await SYCloud.signUp(email,pw,name,role)}catch(err){}
+    /* referral attribution: ?ref=CODE from a share link sticks to this account
+       (drives the Growth Partner Programme's 250-ACU / % tiers) */
+    try{
+      var refCode=(q.get('ref')||'').trim().toUpperCase();
+      if(refCode){
+        localStorage.setItem('sy-u:'+email+':promo',JSON.stringify(refCode));
+        var rf=JSON.parse(localStorage.getItem('sy-partner-refs')||'[]');
+        rf.unshift({code:refCode,email:email,gbp:0,signup:true,when:new Date().toISOString()});
+        localStorage.setItem('sy-partner-refs',JSON.stringify(rf));
+      }
+    }catch(err){}
     save('sy-session',{name:name,email:email,role:role,ts:new Date().toISOString()});
     // new students onboard by building their personalised profile first
     if(role==='student'&&!next){location.replace('../account/profile/?welcome=1');return}
