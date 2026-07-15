@@ -1,15 +1,20 @@
 # Claude working notes — StudYear
 
-## Deployment (owner's current decision, 2026-07)
+## Deployment (owner's current decision, 2026-07-15 — LIVE)
 
-- **Publishing from GitHub Pages for now**: the live site is
-  https://jnnseya-cpu.github.io/StudYear/, served from the `gh-pages` branch,
-  which `.github/workflows/deploy-os.yml` rebuilds and republishes on every push.
-  Treat Pages as the production surface until further notice.
-- **Vercel and Firebase come later**: the remaining steps in
-  `infra/go-live-guide.md` (Part 2 Vercel frontend, Part 3 Firebase backend)
-  are deliberately deferred by the owner — do not treat them as pending work,
-  and do not push the owner to complete them.
+- **Production is https://www.studyear.com/** — the Vercel project
+  (`stud-year-web`, root `apps/web`, production branch
+  `claude/continue-from-here-y37pvu`) behind Hostinger DNS. Everything is
+  based on this domain: canonical tags, sitemap, invite links, docs.
+- **Backend is Firebase project `revision-rocket-4nuir`** (europe-west2):
+  Auth (email/password), Firestore, Storage, Functions. The frontend switch
+  is `apps/web/public/firebase-config.json` (live values committed — public
+  identifiers). Backend deploys via the manual "Deploy Backend (Firebase)"
+  GitHub workflow (`FIREBASE_SERVICE_ACCOUNT` secret) or `cd backend &&
+  firebase deploy`.
+- **GitHub Pages stays as the backup frontend**:
+  https://jnnseya-cpu.github.io/StudYear/ keeps auto-deploying from
+  `gh-pages` via `.github/workflows/deploy-os.yml` on every push.
 
 ## Practical consequences
 
