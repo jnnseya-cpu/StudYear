@@ -37,11 +37,31 @@ jobs:
         # Only non-empty secrets land in backend/functions/.env, which
         # firebase-tools bundles into the Functions runtime. Missing keys just
         # leave that feature dormant (aiProxy → 503, contact → store-only).
+        # The AI key is auto-detected: AI_PROVIDER_KEY wins, otherwise any of
+        # the common provider secret names below is picked up with the right
+        # provider inferred — so keys work whatever they were saved as.
+        env:
+          K_AI: ${{ secrets.AI_PROVIDER_KEY }}
+          K_OPENAI: ${{ secrets.OPENAI_API_KEY }}
+          K_ANTHROPIC: ${{ secrets.ANTHROPIC_API_KEY }}
+          K_CLAUDE: ${{ secrets.CLAUDE_API_KEY }}
+          K_GEMINI: ${{ secrets.GEMINI_API_KEY }}
+          K_GOOGLE: ${{ secrets.GOOGLE_API_KEY }}
         run: |
+          AIP="${{ secrets.AI_PROVIDER }}"; AIK="$K_AI"; SRC="AI_PROVIDER_KEY"
+          if [ -z "$AIK" ]; then
+            if   [ -n "$K_OPENAI" ];    then AIP="${AIP:-openai}";    AIK="$K_OPENAI";    SRC="OPENAI_API_KEY"
+            elif [ -n "$K_ANTHROPIC" ]; then AIP="${AIP:-anthropic}"; AIK="$K_ANTHROPIC"; SRC="ANTHROPIC_API_KEY"
+            elif [ -n "$K_CLAUDE" ];    then AIP="${AIP:-anthropic}"; AIK="$K_CLAUDE";    SRC="CLAUDE_API_KEY"
+            elif [ -n "$K_GEMINI" ];    then AIP="${AIP:-gemini}";    AIK="$K_GEMINI";    SRC="GEMINI_API_KEY"
+            elif [ -n "$K_GOOGLE" ];    then AIP="${AIP:-gemini}";    AIK="$K_GOOGLE";    SRC="GOOGLE_API_KEY"
+            fi
+          fi
+          if [ -n "$AIK" ]; then echo "AI gateway key: found ($SRC → provider $AIP)"; else echo "AI gateway key: NOT FOUND — set AI_PROVIDER_KEY (or OPENAI_API_KEY / ANTHROPIC_API_KEY / GEMINI_API_KEY)"; fi
           {
             for kv in \
-              "AI_PROVIDER=${{ secrets.AI_PROVIDER }}" \
-              "AI_PROVIDER_KEY=${{ secrets.AI_PROVIDER_KEY }}" \
+              "AI_PROVIDER=$AIP" \
+              "AI_PROVIDER_KEY=$AIK" \
               "AI_MODEL=${{ secrets.AI_MODEL }}" \
               "MAIL_HOST=${{ secrets.MAIL_HOST }}" \
               "MAIL_PORT=${{ secrets.MAIL_PORT }}" \
