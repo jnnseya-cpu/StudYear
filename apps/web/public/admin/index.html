@@ -141,10 +141,11 @@
       <input id="u-search" placeholder="Search name or email…" style="min-width:220px">
       <select id="u-role"><option value="">All roles</option><option>student</option><option>parent</option><option>teacher</option><option>tutor</option><option>school</option><option>authority</option><option>admin</option></select>
       <button class="btn ghost" id="u-clean" title="Removes duplicate rows, test/demo-domain accounts and bot-pattern names. Real users are never touched.">🧹 Clean test &amp; duplicate data</button>
+      <button class="btn danger" id="u-delsel" style="display:none">Delete selected (<span id="u-selcount">0</span>)</button>
       <span class="note" style="align-self:center" id="u-count"></span>
     </div>
     <div style="overflow-x:auto"><table id="u-table">
-      <thead><tr><th>Display Name</th><th>Email</th><th>Role</th><th>Subscription</th><th>ACUs</th><th>Actions</th></tr></thead>
+      <thead><tr><th style="width:26px"><input type="checkbox" id="u-all" title="Select all shown" style="width:auto"></th><th>Display Name</th><th>Email</th><th>Role</th><th>Subscription</th><th>ACUs</th><th>Actions</th></tr></thead>
       <tbody></tbody>
     </table></div>
   </div>
@@ -564,6 +565,7 @@ function drawUsers(){
     var plan=PLAN_NAMES[w.plan]||PLAN_NAMES.child_free;
     var student=u.role==='student';
     return '<tr>'+
+      '<td><input type="checkbox" class="u-sel" data-i="'+i+'" style="width:auto" aria-label="Select '+esc(u.name||u.email)+'"></td>'+
       '<td><b>'+esc(u.name||'N/A')+'</b>'+(u.demo?' <span class="pill ok">demo</span>':'')+'</td>'+
       '<td>'+esc(mask(u.email))+'</td>'+
       '<td><span class="pill role">'+esc(u.role||'—')+'</span></td>'+
@@ -577,8 +579,31 @@ function drawUsers(){
         '<button class="btn ghost sm" data-act="view" data-i="'+i+'">View as User</button>'+
         '<button class="btn danger sm" data-act="del" data-i="'+i+'">Delete</button>'+
       '</div></td></tr>';
-  }).join('')||'<tr><td colspan="6" class="note">No accounts match.</td></tr>';
+  }).join('')||'<tr><td colspan="7" class="note">No accounts match.</td></tr>';
   tb.querySelectorAll('button').forEach(function(b){b.onclick=function(){userAct(b.dataset.act,us[+b.dataset.i])}});
+  /* multi-select → bulk delete (for clearing imported/unwanted rows fast) */
+  function selCount(){var n=tb.querySelectorAll('.u-sel:checked').length;
+    $('u-selcount').textContent=n;$('u-delsel').style.display=n?'inline-block':'none';return n}
+  tb.querySelectorAll('.u-sel').forEach(function(c){c.addEventListener('change',selCount)});
+  $('u-all').checked=false;
+  $('u-all').onchange=function(){tb.querySelectorAll('.u-sel').forEach(function(c){c.checked=$('u-all').checked});selCount()};
+  $('u-delsel').onclick=function(){
+    var picked=[];tb.querySelectorAll('.u-sel:checked').forEach(function(c){var u=us[+c.dataset.i];if(u)picked.push(u)});
+    if(!picked.length)return;
+    if(!confirm('Delete '+picked.length+' account(s) and all their data?\n\n'+picked.slice(0,10).map(function(u){return '• '+(u.name||'?')+' <'+u.email+'>'}).join('\n')+(picked.length>10?'\n…and '+(picked.length-10)+' more':'')+'\n\nThis cannot be undone.'))return;
+    var all=users();
+    picked.forEach(function(u){
+      all=all.filter(function(x){return !(x.email===u.email&&x.role===u.role)});
+      var kill=[];for(var k=0;k<localStorage.length;k++){var key=localStorage.key(k);
+        if(key&&(key.indexOf('sy-u:'+u.email+':')===0||key==='sy-e2e:'+u.email))kill.push(key)}
+      kill.forEach(function(key){localStorage.removeItem(key)});
+    });
+    save('sy-users',all);
+    var hl=store('sy-support-log',[]);
+    hl.unshift({admin:SY.session.email,target:'bulk-delete',role:'—',reason:'Deleted '+picked.length+' selected account(s)',when:new Date().toISOString()});
+    save('sy-support-log',hl.slice(0,100));
+    toast(picked.length+' account(s) deleted');drawUsers();drawDashboard();
+  };
 }
 function userAct(act,u){
   if(!u)return;
