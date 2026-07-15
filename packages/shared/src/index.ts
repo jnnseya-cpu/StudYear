@@ -248,11 +248,13 @@ export const SCHOOL_PLANS: Plan[] = [
 
 /** ACU top-ups — commercial-model §4. */
 export const TOPUPS = [
+  // Packs are deliberately ~85–90 ACUs/£ — BELOW every plan's per-pound value,
+  // so subscriptions are always the best deal and packs are the flexible top-up.
   { id: 'mini_boost', pence: 300, acus: 250 },
-  { id: 'core_boost', pence: 500, acus: 500 },
-  { id: 'growth_boost', pence: 1000, acus: 1100 },
-  { id: 'exam_boost', pence: 2000, acus: 2400 },
-  { id: 'power_boost', pence: 3000, acus: 3750 },
+  { id: 'core_boost', pence: 500, acus: 450 },
+  { id: 'growth_boost', pence: 1000, acus: 900 },
+  { id: 'exam_boost', pence: 2000, acus: 1800 },
+  { id: 'power_boost', pence: 3000, acus: 2600 },
 ] as const;
 
 // ------------------------------------------------------------ free tier ----

@@ -29,7 +29,7 @@
 'use strict';var SY=window.SY;if(!SY)return;
 function $(id){return document.getElementById(id)}
 var tt;function toast(t){var e=$('toast');if(!e)return;e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2200)}
-var PACKS=[{n:'Mini Boost',a:250,p:3},{n:'Core Boost',a:500,p:5,best:1},{n:'Growth Boost',a:1100,p:10},{n:'Exam Boost',a:2400,p:20},{n:'Power Boost',a:3750,p:30}];
+var PACKS=[{n:'Mini Boost',a:250,p:3},{n:'Core Boost',a:450,p:5,best:1},{n:'Growth Boost',a:900,p:10},{n:'Exam Boost',a:1800,p:20},{n:'Power Boost',a:2600,p:30}];
 var promo=0;
 function bal(){return SY.get('acus',0)}
 function draw(){$('bal').textContent=bal().toLocaleString();

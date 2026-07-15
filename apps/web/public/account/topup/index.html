@@ -152,7 +152,8 @@
 </div>
 
 <h2 class="sec">ACU packs — one-time payments</h2>
-<p class="sec-sub">Instant credit, no subscription needed. Packs stack on any plan.</p>
+<p class="sec-sub">Instant credit, no subscription needed. Packs stack on any plan — but your monthly plan is always
+  the best ACUs-per-£ (and the only way to unlock premium tools); packs are the flexible extra fuel.</p>
 <div class="packs" id="packs"></div>
 
 <h2 class="sec">🌍 Fund a student — from anywhere in the world</h2>
@@ -218,12 +219,14 @@ function studyEstimate(acus,monthly){
   }
   return line;
 }
+/* packs sit BELOW every plan's ACUs-per-£ on purpose: plans are the best value,
+   packs are the flexible one-off top-up (mirrors @studyear/shared TOPUPS) */
 var PACKS=[
   {id:'mini_boost',label:'Mini Boost pack',acus:250,pounds:3,pop:false},
-  {id:'core_boost',label:'Core Boost pack',acus:500,pounds:5,pop:true},
-  {id:'growth_boost',label:'Growth Boost pack',acus:1100,pounds:10,pop:false},
-  {id:'exam_boost',label:'Exam Boost pack',acus:2400,pounds:20,pop:false},
-  {id:'power_boost',label:'Power Boost pack',acus:3750,pounds:30,pop:false}];
+  {id:'core_boost',label:'Core Boost pack',acus:450,pounds:5,pop:true},
+  {id:'growth_boost',label:'Growth Boost pack',acus:900,pounds:10,pop:false},
+  {id:'exam_boost',label:'Exam Boost pack',acus:1800,pounds:20,pop:false},
+  {id:'power_boost',label:'Power Boost pack',acus:2600,pounds:30,pop:false}];
 var PLANS=[
   {id:'child_free',label:'Child Free',pounds:0,acus:100,flag:'No payment',cta:'Continue with Child Free',
    feats:['100 ACUs every month (Child Free only)','AI homework help & explanations','Not combined with paid plans — upgrade via checkout for more']},
