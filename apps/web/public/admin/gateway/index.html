@@ -64,6 +64,7 @@
     <input id="live-key" type="password" autocomplete="off" placeholder="AIza… / sk-… / sk-ant-…">
     <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn solid" id="live-enable">Enable live AI</button>
+      <button class="btn" id="live-proxy" title="Production path: the key lives only in the Firebase Functions gateway (AI_PROVIDER_KEY secret); the browser sends the signed-in user's token.">Use server gateway (recommended)</button>
       <button class="btn ghost" id="live-test">Send a real test prompt</button>
       <button class="btn ghost" id="live-off">Turn off</button>
       <span class="note" id="live-state" style="font-size:11.5px"></span>
@@ -142,6 +143,11 @@ function liveState(){
 }
 (function(){var c=window.SYAI&&SYAI.config&&SYAI.config();if(c){$('live-provider').value=c.provider||'gemini';$('live-model').value=c.model||'';}})();
 $('live-provider').onchange=function(){if(!$('live-model').value)$('live-model').placeholder='e.g. '+DEFMODEL[$('live-provider').value]};
+$('live-proxy').onclick=function(){
+  SYAI.setConfig({provider:'proxy',key:'session'});
+  toast('AI now routes through the server-side gateway — keys never touch the browser. Requires the AI_PROVIDER_KEY secret on the backend.');
+  try{drawLive()}catch(e){}
+};
 $('live-enable').onclick=function(){
   var key=$('live-key').value.trim();if(!key){toast('Paste an API key first');return}
   var o={provider:$('live-provider').value,key:key,model:$('live-model').value.trim()||DEFMODEL[$('live-provider').value]};

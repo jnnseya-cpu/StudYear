@@ -1046,6 +1046,8 @@ function getWallet(){
 function walletBalance(){return getWallet().acus}
 /** spend ACUs with a hard stop at zero (mirrors the ledger contract). returns true on success */
 function spendAcus(n,label){
+  /* admin accounts have forever-free AI usage — no debits, still logged */
+  if(SY.session&&SY.session.role==="admin"){logEvent("billing",label+" — admin (free)","Admin usage is never metered.");return true;}
   const w=getWallet();
   if(w.acus<n){ toast("Not enough ACUs — "+w.acus+"/"+n+" needed. Top up in My account → Plans & top-up."); return false; }
   w.acus-=n; store.set("wallet",w);

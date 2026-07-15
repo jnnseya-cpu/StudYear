@@ -690,6 +690,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </footer>
 
 <script>
+  // signed-in visitors get a straight route back to their console
+  try{
+    const ses=JSON.parse(localStorage.getItem('sy-session'));
+    if(ses&&ses.role){
+      const btn=document.querySelector('.nav-links a.btn-gold');
+      if(btn){btn.textContent='My dashboard →';btn.href='app/'+(ses.role==='admin'?'admin':ses.role)+'/';}
+      const cta=document.querySelector('.hero-cta a.btn-gold');
+      if(cta){cta.textContent='Continue to my dashboard →';cta.href='app/'+(ses.role==='admin'?'admin':ses.role)+'/';}
+    }
+  }catch(e){}
+
   // reveal on scroll
   const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
   document.querySelectorAll('.rv').forEach(el=>io.observe(el));

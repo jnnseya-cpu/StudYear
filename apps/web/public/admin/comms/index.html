@@ -348,14 +348,31 @@ $('qa-event').onchange=function(){if($('mail-wrap').innerHTML)renderMail()};
 /* provider key: read from gateway settings if present */
 function providerReady(){var g=SY.get('gateway',{});return !!(g&&(g.resendKey||g.emailKey||g.smsKey))}
 $('send-btn').onclick=function(){
-  var e=curEvent(),b=curBrand();var to=SY.session.email||'admin@studyear';var ready=providerReady();
+  var e=curEvent(),b=curBrand();var to=SY.session.email||'admin@studyear';
   var now=new Date();var L=log();
-  e.chans.forEach(function(ch){
-    L.unshift({ch:ch,event:e.key,to:to,brand:b.name,status:ready?'sent':'sandbox',provider:ready?(ch==='email'?'resend':ch):'sandbox',at:now.toISOString(),t:hhmmss(now)});
-  });
-  setLog(L);SY.log('comms','Test event fired',e.key+' → '+e.chans.length+' channel(s)');
-  toast((ready?'Sent':'Sandbox-logged')+' '+e.key+' across '+e.chans.length+' channel'+(e.chans.length===1?'':'s'));
-  renderStats();renderCoverage();renderDeliveries();
+  /* live email via the backend /notify when the cloud is up (delivers only to
+     the signed-in admin's own address; server enforces that) — every other
+     channel sandbox-logs until its provider is wired */
+  var emailLive=false;
+  function record(ready){
+    e.chans.forEach(function(ch){
+      var live=(ch==='email'&&ready)||(ch!=='email'&&providerReady());
+      L.unshift({ch:ch,event:e.key,to:to,brand:b.name,status:live?'sent':'sandbox',provider:live?(ch==='email'?'smtp':ch):'sandbox',at:now.toISOString(),t:hhmmss(now)});
+    });
+    setLog(L);SY.log('comms','Test event fired',e.key+' → '+e.chans.length+' channel(s)');
+    toast((ready?'Email sent live':'Sandbox-logged')+' — '+e.key+' across '+e.chans.length+' channel'+(e.chans.length===1?'':'s'));
+    renderStats();renderCoverage();renderDeliveries();
+  }
+  if(window.SYCloud&&SYCloud.ready()&&e.chans.indexOf('email')>-1){
+    SYCloud.token(to).then(function(tk){
+      if(!tk)return record(false);
+      return fetch(JSON.parse(localStorage.getItem('sy-cloud-config')).apiBase.replace(/\/$/,'')+'/notify',{
+        method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tk},
+        body:JSON.stringify({subject:e.subject.replace(/\{\{(\w+)\}\}/g,'example'),
+          text:'Test of the '+e.key+' notification from the StudYear Communication Event Architecture ('+b.name+' brand).'})
+      }).then(function(r){return r.json()}).then(function(j){record(!!(j&&j.ok))});
+    }).catch(function(){record(false)});
+  }else record(providerReady());
 };
 
 /* ---- recent deliveries ---- */

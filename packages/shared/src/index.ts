@@ -355,3 +355,24 @@ export function isE2EEnvelope(v: unknown): v is E2EEnvelope {
   return !!v && typeof v === 'object' && (v as E2EEnvelope).__e2e === 1
     && typeof (v as E2EEnvelope).n === 'string' && typeof (v as E2EEnvelope).c === 'string';
 }
+
+/* ---------------- Growth Partner Programme (owner terms, 2026-07-15) ------
+   Open to every user via individual signup (/partners/). Tier is set by
+   TOTAL followers across all social platforms (YouTube included):
+   - partner_1pct   : ≥10,000 followers → 1% of referred customers' spending,
+                      lifetime, capped at £20,000 income per referred user
+   - partner_quarter: 5,000–9,999 followers → 0.25% on the same terms
+   - referrer       : everyone else → 250 ACUs per new customer who signs up
+                      with their code (validity rules per commercial model) */
+export const PARTNER_PROGRAMME = {
+  TIERS: [
+    { id: 'partner_1pct', minFollowers: 10000, commissionPct: 1 },
+    { id: 'partner_quarter', minFollowers: 5000, commissionPct: 0.25 },
+    { id: 'referrer', minFollowers: 0, referralAcus: 250 },
+  ],
+  LIFETIME_CAP_GBP_PER_REFERRED_USER: 20000,
+} as const;
+
+export function partnerTier(followers: number) {
+  return PARTNER_PROGRAMME.TIERS.find((t) => followers >= t.minFollowers)!;
+}

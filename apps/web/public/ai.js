@@ -40,11 +40,28 @@
     }catch(e){}
   }
   async function ask(system, user, opts){
-    var c=cfg();if(!c||!c.key)throw new Error('No AI key configured');
+    var c=cfg();if(!c||(!c.key&&c.provider!=='proxy'))throw new Error('No AI key configured');
     opts=opts||{};var model=modelFor(c);var maxTokens=opts.maxTokens||1024;
     var img=opts.image?splitDataUrl(opts.image):null;
     var t0=Date.now(),inChars=String(system||'').length+String(user||'').length;
     var rawAsk=async function(){
+    if(c.provider==='proxy'){
+      /* production path: the server-side gateway (/aiProxy) holds the provider
+         key; the browser sends only the signed-in user's ID token */
+      var cc=null;try{cc=JSON.parse(localStorage.getItem('sy-cloud-config'))}catch(e){}
+      if(!cc||!cc.apiBase)throw new Error('Server gateway not configured');
+      var email=null;try{email=(JSON.parse(localStorage.getItem('sy-session'))||{}).email}catch(e){}
+      if(!window.SYCloud)throw new Error('Cloud bridge unavailable');
+      var tk=await SYCloud.token(email);
+      if(!tk)throw new Error('Sign in again to use the server gateway');
+      var rp=await fetch(cc.apiBase.replace(/\/$/,'')+'/aiProxy',{method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+tk},
+        body:JSON.stringify({system:system,user:user,maxTokens:maxTokens,
+          temperature:opts.temperature!=null?opts.temperature:0.6,image:opts.image||undefined})});
+      var jp=await rp.json().catch(function(){return{}});
+      if(!rp.ok||!jp.ok)throw new Error('Gateway '+rp.status+': '+(jp.error||''));
+      return jp.text||'';
+    }
     if(c.provider==='gemini'){
       var parts=[{text:user}];if(img)parts.push({inlineData:{mimeType:img.mime,data:img.data}});
       var url='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent?key='+encodeURIComponent(c.key);

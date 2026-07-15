@@ -279,6 +279,37 @@ export const register = onRequest({ region: 'europe-west2', cors: true }, async 
   }
 });
 
+// -------------------------------------------------------------- notify (email) ----
+/**
+ * POST /notify { subject, text } — sends an email to the CALLER's own
+ * verified address only (abuse-proof by construction: the recipient is taken
+ * from the ID token, never the payload). Used by the Communication Event
+ * Architecture's "Send test to me" and account-level notices.
+ * Requires MAIL_* env; returns ok:false when mail is not configured.
+ */
+export const notify = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const user = await requireUser(req.headers.authorization);
+    if (!user.email) throw httpError(400, 'token has no email');
+    if (!process.env.MAIL_HOST) { res.json({ ok: false, reason: 'mail not configured' }); return; }
+    const subject = String(req.body?.subject ?? 'StudYear notification').slice(0, 200);
+    const text = String(req.body?.text ?? '').slice(0, 5000);
+    const nodemailer = await import('nodemailer');
+    const transport = nodemailer.createTransport({
+      host: process.env.MAIL_HOST,
+      port: Number(process.env.MAIL_PORT ?? 465),
+      secure: (process.env.MAIL_SECURE ?? 'true') !== 'false',
+      auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
+    });
+    await transport.sendMail({ from: process.env.MAIL_FROM ?? process.env.MAIL_USER, to: user.email, subject, text });
+    await audit('NOTIFY_SENT', user.uid, { subject });
+    res.json({ ok: true });
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
 // ------------------------------------------------------ E2E-encrypted sync ----
 /**
  * POST /sync — the end-to-end encryption boundary.

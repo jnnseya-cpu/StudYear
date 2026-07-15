@@ -62,6 +62,7 @@
   <a href="#analytics">Analytics &amp; Reporting</a>
   <a href="#settings">System &amp; AI Settings</a>
   <a href="#fraud">Fraud Monitoring</a>
+  <a href="../account/me/">👤 My profile</a>
   <a href="gateway/">AI Gateway</a>
   <a href="comms/">Comms engine</a>
   <a href="#" id="signout">Sign out</a>
@@ -260,15 +261,21 @@
 <!-- ============ GROWTH ============ -->
 <section class="panel" id="p-growth">
   <h1>Growth Partner Programme</h1>
-  <p class="lede">Approve influencers, review referrals and monitor commission caps.</p>
+  <p class="lede">Open to every user — individual signup at <b>/partners/</b>. Tiers by verified following across
+    all platforms (YouTube included): <b>10,000+ → 1%</b> of referred customers' spending for life ·
+    <b>5,000–9,999 → 0.25%</b> · everyone else → <b>250 ACUs per referral</b>. Lifetime cap:
+    <b>£20,000 income per referred user</b>.</p>
   <div class="grid">
-    <div class="card c8"><h3>Partners</h3><div class="sub">Referral code · referrals recorded · commission cap</div>
-      <div style="overflow-x:auto"><table id="g-table"><thead><tr><th>Partner</th><th>Code</th><th>Referrals</th><th>Cap</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
-      <div class="note" id="g-empty" style="display:none">No partners yet — add your first on the right.</div></div>
-    <div class="card c4"><h3>Add partner</h3>
+    <div class="card c12"><h3>Applications</h3><div class="sub">From the public /partners/ page — verify the following count before approving; the tier is assigned automatically from it</div>
+      <div style="overflow-x:auto"><table id="ga-table"><thead><tr><th>Applicant</th><th>Social</th><th>Followers</th><th>Proposed tier</th><th>Code</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+      <div class="note" id="ga-empty" style="display:none">No applications yet — share https://www.studyear.com/partners/</div></div>
+    <div class="card c8"><h3>Approved partners</h3><div class="sub">Code · tier · referrals recorded · earnings vs the £20k per-referred-user lifetime cap</div>
+      <div style="overflow-x:auto"><table id="g-table"><thead><tr><th>Partner</th><th>Code</th><th>Tier</th><th>Referrals</th><th>Earned / cap</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+      <div class="note" id="g-empty" style="display:none">No approved partners yet.</div></div>
+    <div class="card c4"><h3>Add partner manually</h3>
       <label class="f">Name</label><input id="g-name" style="width:100%">
       <label class="f" style="margin-top:8px">Referral code</label><input id="g-code" placeholder="e.g. EMILY20" style="width:100%">
-      <label class="f" style="margin-top:8px">Commission cap (£/month)</label><input id="g-cap" type="number" value="250" style="width:100%">
+      <label class="f" style="margin-top:8px">Total followers (sets the tier)</label><input id="g-cap" type="number" value="0" style="width:100%">
       <div style="margin-top:10px"><button class="btn" id="g-add">Add partner</button></div></div>
   </div>
 </section>
@@ -345,6 +352,7 @@
 
 <!-- ============ SETTINGS ============ -->
 <section class="panel" id="p-settings">
+  <!-- provider economics injected below AI provider settings -->
   <h1>System &amp; AI Settings</h1>
   <p class="lede">Control AI rate limits, feature flags, email delivery, and other global settings. Live AI keys and Stripe links live in the <a href="gateway/" style="color:var(--gold-300)">AI Gateway</a>.</p>
   <div class="grid">
@@ -384,6 +392,11 @@
         <div><label class="f">Anthropic — cost-effective</label><input data-pm="anthropic_cheap" style="width:100%"></div>
         <div><label class="f">Anthropic — performance</label><input data-pm="anthropic_perf" style="width:100%"></div>
       </div>
+      <div style="margin-top:16px"><h3 style="font-size:13px;font-weight:600">Cost &amp; users per provider (30d)</h3>
+      <div class="sub">Live from the AI usage log — calls, distinct users and estimated £ per provider</div>
+      <div style="overflow-x:auto"><table id="pv-costs"><thead><tr><th>Provider</th><th>Calls</th><th>Users</th><th>Est. £ (30d)</th><th>Avg £/call</th></tr></thead><tbody></tbody></table></div>
+      <div class="note" id="pv-costs-empty" style="display:none">No AI usage logged yet.</div>
+      </div>
       <div style="margin-top:12px"><button class="btn" id="set-save">Save All Settings</button></div>
     </div>
   </div>
@@ -395,6 +408,9 @@
   <p class="lede">Signals from the auth defences and account anomalies. Flag anything for review.</p>
   <div class="grid">
     <div class="card c6"><h3>Live signals</h3><div class="sub">From the sign-in bot defences and account data</div><div id="f-signals"></div></div>
+    <div class="card c6"><h3>Automated rules scan</h3><div class="sub">One free account per device · signup velocity · top-up velocity · bot-pattern names</div>
+      <div style="margin:8px 0"><button class="btn sm" id="f-scan">Run fraud scan now</button></div>
+      <div class="note" id="f-scan-note">Flags anything the rules catch into the review queue (never auto-suspends).</div></div>
     <div class="card c6"><h3>Flag an account</h3><div class="sub">Adds it to the review queue below with your reason</div>
       <label class="f">Account</label><select id="f-user" style="width:100%"></select>
       <label class="f" style="margin-top:8px">Reason for flag</label>
@@ -974,17 +990,55 @@ function drawContent(){
 }
 
 /* ---------- growth ---------- */
+/* tiers per owner terms (mirrors PARTNER_PROGRAMME in @studyear/shared):
+   ≥10k followers → 1% lifetime · 5k–9,999 → 0.25% · else 250-ACU referrer.
+   Lifetime cap: £20,000 income per referred user. */
+function gTier(followers){return followers>=10000?'partner_1pct':followers>=5000?'partner_quarter':'referrer'}
+function gTierLabel(t){return t==='partner_1pct'?'Influencer · 1%':t==='partner_quarter'?'Rising · 0.25%':'Referrer · 250 ACUs'}
+function partnerRefs(code){return store('sy-partner-refs',[]).filter(function(r){return String(r.code).toUpperCase()===String(code).toUpperCase()})}
 function drawGrowth(){
+  /* applications from the public /partners/ page */
+  var apps=store('sy-partner-apps',[]);
+  $('ga-empty').style.display=apps.length?'none':'block';
+  var ta=$('ga-table').querySelector('tbody');
+  ta.innerHTML=apps.map(function(a,i){
+    return '<tr><td><b>'+esc(a.name)+'</b><div class="note">'+esc(mask(a.email||''))+'</div></td>'+
+      '<td><a href="'+esc(a.social)+'" target="_blank" rel="noopener" style="color:var(--blue-300)">profile ↗</a></td>'+
+      '<td>'+(+a.followers||0).toLocaleString()+'</td>'+
+      '<td>'+gTierLabel(gTier(+a.followers||0))+'</td><td>'+esc(a.code)+'</td>'+
+      '<td><span class="pill '+(a.status==='approved'?'ok':a.status==='rejected'?'bad':'warn')+'">'+esc(a.status)+'</span></td>'+
+      '<td><div class="acts"><button class="btn ghost sm" data-app="'+i+'" data-do="approve">Approve</button>'+
+      '<button class="btn danger sm" data-app="'+i+'" data-do="reject">Reject</button></div></td></tr>';
+  }).join('');
+  ta.querySelectorAll('button').forEach(function(b){b.onclick=function(){
+    var as=store('sy-partner-apps',[]);var a=as[+b.dataset.app];if(!a)return;
+    a.status=b.dataset.do==='approve'?'approved':'rejected';
+    save('sy-partner-apps',as);
+    if(a.status==='approved'){
+      var ps=store('sy-partners',[]);
+      if(!ps.some(function(p){return p.code===a.code}))
+        ps.push({name:a.name,email:a.email,code:a.code,followers:+a.followers||0,tier:gTier(+a.followers||0),approved:true,when:new Date().toISOString()});
+      save('sy-partners',ps);
+    }
+    toast(a.status==='approved'?'Partner approved — code '+a.code+' is live':'Application rejected');
+    drawGrowth();
+  }});
+  /* approved partners with earnings vs the £20k per-referred-user cap */
   var ps=store('sy-partners',[]);
   $('g-empty').style.display=ps.length?'none':'block';
-  var refs=allActivity().filter(function(a){return /ref|promo|code/i.test(a.t)});
   var tb=$('g-table').querySelector('tbody');
   tb.innerHTML=ps.map(function(p,i){
-    var n=refs.filter(function(a){return (a.t+' '+a.d).toUpperCase().indexOf(String(p.code).toUpperCase())>=0}).length;
-    return '<tr><td><b>'+esc(p.name)+'</b></td><td>'+esc(p.code)+'</td><td>'+n+'</td>'+
-      '<td>£'+(p.cap||0)+'/mo</td>'+
-      '<td><span class="pill '+(p.approved?'ok':'warn')+'">'+(p.approved?'approved':'pending')+'</span></td>'+
-      '<td><div class="acts"><button class="btn ghost sm" data-act="ap" data-i="'+i+'">'+(p.approved?'Pause':'Approve')+'</button>'+
+    var refs=partnerRefs(p.code);
+    var pct=p.tier==='partner_1pct'?0.01:p.tier==='partner_quarter'?0.0025:0;
+    /* earnings per referred user, each capped at £20,000 */
+    var per={};refs.forEach(function(r){per[r.email]=(per[r.email]||0)+((+r.gbp||0)*pct)});
+    var earned=Object.keys(per).reduce(function(n,k){return n+Math.min(per[k],20000)},0);
+    return '<tr><td><b>'+esc(p.name)+'</b></td><td>'+esc(p.code)+'</td>'+
+      '<td>'+gTierLabel(p.tier||gTier(+p.followers||0))+'</td>'+
+      '<td>'+refs.length+'</td>'+
+      '<td>'+(pct?('£'+earned.toFixed(2)+' / £20k per user'):(refs.length*250)+' ACUs')+'</td>'+
+      '<td><span class="pill '+(p.approved?'ok':'warn')+'">'+(p.approved?'active':'paused')+'</span></td>'+
+      '<td><div class="acts"><button class="btn ghost sm" data-act="ap" data-i="'+i+'">'+(p.approved?'Pause':'Activate')+'</button>'+
       '<button class="btn danger sm" data-act="rm" data-i="'+i+'">Remove</button></div></td></tr>';
   }).join('');
   tb.querySelectorAll('button').forEach(function(b){b.onclick=function(){
@@ -996,8 +1050,9 @@ function drawGrowth(){
 $('g-add').onclick=function(){
   var name=$('g-name').value.trim(),code=$('g-code').value.trim().toUpperCase();
   if(!name||!code){toast('Add a name and a referral code');return}
-  var ps=store('sy-partners',[]);ps.push({name:name,code:code,cap:+$('g-cap').value||250,approved:false,when:new Date().toISOString()});
-  save('sy-partners',ps);$('g-name').value='';$('g-code').value='';toast('Partner added — approve to activate');drawGrowth();
+  var fol=+$('g-cap').value||0;
+  var ps=store('sy-partners',[]);ps.push({name:name,code:code,followers:fol,tier:gTier(fol),approved:true,when:new Date().toISOString()});
+  save('sy-partners',ps);$('g-name').value='';$('g-code').value='';toast('Partner active — tier '+gTierLabel(gTier(fol)));drawGrowth();
 };
 
 /* ---------- revenue ---------- */
@@ -1176,6 +1231,22 @@ function drawSettings(){
   $('lim-calls').value=lim.calls;$('lim-acus').value=lim.acus;
   var pv=store('sy-ai-models',{default:'openai',fallback:'gemini',models:PM_DEFAULTS});
   $('pv-default').value=pv.default||'openai';$('pv-fallback').value=pv.fallback||'gemini';
+  /* cost & users per provider from the usage log */
+  (function(){
+    var rows={},log30=usageLog().filter(function(r){return within(r.when,30)});
+    log30.forEach(function(r){
+      var k=r.provider||'unknown';rows[k]=rows[k]||{calls:0,users:{},gbp:0};
+      rows[k].calls++;if(r.email)rows[k].users[r.email]=1;rows[k].gbp+=(+r.gbp||0);
+    });
+    var ks=Object.keys(rows);
+    $('pv-costs-empty').style.display=ks.length?'none':'block';
+    $('pv-costs').querySelector('tbody').innerHTML=ks.map(function(k){
+      var r=rows[k];
+      return '<tr><td style="text-transform:capitalize"><b>'+esc(k)+'</b></td><td>'+r.calls+'</td>'+
+        '<td>'+Object.keys(r.users).length+'</td><td>£'+r.gbp.toFixed(2)+'</td>'+
+        '<td>£'+(r.calls?(r.gbp/r.calls):0).toFixed(3)+'</td></tr>';
+    }).join('');
+  })();
   document.querySelectorAll('[data-pm]').forEach(function(el){el.value=(pv.models&&pv.models[el.dataset.pm])||PM_DEFAULTS[el.dataset.pm]||''});
   $('set-save').onclick=function(){
     save('sy-pricing',{mult:+$('pr-mult').value||3,comm:+$('pr-comm').value||20});
@@ -1187,6 +1258,26 @@ function drawSettings(){
 }
 
 /* ---------- fraud ---------- */
+$('f-scan').onclick=function(){
+  var us=uniqUsers(),flags=store('sy-fraud-flags',[]),added=0;
+  function flag(u,reason){
+    if(flags.some(function(f){return f.email===u.email&&f.reason===reason}))return;
+    flags.unshift({email:u.email,name:u.name,reason:reason,status:'new',when:new Date().toISOString()});added++;
+  }
+  /* rule 1 — one free account per device */
+  var free=us.filter(function(u){return u.role==='student'&&((acct(u.email,'wallet',{})||{}).plan||'child_free')==='child_free'});
+  if(free.length>1)free.forEach(function(u){flag(u,'Multiple free student accounts on one device ('+free.length+')')});
+  /* rule 2 — top-up velocity: 4+ billing purchases in 24h */
+  us.forEach(function(u){
+    var buys=(acct(u.email,'activity',[])||[]).filter(function(a){return a.k==='billing'&&/purchas|subscrib/i.test(a.t)&&within(a.when,1)});
+    if(buys.length>=4)flag(u,'Top-up velocity: '+buys.length+' purchases in 24h');
+  });
+  /* rule 3 — bot-pattern account names */
+  us.forEach(function(u){if(looksBot(u.name)&&looksBot((u.email||'').split('@')[0]))flag(u,'Bot-pattern account name')});
+  save('sy-fraud-flags',flags);
+  $('f-scan-note').textContent=added?added+' account(s) flagged for review.':'Scan clean — no rule matched.';
+  drawFraud();
+};
 function drawFraud(){
   var sig=[];
   var thr=store('sy-auth-throttle',{n:0,until:0});

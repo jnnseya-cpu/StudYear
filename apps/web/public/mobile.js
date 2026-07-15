@@ -66,7 +66,7 @@
       links = (MENUS[s.role] || [['Home','']]).map(function (m) {
         return '<a href="' + esc(base + m[1]) + '">' + esc(m[0]) + '</a>';
       }).join('');
-      links += '<div class="grp">Session</div><a href="#" data-signout="1">Sign out</a>';
+      links += '<div class="grp">Session</div><a href="' + esc(base + 'account/me/') + '">👤 My profile</a><a href="#" data-signout="1">Sign out</a>';
     }
     drawer.innerHTML = '<div class="scrim"></div><div class="panel">' +
       '<div class="hd">⌂ Stud<b>Year</b>' + (s.name ? '<div style="font-family:inherit;font-size:12px;color:#77839B;margin-top:4px">' + esc(s.name) + '</div>' : '') + '</div>' +
