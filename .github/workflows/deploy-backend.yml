@@ -11,9 +11,11 @@ on:
       target:
         description: 'Firebase project alias (backend/.firebaserc)'
         required: true
-        default: 'staging'
+        # production is the default: the live stack is revision-rocket-4nuir;
+        # the studyear-staging project was never created (deploys to it 400)
+        default: 'production'
         type: choice
-        options: [staging, production]
+        options: [production, staging]
 
 jobs:
   deploy:
