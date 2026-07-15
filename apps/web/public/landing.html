@@ -331,10 +331,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <b>Zero child left invisible.</b></p>
 
     <div class="telemetry rv">
-      <div class="tele"><span class="live">LIVE</span><div class="num" data-count="38" data-live="students">0</div><div class="lbl">Student accounts</div></div>
-      <div class="tele" title="Schools, local authorities & private tutors"><span class="live">LIVE</span><div class="num" data-count="3" data-live="partners">0</div><div class="lbl">Partner organisations</div></div>
-      <div class="tele"><span class="live">LIVE</span><div class="num" data-count="155" data-live="resources">0</div><div class="lbl">Resources shared</div></div>
-      <div class="tele"><span class="live">LIVE</span><div class="num" data-count="67" data-live="profiles">0</div><div class="lbl">Profiles created</div></div>
+      <div class="tele"><span class="live">LIVE</span><div class="num" data-count="0" data-live="students">0</div><div class="lbl">Student accounts</div></div>
+      <div class="tele" title="Schools, local authorities & private tutors"><span class="live">LIVE</span><div class="num" data-count="0" data-live="partners">0</div><div class="lbl">Partner organisations</div></div>
+      <div class="tele"><span class="live">LIVE</span><div class="num" data-count="0" data-live="resources">0</div><div class="lbl">Resources shared</div></div>
+      <div class="tele"><span class="live">LIVE</span><div class="num" data-count="0" data-live="profiles">0</div><div class="lbl">Profiles created</div></div>
     </div>
   </div>
 </header>
@@ -726,10 +726,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     }
     resources+=j('sy-blog',[]).length;                      // published articles are shared resources too
     const live={students,partners,resources,profiles};
-    document.querySelectorAll('[data-live]').forEach(el=>{
-      const v=live[el.getAttribute('data-live')];
-      if(v>0)el.dataset.count=v;
+    const apply=(vals)=>document.querySelectorAll('[data-live]').forEach(el=>{
+      const v=vals[el.getAttribute('data-live')];
+      if(typeof v==='number')el.dataset.count=v;
     });
+    apply(live); // this device's truth, immediately
+    // platform-wide truth from the backend (public, unauthenticated, cached)
+    fetch('firebase-config.json').then(r=>r.json()).then(c=>{
+      if(!c||!c.apiBase)return;
+      return fetch(c.apiBase.replace(/\/$/,'')+'/publicStats').then(r=>r.json()).then(j=>{
+        if(j&&j.ok)apply({students:j.students,partners:j.partners,profiles:j.profiles,
+          resources:Math.max(resources,j.resources||0)});
+      });
+    }).catch(()=>{});
   })();
 
   // animated live counters

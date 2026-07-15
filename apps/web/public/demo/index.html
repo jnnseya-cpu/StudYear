@@ -173,11 +173,9 @@ var ROLES=[
     /* the demo school shows as connected to this authority */
     set('sy-u:school@demo.studyear:schoolSettings',{authorityCode:LA});
     set('sy-u:school@demo.studyear:authorityLink',LA);}},
- {role:'admin',ic:'🛠',t:'Platform Admin',who:'Operations console · full oversight',dest:'../admin/',
-  p:'The operator view: dashboard, users, tutors, content, billing, AI costs, comms architecture, the AI Gateway and the National Championship trigger.',
-  loaded:function(){var ns='sy-u:admin@demo.studyear:';del(ns);
-    set(ns+'profile',{name:'StudYear Operations'});}}
 ];
+/* The Platform Admin demo card is intentionally NOT public: the operator
+   view is internal. Admins sign in at /auth/?role=admin with the invite code. */
 
 function launch(r,mode){
   var email=(mode==='empty'?(r.role+'.new@demo.studyear'):(r.role+'@demo.studyear'));

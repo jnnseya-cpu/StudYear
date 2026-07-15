@@ -279,6 +279,30 @@ export const register = onRequest({ region: 'europe-west2', cors: true }, async 
   }
 });
 
+// -------------------------------------------------------------- public stats ----
+/** GET /publicStats — real platform-wide numbers for the landing counters
+    (no marketing fallbacks — owner directive: reality only). Public,
+    cached in-memory for 60s per instance. */
+let statsCache: { at: number; body: Record<string, unknown> } | null = null;
+export const publicStats = onRequest({ region: 'europe-west2', cors: true }, async (_req, res) => {
+  try {
+    if (statsCache && Date.now() - statsCache.at < 60_000) { res.json(statsCache.body); return; }
+    const [auth, docs] = await Promise.all([getAuth().listUsers(1000), db.collection('users').get()]);
+    let students = 0, partners = 0;
+    docs.forEach((d) => {
+      const roles = (d.data().roles as string[]) ?? [];
+      if (roles.includes('student')) students++;
+      if (roles.some((r) => ['school', 'authority', 'tutor'].includes(r))) partners++;
+    });
+    const body = { ok: true, students, partners, profiles: docs.size, accounts: auth.users.length, resources: 0 };
+    statsCache = { at: Date.now(), body };
+    res.json(body);
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
 // ----------------------------------------------------------- admin (cloud view) ----
 /** Platform administrators — the only accounts the admin endpoints serve.
     Override with the ADMIN_EMAILS env (comma-separated). */
