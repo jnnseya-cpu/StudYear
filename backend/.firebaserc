@@ -1,7 +1,7 @@
 {
   "projects": {
-    "default": "studyear-platform",
-    "production": "studyear-platform",
+    "default": "revision-rocket-4nuir",
+    "production": "revision-rocket-4nuir",
     "staging": "studyear-staging"
   }
 }

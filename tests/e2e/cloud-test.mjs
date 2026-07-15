@@ -101,12 +101,13 @@ await p3.click('#go');
 await p3.waitForTimeout(2500);
 ok('Wrong password is rejected (no restore, stays on auth)', /\/auth\//.test(p3.url()));
 
-/* ---- 5. placeholder config keeps the bridge dormant ---- */
+/* ---- 5. empty/placeholder config keeps the bridge dormant ---- */
 const ctx4=await browser.newContext({serviceWorkers:'block'});
-const p4=await ctx4.newPage(); // NO routes: real placeholder firebase-config.json
+await ctx4.route('**/firebase-config.json',r=>r.fulfill({json:{apiKey:'',projectId:'',storageBucket:'',apiBase:''}}));
+const p4=await ctx4.newPage();
 p4.on('pageerror',e=>results.push('JSERR — '+e.message));
 await p4.goto(B+'/auth/',{waitUntil:'networkidle'});
-ok('Placeholder config → SYCloud dormant (offline OS unchanged)',
+ok('Empty config → SYCloud dormant (offline OS unchanged)',
   await p4.evaluate(async()=>{await SYCloud.whenReady();return SYCloud.ready()===false}));
 
 for(const r of results)console.log(r);

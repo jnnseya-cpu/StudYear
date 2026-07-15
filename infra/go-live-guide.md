@@ -15,7 +15,7 @@ GitHub Pages today. Nothing breaks if you stop halfway.
 
 ### A1. Create the project
 1. https://console.firebase.google.com → **Add project** → name it
-   **StudYear** (the repo default project ID is `studyear-platform`; if
+   **StudYear** (the repo default project ID is `revision-rocket-4nuir`; if
    Firebase assigns something else, note it — you'll use it in A5 and A6).
 2. Skip Google Analytics (the site uses GTM/Meta on marketing pages only).
 
@@ -47,9 +47,9 @@ npm install -g firebase-tools
 firebase login
 git clone https://github.com/jnnseya-cpu/StudYear.git
 cd StudYear && npm install
-# only if your project ID is not studyear-platform:
+# only if your project ID is not revision-rocket-4nuir:
 #   edit backend/.firebaserc and replace the ID
-cd backend && firebase deploy --project studyear-platform
+cd backend && firebase deploy --project revision-rocket-4nuir
 ```
 
 This ships: `health`, `acuAuthorize`, `register`, `sync`, `syncPull`,
@@ -63,7 +63,7 @@ Only when you want server-side AI (keys out of browsers):
 
 ```bash
 firebase functions:secrets:set AI_PROVIDER_KEY   # paste a FRESH key — rotate anything ever shared in chat
-firebase deploy --only functions --project studyear-platform
+firebase deploy --only functions --project revision-rocket-4nuir
 ```
 
 ---
@@ -117,7 +117,7 @@ Edit **`apps/web/public/firebase-config.json`** on the shipping branch:
 {
   "apiKey":        "<from A4>",
   "projectId":     "<from A4>",
-  "storageBucket": "<from A4, e.g. studyear-platform.appspot.com>",
+  "storageBucket": "<from A4, e.g. revision-rocket-4nuir.appspot.com>",
   "apiBase":       "https://europe-west2-<project-id>.cloudfunctions.net"
 }
 ```
