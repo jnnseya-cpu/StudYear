@@ -54,17 +54,58 @@ jobs:
           } > backend/functions/.env || true
           echo "provisioned $(grep -c '=' backend/functions/.env || echo 0) key(s)"
       - name: Deploy functions + Firestore rules/indexes
+        id: deploy
         working-directory: backend
-        run: npx firebase-tools deploy --only functions,firestore --project ${{ inputs.target }} --non-interactive --force
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npx firebase-tools deploy --only functions,firestore --project ${{ inputs.target }} --non-interactive --force 2>&1 | tee "$RUNNER_TEMP/deploy.log"
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
       - name: Deploy Storage rules (best-effort — needs the default bucket + IAM)
+        if: steps.deploy.outcome == 'success'
         working-directory: backend
         continue-on-error: true
         run: npx firebase-tools deploy --only storage --project ${{ inputs.target }} --non-interactive --force
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
       - name: Smoke-test the deployment
+        if: steps.deploy.outcome == 'success'
         run: node scripts/verify-deployment.mjs
         env:
           SY_API_BASE: ${{ vars.SY_API_BASE }}
+      - name: Outcome
+        # The robot (FIREBASE_SERVICE_ACCOUNT) may not be authorised yet.
+        # That has ZERO impact — the backend simply stays on its current
+        # version — so it must not read as a scary failure. Green + notice.
+        run: |
+          if [ "${{ steps.deploy.outcome }}" = "success" ]; then
+            echo "## ✅ Backend deployed to ${{ inputs.target }}" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if grep -qEi "Missing permissions|iam\.serviceAccounts\.ActAs|caller does not have permission|Permission .* denied" "$RUNNER_TEMP/deploy.log"; then
+            {
+              echo "## ⚠️ Skipped — deploy robot not authorised yet (no impact)"
+              echo ""
+              echo "**Nothing changed**: the backend keeps running its current version (last deployed from Cloud Shell)."
+              echo ""
+              echo "To enable one-click deploys, run this once in [Cloud Shell](https://console.cloud.google.com/?project=revision-rocket-4nuir&cloudshell=true):"
+              echo ""
+              echo '```bash'
+              echo 'for R in roles/editor roles/iam.serviceAccountUser roles/firebase.admin; do'
+              echo '  gcloud projects add-iam-policy-binding revision-rocket-4nuir \'
+              echo '    --member="serviceAccount:firebase-adminsdk-fbsvc@revision-rocket-4nuir.iam.gserviceaccount.com" \'
+              echo '    --role="$R" --condition=None --quiet'
+              echo 'done'
+              echo 'gcloud iam service-accounts add-iam-policy-binding revision-rocket-4nuir@appspot.gserviceaccount.com \'
+              echo '  --member="serviceAccount:firebase-adminsdk-fbsvc@revision-rocket-4nuir.iam.gserviceaccount.com" \'
+              echo '  --role="roles/iam.serviceAccountUser" --project=revision-rocket-4nuir --quiet'
+              echo '```'
+              echo ""
+              echo "Until then, deploy the backend from Cloud Shell: \`cd ~/StudYear && git pull && cd backend && npx firebase-tools deploy --project revision-rocket-4nuir --non-interactive --force\`"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::Backend NOT deployed — the robot account lacks IAM roles. No impact; see the run summary for the one-time enable command."
+            exit 0
+          fi
+          echo "## ❌ Deploy failed — see the log above (not a permissions issue)" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
