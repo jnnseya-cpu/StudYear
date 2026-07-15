@@ -344,6 +344,36 @@
   };
   try { window.SY.applyLearning(); } catch (e) {}
 
+  // ---- school-managed profile bridge (runs on every guarded page) ----
+  // My School and the private account stay separate surfaces, but they share
+  // data in the background: a private student manages their own year group;
+  // once a school links them, the school's managed fields (year group) flow
+  // into the personal profile store here, so every tool — planner,
+  // diagnostics, predicted grades, exams — uses the school's value without
+  // the student having to visit or re-save their profile.
+  try {
+    if (s.role === 'student') {
+      var _semail = (s.email || '').toLowerCase();
+      for (var _si = 0; _si < localStorage.length; _si++) {
+        var _sk = localStorage.key(_si);
+        var _sm = _sk && _sk.match(/^sy-school:([^:]+):roster$/);
+        if (!_sm) continue;
+        var _roster = window.SY.schoolGet(_sm[1], 'roster', []) || [];
+        var _onRoll = false;
+        for (var _ri = 0; _ri < _roster.length; _ri++) {
+          if (String(_roster[_ri].email || '').toLowerCase() === _semail) { _onRoll = true; break; }
+        }
+        if (!_onRoll) continue;
+        var _mg = window.SY.schoolGet(_sm[1], 'managed:' + _semail, {}) || {};
+        if (_mg.level) {
+          var _prof = window.SY.get('profile', {}) || {};
+          if (_prof.level !== _mg.level) { _prof.level = _mg.level; window.SY.set('profile', _prof); }
+        }
+        break;
+      }
+    }
+  } catch (e) {}
+
   // ---- Progressive Web App + responsive baseline (applied to every guarded page) ----
   // One place wires PWA install + offline + iOS home-screen + a responsive safety net,
   // so all role consoles behave as an installable, screen-fitting app.
