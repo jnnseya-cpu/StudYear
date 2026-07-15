@@ -1,0 +1,64 @@
+# Manual, gated backend deployment (go-live architecture §15):
+# staging deploys freely; production is a deliberate button-press with the
+# target spelled out. Requires the FIREBASE_SERVICE_ACCOUNT repo secret —
+# a service-account JSON from the matching Firebase project with the
+# "Firebase Admin" + "Cloud Functions Admin" roles.
+name: Deploy Backend (Firebase)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Firebase project alias (backend/.firebaserc)'
+        required: true
+        default: 'staging'
+        type: choice
+        options: [staging, production]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Typecheck functions
+        run: npm run typecheck --workspace backend/functions
+      - name: Write service-account credentials
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      - name: Provision runtime env (AI + mail keys from repo secrets)
+        # Only non-empty secrets land in backend/functions/.env, which
+        # firebase-tools bundles into the Functions runtime. Missing keys just
+        # leave that feature dormant (aiProxy → 503, contact → store-only).
+        run: |
+          {
+            for kv in \
+              "AI_PROVIDER=${{ secrets.AI_PROVIDER }}" \
+              "AI_PROVIDER_KEY=${{ secrets.AI_PROVIDER_KEY }}" \
+              "AI_MODEL=${{ secrets.AI_MODEL }}" \
+              "MAIL_HOST=${{ secrets.MAIL_HOST }}" \
+              "MAIL_PORT=${{ secrets.MAIL_PORT }}" \
+              "MAIL_USER=${{ secrets.MAIL_USER }}" \
+              "MAIL_PASS=${{ secrets.MAIL_PASS }}" \
+              "MAIL_FROM=${{ secrets.MAIL_FROM }}" \
+              "MAIL_TO=${{ secrets.MAIL_TO }}" \
+              "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" \
+              "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}"; do
+              [ -n "${kv#*=}" ] && echo "$kv"
+            done
+          } > backend/functions/.env || true
+          echo "provisioned $(grep -c '=' backend/functions/.env || echo 0) key(s)"
+      - name: Deploy functions + Firestore rules/indexes + Storage rules
+        working-directory: backend
+        run: npx firebase-tools deploy --project ${{ inputs.target }} --non-interactive --force
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+      - name: Smoke-test the deployment
+        run: node scripts/verify-deployment.mjs
+        env:
+          SY_API_BASE: ${{ vars.SY_API_BASE }}
