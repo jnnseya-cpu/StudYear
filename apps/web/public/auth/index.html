@@ -202,7 +202,7 @@ $('f').addEventListener('submit',async function(e){
     var role=pickedRole;
     if(wantRole==='admin'){
       var inv=$('invite').value.trim();
-      if(await hash('sy-admin',inv)!=='57ba23d68fd51c7b48591af30294de529b640652b192a78def879af29ab69572'){
+      if(await hash('sy-admin',inv)!=='83a38e5bf7454013c6a5452b458dc59b2543b2ce20d61175702f7364419c53b6'){
         say('Invalid invite code — admin accounts are provisioned internally.','err');return}
       role='admin';
     }else if(pickedRole==='admin'){say('Admin accounts are provisioned internally.','err');return}

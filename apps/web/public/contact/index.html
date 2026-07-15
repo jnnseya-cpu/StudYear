@@ -65,10 +65,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </header>
 
 <div class="cards">
-  <div class="card"><h3>✉️ General &amp; support</h3><p><a href="mailto:hello@studyear.com">hello@studyear.com</a></p><p>Account help, billing and wallet questions, bug reports, feature requests. We aim to reply within <b style="color:var(--ink)">one working day</b>.</p></div>
-  <div class="card"><h3>🏫 Schools, trusts &amp; local authorities</h3><p><a href="mailto:schools@studyear.com">schools@studyear.com</a></p><p>Book a demo of the school command centre, discuss cohort licensing and shared credit pools, or request our safeguarding &amp; data-protection pack. You can also <a href="../demo/?role=school">test the school demo</a> right now — fully loaded, no signup.</p></div>
-  <div class="card"><h3>🤝 Tutors &amp; partnerships</h3><p><a href="mailto:partners@studyear.com">partners@studyear.com</a></p><p>Join the vetted tutor marketplace (DBS check required) or explore programme partnerships.</p></div>
-  <div class="card"><h3>🔐 Privacy &amp; data</h3><p><a href="mailto:privacy@studyear.com">privacy@studyear.com</a></p><p>Data-subject requests, privacy questions, or anything for our data-protection lead — see the <a href="../privacy/">privacy policy</a> for your rights.</p></div>
+  <div class="card"><h3>✉️ General &amp; support</h3><p><a href="mailto:contact@studyear.com">contact@studyear.com</a></p><p>Account help, billing and wallet questions, bug reports, feature requests. We aim to reply within <b style="color:var(--ink)">one working day</b>.</p></div>
+  <div class="card"><h3>🏫 Schools, trusts &amp; local authorities</h3><p><a href="mailto:contact@studyear.com">contact@studyear.com</a></p><p>Book a demo of the school command centre, discuss cohort licensing and shared credit pools, or request our safeguarding &amp; data-protection pack. You can also <a href="../demo/?role=school">test the school demo</a> right now — fully loaded, no signup.</p></div>
+  <div class="card"><h3>🤝 Tutors &amp; partnerships</h3><p><a href="mailto:contact@studyear.com">contact@studyear.com</a></p><p>Join the vetted tutor marketplace (DBS check required) or explore programme partnerships.</p></div>
+  <div class="card"><h3>🔐 Privacy &amp; data</h3><p><a href="mailto:contact@studyear.com">contact@studyear.com</a></p><p>Data-subject requests, privacy questions, or anything for our data-protection lead — see the <a href="../privacy/">privacy policy</a> for your rights.</p></div>
 </div>
 
 <div class="card" style="margin-top:22px" id="cf-card">
@@ -94,7 +94,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
 </div>
 
-<div class="safe">⚠ StudYear operates from England &amp; Wales. For anything urgent relating to a child's safety, always contact your school's designated safeguarding lead or local authority first.</div>
+<div class="safe">⚠ StudYear operates UK-wide. For anything urgent relating to a child's safety, always contact your school's designated safeguarding lead or local authority first.</div>
 </div>
 <script>
 (function(){
@@ -123,10 +123,20 @@ $('cf-send').onclick=function(){
   if(!$('cf-human').checked){say('Please confirm you are a human to continue.',true);return}
   if(parseInt($('cf-a').value,10)!==chal){newChal();$('cf-a').value='';say('Human check failed — please answer the new question.',true);return}
   if(looksBot(name)||looksBot(msg)){say('Your message was flagged by our spam filter — please write it in plain language or email us directly.',true);return}
+  var typ=$('cf-type').value;
   try{
     var inbox=JSON.parse(localStorage.getItem('sy-inbox'))||[];
-    inbox.unshift({from:name,email:email,type:$('cf-type').value,body:msg,status:'NEW',when:new Date().toISOString()});
+    inbox.unshift({from:name,email:email,type:typ,body:msg,status:'NEW',when:new Date().toISOString()});
     localStorage.setItem('sy-inbox',JSON.stringify(inbox.slice(0,200)));
+  }catch(e){}
+  /* deliver to the contact@studyear.com inbox via the backend (bot checks
+     run again server-side; local copy above is the offline fallback) */
+  try{
+    fetch('../firebase-config.json').then(function(r){return r.json()}).then(function(c){
+      if(c&&c.apiBase)fetch(c.apiBase.replace(/\/$/,'')+'/contact',{method:'POST',keepalive:true,
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({from:name,email:email,type:typ,body:msg})});
+    }).catch(function(){});
   }catch(e){}
   $('cf-name').value='';$('cf-email').value='';$('cf-msg').value='';$('cf-a').value='';
   $('cf-human').checked=false;$('cf-chal').style.display='none';
@@ -138,7 +148,7 @@ $('cf-send').onclick=function(){
 <footer><div class="wrap foot">
   <a href="../">Home</a><a href="../about/">About</a><a href="../contact/">Contact</a><a href="../blog/">Blog</a>
   <a href="../terms/">Terms</a><a href="../privacy/">Privacy</a><a href="../disclaimer/">Disclaimer</a><a href="../cookies/">Cookies</a>
-  <span style="margin-left:auto">© StudYear — England &amp; Wales</span>
+  <span style="margin-left:auto">© StudYear — Serving the whole UK</span>
 </div></footer>
 <script src="../pwa.js"></script>
 </body></html>

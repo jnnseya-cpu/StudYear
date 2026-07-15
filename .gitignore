@@ -16,3 +16,4 @@ apps/web/.next/
 *.tsbuildinfo
 next-env.d.ts
 srv/
+backend/functions/.env

@@ -136,7 +136,7 @@ export const redeemCode = onRequest({ region: 'europe-west2', cors: true }, asyn
  * The browser SYAI client swaps its direct-provider path for this endpoint
  * by setting sy-ai-live = { provider:'proxy', key:'session' }.
  */
-export const aiProxy = onRequest({ region: 'europe-west2', cors: true, secrets: ['AI_PROVIDER_KEY'] }, async (req, res) => {
+export const aiProxy = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
   try {
     const user = await requireUser(req.headers.authorization);
     const provider = process.env.AI_PROVIDER ?? 'gemini';
@@ -201,6 +201,28 @@ export const contact = onRequest({ region: 'europe-west2', cors: true }, async (
       from, email, type: String(b.type ?? 'support'), body: msg, status: 'NEW',
       createdAt: FieldValue.serverTimestamp(),
     });
+    // Forward to the public inbox. Best-effort: the message is already stored
+    // in contactInbox (Admin console) even if SMTP is not configured yet.
+    // Configure via backend/functions/.env or secrets: MAIL_HOST, MAIL_PORT,
+    // MAIL_USER, MAIL_PASS (and optionally MAIL_FROM / MAIL_TO).
+    if (process.env.MAIL_HOST) {
+      try {
+        const nodemailer = await import('nodemailer');
+        const transport = nodemailer.createTransport({
+          host: process.env.MAIL_HOST,
+          port: Number(process.env.MAIL_PORT ?? 465),
+          secure: (process.env.MAIL_SECURE ?? 'true') !== 'false',
+          auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
+        });
+        await transport.sendMail({
+          from: process.env.MAIL_FROM ?? process.env.MAIL_USER,
+          to: process.env.MAIL_TO ?? 'contact@studyear.com',
+          replyTo: email,
+          subject: `[StudYear contact] ${String(b.type ?? 'support')} — ${from}`,
+          text: `${msg}\n\n— ${from} <${email}>`,
+        });
+      } catch { /* never fail the submission over email delivery */ }
+    }
     res.json({ ok: true });
   } catch (e) {
     const err = e as Error & { status?: number };
