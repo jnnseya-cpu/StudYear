@@ -63,6 +63,10 @@
   <a href="#settings">System &amp; AI Settings</a>
   <a href="#fraud">Fraud Monitoring</a>
   <a href="../account/me/">👤 My profile</a>
+  <div class="note" id="build-id" style="padding:10px 12px;font-size:10px;letter-spacing:.08em">build —</div>
+  <script>fetch('../build.json').then(function(r){return r.json()}).then(function(b){
+    document.getElementById('build-id').textContent='build '+b.sha+' · '+String(b.when).slice(0,16).replace('T',' ');
+  }).catch(function(){});</script>
   <a href="gateway/">AI Gateway</a>
   <a href="comms/">Comms engine</a>
   <a href="#" id="signout">Sign out</a>
