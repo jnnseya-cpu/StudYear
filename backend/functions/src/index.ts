@@ -12,7 +12,7 @@ import { onRequest } from 'firebase-functions/v2/https';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
-import { ACU_TARIFF, FREE_TIER, MARGIN, type MeteredActivity } from '@studyear/shared';
+import { ACU_TARIFF, FREE_TIER, MARGIN, type MeteredActivity } from '../../../packages/shared/src';
 
 initializeApp();
 const db = getFirestore();

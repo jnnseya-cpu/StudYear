@@ -8,8 +8,7 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "sourceMap": true,
-    "paths": { "@studyear/shared": ["../../packages/shared/src"] }
+    "sourceMap": true
   },
-  "include": ["src"]
+  "include": ["src", "../../packages/shared/src"]
 }

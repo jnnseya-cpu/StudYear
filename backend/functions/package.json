@@ -2,7 +2,7 @@
   "name": "@studyear/functions",
   "version": "0.1.0",
   "private": true,
-  "main": "lib/index.js",
+  "main": "lib/backend/functions/src/index.js",
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
@@ -10,7 +10,6 @@
     "deploy": "firebase deploy --only functions"
   },
   "dependencies": {
-    "@studyear/shared": "*",
     "firebase-admin": "^12.6.0",
     "firebase-functions": "^6.1.0",
     "nodemailer": "^9.0.3"
