@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "studyear-platform"
+    "default": "studyear-platform",
+    "production": "studyear-platform",
+    "staging": "studyear-staging"
   }
 }

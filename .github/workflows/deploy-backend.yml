@@ -1,0 +1,42 @@
+# Manual, gated backend deployment (go-live architecture §15):
+# staging deploys freely; production is a deliberate button-press with the
+# target spelled out. Requires the FIREBASE_SERVICE_ACCOUNT repo secret —
+# a service-account JSON from the matching Firebase project with the
+# "Firebase Admin" + "Cloud Functions Admin" roles.
+name: Deploy Backend (Firebase)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Firebase project alias (backend/.firebaserc)'
+        required: true
+        default: 'staging'
+        type: choice
+        options: [staging, production]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Typecheck functions
+        run: npm run typecheck --workspace backend/functions
+      - name: Write service-account credentials
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      - name: Deploy functions + Firestore rules/indexes + Storage rules
+        working-directory: backend
+        run: npx firebase-tools deploy --project ${{ inputs.target }} --non-interactive --force
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+      - name: Smoke-test the deployment
+        run: node scripts/verify-deployment.mjs
+        env:
+          SY_API_BASE: ${{ vars.SY_API_BASE }}

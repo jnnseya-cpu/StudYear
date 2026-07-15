@@ -62,6 +62,14 @@
     (document.head || document.documentElement).appendChild(mj);
   } catch (e) {}
 
+  // cloud bridge: Firebase Auth mirror + end-to-end-encrypted sync + Storage.
+  // A silent no-op until firebase-config.json carries real values (go-live).
+  try {
+    var cj = document.createElement('script');
+    cj.src = base + 'cloud.js'; cj.defer = true;
+    (document.head || document.documentElement).appendChild(cj);
+  } catch (e) {}
+
   // end-to-end encryption layer: TweetNaCl (synchronous secretbox) + the
   // SYE2E key manager load parser-blocking so they are ready before any page
   // script touches the store. e2e.js runs the one-time migration sweep.

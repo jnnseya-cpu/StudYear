@@ -30,6 +30,14 @@ function httpError(status: number, message: string) {
   return e;
 }
 
+/** Append-only audit trail (go-live architecture §18). Readable by platform
+    admins only (firestore.rules); failures never break the user action. */
+function audit(action: string, actorId: string, detail: Record<string, unknown> = {}) {
+  return db.collection('auditEvents')
+    .add({ action, actorId, ...detail, source: 'function', createdAt: FieldValue.serverTimestamp() })
+    .catch(() => null);
+}
+
 /** Derived balance = sum of append-only ledger. Cached on wallets/{ownerId} by trigger later. */
 async function walletBalance(ownerId: string): Promise<number> {
   const snap = await db.collection('acuTransactions').where('ownerId', '==', ownerId).get();
@@ -79,6 +87,7 @@ export const acuAuthorize = onRequest({ region: 'europe-west2', cors: true }, as
       createdAt: FieldValue.serverTimestamp(),
     });
 
+    await audit('AI_CREDITS_DEDUCTED', user.uid, { activity, cost });
     res.json({ ok: true, txId: tx.id, debited: cost, balance: balance - cost });
   } catch (e) {
     const err = e as Error & { status?: number };
@@ -199,6 +208,38 @@ export const contact = onRequest({ region: 'europe-west2', cors: true }, async (
   }
 });
 
+// ------------------------------------------------------------- registration ----
+/**
+ * POST /register { name, role } — called by the cloud bridge right after a
+ * Firebase Auth signup (or when an existing email adds a second role). The
+ * role list is validated here and the users/{uid} document is server-owned:
+ * clients can never self-assign admin or change plan through this path.
+ */
+const PUBLIC_ROLES = ['student', 'parent', 'teacher', 'school', 'tutor', 'authority'];
+export const register = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const user = await requireUser(req.headers.authorization);
+    const name = String(req.body?.name ?? '').trim().slice(0, 120);
+    const role = String(req.body?.role ?? '');
+    if (!PUBLIC_ROLES.includes(role)) throw httpError(400, 'invalid role');
+    const ref = db.doc(`users/${user.uid}`);
+    const existing = await ref.get();
+    await ref.set({
+      email: user.email ?? null,
+      name: name || existing.data()?.name || null,
+      roles: FieldValue.arrayUnion(role),
+      plan: existing.data()?.plan ?? 'child_free', // never downgraded by re-registration
+      createdAt: existing.data()?.createdAt ?? FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    await audit(existing.exists ? 'USER_ROLE_ADDED' : 'USER_REGISTERED', user.uid, { role });
+    res.json({ ok: true });
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
 // ------------------------------------------------------ E2E-encrypted sync ----
 /**
  * POST /sync — the end-to-end encryption boundary.
@@ -226,7 +267,38 @@ export const sync = onRequest({ region: 'europe-west2', cors: true }, async (req
     for (const [k, v] of Object.entries(data))
       batch.set(db.doc(`e2eData/${user.uid}/blobs/${encodeURIComponent(k)}`), { env: v, updatedAt: FieldValue.serverTimestamp() });
     await batch.commit();
+    await audit('DATA_SYNCED', user.uid, { blobs: Object.keys(data).length });
     res.json({ ok: true, stored: Object.keys(data).length });
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
+/**
+ * GET /syncPull — restore on a new device. Returns the password-wrapped key
+ * record, the ciphertext blobs, and the public account meta (name/roles/plan).
+ * Everything personal in the response is ciphertext; it becomes readable only
+ * after the client unwraps the key with the user's password.
+ */
+export const syncPull = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const user = await requireUser(req.headers.authorization);
+    const [keyDoc, userDoc, blobs] = await Promise.all([
+      db.doc(`e2eKeys/${user.uid}`).get(),
+      db.doc(`users/${user.uid}`).get(),
+      db.collection(`e2eData/${user.uid}/blobs`).get(),
+    ]);
+    const data: Record<string, unknown> = {};
+    blobs.forEach((d) => { data[decodeURIComponent(d.id)] = d.data().env; });
+    const u = userDoc.data();
+    await audit('ACCOUNT_RESTORED', user.uid, { blobs: blobs.size });
+    res.json({
+      ok: true,
+      e2e: keyDoc.exists ? { v: keyDoc.data()!.v ?? 1, salt: keyDoc.data()!.salt, wrapPw: keyDoc.data()!.wrapPw } : null,
+      user: u ? { name: u.name ?? null, roles: (u.roles as string[]) ?? [], plan: u.plan ?? 'child_free' } : null,
+      data,
+    });
   } catch (e) {
     const err = e as Error & { status?: number };
     res.status(err.status ?? 500).json({ ok: false, error: err.message });

@@ -1,0 +1,7 @@
+{
+  "_comment": "Go-live switch. Fill these from Firebase console → Project settings → Your apps (web). While apiKey is empty the OS runs fully offline/local and SYCloud is a no-op. These web config values are public identifiers, not secrets — access is enforced by Firebase Auth + security rules.",
+  "apiKey": "",
+  "projectId": "",
+  "storageBucket": "",
+  "apiBase": ""
+}
