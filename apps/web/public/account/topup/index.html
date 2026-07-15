@@ -149,6 +149,34 @@
 <p class="sec-sub">Instant credit, no subscription needed. Packs stack on any plan.</p>
 <div class="packs" id="packs"></div>
 
+<h2 class="sec">🌍 Fund a student — from anywhere in the world</h2>
+<p class="sec-sub">Family abroad, diaspora, sponsors, community champions: buy a pack for any student and send them
+  the <b>gift code</b> — the ACUs land in their wallet the moment they redeem it. No shared passwords, no access to
+  their account, just funded learning.</p>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px">
+  <div class="pack" style="text-align:left">
+    <h4>Give a gift code</h4>
+    <div class="pa" style="margin:8px 0 4px">Pack</div>
+    <select id="gift-pack" style="width:100%;padding:9px;border-radius:9px;background:#0B1428;color:#EDF1F8;border:1px solid rgba(120,140,190,.35)"></select>
+    <div class="pa" style="margin:8px 0 4px">Lock to a student's email (optional)</div>
+    <input type="text" id="gift-for" placeholder="student@example.com — leave empty for anyone" style="width:100%;padding:9px;border-radius:9px;background:#0B1428;color:#EDF1F8;border:1px solid rgba(120,140,190,.35)">
+    <button class="btn solid" id="gift-go" style="margin-top:10px">Fund &amp; get the gift code</button>
+    <div id="gift-out" style="display:none;margin-top:10px;padding:10px;border:1px dashed rgba(242,206,123,.5);border-radius:10px">
+      <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#F2CE7B">Gift code</div>
+      <div id="gift-code" style="font-size:18px;font-weight:700;margin:4px 0"></div>
+      <button class="btn" id="gift-copy">Copy code</button>
+      <a class="btn" id="gift-wa" target="_blank" rel="noopener">Share on WhatsApp</a>
+    </div>
+  </div>
+  <div class="pack" style="text-align:left">
+    <h4>Redeem a gift code</h4>
+    <p class="pa" style="margin:8px 0">Someone funding your learning? Paste their code — the ACUs credit instantly.</p>
+    <input type="text" id="gift-in" placeholder="SY-GIFT-XXXX-XXXX" autocomplete="off" style="width:100%;padding:9px;border-radius:9px;background:#0B1428;color:#EDF1F8;border:1px solid rgba(120,140,190,.35)">
+    <button class="btn solid" id="gift-redeem" style="margin-top:10px">Redeem into my wallet</button>
+    <div id="gift-supporters" style="margin-top:10px;font-size:12.5px;color:#AAB6CC"></div>
+  </div>
+</div>
+
 <h2 class="sec">Student plans — monthly only</h2>
 <p class="sec-sub">Child Free is a separate student account — 100 ACUs every month, never added to paid plans.
   Paid plans add larger monthly allowances — from £5 Student Access through to £30 Student Max for daily heavy usage.</p>
@@ -278,6 +306,54 @@ document.body.addEventListener('click',function(e){
   }
 });
 drawWallet();
+
+/* ---- Fund a student from anywhere: gift codes (sy-gifts, shared store) ----
+   Preview build: codes settle instantly on this device; at billing go-live
+   the funder pays by Stripe/BitriPay first and codes validate server-side
+   (backend /redeemCode). */
+function gifts(){try{return JSON.parse(localStorage.getItem('sy-gifts'))||[]}catch(e){return []}}
+function saveGifts(g){localStorage.setItem('sy-gifts',JSON.stringify(g))}
+$('gift-pack').innerHTML=PACKS.map(function(p){return '<option value="'+p.id+'">'+p.label+' — '+fmt(p.acus)+' ACUs (£'+p.pounds+')</option>'}).join('');
+$('gift-go').onclick=function(){
+  var pk=PACKS.find(function(x){return x.id===$('gift-pack').value});
+  var forEmail=$('gift-for').value.trim().toLowerCase();
+  if(forEmail&&!/^\S+@\S+\.\S+$/.test(forEmail)){toast('That student email does not look valid.');return}
+  var mk=function(){var s='';var A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    for(var i=0;i<8;i++){s+=A[Math.floor(Math.random()*A.length)];if(i===3)s+='-'}return s};
+  var doGift=function(){
+    var code='SY-GIFT-'+mk();
+    var g=gifts();g.unshift({code:code,acus:pk.acus,pack:pk.id,from:(SY.session&&SY.session.name)||'A supporter',
+      forEmail:forEmail||null,when:new Date().toISOString(),redeemed:null});
+    saveGifts(g);
+    $('gift-out').style.display='block';
+    $('gift-code').textContent=code;
+    $('gift-wa').href='https://wa.me/?text='+encodeURIComponent('I’ve funded your StudYear learning 🌍 — redeem this gift code in Plans & top-up: '+code+' ('+fmt(pk.acus)+' ACUs) → https://www.studyear.com/account/topup/');
+    SY.log('billing','Gift code created',pk.label+' ('+fmt(pk.acus)+' ACUs)'+(forEmail?(' for '+forEmail):'')+' — '+code);
+    toast('Gift ready — send the code to the student.'+(window.SYBill?'':' (Preview: Stripe checkout takes over at billing go-live.)'));};
+  if(window.SYBill){SYBill.checkout(pk.id,{promo:promo,email:(SY.session&&SY.session.email),gift:true,activate:doGift})}else doGift();
+};
+$('gift-copy').onclick=function(){try{navigator.clipboard.writeText($('gift-code').textContent);toast('Code copied')}catch(e){}};
+$('gift-redeem').onclick=function(){
+  var code=$('gift-in').value.trim().toUpperCase();
+  if(!code){toast('Paste a gift code first.');return}
+  var g=gifts();var gift=g.find(function(x){return x.code===code});
+  if(!gift){toast('That code was not found. Codes from another device settle when the payment goes through at billing go-live.');return}
+  if(gift.redeemed){toast('This code has already been redeemed.');return}
+  var me=(SY.session&&SY.session.email)||'';
+  if(gift.forEmail&&gift.forEmail!==me.toLowerCase()){toast('This gift is locked to a different student account.');return}
+  gift.redeemed={by:me,when:new Date().toISOString()};saveGifts(g);
+  wallet.acus+=gift.acus;SY.set('wallet',wallet);drawWallet();
+  SY.log('billing','Gift redeemed',fmt(gift.acus)+' ACUs from '+gift.from+' — code '+code);
+  $('gift-in').value='';drawSupporters();
+  toast(fmt(gift.acus)+' ACUs from '+gift.from+' added to your wallet 🎉');
+};
+function drawSupporters(){
+  var me=((SY.session&&SY.session.email)||'').toLowerCase();
+  var mine=gifts().filter(function(x){return x.redeemed&&String(x.redeemed.by).toLowerCase()===me});
+  $('gift-supporters').innerHTML=mine.length?('<b style="color:#F2CE7B">My supporters:</b> '+mine.map(function(x){
+    return x.from+' ('+fmt(x.acus)+' ACUs)';}).join(' · ')):'';
+}
+drawSupporters();
 $('signout').onclick=function(e){e.preventDefault();SY.signOut()};
 })();
 </script>
