@@ -30,6 +30,10 @@ jobs:
         run: |
           cp apps/web/public/landing.html apps/web/out/index.html
           touch apps/web/out/.nojekyll
+          # Vercel also sees gh-pages pushes; give it the root dir it expects
+          # with an ignoreCommand so the row shows Skipped instead of Error
+          mkdir -p apps/web/out/apps/web
+          printf '{"ignoreCommand":"exit 0"}' > apps/web/out/apps/web/vercel.json
       # The default GITHUB_TOKEN cannot create a Pages site via the API
       # (configure-pages enablement fails with "Resource not accessible by
       # integration"), but publishing a gh-pages branch enables branch-based

@@ -357,6 +357,15 @@
     // register the offline/install service worker (scope-relative so / and /StudYear/ both work)
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register(base + 'sw.js', { scope: base }).catch(function () {});
+      // when a new worker takes control mid-visit, the page on screen was styled
+      // by the previous deploy's cached CSS — refresh once so HTML+CSS match
+      var reloaded = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (reloaded || !navigator.serviceWorker.controller) return;
+        if (!sessionStorage.getItem('sy-sw-reloaded')) {
+          reloaded = true; sessionStorage.setItem('sy-sw-reloaded', '1'); location.reload();
+        }
+      });
     }
   } catch (e) {}
 })();

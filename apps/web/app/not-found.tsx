@@ -6,6 +6,29 @@
  */
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 
+/**
+ * Legacy paths from the retired React admin console (and old bookmarks/history)
+ * — forward them to the real page instead of dead-ending. Keys are matched
+ * against the last path segments so both / and /StudYear/ deployments work.
+ */
+const RESCUE: Record<string, string> = {
+  support: 'admin/', profile: 'account/me/', gateway: 'admin/gateway/',
+  comms: 'admin/comms/', users: 'admin/', billing: 'account/topup/',
+  analytics: 'dashboards/', settings: 'account/me/', login: 'auth/',
+  signin: 'auth/', signup: 'auth/?signup=1', register: 'auth/?signup=1',
+  dashboard: 'app/', account: 'account/me/', me: 'account/me/',
+};
+
+const RESCUE_JS = `(function(){
+  var map=${JSON.stringify(RESCUE)};
+  var parts=location.pathname.replace(/\\/+$/,'').split('/');
+  var last=(parts[parts.length-1]||'').toLowerCase();
+  if(map[last]){
+    var base=location.pathname.indexOf('/StudYear/')===0?'/StudYear/':'/';
+    location.replace(base+map[last]);
+  }
+})();`;
+
 export default function NotFound() {
   return (
     <main
@@ -18,6 +41,7 @@ export default function NotFound() {
         padding: 24,
       }}
     >
+      <script dangerouslySetInnerHTML={{ __html: RESCUE_JS }} />
       <div>
         <p style={{ letterSpacing: '.3em', fontSize: 12, color: '#3D8FD1', fontFamily: 'system-ui, sans-serif' }}>
           STUDYEAR OS
