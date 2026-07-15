@@ -734,10 +734,18 @@
   <div class="grid">
     <div class="card c5">
       <h3>AI Course Generator<span class="badge prem">Premium</span></h3>
-      <div class="sub">Let StudYear build a structured course with modules, topics, and quizzes based on any topic
-        you choose.</div>
+      <div class="sub">Pick your level, subject and (optionally) the exact topic to focus on — StudYear builds a
+        structured course with modules and quizzes from the real specification.</div>
       <label class="f">Study Level</label><select id="cg-level"><option value="">Select a level</option></select>
-      <label class="f" style="margin-top:10px">Topic</label><input type="text" id="cg-topic" placeholder="e.g. The Cold War">
+      <label class="f" style="margin-top:10px">Subject</label>
+      <select id="cg-subject"><option value="">Select a subject</option>
+        <option>Mathematics</option><option>English Language</option><option>English Literature</option>
+        <option>Biology</option><option>Chemistry</option><option>Physics</option><option>Combined Science</option>
+        <option>Geography</option><option>History</option><option>Computer Science</option><option>Business</option>
+        <option>French</option><option>Spanish</option><option>Religious Studies</option><option>Psychology</option>
+        <option>Economics</option><option>Sociology</option><option value="other">Other (type it in the topic box)</option>
+      </select>
+      <label class="f" style="margin-top:10px">Topic (Optional focus)</label><input type="text" id="cg-topic" placeholder="e.g. Quadratic equations · The Cold War">
       <label class="f" style="margin-top:10px">Exam Board (Optional)</label>
       <select id="cg-board"><option value="">Any</option><option>AQA</option><option>CCEA</option><option>CIE</option><option>Edexcel</option><option>OCR</option><option>SQA</option><option>WJEC</option></select>
       <div style="margin-top:14px"><button class="btn" id="cg-go">Generate Course</button></div>
@@ -3324,29 +3332,33 @@ function openLessonFor(topic,subj,level){
 
 /* ============================ AI COURSE ============================ */
 document.getElementById("cg-go").onclick=()=>{
-  const topic=document.getElementById("cg-topic").value.trim();
+  const subjSel=document.getElementById("cg-subject").value;
+  const focusRaw=document.getElementById("cg-topic").value.trim();
   const level=document.getElementById("cg-level").value;
   if(!level){toast("Select a study level");return}
-  if(!topic){toast("Enter a course topic");return}
-  if(!spendAcus(CG_PRICE,"AI course: "+topic))return;
+  const subject=(subjSel==="other"?focusRaw:subjSel);
+  if(!subject){toast(subjSel==="other"?"Type your subject in the topic box":"Select a subject");return}
+  const focus=(subjSel==="other"?"":focusRaw);
+  if(!spendAcus(CG_PRICE,"AI course: "+subject))return;
   const board=document.getElementById("cg-board").value;
-  const cap=topic.replace(/\b\w/g,c=>c.toUpperCase());
+  const cap=subject.replace(/\b\w/g,c=>c.toUpperCase());
+  const head=cap+(focus?" — "+focus:"")+" · "+level+(board?" · "+board:"");
   /* live model authors the full course when a key is configured */
   if(window.SYAI&&SYAI.ready()){
-    document.getElementById("cg-sub").textContent=cap+" · "+level+(board?" · "+board:"")+" · generating with live AI…";
+    document.getElementById("cg-sub").textContent=head+" · generating with live AI…";
     document.getElementById("cg-out").innerHTML='<div class="note">Writing your course with '+SYAI.provider()+'…</div>';
-    const grounding=(function(){const f=curricFor(topic,level);return f?"\nGround the course on this REAL "+f.tier+" specification structure — keep these modules and refine/expand the bullets with concrete, exam-relevant detail:\n"+f.modules.map((m,i)=>"Module "+(i+1)+": "+m.t+" — "+m.topics.join("; ")).join("\n"):""})();
-    const sys="You are StudYear's course designer. Write a structured "+level+" course"+(board?" aligned to the "+board+" exam board":"")+". Produce 4–6 modules. For each module use a '## Module N — <title>' heading, then 3–5 specific subtopics as bullets, then a line '▸ ends with a check quiz'. Be concrete and exam-relevant to the topic — real specification content, never generic filler. End with a short 'How to study this course' note."+grounding;
-    SYAI.ask(sys,"Course topic: "+topic+"\nLevel: "+level+(board?"\nExam board: "+board:""),{maxTokens:1500}).then(txt=>{
-      addPoints(10);touchStreak();logEvent("course","AI course: "+cap,level+(board?" · "+board:"")+" — live AI course generated.");
-      document.getElementById("cg-sub").textContent=cap+" · "+level+(board?" · "+board:"")+" · live AI course";
+    const grounding=(function(){const f=curricFor(subject,level);return f?"\nGround the course on this REAL "+f.tier+" specification structure — keep to it and refine/expand the bullets with concrete, exam-relevant detail:\n"+f.modules.map((m,i)=>"Module "+(i+1)+": "+m.t+" — "+m.topics.join("; ")).join("\n"):""})();
+    const sys="You are StudYear's course designer. Write a structured "+level+" "+subject+" course"+(board?" aligned to the "+board+" exam board":"")+(focus?" focused on: "+focus+" (go deep on this topic; only include other modules where they directly support it)":"")+". Produce 4–6 modules. For each module use a '## Module N — <title>' heading, then 3–5 specific subtopics as bullets, then a line '▸ ends with a check quiz'. Be concrete and exam-relevant — real specification content, never generic filler. End with a short 'How to study this course' note."+grounding;
+    SYAI.ask(sys,"Subject: "+subject+(focus?"\nFocus topic: "+focus:"")+"\nLevel: "+level+(board?"\nExam board: "+board:""),{maxTokens:1500}).then(txt=>{
+      addPoints(10);touchStreak();logEvent("course","AI course: "+cap,head+" — live AI course generated.");
+      document.getElementById("cg-sub").textContent=head+" · live AI course";
       document.getElementById("cg-out").innerHTML='<div class="card">'+SYAI.render(txt)+'</div>'+
         '<div style="margin-top:8px"><button class="btn sm" id="cg-savecourse">Save course to library</button></div>';
-      const sv=document.getElementById("cg-savecourse");if(sv)sv.onclick=()=>{saveMine({type:"Revision Notes",title:cap+" — AI course",subj:"",level:level,body:txt},"co","Course saved",[])};
-    }).catch(e=>{toast("Live AI error — using the built-in outline");cgStatic(topic,level,board,cap)});
+      const sv=document.getElementById("cg-savecourse");if(sv)sv.onclick=()=>{saveMine({type:"Revision Notes",title:cap+(focus?" — "+focus:"")+" — AI course",subj:"",level:level,body:txt},"co","Course saved",[])};
+    }).catch(e=>{toast("Live AI error — using the verified outline");cgStatic(subject,level,board,cap,focus)});
     return;
   }
-  cgStatic(topic,level,board,cap);
+  cgStatic(subject,level,board,cap,focus);
 };
 /* Verified curriculum library — REAL specification structures (AQA-aligned,
    board-neutral where sensible), not generic scaffolds. Used two ways:
@@ -3516,23 +3528,28 @@ function curricFor(topic,level){
   const mods=wantA?(subj.alevel||subj.gcse):(subj.gcse||subj.alevel);
   return mods?{key:hit[1],modules:mods,tier:wantA&&subj.alevel?"A-level":"GCSE"}:null;
 }
-function cgStatic(topic,level,board,cap){
-  const found=curricFor(topic,level);
+function cgStatic(subject,level,board,cap,focus){
+  const found=curricFor(subject,level);
   if(!found){
     /* be honest — no invented filler for subjects we can't verify */
     document.getElementById("cg-sub").textContent=cap+" · "+level+(board?" · "+board:"");
     document.getElementById("cg-out").innerHTML=
       `<div class="card"><h3 style="font-family:var(--serif);font-weight:500">No verified outline for “${esc(cap)}” yet</h3>
-       <p class="sub" style="margin-top:6px">Custom topics are written by the live AI course engine so every module is real and exam-relevant —
+       <p class="sub" style="margin-top:6px">Custom subjects are written by the live AI course engine so every module is real and exam-relevant —
        it isn't reachable right now. Try one of the verified subjects (Maths, Sciences, English, Geography, History, Computer Science,
        Business, MFL, RS…) or try again shortly.</p></div>`;
     return;
   }
-  const modules=found.modules;
+  let modules=found.modules, focused=false;
+  if(focus){
+    const fq=focus.toLowerCase();
+    const hits=found.modules.filter(m=>(m.t+" "+m.topics.join(" ")).toLowerCase().includes(fq));
+    if(hits.length){modules=hits;focused=true}
+  }
   addPoints(10);touchStreak();
-  logEvent("course","Course: "+cap,level+(board?" · "+board:"")+" — verified "+found.tier+" specification outline ("+modules.length+" modules).");
-  document.getElementById("cg-sub").textContent=cap+" · "+found.tier+(board?" · "+board:"")+" · verified specification structure — "+modules.length+" modules, each ending in a quiz.";
-  document.getElementById("cg-out").innerHTML=modules.map((m,i)=>`
+  logEvent("course","Course: "+cap,level+(board?" · "+board:"")+" — verified "+found.tier+" specification outline ("+modules.length+" modules"+(focused?", focused on "+focus:"")+").");
+  document.getElementById("cg-sub").textContent=cap+(focused?" — "+focus:"")+" · "+found.tier+(board?" · "+board:"")+" · verified specification structure — "+modules.length+" module"+(modules.length>1?"s":"")+(focused?" matching your topic":"")+", each ending in a quiz.";
+  document.getElementById("cg-out").innerHTML=(focused?`<div class="note" style="margin-bottom:8px">🎯 Showing the specification module${modules.length>1?"s":""} covering “${esc(focus)}” — the live AI engine writes a full deep-dive course on this exact topic.</div>`:(focus?`<div class="note" style="margin-bottom:8px">“${esc(focus)}” isn't a named unit in this specification — showing the full course; the live AI engine writes topic-focused courses.</div>`:""))+modules.map((m,i)=>`
     <div class="card" style="margin-bottom:10px">
       <div style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)">Module ${i+1}</div>
       <h3 style="font-family:var(--serif);font-weight:500;font-size:18px;color:var(--gold-300);margin:2px 0 8px">${esc(m.t)}</h3>
