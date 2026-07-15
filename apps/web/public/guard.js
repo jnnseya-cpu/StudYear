@@ -351,17 +351,24 @@
     // responsive safety net — media stays inside its container on any screen; tables/code scroll
     if (!document.getElementById('sy-responsive')) {
       var rs = document.createElement('style'); rs.id = 'sy-responsive';
-      rs.textContent = 'img{max-width:100%;height:auto}.sy-scroll,table.sy-scroll{display:block;max-width:100%;overflow-x:auto}@media(max-width:520px){:root{}}';
+      rs.textContent = 'img{max-width:100%;height:auto}.sy-scroll,table.sy-scroll{display:block;max-width:100%;overflow-x:auto}' +
+        // grid/flex children default to min-width:auto, so one wide child (chart,
+        // table, long word) forces the whole console wider than a phone screen —
+        // let console grid cells shrink and wrap instead of overflowing
+        '.grid>*,.two>*,.three>*{min-width:0}';
       head.appendChild(rs);
     }
     // register the offline/install service worker (scope-relative so / and /StudYear/ both work)
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register(base + 'sw.js', { scope: base }).catch(function () {});
-      // when a new worker takes control mid-visit, the page on screen was styled
-      // by the previous deploy's cached CSS — refresh once so HTML+CSS match
+      // when a NEW worker replaces the one that was controlling this page, the
+      // markup on screen was styled by the previous deploy's cached CSS —
+      // refresh once so HTML+CSS match. hadController distinguishes an update
+      // from the first-ever install (claim() fires controllerchange there too).
+      var hadController = !!navigator.serviceWorker.controller;
       var reloaded = false;
       navigator.serviceWorker.addEventListener('controllerchange', function () {
-        if (reloaded || !navigator.serviceWorker.controller) return;
+        if (!hadController || reloaded || !navigator.serviceWorker.controller) return;
         if (!sessionStorage.getItem('sy-sw-reloaded')) {
           reloaded = true; sessionStorage.setItem('sy-sw-reloaded', '1'); location.reload();
         }

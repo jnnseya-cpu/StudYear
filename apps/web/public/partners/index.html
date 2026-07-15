@@ -11,7 +11,8 @@
   nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);background:linear-gradient(to bottom,rgba(6,11,24,.9),rgba(6,11,24,.4));border-bottom:1px solid rgba(77,157,224,.08)}
   .nav-in{display:flex;align-items:center;justify-content:space-between;height:66px}
   .logo{font-family:var(--serif);font-size:22px;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;gap:10px}.logo img{height:32px;width:32px}.logo b{color:var(--gold-400);font-weight:600}
-  .nav-links{display:flex;gap:22px;align-items:center}.nav-links a{color:var(--ink-2);text-decoration:none;font-size:14px}
+  .nav-links{display:flex;gap:22px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.nav-links a{color:var(--ink-2);text-decoration:none;font-size:14px}
+  @media(max-width:520px){.nav-links{gap:12px}.nav-links a{font-size:13px}}
   .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:10px;font-size:14.5px;font-weight:600;text-decoration:none;transition:all .25s;border:none;cursor:pointer}
   .btn-gold{background:linear-gradient(135deg,var(--gold-400),var(--gold-600));color:#fff}
   header{padding:78px 0 24px}
