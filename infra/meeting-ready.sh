@@ -29,6 +29,22 @@ bad()  { printf '  \033[31m✗ %s\033[0m\n' "$*"; }
 
 cd "$(dirname "$0")/.." || exit 1
 
+step "0/3 AI gateway key (powers every AI tool for every account)"
+if [ -f backend/functions/.env ] && grep -q '^AI_PROVIDER_KEY=.' backend/functions/.env 2>/dev/null; then
+  ok "AI key already configured in backend/functions/.env"
+elif [ -t 0 ]; then
+  echo "  The server AI gateway needs a provider key (courses, lessons, tutor, marking go LIVE with it)."
+  echo "  Paste your key now, or press Enter to skip (AI tools stay on their built-in fallbacks)."
+  read -r -p "  Provider [openai/anthropic/gemini] (default openai): " AIP; AIP=${AIP:-openai}
+  read -r -s -p "  API key (hidden, Enter to skip): " AIK; echo
+  if [ -n "$AIK" ]; then
+    { echo "AI_PROVIDER=$AIP"; echo "AI_PROVIDER_KEY=$AIK"; } >> backend/functions/.env
+    ok "AI gateway configured — deploying it live"
+  else
+    bad "Skipped — AI tools will use fallbacks until a key is added"
+  fi
+fi
+
 step "1/3 Deploying backend as $(gcloud config get-value account 2>/dev/null || echo 'you')"
 ( cd backend && npx --yes firebase-tools deploy --only functions,firestore \
     --project "$PROJECT" --non-interactive --force ) \

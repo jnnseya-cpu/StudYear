@@ -3335,7 +3335,8 @@ document.getElementById("cg-go").onclick=()=>{
   if(window.SYAI&&SYAI.ready()){
     document.getElementById("cg-sub").textContent=cap+" · "+level+(board?" · "+board:"")+" · generating with live AI…";
     document.getElementById("cg-out").innerHTML='<div class="note">Writing your course with '+SYAI.provider()+'…</div>';
-    const sys="You are StudYear's course designer. Write a structured "+level+" course"+(board?" aligned to the "+board+" exam board":"")+". Produce 4–6 modules. For each module use a '## Module N — <title>' heading, then 3–5 specific subtopics as bullets, then a line '▸ ends with a check quiz'. Be concrete and exam-relevant to the topic. End with a short 'How to study this course' note.";
+    const grounding=(function(){const f=curricFor(topic,level);return f?"\nGround the course on this REAL "+f.tier+" specification structure — keep these modules and refine/expand the bullets with concrete, exam-relevant detail:\n"+f.modules.map((m,i)=>"Module "+(i+1)+": "+m.t+" — "+m.topics.join("; ")).join("\n"):""})();
+    const sys="You are StudYear's course designer. Write a structured "+level+" course"+(board?" aligned to the "+board+" exam board":"")+". Produce 4–6 modules. For each module use a '## Module N — <title>' heading, then 3–5 specific subtopics as bullets, then a line '▸ ends with a check quiz'. Be concrete and exam-relevant to the topic — real specification content, never generic filler. End with a short 'How to study this course' note."+grounding;
     SYAI.ask(sys,"Course topic: "+topic+"\nLevel: "+level+(board?"\nExam board: "+board:""),{maxTokens:1500}).then(txt=>{
       addPoints(10);touchStreak();logEvent("course","AI course: "+cap,level+(board?" · "+board:"")+" — live AI course generated.");
       document.getElementById("cg-sub").textContent=cap+" · "+level+(board?" · "+board:"")+" · live AI course";
@@ -3347,24 +3348,199 @@ document.getElementById("cg-go").onclick=()=>{
   }
   cgStatic(topic,level,board,cap);
 };
+/* Verified curriculum library — REAL specification structures (AQA-aligned,
+   board-neutral where sensible), not generic scaffolds. Used two ways:
+   1. grounding for the live AI so generated courses follow the actual spec;
+   2. the proven outline shown when the AI gateway is unreachable. */
+const CURRICULUM={
+  geography:{gcse:[
+    {t:"The Challenge of Natural Hazards",topics:["Tectonic hazards — plate margins, earthquakes & case-study comparison (HIC vs LIC)","Weather hazards — global atmospheric circulation, tropical storms, UK extreme weather","Climate change — evidence, natural & human causes, mitigation and adaptation"]},
+    {t:"The Living World",topics:["Ecosystems and nutrient cycling","Tropical rainforests — characteristics, deforestation, sustainable management","Hot deserts / cold environments — opportunities, challenges, desertification"]},
+    {t:"Physical Landscapes in the UK",topics:["Coastal landscapes — erosion, transport & deposition landforms, management","River landscapes — long profile, landforms, flood risk & hydrographs","Fieldwork links for physical landscapes"]},
+    {t:"Urban Issues and Challenges",topics:["Global urbanisation and megacities","A major city in an LIC/NEE — opportunities & challenges","A major UK city — regeneration & urban sustainability"]},
+    {t:"The Changing Economic World",topics:["The development gap — measures, causes, strategies to reduce it","An LIC/NEE experiencing rapid development (e.g. Nigeria)","Economic change in the UK — post-industrial economy, north–south divide"]},
+    {t:"The Challenge of Resource Management",topics:["Resource distribution in the UK — food, water, energy","One resource in depth — supply, demand, sustainable strategies"]},
+    {t:"Geographical Skills & Fieldwork",topics:["OS map, graph and statistics skills","Two enquiries — one physical, one human","Evaluating your fieldwork for Paper 3"]}],
+   alevel:[
+    {t:"Water and Carbon Cycles",topics:["Systems, stores and transfers","Drainage-basin processes & the water balance","The carbon budget and climate links"]},
+    {t:"Coastal Systems and Landscapes",topics:["Sources of energy & sediment budgets","Landform development & sea-level change","Coastal management case studies"]},
+    {t:"Hazards",topics:["Hazard perception & the risk equation","Volcanic, seismic, storm and wildfire hazards","Multi-hazardous environments case study"]},
+    {t:"Global Systems and Global Governance",topics:["Globalisation — flows, dimensions and unequal outcomes","International trade, TNCs and interdependence","Global commons & Antarctica governance"]},
+    {t:"Changing Places",topics:["Place meanings, representations & lived experience","Endogenous & exogenous factors","Local & distant place studies"]},
+    {t:"Fieldwork & the NEA",topics:["Designing an independent enquiry","Data collection, presentation & statistical analysis","Drawing evidenced conclusions & critical evaluation"]}]},
+  history:{gcse:[
+    {t:"Germany 1890–1945: Democracy and Dictatorship",topics:["Kaiser to Weimar — the difficulties of the new republic","The rise of the Nazis and the end of democracy","Nazi control, opposition, and life in wartime Germany"]},
+    {t:"Conflict and Tension 1918–1939",topics:["The peace settlement and its critics","The League of Nations & failures of the 1930s","Hitler's foreign policy and the road to war"]},
+    {t:"Britain: Health and the People c1000–Present",topics:["Medieval & Renaissance medicine","The fight against disease — vaccination, germ theory, antibiotics","Public health and the NHS — factors of change"]},
+    {t:"Elizabethan England c1568–1603",topics:["Court, parliament and the problem of marriage","Catholic threat, Mary Queen of Scots & the Armada","Society: poverty, theatres and voyages of discovery"]},
+    {t:"Source and Interpretation Skills",topics:["Evaluating provenance, content and purpose","Comparing interpretations","The historic-environment site study"]}]},
+  biology:{gcse:[
+    {t:"Cell Biology",topics:["Eukaryotic & prokaryotic cells; microscopy (required practical)","Cell division — mitosis & stem cells","Transport: diffusion, osmosis (RP) & active transport"]},
+    {t:"Organisation",topics:["Digestive system & enzymes (RP)","Heart, blood and cardiovascular disease","Plant tissues and transpiration"]},
+    {t:"Infection and Response",topics:["Pathogens — bacteria, viruses, fungi, protists","The immune system, vaccination & antibiotics","Monoclonal antibodies & plant disease (triple)"]},
+    {t:"Bioenergetics",topics:["Photosynthesis & limiting factors (RP)","Aerobic & anaerobic respiration","Metabolism and response to exercise"]},
+    {t:"Homeostasis and Response",topics:["The nervous system & reflexes (RP)","Hormones — blood glucose, diabetes, fertility","The brain, eye & thermoregulation (triple)"]},
+    {t:"Inheritance, Variation and Evolution",topics:["DNA, the genome and genetic crosses","Natural selection, evidence for evolution & antibiotic resistance","Genetic engineering & classification"]},
+    {t:"Ecology",topics:["Communities, abiotic & biotic factors; sampling (RP)","Carbon & water cycles; biodiversity","Human impacts — pollution, land use, global warming"]}],
+   alevel:[
+    {t:"Biological Molecules",topics:["Carbohydrates, lipids, proteins & enzymes","DNA, RNA and ATP","Water and inorganic ions"]},
+    {t:"Cells",topics:["Cell structure & microscopy","Transport across membranes","Cell recognition & the immune system"]},
+    {t:"Organisms Exchange Substances",topics:["Gas exchange systems","Digestion and absorption","Mass transport — haemoglobin & the heart"]},
+    {t:"Genetic Information & Variation",topics:["DNA, genes and protein synthesis","Genetic diversity & natural selection","Biodiversity within a community"]},
+    {t:"Energy Transfers (A2)",topics:["Photosynthesis & respiration","Energy and ecosystems","Nutrient cycles"]},
+    {t:"Organisms Respond to Change (A2)",topics:["Stimuli and receptors","Nervous coordination & muscles","Homeostasis — kidneys and blood glucose"]},
+    {t:"Genetics, Populations & Evolution (A2)",topics:["Hardy–Weinberg & allele frequencies","Speciation and evolution","Populations in ecosystems"]},
+    {t:"Control of Gene Expression (A2)",topics:["Mutation & stem cells","Regulation of transcription/translation","Gene technologies & genome projects"]}]},
+  chemistry:{gcse:[
+    {t:"Atomic Structure and the Periodic Table",topics:["Atoms, isotopes and electronic structure","Development of the periodic table","Groups 1, 7, 0 and transition metals"]},
+    {t:"Bonding, Structure and Properties",topics:["Ionic, covalent and metallic bonding","States of matter & giant structures","Nanoparticles (triple)"]},
+    {t:"Quantitative Chemistry",topics:["Conservation of mass & balanced equations","Moles, masses and concentrations","Yield, atom economy & titrations"]},
+    {t:"Chemical Changes",topics:["Reactivity series & extraction of metals","Acids, bases and making salts (RP)","Electrolysis (RP)"]},
+    {t:"Energy Changes",topics:["Exothermic & endothermic reactions (RP)","Reaction profiles & bond energies","Cells, batteries & fuel cells (triple)"]},
+    {t:"Rates and Equilibrium",topics:["Collision theory & measuring rates (RP)","Catalysts","Reversible reactions & Le Chatelier"]},
+    {t:"Organic Chemistry",topics:["Crude oil, alkanes & fractional distillation","Cracking and alkenes","Alcohols, acids & polymers (triple)"]},
+    {t:"Chemical Analysis",topics:["Purity, formulations & chromatography (RP)","Gas tests","Ion tests & flame emission (triple)"]},
+    {t:"Chemistry of the Atmosphere",topics:["Evolution of the atmosphere","Greenhouse gases & climate change","Atmospheric pollutants"]},
+    {t:"Using Resources",topics:["Sustainable use & potable water (RP)","Life-cycle assessment & recycling","Haber process & fertilisers (triple)"]}]},
+  physics:{gcse:[
+    {t:"Energy",topics:["Energy stores, transfers & equations","Specific heat capacity (RP) & insulation","National & global energy resources"]},
+    {t:"Electricity",topics:["Circuits, I-V characteristics (RP) & resistance (RP)","Series & parallel; domestic electricity & safety","Static electricity (triple)"]},
+    {t:"Particle Model of Matter",topics:["Density (RP) and states of matter","Internal energy & specific latent heat","Gas pressure"]},
+    {t:"Atomic Structure",topics:["The nuclear model & isotopes","Radioactive decay, half-life & irradiation vs contamination","Fission, fusion & background radiation"]},
+    {t:"Forces",topics:["Vectors, resultant forces & Newton's laws (RP)","Speed, velocity & motion graphs","Momentum, stopping distances & pressure (triple)"]},
+    {t:"Waves",topics:["Wave properties & the wave equation (RP)","The electromagnetic spectrum (RP)","Sound, ultrasound & lenses (triple)"]},
+    {t:"Magnetism and Electromagnetism",topics:["Magnetic fields & electromagnets","The motor effect & Fleming's left hand","Generators, transformers & the National Grid (triple)"]},
+    {t:"Space Physics (triple)",topics:["The life cycle of stars","Orbits and satellites","Red-shift and the Big Bang"]}],
+   alevel:[
+    {t:"Measurements and Their Errors",topics:["SI units & prefixes","Uncertainties and error propagation","Orders of magnitude & estimation"]},
+    {t:"Particles and Radiation",topics:["Constituents of the atom; hadrons & leptons","Quarks & particle interactions","The photoelectric effect & wave–particle duality"]},
+    {t:"Waves",topics:["Progressive & stationary waves","Interference, diffraction & gratings","Refraction & total internal reflection"]},
+    {t:"Mechanics and Materials",topics:["Projectiles, moments & equilibrium","Newton's laws, momentum & energy","Young's modulus & material behaviour"]},
+    {t:"Electricity",topics:["Current–voltage characteristics & resistivity","EMF and internal resistance","Potential dividers"]},
+    {t:"Further Mechanics & Thermal (A2)",topics:["Circular & simple harmonic motion","Thermal energy & ideal gases","Molecular kinetic theory"]},
+    {t:"Fields (A2)",topics:["Gravitational & electric fields","Capacitance","Magnetic fields & electromagnetic induction"]},
+    {t:"Nuclear Physics (A2)",topics:["Rutherford scattering & nuclear radius","Radioactivity & decay equations","Binding energy, fission & fusion"]}]},
+  science:{gcse:[
+    {t:"Biology Paper 1 (Combined)",topics:["Cell biology & organisation","Infection and response","Bioenergetics"]},
+    {t:"Biology Paper 2 (Combined)",topics:["Homeostasis and response","Inheritance, variation and evolution","Ecology"]},
+    {t:"Chemistry Paper 1 (Combined)",topics:["Atomic structure & bonding","Quantitative chemistry & chemical changes","Energy changes"]},
+    {t:"Chemistry Paper 2 (Combined)",topics:["Rates & equilibrium","Organic chemistry & analysis","Atmosphere and resources"]},
+    {t:"Physics Paper 1 (Combined)",topics:["Energy & electricity","Particle model","Atomic structure"]},
+    {t:"Physics Paper 2 (Combined)",topics:["Forces","Waves","Magnetism & electromagnetism"]}]},
+  mathematics:{gcse:[
+    {t:"Number",topics:["Fractions, decimals & percentages; FDP conversion","Indices, standard form & surds (higher)","Bounds, estimation & financial maths"]},
+    {t:"Algebra",topics:["Expressions, expanding & factorising (incl. quadratics)","Linear & quadratic equations; simultaneous equations","Sequences, inequalities, graphs & functions (higher)"]},
+    {t:"Ratio, Proportion and Rates of Change",topics:["Ratio sharing & scale","Direct & inverse proportion","Percentage change, growth & decay, compound measures"]},
+    {t:"Geometry and Measures",topics:["Angles, polygons & circle theorems (higher)","Pythagoras & trigonometry (incl. sine/cosine rules)","Transformations, constructions, vectors, area & volume"]},
+    {t:"Probability",topics:["Probability scales & sample spaces","Tree diagrams & conditional probability","Venn diagrams & set notation"]},
+    {t:"Statistics",topics:["Averages, range & comparing distributions","Charts: histograms, cumulative frequency & box plots (higher)","Scatter graphs, correlation & sampling"]}],
+   alevel:[
+    {t:"Pure: Proof, Algebra and Functions",topics:["Proof by deduction, exhaustion & contradiction","Polynomials, partial fractions & the factor theorem","Composite/inverse functions, transformations & modulus"]},
+    {t:"Pure: Coordinate Geometry & Sequences",topics:["Straight lines & circles","Parametric equations","Arithmetic & geometric sequences; binomial expansion"]},
+    {t:"Pure: Trigonometry",topics:["Radians, arcs and sectors","Identities & equations; addition formulae","Reciprocal & inverse trig; R-alpha form"]},
+    {t:"Pure: Exponentials, Logs & Calculus",topics:["Exponential models & logarithm laws","Differentiation — chain/product/quotient; stationary points","Integration — substitution, parts; differential equations"]},
+    {t:"Pure: Numerical Methods & Vectors",topics:["Iteration & the Newton–Raphson method","The trapezium rule","2D/3D vectors & their geometry"]},
+    {t:"Statistics",topics:["Sampling & data presentation; the large data set","Probability, discrete distributions & the binomial","Hypothesis testing; the normal distribution (A2)"]},
+    {t:"Mechanics",topics:["Kinematics & suvat; variable acceleration","Forces & Newton's laws; connected particles","Moments, friction & projectiles (A2)"]}]},
+  english_literature:{gcse:[
+    {t:"Shakespeare",topics:["Your set play — plot, characters & key scenes (e.g. Macbeth)","Themes, context & dramatic methods","Extract-to-whole essay technique"]},
+    {t:"The 19th-Century Novel",topics:["Your set novel — plot & characters (e.g. A Christmas Carol)","Victorian context & authorial intent","Analysing extracts under exam conditions"]},
+    {t:"Modern Texts",topics:["Your modern play/novel (e.g. An Inspector Calls)","Social context, themes & character arcs","Essay planning from a named question"]},
+    {t:"Poetry Anthology",topics:["All 15 cluster poems (e.g. Power and Conflict)","Comparing poems — themes, methods, context","Building the comparative essay"]},
+    {t:"Unseen Poetry",topics:["First-read strategies & annotation","Analysing language, form and structure","The two-part unseen question"]}]},
+  english_language:{gcse:[
+    {t:"Paper 1: Explorations in Creative Reading and Writing",topics:["Q1–3: retrieving, language analysis & structure","Q4: evaluating a statement","Q5: narrative & descriptive writing"]},
+    {t:"Paper 2: Writers' Viewpoints and Perspectives",topics:["Comparing two non-fiction texts","Summary & inference questions","Writing to present a viewpoint (article, letter, speech)"]},
+    {t:"Technical Accuracy (AO6)",topics:["Sentence variety & punctuation for effect","Paragraphing & structural craft","Proofreading & upgrading vocabulary"]},
+    {t:"Spoken Language Endorsement",topics:["Planning and delivering your presentation","Responding to questions","Standard English & register"]}]},
+  computer_science:{gcse:[
+    {t:"Computational Thinking and Algorithms",topics:["Decomposition, abstraction & pattern recognition","Searching & sorting algorithms (linear/binary; bubble/merge/insertion)","Trace tables, flowcharts & pseudocode"]},
+    {t:"Programming",topics:["Variables, selection, iteration & subroutines","Data types, strings, arrays & file handling","Validation, testing & robust programs"]},
+    {t:"Data Representation",topics:["Binary, hex & binary arithmetic","Characters, images & sound","Compression"]},
+    {t:"Computer Systems",topics:["CPU architecture & the fetch–execute cycle","Memory & storage","Operating systems & utility software"]},
+    {t:"Networks",topics:["LAN/WAN, topologies & hardware","Protocols, layers & the internet","Wired vs wireless; performance"]},
+    {t:"Cyber Security and Ethics",topics:["Threats — malware, phishing, SQL injection, brute force","Prevention — firewalls, encryption, authentication","Legal, ethical & environmental impacts"]}]},
+  business:{gcse:[
+    {t:"Business in the Real World",topics:["Enterprise, risk & business ownership","Aims, objectives & stakeholders","Business location & planning"]},
+    {t:"Influences on Business",topics:["Technology, ethics & the environment","The economic climate — interest rates, employment","Globalisation and legislation"]},
+    {t:"Business Operations",topics:["Production methods & efficiency","Procurement & supply chains","Quality and customer service"]},
+    {t:"Human Resources",topics:["Organisational structures","Recruitment, training & motivation","Employment law basics"]},
+    {t:"Marketing",topics:["Market research & segmentation","The marketing mix — product, price, place, promotion","Product life cycle"]},
+    {t:"Finance",topics:["Sources of finance","Cash flow, revenue, costs & profit","Break-even & financial performance"]}]},
+  french:{gcse:[
+    {t:"Identity and Culture",topics:["Me, my family and friends; relationships","Free time — music, sport, film & TV","Customs and festivals in French-speaking countries"]},
+    {t:"Local, National and Global Areas of Interest",topics:["Home, town and region","Social and environmental issues","Travel and tourism"]},
+    {t:"Study and Employment",topics:["School life and studies","Post-16 education & jobs","Career choices and ambitions"]},
+    {t:"Grammar Core",topics:["Present, perfect, imperfect & future tenses","Object pronouns & negatives","Comparatives, connectives & opinion phrases"]},
+    {t:"Exam Skills",topics:["Listening & reading strategies","Role-play, photo card & conversation","Translation and structured writing"]}]},
+  spanish:{gcse:[
+    {t:"Identity and Culture",topics:["Family, friends and relationships","Free time — music, sport, film & TV","Customs and festivals in the Hispanic world"]},
+    {t:"Local, National and Global Areas of Interest",topics:["Home, town and region","Social and environmental issues","Travel and tourism"]},
+    {t:"Study and Employment",topics:["School life and studies","Post-16 education & jobs","Career choices and ambitions"]},
+    {t:"Grammar Core",topics:["Present, preterite, imperfect & future tenses","Object pronouns & negatives","Comparatives, connectives & opinion phrases"]},
+    {t:"Exam Skills",topics:["Listening & reading strategies","Role-play, photo card & conversation","Translation and structured writing"]}]},
+  religious_studies:{gcse:[
+    {t:"Christianity: Beliefs and Practices",topics:["The nature of God, creation & the afterlife","Jesus — incarnation, crucifixion, resurrection & salvation","Worship, sacraments, pilgrimage & the Church in the community"]},
+    {t:"Islam: Beliefs and Practices",topics:["The six articles & five roots; the nature of Allah","Prophethood, holy books, angels & the afterlife","The Five Pillars, festivals & jihad"]},
+    {t:"Theme: Relationships and Families",topics:["Marriage, divorce & family life","Contraception and sexuality","Gender equality"]},
+    {t:"Theme: Religion and Life",topics:["Origins of the universe & the environment","Abortion and euthanasia","Animal rights"]},
+    {t:"Theme: Peace and Conflict",topics:["Just war & holy war","Pacifism & peacemaking","Terrorism, weapons & victims of war"]},
+    {t:"Theme: Crime and Punishment",topics:["Causes of crime & aims of punishment","The death penalty","Forgiveness and reform"]}]},
+  psychology:{alevel:[
+    {t:"Social Influence",topics:["Conformity — Asch, types & explanations","Obedience — Milgram, agentic state & authority","Minority influence & social change"]},
+    {t:"Memory",topics:["Multi-store & working memory models","Explanations for forgetting","Eyewitness testimony & the cognitive interview"]},
+    {t:"Attachment",topics:["Caregiver–infant interactions & stages","Ainsworth's Strange Situation & cultural variations","Bowlby — monotropy, deprivation & institutionalisation"]},
+    {t:"Psychopathology",topics:["Definitions of abnormality","Phobias, depression & OCD — characteristics","Behavioural, cognitive & biological treatments"]},
+    {t:"Approaches in Psychology",topics:["Learning, cognitive & biological approaches","Psychodynamic & humanistic approaches","Comparison of approaches"]},
+    {t:"Biopsychology",topics:["The nervous & endocrine systems","Localisation, plasticity & ways of studying the brain","Biological rhythms"]},
+    {t:"Research Methods",topics:["Experimental design, sampling & ethics","Data handling & statistical tests","Inferential testing & sign test"]}]},
+  economics:{alevel:[
+    {t:"Markets and Market Failure (Micro)",topics:["Demand, supply & elasticities","Market failure — externalities, public goods, information gaps","Government intervention & its failures"]},
+    {t:"Individuals, Firms and Markets (Micro A2)",topics:["Costs, revenue & profit; economies of scale","Market structures — perfect competition to monopoly","Labour markets & distribution of income"]},
+    {t:"The National Economy (Macro)",topics:["Macroeconomic indicators & the circular flow","AD/AS analysis & the multiplier","Monetary, fiscal & supply-side policy"]},
+    {t:"The International Economy (Macro A2)",topics:["Globalisation & trade theory","Exchange rates & the balance of payments","Development economics"]}]},
+  sociology:{gcse:[
+    {t:"The Sociological Approach",topics:["Key thinkers — Durkheim, Marx, Weber","Structural vs action theories","Research methods & ethics"]},
+    {t:"Families",topics:["Family forms & functions","Conjugal roles & family diversity","Divorce, demography & family critiques"]},
+    {t:"Education",topics:["Roles & functions of education","Differential achievement — class, gender, ethnicity","Processes in schools — labelling & subcultures"]},
+    {t:"Crime and Deviance",topics:["Social control & causes of crime","Patterns — class, gender, ethnicity, age","Measuring crime — statistics & surveys"]},
+    {t:"Social Stratification",topics:["Class, wealth & poverty","Power and authority","Life chances & social mobility"]}]}
+};
+const CURRIC_ALIAS=[["geog","geography"],["hist","history"],["biol","biology"],["chem","chemistry"],["phys","physics"],["combined","science"],["trilogy","science"],["science","science"],["math","mathematics"],["further math","mathematics"],["english lit","english_literature"],["literature","english_literature"],["english lang","english_language"],["english","english_language"],["comput","computer_science"],["business","business"],["french","french"],["spanish","spanish"],["religio","religious_studies"],["philosophy and ethics","religious_studies"],[" rs","religious_studies"],["psycholog","psychology"],["econom","economics"],["sociolog","sociology"]];
+function curricFor(topic,level){
+  const t=" "+String(topic).toLowerCase().trim();
+  const hit=CURRIC_ALIAS.find(a=>t.includes(a[0]));
+  if(!hit)return null;
+  const subj=CURRICULUM[hit[1]];if(!subj)return null;
+  const wantA=/a2|a-level|alevel|as\b|higher|baccalaureate|university/i.test(level);
+  const mods=wantA?(subj.alevel||subj.gcse):(subj.gcse||subj.alevel);
+  return mods?{key:hit[1],modules:mods,tier:wantA&&subj.alevel?"A-level":"GCSE"}:null;
+}
 function cgStatic(topic,level,board,cap){
-  const modules=[
-    {t:"Foundations of "+cap,topics:["Key terms and definitions","Why "+topic+" matters","The big picture / timeline"]},
-    {t:"Core Concepts",topics:["The main principles of "+topic,"How the parts connect","Worked examples"]},
-    {t:"Going Deeper",topics:["Analysis and evaluation","Common misconceptions","Links to other topics"]},
-    {t:"Exam Mastery",topics:["Question types and command words","Mark-scheme thinking","Timed practice"]}];
+  const found=curricFor(topic,level);
+  if(!found){
+    /* be honest — no invented filler for subjects we can't verify */
+    document.getElementById("cg-sub").textContent=cap+" · "+level+(board?" · "+board:"");
+    document.getElementById("cg-out").innerHTML=
+      `<div class="card"><h3 style="font-family:var(--serif);font-weight:500">No verified outline for “${esc(cap)}” yet</h3>
+       <p class="sub" style="margin-top:6px">Custom topics are written by the live AI course engine so every module is real and exam-relevant —
+       it isn't reachable right now. Try one of the verified subjects (Maths, Sciences, English, Geography, History, Computer Science,
+       Business, MFL, RS…) or try again shortly.</p></div>`;
+    return;
+  }
+  const modules=found.modules;
   addPoints(10);touchStreak();
-  logEvent("course","AI course: "+cap,level+(board?" · "+board:"")+" — "+modules.length+" modules generated.");
-  document.getElementById("cg-sub").textContent=cap+" · "+level+(board?" · "+board:"")+" · "+modules.length+" modules, each ending in a quiz.";
+  logEvent("course","Course: "+cap,level+(board?" · "+board:"")+" — verified "+found.tier+" specification outline ("+modules.length+" modules).");
+  document.getElementById("cg-sub").textContent=cap+" · "+found.tier+(board?" · "+board:"")+" · verified specification structure — "+modules.length+" modules, each ending in a quiz.";
   document.getElementById("cg-out").innerHTML=modules.map((m,i)=>`
     <div class="card" style="margin-bottom:10px">
       <div style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)">Module ${i+1}</div>
       <h3 style="font-family:var(--serif);font-weight:500;font-size:18px;color:var(--gold-300);margin:2px 0 8px">${esc(m.t)}</h3>
       <ul style="margin:0 0 0 18px;font-size:13.5px;color:var(--ink-2)">${m.topics.map(t=>`<li style="margin:4px 0">${esc(t)}</li>`).join("")}</ul>
-      <div style="margin-top:8px;font-size:12px;color:var(--gold-400)">▸ ends with a ${esc(topic)} check quiz</div>
+      <div style="margin-top:8px;font-size:12px;color:var(--gold-400)">▸ ends with a check quiz on this module</div>
     </div>`).join("")+
-    `<div class="note">Preview build: the outline is generated from a rules-based scaffold. The live AI course engine
-      (SY-A05) writes full lesson content and adaptive quizzes when the backend goes live.</div>`;
+    `<div class="note">Built from the real ${esc(found.tier)} specification structure${board?" ("+esc(board)+"-aligned)":""}.
+      The live AI engine expands each module into full lessons and adaptive quizzes.</div>`;
 };
 
 /* ============================ MISC ============================ */

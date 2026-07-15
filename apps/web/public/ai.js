@@ -10,7 +10,17 @@
    never reaches the browser. Use a restricted/test key here. */
 (function(){
   'use strict';
-  function cfg(){try{return JSON.parse(localStorage.getItem('sy-ai-live'))||null}catch(e){return null}}
+  function cfg(){try{
+    var c=JSON.parse(localStorage.getItem('sy-ai-live'))||null;
+    if(c&&c.provider)return c;
+    /* go-live default: when the cloud is configured, every signed-in account
+       routes through the server-side gateway (/aiProxy) automatically — no
+       per-device setup. The server holds the provider key; if the gateway is
+       dormant the call fails cleanly and tools use their proven fallbacks. */
+    var cc=null;try{cc=JSON.parse(localStorage.getItem('sy-cloud-config'))}catch(e){}
+    if(cc&&cc.apiBase)return{provider:'proxy',key:'server'};
+    return c;
+  }catch(e){return null}}
   /* demo sessions never call the live providers — every tool uses its
      on-device fallback, so presentations spend nothing */
   function isDemo(){try{var s=JSON.parse(localStorage.getItem('sy-session'));return !!(s&&s.demo)}catch(e){return false}}
