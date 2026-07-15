@@ -146,43 +146,115 @@ export const redeemCode = onRequest({ region: 'europe-west2', cors: true }, asyn
  * The browser SYAI client swaps its direct-provider path for this endpoint
  * by setting sy-ai-live = { provider:'proxy', key:'session' }.
  */
+type AiProvider = 'openai' | 'anthropic' | 'gemini';
+type AiBody = { system?: string; user?: string; maxTokens?: number; temperature?: number; image?: string };
+const AI_DEFAULT_MODEL: Record<AiProvider, string> = {
+  openai: 'gpt-4o-mini',
+  anthropic: 'claude-haiku-4-5-20251001',
+  gemini: 'gemini-2.0-flash',
+};
+/** All configured providers, primary (AI_PROVIDER) first — every key that is
+ *  set joins the failover chain, so one provider outage never downs the OS. */
+function aiProviderChain(): { provider: AiProvider; key: string }[] {
+  const keys: Record<AiProvider, string | undefined> = {
+    openai: process.env.OPENAI_API_KEY,
+    anthropic: process.env.ANTHROPIC_API_KEY,
+    gemini: process.env.GEMINI_API_KEY,
+  };
+  const legacyP = process.env.AI_PROVIDER as AiProvider | undefined;
+  if (legacyP && process.env.AI_PROVIDER_KEY && !keys[legacyP]) keys[legacyP] = process.env.AI_PROVIDER_KEY;
+  const all: AiProvider[] = ['openai', 'anthropic', 'gemini'];
+  const order = legacyP && keys[legacyP] ? [legacyP, ...all.filter((p) => p !== legacyP)] : all;
+  return order.filter((p) => keys[p]).map((p) => ({ provider: p, key: keys[p] as string }));
+}
+async function aiCall(provider: AiProvider, key: string, body: AiBody): Promise<{ text: string; model: string }> {
+  const model = (process.env.AI_MODEL && (process.env.AI_PROVIDER ?? 'openai') === provider)
+    ? process.env.AI_MODEL : AI_DEFAULT_MODEL[provider];
+  const maxTokens = body.maxTokens ?? 1024;
+  const temperature = body.temperature ?? 0.6;
+  const img = body.image ? String(body.image).match(/^data:([^;]+);base64,(.*)$/) : null;
+  if (provider === 'gemini') {
+    const parts: unknown[] = [{ text: String(body.user ?? '') }];
+    if (img) parts.push({ inlineData: { mimeType: img[1], data: img[2] } });
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: body.system ? { parts: [{ text: body.system }] } : undefined,
+        contents: [{ role: 'user', parts }],
+        generationConfig: { maxOutputTokens: maxTokens, temperature },
+      }),
+    });
+    if (!r.ok) throw httpError(502, `gemini ${r.status}`);
+    const j = (await r.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+    return { text: (j.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? '').join(''), model };
+  }
+  if (provider === 'anthropic') {
+    const content: unknown[] = [];
+    if (img) content.push(img[1] === 'application/pdf'
+      ? { type: 'document', source: { type: 'base64', media_type: img[1], data: img[2] } }
+      : { type: 'image', source: { type: 'base64', media_type: img[1], data: img[2] } });
+    content.push({ type: 'text', text: String(body.user ?? '') });
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model, max_tokens: maxTokens, temperature,
+        system: body.system || undefined,
+        messages: [{ role: 'user', content }],
+      }),
+    });
+    if (!r.ok) throw httpError(502, `anthropic ${r.status}`);
+    const j = (await r.json()) as { content?: { type: string; text?: string }[] };
+    return { text: (j.content ?? []).filter((b) => b.type === 'text').map((b) => b.text ?? '').join(''), model };
+  }
+  // openai
+  const userContent: unknown = img
+    ? [{ type: 'text', text: String(body.user ?? '') },
+       img[1] === 'application/pdf'
+         ? { type: 'file', file: { filename: 'upload.pdf', file_data: body.image } }
+         : { type: 'image_url', image_url: { url: body.image } }]
+    : String(body.user ?? '');
+  const r = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model, max_tokens: maxTokens, temperature,
+      messages: [...(body.system ? [{ role: 'system', content: body.system }] : []), { role: 'user', content: userContent }],
+    }),
+  });
+  if (!r.ok) throw httpError(502, `openai ${r.status}`);
+  const j = (await r.json()) as { choices?: { message?: { content?: string } }[] };
+  return { text: j.choices?.[0]?.message?.content ?? '', model };
+}
 export const aiProxy = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
   try {
     const user = await requireUser(req.headers.authorization);
-    const provider = process.env.AI_PROVIDER ?? 'gemini';
-    const key = process.env.AI_PROVIDER_KEY;
-    if (!key) throw httpError(503, 'AI provider key not configured on the server');
+    const chain = aiProviderChain();
+    if (!chain.length) throw httpError(503, 'AI provider key not configured on the server');
     const t0 = Date.now();
-    const body = req.body ?? {};
-    // Same request shapes the browser client uses — one provider adapter here.
-    const model = process.env.AI_MODEL ?? (provider === 'gemini' ? 'gemini-2.0-flash' : 'gpt-4o-mini');
-    let text = '';
-    if (provider === 'gemini') {
-      const parts: unknown[] = [{ text: String(body.user ?? '') }];
-      if (body.image) {
-        const m = String(body.image).match(/^data:([^;]+);base64,(.*)$/);
-        if (m) parts.push({ inlineData: { mimeType: m[1], data: m[2] } });
+    const body = (req.body ?? {}) as AiBody;
+    let lastErr: Error | null = null;
+    for (const { provider, key } of chain) {
+      try {
+        const { text, model } = await aiCall(provider, key, body);
+        await db.collection('aiUsageLogs').add({
+          ownerId: user.uid, provider, model, ms: Date.now() - t0, ok: true,
+          failover: chain[0].provider !== provider,
+          inChars: String(body.system ?? '').length + String(body.user ?? '').length,
+          outChars: text.length, createdAt: FieldValue.serverTimestamp(),
+        });
+        res.json({ ok: true, text, provider });
+        return;
+      } catch (e) {
+        lastErr = e as Error; // provider down/limited — fail over to the next key
       }
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemInstruction: body.system ? { parts: [{ text: body.system }] } : undefined,
-          contents: [{ role: 'user', parts }],
-          generationConfig: { maxOutputTokens: body.maxTokens ?? 1024, temperature: body.temperature ?? 0.6 },
-        }),
-      });
-      if (!r.ok) throw httpError(502, `provider ${r.status}`);
-      const j = (await r.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-      text = (j.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? '').join('');
-    } else {
-      throw httpError(501, `provider ${provider} adapter lands with go-live config`);
     }
     await db.collection('aiUsageLogs').add({
-      ownerId: user.uid, provider, model, ms: Date.now() - t0, ok: true,
+      ownerId: user.uid, provider: chain[0].provider, model: '-', ms: Date.now() - t0, ok: false,
       inChars: String(body.system ?? '').length + String(body.user ?? '').length,
-      outChars: text.length, createdAt: FieldValue.serverTimestamp(),
+      outChars: 0, createdAt: FieldValue.serverTimestamp(),
     });
-    res.json({ ok: true, text });
+    throw httpError(502, `all providers failed: ${lastErr?.message ?? 'unknown'}`);
   } catch (e) {
     const err = e as Error & { status?: number };
     res.status(err.status ?? 500).json({ ok: false, error: err.message });

@@ -57,11 +57,17 @@ jobs:
             elif [ -n "$K_GOOGLE" ];    then AIP="${AIP:-gemini}";    AIK="$K_GOOGLE";    SRC="GOOGLE_API_KEY"
             fi
           fi
-          if [ -n "$AIK" ]; then echo "AI gateway key: found ($SRC → provider $AIP)"; else echo "AI gateway key: NOT FOUND — set AI_PROVIDER_KEY (or OPENAI_API_KEY / ANTHROPIC_API_KEY / GEMINI_API_KEY)"; fi
+          if [ -n "$AIK" ]; then echo "AI gateway primary: $SRC (provider $AIP)"; else echo "AI gateway key: NOT FOUND — set AI_PROVIDER_KEY (or OPENAI_API_KEY / ANTHROPIC_API_KEY / GEMINI_API_KEY)"; fi
+          for n in OPENAI ANTHROPIC GEMINI; do
+            v="K_$n"; [ -n "${!v}" ] && echo "AI failover key present: ${n}_API_KEY"
+          done
           {
             for kv in \
               "AI_PROVIDER=$AIP" \
               "AI_PROVIDER_KEY=$AIK" \
+              "OPENAI_API_KEY=$K_OPENAI" \
+              "ANTHROPIC_API_KEY=${K_ANTHROPIC:-$K_CLAUDE}" \
+              "GEMINI_API_KEY=${K_GEMINI:-$K_GOOGLE}" \
               "AI_MODEL=${{ secrets.AI_MODEL }}" \
               "MAIL_HOST=${{ secrets.MAIL_HOST }}" \
               "MAIL_PORT=${{ secrets.MAIL_PORT }}" \
