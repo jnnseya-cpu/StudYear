@@ -46,7 +46,11 @@ for(const [role,urls] of Object.entries(byRole)){
     if(r.status()===404&&r.url().startsWith('http://localhost:8137'))errs.push({type:'404',msg:r.url().replace('http://localhost:8137','')});
   });
   p.on('requestfailed',r=>{
-    if(r.url().startsWith('http://localhost:8137'))errs.push({type:'reqfail',msg:r.url().replace('http://localhost:8137','')+' — '+(r.failure()||{}).errorText});
+    var why=(r.failure()||{}).errorText||'';
+    // ERR_ABORTED = in-flight request cancelled by the crawler's own
+    // navigation (e.g. cloud.js's async firebase-config fetch) — not a defect
+    if(why==='net::ERR_ABORTED')return;
+    if(r.url().startsWith('http://localhost:8137'))errs.push({type:'reqfail',msg:r.url().replace('http://localhost:8137','')+' — '+why});
   });
   for(const u of urls){
     errs.length=0;
