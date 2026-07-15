@@ -59,7 +59,8 @@
 <div class="plans" id="plans"></div>
 
 <h2 class="sec">Top up your school ACU pool</h2>
-<p class="sub">Need more AI credits mid-month? One-off packs are instantly added to your institution's shared wallet.</p>
+<p class="sub">Need more AI credits mid-month? One-off packs are instantly added to your institution's shared wallet.
+  <b>Top-ups are exclusive to subscribed schools</b> — your monthly top-up allowance matches your plan price.</p>
 <div class="packs" id="packs"></div>
 
 <p class="fine">Secure payments processed by Stripe. ACU packs are one-time payments. <b>Every school plan runs for a
@@ -117,8 +118,16 @@ document.body.addEventListener('click',function(e){var b=e.target.closest('butto
     if(window.SYBill){SYBill.checkout(pl.id,{promo:promo,email:(SY.session&&SY.session.email),ref:code,activate:activate})}else activate();
     return;}
   if(b.dataset.pack){var pk=PACKS.find(function(x){return x.id===b.dataset.pack});
+    /* members-only top-ups: allowance per month equals the plan price */
+    var plNow=PLANS.find(function(x){return x.id===sub.plan});
+    if(!plNow){toast('🔒 Top-up packs are exclusive to subscribed schools — pick a plan above first.');return}
+    var mk=new Date().toISOString().slice(0,7);
+    if(sub.topupMonth!==mk){sub.topupMonth=mk;sub.topupSpent=0}
+    var remS=Math.max(0,plNow.pounds-(sub.topupSpent||0));
+    if(pk.pounds>remS){toast('Your £'+plNow.pounds+'/month plan allows up to £'+plNow.pounds+' of top-ups each month — £'+remS+' left.');return}
+    sub.topupSpent=(sub.topupSpent||0)+pk.pounds;SY.set('schoolSub',sub);
     pool.balance=(pool.balance||0)+pk.acus;SY.schoolSet(code,'acu',pool);draw();
-    SY.log('billing',pk.label+' purchased',fmt(pk.acus)+' ACUs added to the school pool.');
+    SY.log('billing',pk.label+' purchased',fmt(pk.acus)+' ACUs added to the school pool · £'+sub.topupSpent+' of £'+plNow.pounds+' monthly top-up allowance used.');
     toast('Preview purchase — '+fmt(pk.acus)+' ACUs added to your shared pool.');}
 });
 draw();

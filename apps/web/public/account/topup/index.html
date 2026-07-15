@@ -151,9 +151,11 @@
   </div>
 </div>
 
-<h2 class="sec">ACU packs — one-time payments</h2>
-<p class="sec-sub">Instant credit, no subscription needed. Packs stack on any plan — but your monthly plan is always
-  the best ACUs-per-£ (and the only way to unlock premium tools); packs are the flexible extra fuel.</p>
+<h2 class="sec">ACU packs — members only</h2>
+<p class="sec-sub">Top-up packs are exclusive to monthly plan members. Your monthly top-up allowance matches your
+  plan price — on the £10 plan you can top up up to £10 each month, on the £30 plan up to £30. Your plan is always
+  the best ACUs-per-£ and the only way to unlock premium tools; packs are the extra fuel on top.</p>
+<div class="walbar" id="allow-bar" style="margin-top:0"></div>
 <div class="packs" id="packs"></div>
 
 <h2 class="sec">🌍 Fund a student — from anywhere in the world</h2>
@@ -279,14 +281,30 @@ $('promo-apply').onclick=function(){
   toast(promo?('Code '+promo+' saved — it is passed to Stripe when you click Purchase or Subscribe'):'Code cleared');
 };
 
-$('packs').innerHTML=PACKS.map(function(p){return '\
-  <div class="pack'+(p.pop?' pop':'')+'">'+(p.pop?'<span class="flag">Most popular</span>':'')+'\
+/* ---- members-only top-ups: allowance per month equals the plan price ---- */
+function planPounds(){var pl=PLANS.find(function(x){return x.id===wallet.plan});return pl?pl.pounds:0}
+function topupRemaining(){
+  var mk=monthKey();
+  if(wallet.topupMonth!==mk){wallet.topupMonth=mk;wallet.topupSpent=0;SY.set('wallet',wallet)}
+  return Math.max(0,planPounds()-(wallet.topupSpent||0));
+}
+function drawPacks(){
+  var paid=planPounds()>0, rem=paid?topupRemaining():0;
+  $('allow-bar').innerHTML=paid
+    ?('Top-up allowance this month: <b>£'+rem+'</b> of £'+planPounds()+' (matches your plan price) · resets monthly')
+    :('🔒 <b style="font-size:15px">Top-ups unlock with any monthly plan.</b> <span>Pick a plan above — your allowance will match your plan price (£5 plan → £5/month … £30 plan → £30/month).</span>');
+  $('packs').innerHTML=PACKS.map(function(p){
+    var over=!paid||p.pounds>rem;
+    return '\
+  <div class="pack'+(p.pop?' pop':'')+'"'+(over?' style="opacity:.55"':'')+'>'+(p.pop?'<span class="flag">Most popular</span>':'')+'\
     <h4>'+p.label+'</h4>\
     <div class="pv">'+fmt(p.acus)+' ACUs</div>\
     <div class="pa">£'+p.pounds+'.00 one-time · '+fmt(p.acus)+' ACUs</div>\
     <div class="pa" style="color:#8ee0a5;font-size:11px">⏱ '+studyEstimate(p.acus,false)+'</div>\
-    <button class="btn solid" data-pack="'+p.id+'">Purchase now</button>\
+    <button class="btn'+(over?' ghost':' solid')+'" data-pack="'+p.id+'">'+(paid?(over?'Over your monthly allowance':'Purchase now'):'🔒 Members only')+'</button>\
   </div>'}).join('');
+}
+drawPacks();
 $('plans').innerHTML=PLANS.map(function(p){return '\
   <div class="plan'+(p.rec?' rec':'')+'" data-id="'+p.id+'">'+(p.flag?'<span class="flag" style="position:absolute;top:-10px;left:16px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff;border-radius:20px;padding:3px 11px">'+p.flag+'</span>':'')+'\
     <h4>'+p.label+'</h4>\
@@ -299,9 +317,20 @@ document.body.addEventListener('click',function(e){
   var b=e.target.closest('button');if(!b)return;
   if(b.dataset.pack){
     var pk=PACKS.find(function(x){return x.id===b.dataset.pack});
+    if(planPounds()===0){
+      toast('🔒 Top-up packs are exclusive to plan members — pick a monthly plan above to unlock them.');
+      return;
+    }
+    var rem=topupRemaining();
+    if(pk.pounds>rem){
+      toast('Your £'+planPounds()+'/month plan allows up to £'+planPounds()+' of top-ups each month — £'+rem+' left. Upgrade your plan for a bigger allowance.');
+      return;
+    }
     var actP=function(){
-      wallet.acus+=pk.acus;SY.set('wallet',wallet);drawWallet();
-      SY.log('billing',pk.label+' purchased',fmt(pk.acus)+' ACUs added to your wallet.');
+      wallet.acus+=pk.acus;
+      wallet.topupSpent=(wallet.topupSpent||0)+pk.pounds;
+      SY.set('wallet',wallet);drawWallet();drawPacks();
+      SY.log('billing',pk.label+' purchased',fmt(pk.acus)+' ACUs added to your wallet · £'+(planPounds()-topupRemaining())+' of £'+planPounds()+' monthly top-up allowance used.');
       recordReferral(pk.pounds);
       toast('Preview purchase'+(promo?' (code '+promo+')':'')+' — '+fmt(pk.acus)+' ACUs credited. Stripe checkout takes over when billing goes live.');};
     if(window.SYBill){SYBill.checkout(pk.id,{promo:promo,email:(SY.session&&SY.session.email),ref:(SY.session&&SY.session.email),activate:actP})}else actP();
@@ -318,6 +347,7 @@ document.body.addEventListener('click',function(e){
       }else{delete wallet.planExpires}
       SY.set('wallet',wallet);drawWallet();
       if(pl.pounds>0)recordReferral(pl.pounds);
+      drawPacks(); // the top-up allowance follows the plan price
       SY.log('billing',pl.pounds>0?('Started '+pl.label):'Switched to Child Free',
         pl.pounds>0?(fmt(pl.acus)+' ACUs added · 30-day term, ends '+fmtDay(wallet.planExpires)+' with no auto-renewal.'):'Child Free — 100 ACUs every month.');
       toast(pl.pounds===0?'You are on Child Free — 100 ACUs every month'

@@ -257,6 +257,19 @@ export const TOPUPS = [
   { id: 'power_boost', pence: 3000, acus: 2600 },
 ] as const;
 
+/**
+ * Top-up policy — packs are a member benefit, not a subscription substitute:
+ * only accounts on an active paid plan may buy packs, and each account's
+ * monthly top-up allowance equals its plan price (£10 plan → £10 of packs
+ * per calendar month, £30 plan → £30). Enforced in the plan/top-up UIs and
+ * to be enforced server-side at Stripe checkout when billing goes live.
+ * (Tutors have no subscription product yet, so tutor packs stay open.)
+ */
+export const TOPUP_POLICY = {
+  requiresPaidPlan: true,
+  monthlyCapEqualsPlanPrice: true,
+} as const;
+
 // ------------------------------------------------------------ free tier ----
 /** Free-plan rules — commercial-model §6 (incl. resolved directive: no tutor access). */
 export const FREE_TIER = {
