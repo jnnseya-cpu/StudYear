@@ -128,7 +128,11 @@ async function hash(salt,pw){
   var buf=await crypto.subtle.digest('SHA-256',data);
   return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
 }
-function destination(role){if(role==='admin')return '../admin/';return next&&decodeURIComponent(next).indexOf('/'+role+'/')>-1?decodeURIComponent(next):'../app/'+role+'/'}
+var CONSOLE={student:'../study/',parent:'../parent/',teacher:'../teacher/',school:'../school/',tutor:'../tutor/',authority:'../authority/',admin:'../admin/'};
+function destination(role){
+  if(next){var n=decodeURIComponent(next);if(n.indexOf('/'+role+'/')>-1||n.indexOf('/study/')>-1||n.indexOf('/myschool/')>-1||n.indexOf('/account/')>-1)return n}
+  return CONSOLE[role]||'../study/';
+}
 
 // role picker
 var rolesEl=$('roles');
@@ -156,14 +160,14 @@ $('t-up').onclick=function(){setMode('up')};
 var session=store('sy-session',null);
 if(mismatch&&wantRole){
   say('You are signed in as a <b>'+(LABELS[mismatch]||mismatch)+'</b>. This area is for <b>'+(LABELS[wantRole]||wantRole)+
-      '</b> accounts only. <a href="../app/'+mismatch+'/">Go to my console</a> or sign in below with a '+
+      '</b> accounts only. <a href="'+(CONSOLE[mismatch]||'../study/')+'">Go to my console</a> or sign in below with a '+
       (LABELS[wantRole]||wantRole)+' account.','info');
 }else if(wantRole&&LABELS[wantRole]){
   if(wantRole==='admin'){say('Admin consoles are restricted. Sign in with a provisioned admin account, or create one with your ops invite code.','info')}
   else{$('title').textContent='Sign in — '+LABELS[wantRole]+' console';
        $('subtitle').textContent='This area is for '+LABELS[wantRole].toLowerCase()+' accounts. Sign in, or create a '+LABELS[wantRole].toLowerCase()+' account.'}
 }else if(session){
-  say('Signed in as <b>'+session.name+'</b> ('+(LABELS[session.role]||session.role)+'). <a href="../app/'+session.role+'/">Open my console</a> or switch accounts below.','ok');
+  say('Signed in as <b>'+session.name+'</b> ('+(LABELS[session.role]||session.role)+'). <a href="'+(CONSOLE[session.role]||'../study/')+'">Open my console</a> or switch accounts below.','ok');
 }
 
 /* ---- human verification / anti-bot (preview-grade; the backend swaps in a
@@ -260,7 +264,7 @@ $('f').addEventListener('submit',async function(e){
     if(wantRole&&authed.role!==wantRole){
       save('sy-session',{name:authed.name,email:authed.email,role:authed.role,ts:new Date().toISOString()});
       say('Signed in — but this account is a <b>'+(LABELS[authed.role]||authed.role)+'</b> account, and this area needs a <b>'+
-          (LABELS[wantRole]||wantRole)+'</b> account. <a href="../app/'+authed.role+'/">Go to my console</a>','info');
+          (LABELS[wantRole]||wantRole)+'</b> account. <a href="'+(CONSOLE[authed.role]||'../study/')+'">Go to my console</a>','info');
       return;
     }
     save('sy-session',{name:authed.name,email:authed.email,role:authed.role,ts:new Date().toISOString()});
