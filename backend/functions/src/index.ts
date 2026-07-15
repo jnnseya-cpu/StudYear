@@ -279,6 +279,90 @@ export const register = onRequest({ region: 'europe-west2', cors: true }, async 
   }
 });
 
+// ----------------------------------------------------------- admin (cloud view) ----
+/** Platform administrators — the only accounts the admin endpoints serve.
+    Override with the ADMIN_EMAILS env (comma-separated). */
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? 'jnnseya@gmail.com,jnbankwa@gmail.com')
+  .toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
+async function requireAdmin(authHeader: string | undefined) {
+  const u = await requireUser(authHeader);
+  if (!u.email || !ADMIN_EMAILS.includes(u.email.toLowerCase())) throw httpError(403, 'admin only');
+  return u;
+}
+
+/**
+ * GET /adminOverview — the platform-wide truth for the Admin console:
+ * every Firebase Auth account (merged with its users/ doc), the contact
+ * inbox, recent audit events and a 30-day AI usage summary. The console
+ * merges this over its device-local view, so the admin sees every user on
+ * the platform regardless of which device they signed up on.
+ */
+export const adminOverview = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const admin = await requireAdmin(req.headers.authorization);
+    const [authUsers, userDocs, inbox, audits, usage] = await Promise.all([
+      getAuth().listUsers(1000),
+      db.collection('users').get(),
+      db.collection('contactInbox').orderBy('createdAt', 'desc').limit(200).get(),
+      db.collection('auditEvents').orderBy('createdAt', 'desc').limit(100).get(),
+      db.collection('aiUsageLogs').orderBy('createdAt', 'desc').limit(500).get(),
+    ]);
+    const docs: Record<string, FirebaseFirestore.DocumentData> = {};
+    userDocs.forEach((d) => { docs[d.id] = d.data(); });
+    const iso = (v: { toDate?: () => Date } | undefined) => v?.toDate?.()?.toISOString() ?? null;
+    await audit('ADMIN_OVERVIEW_READ', admin.uid);
+    res.json({
+      ok: true,
+      users: authUsers.users.map((u) => ({
+        uid: u.uid, email: u.email ?? null,
+        name: (docs[u.uid]?.name as string) ?? u.displayName ?? null,
+        roles: (docs[u.uid]?.roles as string[]) ?? [],
+        plan: (docs[u.uid]?.plan as string) ?? 'child_free',
+        created: u.metadata.creationTime, lastLogin: u.metadata.lastSignInTime,
+        disabled: u.disabled,
+      })),
+      inbox: inbox.docs.map((d) => ({ id: d.id, ...d.data(), createdAt: iso(d.data().createdAt) })),
+      audit: audits.docs.map((d) => ({ id: d.id, ...d.data(), createdAt: iso(d.data().createdAt) })),
+      aiUsage: usage.docs.map((d) => ({ ...d.data(), createdAt: iso(d.data().createdAt) })),
+    });
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
+/**
+ * POST /adminUserOp { op, uid, value? } — server-side account actions:
+ *   delete   — removes the Auth account, users/ doc and encrypted blobs
+ *   disable / enable — blocks or restores sign-in (bot/no-human ban)
+ *   setPlan  — server-authoritative plan change
+ * Every action is audited with the acting admin.
+ */
+export const adminUserOp = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const admin = await requireAdmin(req.headers.authorization);
+    const op = String(req.body?.op ?? '');
+    const uid = String(req.body?.uid ?? '');
+    if (!uid) throw httpError(400, 'uid required');
+    if (op === 'delete') {
+      await getAuth().deleteUser(uid).catch(() => null);
+      await db.doc(`users/${uid}`).delete().catch(() => null);
+      await db.doc(`e2eKeys/${uid}`).delete().catch(() => null);
+      const blobs = await db.collection(`e2eData/${uid}/blobs`).get();
+      const batch = db.batch(); blobs.forEach((d) => batch.delete(d.ref)); await batch.commit();
+    } else if (op === 'disable' || op === 'enable') {
+      await getAuth().updateUser(uid, { disabled: op === 'disable' });
+    } else if (op === 'setPlan') {
+      await db.doc(`users/${uid}`).set({ plan: String(req.body?.value ?? 'child_free') }, { merge: true });
+    } else throw httpError(400, 'unknown op');
+    await audit('ADMIN_USER_' + op.toUpperCase(), admin.uid, { target: uid });
+    res.json({ ok: true });
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
 // -------------------------------------------------------------- notify (email) ----
 /**
  * POST /notify { subject, text } — sends an email to the CALLER's own

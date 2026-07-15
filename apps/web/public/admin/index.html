@@ -570,7 +570,7 @@ function drawUsers(){
     var student=u.role==='student';
     return '<tr>'+
       '<td><input type="checkbox" class="u-sel" data-i="'+i+'" style="width:auto" aria-label="Select '+esc(u.name||u.email)+'"></td>'+
-      '<td><b>'+esc(u.name||'N/A')+'</b>'+(u.demo?' <span class="pill ok">demo</span>':'')+'</td>'+
+      '<td><b>'+esc(u.name||'N/A')+'</b>'+(u.demo?' <span class="pill ok">demo</span>':'')+(u.cloud?' <span class="pill role" title="Live platform account (Firebase)">☁</span>':'')+(u.disabled?' <span class="pill bad">banned</span>':'')+'</td>'+
       '<td>'+esc(mask(u.email))+'</td>'+
       '<td><span class="pill role">'+esc(u.role||'—')+'</span></td>'+
       '<td><span class="pill plan">'+esc(plan)+'</span></td>'+
@@ -580,7 +580,9 @@ function drawUsers(){
         (student?'<button class="btn ghost sm" data-act="parent" data-i="'+i+'">Link Parent</button>'+
                  '<button class="btn ghost sm" data-act="school" data-i="'+i+'">Link School</button>':'')+
         '<button class="btn ghost sm" data-act="acus" data-i="'+i+'">Adjust ACUs</button>'+
+        '<button class="btn ghost sm" data-act="grant" data-i="'+i+'">Grant free ACUs</button>'+
         '<button class="btn ghost sm" data-act="view" data-i="'+i+'">View as User</button>'+
+        (u.cloud?'<button class="btn ghost sm" data-act="ban" data-i="'+i+'">'+(u.disabled?'Unban':'Ban')+'</button>':'')+
         '<button class="btn danger sm" data-act="del" data-i="'+i+'">Delete</button>'+
       '</div></td></tr>';
   }).join('')||'<tr><td colspan="7" class="note">No accounts match.</td></tr>';
@@ -621,6 +623,15 @@ function userAct(act,u){
     $('ud-plan').innerHTML=opts.map(function(p){return '<option value="'+p+'"'+(p===w.plan?' selected':'')+'>'+esc(PLAN_NAMES[p]||p)+'</option>'}).join('');
     $('u-dialog').showModal();return;
   }
+  if(act==='grant'){
+    var wg=acct(u.email,'wallet',null)||{plan:'child_free',acus:0};
+    var g=prompt('Grant FREE ACUs to '+mask(u.email)+' (current '+(wg.acus||0)+'):','250');
+    if(g===null)return;var gn=Math.abs(parseInt(g,10));if(isNaN(gn)||!gn){toast('Enter a number like 250');return}
+    wg.acus=(wg.acus||0)+gn;acctSet(u.email,'wallet',wg);
+    var gf=acct(u.email,'activity',[]);gf.unshift({k:'billing',t:'Free ACUs granted — +'+gn+' ACUs',d:'A gift from the StudYear team. Balance now '+wg.acus+' ACUs.',when:new Date().toISOString()});
+    acctSet(u.email,'activity',gf.slice(0,100));
+    toast('+'+gn+' free ACUs granted — wallet now '+wg.acus);drawUsers();drawDashboard();return;
+  }
   if(act==='acus'){
     var w2=acct(u.email,'wallet',null)||{plan:'child_free',acus:0};
     var delta=prompt('Adjust ACUs for '+mask(u.email)+' (current '+(w2.acus||0)+'). Enter +/- amount:','+100');
@@ -654,11 +665,17 @@ function userAct(act,u){
     return;
   }
   if(act==='del'){
-    if(!confirm('Delete '+(u.name||mask(u.email))+' and ALL their data on this workspace? This cannot be undone.'))return;
+    if(!confirm('Delete '+(u.name||mask(u.email))+' and ALL their data'+(u.cloud?' — INCLUDING their cloud account on the platform':' on this workspace')+'? This cannot be undone.'))return;
     save('sy-users',users().filter(function(x){return !(x.email===u.email&&x.role===u.role)}));
     var kill=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('sy-u:'+u.email+':')===0)kill.push(k)}
     kill.forEach(function(k){localStorage.removeItem(k)});
-    toast('Account deleted');drawUsers();drawDashboard();return;
+    if(u.cloud&&u.uid&&window.cloudUserOp)cloudUserOp('delete',u.uid,null,function(){drawUsers();drawDashboard()});
+    toast('Account deleted'+(u.cloud?' (cloud removal running)':''));drawUsers();drawDashboard();return;
+  }
+  if(act==='ban'){
+    if(!u.cloud||!u.uid){toast('Ban applies to cloud accounts');return}
+    cloudUserOp(u.disabled?'enable':'disable',u.uid,null,function(){u.disabled=!u.disabled;drawUsers()});
+    return;
   }
 }
 $('ud-cancel').onclick=function(){$('u-dialog').close()};
@@ -1354,6 +1371,71 @@ function drawFraud(){
 function drawAll(){drawDashboard();drawUsers();drawTutors();drawSchools();drawSupport();drawInbox();drawContent();drawGrowth();drawRevenue();drawAI();drawAnalytics();drawSettings();drawFraud()}
 drawAll();
 show(location.hash.replace('#','')||'dashboard');
+
+/* ---------- cloud source of truth ----------
+   The console must show EVERY user on the platform, not just this device.
+   When the backend is live and this admin is signed in to the cloud, pull
+   /adminOverview (Firebase Auth accounts + users docs + contact inbox +
+   audit + AI usage) and merge it over the local view. Cloud rows carry a
+   ☁ marker; deletes/disables on them run server-side via /adminUserOp. */
+window.CLOUD=null;
+function cloudApi(){try{return ((JSON.parse(localStorage.getItem('sy-cloud-config'))||{}).apiBase||'').replace(/\/$/,'')}catch(e){return ''}}
+window.cloudUserOp=function(op,uid,value,done){
+  if(!window.SYCloud||!cloudApi())return;
+  SYCloud.token(SY.session.email).then(function(tk){
+    if(!tk){toast('Sign in again to act on cloud accounts');return}
+    return fetch(cloudApi()+'/adminUserOp',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+tk},
+      body:JSON.stringify({op:op,uid:uid,value:value})})
+      .then(function(r){return r.json()}).then(function(j){
+        toast(j.ok?('Cloud account '+op+' done'):('Cloud: '+(j.error||'failed')));
+        if(j.ok&&done)done();
+      });
+  }).catch(function(){toast('Cloud unreachable')});
+};
+(function cloudPull(){
+  if(!window.SYCloud||!cloudApi()){setTimeout(cloudPull,1500);return}
+  SYCloud.token(SY.session.email).then(function(tk){
+    if(!tk)return; /* admin not signed in to Firebase Auth (or mirror off) */
+    return fetch(cloudApi()+'/adminOverview',{headers:{Authorization:'Bearer '+tk}})
+      .then(function(r){return r.json()}).then(function(j){
+        if(!j||!j.ok)return;
+        window.CLOUD=j;
+        /* merge platform accounts into the registry (never duplicating) */
+        var us=store('sy-users',[]);var added=0;
+        (j.users||[]).forEach(function(cu){
+          if(!cu.email)return;
+          var roles=(cu.roles&&cu.roles.length)?cu.roles:['student'];
+          roles.forEach(function(role){
+            if(!us.some(function(x){return x.email===cu.email&&x.role===role})){
+              us.push({name:cu.name||cu.email.split('@')[0],email:cu.email,role:role,
+                cloud:true,uid:cu.uid,created:cu.created,plan:cu.plan,disabled:cu.disabled});added++;
+            }else{us.forEach(function(x){if(x.email===cu.email&&x.role===role){x.cloud=true;x.uid=cu.uid;x.disabled=cu.disabled}})}
+          });
+        });
+        save('sy-users',us);
+        /* merge the platform contact inbox */
+        var inbox=store('sy-inbox',[]);
+        (j.inbox||[]).forEach(function(m){
+          if(!inbox.some(function(x){return x.when===m.createdAt&&x.email===m.email&&x.body===m.body}))
+            inbox.push({from:m.from,email:m.email,type:m.type||'support',body:m.body,
+              status:m.status||'NEW',when:m.createdAt||new Date().toISOString(),cloud:true});
+        });
+        inbox.sort(function(a,b){return new Date(b.when)-new Date(a.when)});
+        save('sy-inbox',inbox.slice(0,300));
+        /* merge server AI usage into the local log for the cost panels */
+        var ulog=store('sy-ai-usage',[]);
+        (j.aiUsage||[]).forEach(function(r){
+          if(!ulog.some(function(x){return x.when===r.createdAt&&x.model===r.model}))
+            ulog.push({provider:r.provider,model:r.model,ms:r.ms,ok:r.ok,email:r.ownerId,
+              gbp:(r.outChars||0)/4000*0.0025*0.79,when:r.createdAt||new Date().toISOString()});
+        });
+        save('sy-ai-usage',ulog.slice(0,1000));
+        drawAll();
+        toast('☁ Platform sync: '+((j.users||[]).length)+' account(s), '+((j.inbox||[]).length)+' message(s) from the cloud'+(added?(' — '+added+' new'):''));
+      });
+  }).catch(function(){});
+})();
 })();
 </script>
 </body></html>

@@ -128,7 +128,7 @@ async function hash(salt,pw){
   var buf=await crypto.subtle.digest('SHA-256',data);
   return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
 }
-function destination(role){return next&&decodeURIComponent(next).indexOf('/'+role+'/')>-1?decodeURIComponent(next):'../app/'+role+'/'}
+function destination(role){if(role==='admin')return '../admin/';return next&&decodeURIComponent(next).indexOf('/'+role+'/')>-1?decodeURIComponent(next):'../app/'+role+'/'}
 
 // role picker
 var rolesEl=$('roles');

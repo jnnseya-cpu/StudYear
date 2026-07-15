@@ -107,7 +107,7 @@
 try{var ses=JSON.parse(localStorage.getItem('sy-session'));
 var sw=new URLSearchParams(location.search).get('switch')==='1';
 if(!sw&&ses&&['student','parent','teacher','school','tutor'].indexOf(ses.role)>-1)location.replace(ses.role+'/');
-else if(!sw&&ses&&ses.role==='admin')location.replace('../app/admin/');}catch(e){}
+else if(!sw&&ses&&ses.role==='admin')location.replace('../admin/');}catch(e){}
 var go=function(){var h=location.hash.replace('#','');
 if(['student','parent','teacher','school','tutor'].indexOf(h)>-1)location.replace(h+'/');};
 go();addEventListener('hashchange',go);})();
