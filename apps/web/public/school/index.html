@@ -291,6 +291,25 @@ if(!code){code=(Math.random().toString(36).slice(2,10)).toUpperCase();SY.set('sc
 SY.schoolSet(code,'name',schoolName); SY.schoolSet(code,'admin',S.email);
 $('verif').textContent=(profile.verified?'verified':'setup in progress');
 
+/* partner-approval gate — set from Admin → School Management */
+(function(){
+  if(SY.schoolGet(code,'rejected',false)){
+    document.body.innerHTML='<div style="max-width:560px;margin:18vh auto;padding:34px;text-align:center;'+
+      'border:1px solid rgba(230,103,103,.4);border-radius:16px;background:rgba(11,20,40,.9);font-family:sans-serif;color:#EDF1F8">'+
+      '<h1 style="font-family:Georgia,serif;font-weight:500">Partner account not approved</h1>'+
+      '<p style="color:#AAB6CC">This school partner account has been declined or suspended by the StudYear team. '+
+      'If you believe this is a mistake, contact us at <a href="mailto:contact@studyear.com" style="color:#8FC2EC">contact@studyear.com</a>.</p></div>';
+    throw new Error('school account rejected');
+  }
+  if(!SY.schoolGet(code,'verified',false)){
+    var b=document.createElement('div');
+    b.style.cssText='position:sticky;top:0;z-index:60;padding:9px 16px;text-align:center;font-size:13px;'+
+      'background:linear-gradient(90deg,rgba(217,174,85,.16),rgba(217,174,85,.08));border-bottom:1px solid rgba(217,174,85,.4);color:#F2CE7B';
+    b.textContent='⏳ Partner review: your school account is pending approval — everything works meanwhile, and our team usually approves within one working day.';
+    document.body.prepend(b);
+  }
+})();
+
 var roster=SY.schoolGet(code,'roster',[]);
 var staff=SY.schoolGet(code,'staff',[]);
 var interventions=SY.schoolGet(code,'interventions',[]);

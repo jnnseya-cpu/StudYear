@@ -30,6 +30,16 @@ function httpError(status: number, message: string) {
   return e;
 }
 
+/** Bot-pattern text heuristic shared with the browser filters. */
+function looksGibberish(s: string): boolean {
+  const t = String(s ?? '').trim();
+  if (!t) return true;
+  const words = t.split(/\s+/);
+  const weird = words.filter((w) =>
+    (w.length >= 12 && !/[aeiou]/i.test(w)) || /[a-z][A-Z][a-z][A-Z]/.test(w) || /[bcdfghjklmnpqrstvwxz]{6,}/i.test(w)).length;
+  return weird >= Math.max(1, Math.ceil(words.length * 0.5));
+}
+
 /** Append-only audit trail (go-live architecture §18). Readable by platform
     admins only (firestore.rules); failures never break the user action. */
 function audit(action: string, actorId: string, detail: Record<string, unknown> = {}) {
@@ -197,6 +207,13 @@ export const contact = onRequest({ region: 'europe-west2', cors: true }, async (
     const words = msg.split(/\s+/);
     const weird = words.filter((w) => (w.length >= 12 && !/[aeiou]/i.test(w)) || /[bcdfghjklmnpqrstvwxz]{6,}/i.test(w)).length;
     if (weird >= Math.max(1, Math.ceil(words.length * 0.5))) throw httpError(400, 'flagged as automated');
+    if ((msg.match(/https?:\/\//gi) ?? []).length >= 2) throw httpError(400, 'flagged as automated'); // link-stuffing
+    if (looksGibberish(from)) throw httpError(400, 'flagged as automated'); // bot-pattern sender names
+    // throttle: max 3 messages per sender address per hour
+    const hourAgo = new Date(Date.now() - 3600_000);
+    const recent = await db.collection('contactInbox')
+      .where('email', '==', email).where('createdAt', '>', hourAgo).get();
+    if (recent.size >= 3) throw httpError(429, 'too many messages — please wait before sending more');
     await db.collection('contactInbox').add({
       from, email, type: String(b.type ?? 'support'), body: msg, status: 'NEW',
       createdAt: FieldValue.serverTimestamp(),

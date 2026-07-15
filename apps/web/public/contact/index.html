@@ -114,6 +114,7 @@ function looksBot(s){
     if(/[a-z][A-Z][a-z][A-Z]/.test(w))weird++;
     if(/[bcdfghjklmnpqrstvwxz]{6,}/i.test(w))weird++;
   });
+  if((s.match(/https?:\/\//gi)||[]).length>=2)return true; /* link-stuffing = bot */
   return weird>=Math.max(1,Math.ceil(words.length*0.5));
 }
 $('cf-send').onclick=function(){
@@ -124,6 +125,11 @@ $('cf-send').onclick=function(){
   if(!$('cf-human').checked){say('Please confirm you are a human to continue.',true);return}
   if(parseInt($('cf-a').value,10)!==chal){newChal();$('cf-a').value='';say('Human check failed — please answer the new question.',true);return}
   if(looksBot(name)||looksBot(msg)){say('Your message was flagged by our spam filter — please write it in plain language or email us directly.',true);return}
+  /* rate limit: one message per 3 minutes per browser */
+  try{var last=+localStorage.getItem('sy-contact-last')||0;
+    if(Date.now()-last<180000){say('You just sent a message — please wait a couple of minutes before sending another.',true);return}
+    localStorage.setItem('sy-contact-last',String(Date.now()));
+  }catch(e){}
   var typ=$('cf-type').value;
   try{
     var inbox=JSON.parse(localStorage.getItem('sy-inbox'))||[];

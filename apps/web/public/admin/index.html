@@ -139,6 +139,7 @@
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
       <input id="u-search" placeholder="Search name or email…" style="min-width:220px">
       <select id="u-role"><option value="">All roles</option><option>student</option><option>parent</option><option>teacher</option><option>tutor</option><option>school</option><option>authority</option><option>admin</option></select>
+      <button class="btn ghost" id="u-clean" title="Removes duplicate rows, test/demo-domain accounts and bot-pattern names. Real users are never touched.">🧹 Clean test &amp; duplicate data</button>
       <span class="note" style="align-self:center" id="u-count"></span>
     </div>
     <div style="overflow-x:auto"><table id="u-table">
@@ -184,11 +185,15 @@
       <label class="f">Target user — search by name or email</label>
       <input id="sup-search" placeholder="Search by name or email…" style="width:100%">
       <label class="f" style="margin-top:8px">Account</label><select id="sup-user" style="width:100%"></select>
+      <label class="f" style="margin-top:8px">Account ID — filled when you pick a user, or paste an email directly</label>
+      <input id="sup-uid" placeholder="user@example.com" style="width:100%">
       <label class="f" style="margin-top:8px">Reason for Session</label>
       <textarea id="sup-reason" rows="2" placeholder="e.g. 'Investigating user report of missing study plan…'" style="width:100%"></textarea>
       <div style="margin-top:10px"><button class="btn" id="sup-view">Start View as User Session</button></div></div>
     <div class="card c6"><h3>Wallet inspector</h3><div class="sub">Plan, balance and last billing events for the selected account</div>
       <div id="sup-wallet" class="note">Select an account on the left.</div></div>
+    <div class="card c12"><h3>Open tickets</h3><div class="sub">Live from the contact inbox — support &amp; billing enquiries that still need an answer</div>
+      <div id="sup-tickets"></div></div>
     <div class="card c12"><h3>Support session log</h3><div class="sub">Every impersonation session with its reason — most recent first</div>
       <div id="sup-log"></div></div>
   </div>
@@ -214,7 +219,8 @@
       <div style="overflow-x:auto"><table id="inbox-table"><thead><tr><th>Date</th><th>From</th><th>Type</th><th>Message</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
       <div class="note" id="inbox-empty" style="display:none">No messages yet — the public contact form posts straight into this inbox.</div>
     </div>
-    <div class="card c12"><h3>Spam quarantine</h3><div class="sub">Messages the bot filter would have blocked — kept for audit, never shown as live enquiries</div>
+    <div class="card c12"><h3>Spam quarantine</h3><div class="sub">Messages the bot filter blocked — kept for audit, never shown as live enquiries</div>
+      <div style="margin:6px 0"><button class="btn danger sm" id="spam-purge">Empty quarantine</button></div>
       <div id="spam-list"></div></div>
   </div>
 </section>
@@ -448,7 +454,8 @@ function schools(){
   for(i=0;i<localStorage.length;i++){k=localStorage.key(i);m=k&&k.match(/^sy-school:([^:]+):name$/);
     if(m)out[m[1]]={code:m[1],name:store(k,''),roster:store('sy-school:'+m[1]+':roster',[]),
       staff:store('sy-school:'+m[1]+':staff',[]),acu:store('sy-school:'+m[1]+':acu',{balance:0}),
-      verified:store('sy-school:'+m[1]+':verified',false)};}
+      verified:store('sy-school:'+m[1]+':verified',false),
+      rejected:store('sy-school:'+m[1]+':rejected',false)};}
   return Object.keys(out).map(function(c){return out[c]});
 }
 function allActivity(){
@@ -480,8 +487,10 @@ function drawDashboard(){
   var us=uniqUsers();
   var students=us.filter(function(u){return u.role==='student'});
   $('k-students').textContent=students.length;
+  /* honest number: accounts with real activity in the last 30 days — no
+     flattering fallback to the total */
   var active=us.filter(function(u){return (acct(u.email,'activity',[])||[]).some(function(a){return within(a.when,30)})}).length;
-  $('k-active').textContent=active||us.length;
+  $('k-active').textContent=active;
   var risk=0,sponsored=0;
   students.forEach(function(u){
     var d=(acct(u.email,'diagnostics',[])||[])[0];if(d&&String(d.risk).toUpperCase()==='HIGH')risk++;
@@ -676,6 +685,37 @@ $('imp-export').onclick=function(){
   toast('Credentials downloaded — send each user their invite');
 };
 
+/* ---------- data hygiene: remove test fixtures, duplicates & bot names ----------
+   Real customer accounts are never auto-deleted — only test/demo domains,
+   exact duplicates (same email+role) and gibberish bot-pattern names.
+   Anything else the admin removes individually with the Delete action. */
+$('u-clean').onclick=function(){
+  var TESTDOM=/@(local\.test|t\.test|e2e\.test|demo\.studyear|example\.(com|org|net|co\.uk))$/i;
+  function botName(s){s=String(s||'').trim();if(!s)return false;
+    return (s.length>=14&&!/[aeiou]/i.test(s))||/[bcdfghjklmnpqrstvwxz]{7,}/i.test(s)||/(.)\1{5,}/.test(s)}
+  var all=users(),seen={},keep=[],removed=[];
+  all.forEach(function(u){
+    var email=(u.email||'').toLowerCase();
+    if(!email){removed.push(u);return}
+    if(TESTDOM.test(email)){removed.push(u);return}
+    if(botName(u.name)&&botName(email.split('@')[0])){removed.push(u);return}
+    var k=email+'|'+(u.role||'');
+    if(seen[k]){removed.push(u);return}
+    seen[k]=1;keep.push(u);
+  });
+  if(!removed.length){alert('Nothing to clean — no test accounts, duplicates or bot patterns found.');return}
+  if(!confirm('Remove '+removed.length+' row(s)?\n\n'+removed.slice(0,12).map(function(u){return '• '+(u.name||'?')+' <'+u.email+'> ('+u.role+')'}).join('\n')+(removed.length>12?'\n…and '+(removed.length-12)+' more':'')+'\n\nReal customer accounts are kept. This cannot be undone.'))return;
+  save('sy-users',keep);
+  /* sweep the same test domains out of tutor marketplace profiles + statuses */
+  save('sy-tutors',store('sy-tutors',[]).filter(function(t){return !TESTDOM.test(String(t.email||''))}));
+  var st=store('sy-tutor-status',{});Object.keys(st).forEach(function(id){if(TESTDOM.test(id))delete st[id]});save('sy-tutor-status',st);
+  var hlog=store('sy-support-log',[]);
+  hlog.unshift({admin:SY.session.email,target:'data-hygiene',role:'—',reason:'Removed '+removed.length+' test/duplicate/bot rows',when:new Date().toISOString()});
+  save('sy-support-log',hlog.slice(0,100));
+  drawUsers();drawDashboard();try{drawTutors()}catch(e){}
+  alert(removed.length+' row(s) removed. Dashboard numbers now reflect real accounts only.');
+};
+
 /* ---------- tutor applications ---------- */
 function tutorApps(){
   var reg=store('sy-tutors',[]);var st=store('sy-tutor-status',{});
@@ -730,14 +770,16 @@ function drawSchools(){
     return '<tr><td><b>'+esc(s.name)+'</b></td><td>'+esc(s.code)+'</td>'+
       '<td>'+s.roster.length+'</td><td>'+s.staff.length+'</td>'+
       '<td>'+(s.acu.balance||0).toLocaleString()+'</td>'+
-      '<td><span class="pill '+(s.verified?'ok':'warn')+'">'+(s.verified?'approved':'pending')+'</span></td>'+
+      '<td><span class="pill '+(s.rejected?'bad':s.verified?'ok':'warn')+'">'+(s.rejected?'rejected':s.verified?'approved':'pending')+'</span></td>'+
       '<td><div class="acts">'+
       '<button class="btn ghost sm" data-act="verify" data-i="'+i+'">'+(s.verified?'Revoke':'Approve')+'</button>'+
+      '<button class="btn danger sm" data-act="reject" data-i="'+i+'">'+(s.rejected?'Un-reject':'Reject')+'</button>'+
       '<button class="btn ghost sm" data-act="pool" data-i="'+i+'">Credit pool</button></div></td></tr>';
   }).join('');
   tb.querySelectorAll('button').forEach(function(b){b.onclick=function(){
     var s=schools()[+b.dataset.i];if(!s)return;
-    if(b.dataset.act==='verify'){save('sy-school:'+s.code+':verified',!s.verified);toast(s.verified?'Approval revoked':'School approved');drawSchools();drawDashboard();}
+    if(b.dataset.act==='verify'){save('sy-school:'+s.code+':verified',!s.verified);if(!s.verified)save('sy-school:'+s.code+':rejected',false);toast(s.verified?'Approval revoked':'School approved');drawSchools();drawDashboard();}
+    else if(b.dataset.act==='reject'){save('sy-school:'+s.code+':rejected',!s.rejected);if(!s.rejected)save('sy-school:'+s.code+':verified',false);toast(s.rejected?'Rejection lifted':'School rejected — their console is blocked');drawSchools();drawDashboard();}
     else{var n=parseInt(prompt('Credit how many ACUs to '+s.name+' (pool '+(s.acu.balance||0)+')?','1000'),10);
       if(isNaN(n))return;var pool=store('sy-school:'+s.code+':acu',{balance:0,burn:[]});pool.balance=Math.max(0,(pool.balance||0)+n);
       save('sy-school:'+s.code+':acu',pool);toast('Pool now '+pool.balance.toLocaleString()+' ACUs');drawSchools();}
@@ -768,10 +810,32 @@ function drawSupport(){
     var reason=$('sup-reason').value.trim();
     if(reason.length<8){toast('Add a reason for the session — all impersonations are logged');$('sup-reason').focus();return}
     var log=store('sy-support-log',[]);
-    log.unshift({admin:SY.session.email,target:u.email,role:u.role,reason:reason,when:new Date().toISOString()});
+    log.unshift({admin:SY.session.email,target:($('sup-uid').value.trim()||u.email),role:u.role,reason:reason,when:new Date().toISOString()});
     save('sy-support-log',log.slice(0,100));
     userAct('view',u);
   };
+  $('sup-user').addEventListener('change',function(){
+    var u=uniqUsers().filter(function(x){return x.role!=='admin'})[+this.value||0];
+    if(u)$('sup-uid').value=u.email;
+  });
+  /* open tickets — live from the contact inbox, no fixtures */
+  function drawTickets(){
+    var msgs=store('sy-inbox',[]).map(function(m,i){m._i=i;return m})
+      .filter(function(m){return !(looksBot(m.from)||looksBot(m.body))});
+    var open=msgs.filter(function(m){return (m.status||'NEW')!=='REPLIED'});
+    $('sup-tickets').innerHTML=open.length?open.map(function(m){
+      return '<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(170,182,204,.08)">'+
+        '<span class="pill warn">T-'+(1000+m._i)+'</span>'+
+        '<div style="flex:1"><b style="color:var(--ink)">'+esc(String(m.body||'').slice(0,70))+(String(m.body||'').length>70?'…':'')+'</b>'+
+        '<div class="note">'+esc(m.from||'')+' · '+esc(mask(m.email||''))+' · '+esc(m.type||'support')+' · '+esc(fmtDate(m.when))+'</div></div>'+
+        '<button class="btn ghost sm" data-tres="'+m._i+'">Mark resolved</button></div>';
+    }).join(''):'<div class="note">No open tickets — every enquiry has been answered.</div>';
+    $('sup-tickets').querySelectorAll('button[data-tres]').forEach(function(b){b.onclick=function(){
+      var all=store('sy-inbox',[]);if(all[+b.dataset.tres])all[+b.dataset.tres].status='REPLIED';
+      save('sy-inbox',all);drawTickets();
+    }});
+  }
+  drawTickets();
   var log2=store('sy-support-log',[]);
   $('sup-log').innerHTML=log2.length?log2.slice(0,10).map(function(l){
     return '<div style="padding:7px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:12.5px">'+
@@ -789,6 +853,7 @@ function looksBot(s){
     if(/[a-z][A-Z][a-z][A-Z]/.test(w))weird++;
     if(/[bcdfghjklmnpqrstvwxz]{6,}/i.test(w))weird++;
   });
+  if((s.match(/https?:\/\//gi)||[]).length>=2)return true; /* link-stuffing = bot */
   return weird>=Math.max(1,Math.ceil(words.length*0.5));
 }
 function drawInbox(){
@@ -828,7 +893,14 @@ function drawInbox(){
     return '<div style="padding:7px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:12.5px"><span class="pill bad">blocked</span> '+
       '<b style="color:var(--ink)">'+esc(String(m.from||'').slice(0,30))+'</b> · '+esc(mask(m.email||''))+' · '+esc(fmtDate(m.when))+
       '<div class="note">'+esc(String(m.body||'').slice(0,80))+'</div></div>';
-  }).join(''):'<div class="note">Quarantine is empty — the public form\'s honeypot, human check, time-trap and gibberish filter stop bots before they land here.</div>';
+  }).join(''):'<div class="note">Quarantine is empty — the public form\'s honeypot, human check, time-trap, link filter and gibberish filter stop bots before they land here.</div>';
+  $('spam-purge').style.display=spam.length?'inline-flex':'none';
+  $('spam-purge').textContent='Empty quarantine ('+spam.length+')';
+  $('spam-purge').onclick=function(){
+    if(!confirm('Permanently delete '+spam.length+' quarantined bot message(s)?'))return;
+    save('sy-inbox',store('sy-inbox',[]).filter(function(m){return !(looksBot(m.from)||looksBot(m.body))}));
+    drawInbox();
+  };
 }
 $('mail-send').onclick=function(){
   var to=$('mail-to').value.trim()||'contact@studyear.com';
