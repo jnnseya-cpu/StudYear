@@ -53,9 +53,15 @@ jobs:
             done
           } > backend/functions/.env || true
           echo "provisioned $(grep -c '=' backend/functions/.env || echo 0) key(s)"
-      - name: Deploy functions + Firestore rules/indexes + Storage rules
+      - name: Deploy functions + Firestore rules/indexes
         working-directory: backend
-        run: npx firebase-tools deploy --project ${{ inputs.target }} --non-interactive --force
+        run: npx firebase-tools deploy --only functions,firestore --project ${{ inputs.target }} --non-interactive --force
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+      - name: Deploy Storage rules (best-effort — needs the default bucket + IAM)
+        working-directory: backend
+        continue-on-error: true
+        run: npx firebase-tools deploy --only storage --project ${{ inputs.target }} --non-interactive --force
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
       - name: Smoke-test the deployment
