@@ -16,11 +16,16 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_BASE_PATH: basePath,
   },
+  // BOTH targets: the consoles are static pages under public/ that navigate
+  // with RELATIVE links (students/, people/, gateway/ …). Those only resolve
+  // when the browser URL ends in a slash — /school/ + students/ → /school/students/.
+  // Without this, Vercel serves /school (no slash) and every sidebar link
+  // resolves a level too high (→ /students/ → 404 on the live domain).
+  trailingSlash: true,
   ...(isExport
     ? {
         output: 'export',
         basePath,
-        trailingSlash: true,
       }
     : {
         async rewrites() {

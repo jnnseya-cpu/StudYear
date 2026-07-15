@@ -16,6 +16,19 @@
  */
 (function () {
   'use strict';
+  // URL normalisation MUST run before anything else: hosts that serve console
+  // pages without the trailing slash (/teacher instead of /teacher/) silently
+  // break every RELATIVE reference on the page — <script src="nav.js"> loads
+  // /nav.js (404, so the console renders unstyled) and sidebar links resolve a
+  // level too high (students/ → /students/, the "hasn't shipped yet" 404s).
+  // replaceState updates document.baseURI without a navigation, so everything
+  // parsed after this script resolves correctly. No-op when the slash is there.
+  try {
+    var _p = location.pathname;
+    if (!/\/$/.test(_p) && !/\.[^\/]+$/.test(_p)) {
+      history.replaceState(null, '', _p + '/' + location.search + location.hash);
+    }
+  } catch (e) {}
   var el = document.currentScript;
   var role = el.getAttribute('data-role');
   var base = el.getAttribute('data-base') || '../../';
