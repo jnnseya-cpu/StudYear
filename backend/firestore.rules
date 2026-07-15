@@ -99,6 +99,35 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ------------- E2E-encrypted personal data (Functions only) -------------
+    // Clients sync exclusively through the /sync and /syncPull endpoints,
+    // which verify ID tokens and enforce the ciphertext-only contract.
+    // No direct client path exists — not even for the owner.
+    match /e2eKeys/{userId} { allow read, write: if false; }
+    match /e2eData/{userId}/blobs/{blobId} { allow read, write: if false; }
+
+    // ------------- server-managed operational collections -------------
+    match /aiUsageLogs/{logId} {
+      allow read: if isPlatformAdmin();
+      allow write: if false; // written by the aiProxy Function
+    }
+    match /contactInbox/{msgId} {
+      allow read: if isPlatformAdmin();
+      allow write: if false; // written by the contact Function (bot-screened)
+    }
+    match /discountCodes/{code} {
+      allow read: if isPlatformAdmin(); // redemption validates server-side in /redeemCode
+      allow write: if false;            // authored via Admin console → backend only
+    }
+    match /subscriptions/{ownerId} {
+      allow read: if signedIn() && (uid() == ownerId || isGuardianOf(ownerId) || isPlatformAdmin());
+      allow write: if false; // plan state changes only via billing webhooks/Functions
+    }
+    match /intelligenceBriefings/{ownerId} {
+      allow read: if signedIn() && (uid() == ownerId || isPlatformAdmin());
+      allow write: if false; // generated server-side
+    }
+
     match /{document=**} { allow read, write: if false; } // deny by default
   }
 }
