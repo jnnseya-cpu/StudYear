@@ -96,6 +96,18 @@
   function canE2E(email) {
     return !!(window.SYE2E && !s.demo && window.SYE2E.enabled(email || s.email));
   }
+  /** cloud.js is injected by guard with defer, so window.SYCloud may not exist
+      yet when a page's load-time code runs. Resolve once it appears (or null
+      after ~10s) so link publish/resolve never silently no-ops on first load. */
+  function cloudReady() {
+    if (window.SYCloud) return Promise.resolve(window.SYCloud);
+    return new Promise(function (res) {
+      var n = 0, t = setInterval(function () {
+        if (window.SYCloud) { clearInterval(t); res(window.SYCloud); }
+        else if (++n > 100) { clearInterval(t); res(null); }
+      }, 100);
+    });
+  }
   function readStored(fullKey, ownerEmail, d) {
     var raw = localStorage.getItem(fullKey);
     if (raw === null || raw === undefined) return d;
@@ -204,7 +216,8 @@
         different account/device can resolve it too. */
     publishCode: function (code, kind) {
       try { localStorage.setItem('sy-code:' + code, s.email); } catch (e) {}
-      try { if (window.SYCloud && !s.demo) SYCloud.dirPublish(String(code), kind || 'account', s.email); } catch (e) {}
+      if (s.demo) return;
+      cloudReady().then(function (c) { if (c) { try { c.dirPublish(String(code), kind || 'account', s.email); } catch (e) {} } });
     },
     /** resolve a share code to an account email (or null) — same-device only */
     resolveCode: function (code) { try { return localStorage.getItem('sy-code:' + String(code).trim()); } catch (e) { return null; } },
@@ -214,32 +227,38 @@
     resolveCodeAsync: function (code) {
       var c = String(code).trim(), local = this.resolveCode(c), self = this;
       var loc = local ? { email: local, name: self.accountName(local), uid: null, kind: 'account', local: true } : null;
-      if (!window.SYCloud || s.demo) return Promise.resolve(loc);
-      return SYCloud.dirResolve(c, s.email).then(function (r) {
-        if (r && r.email) return { email: r.email, name: r.name || self.accountName(r.email), uid: r.uid || null, kind: r.kind || 'account' };
-        return loc;
-      }).catch(function () { return loc; });
+      if (s.demo) return Promise.resolve(loc);
+      return cloudReady().then(function (cl) {
+        if (!cl) return loc;
+        return cl.dirResolve(c, s.email).then(function (r) {
+          if (r && r.email) return { email: r.email, name: r.name || self.accountName(r.email), uid: r.uid || null, kind: r.kind || 'account' };
+          return loc;
+        }).catch(function () { return loc; });
+      });
     },
     /** establish a link to the code's owner on the backend (both sides see it);
         resolves to the target { email, name, uid, kind } or the local fallback. */
     connectCode: function (code, relation) {
       var c = String(code).trim(), self = this;
-      if (!window.SYCloud || s.demo) return this.resolveCodeAsync(c);
-      return SYCloud.dirConnect(c, relation || 'parent', s.email).then(function (r) {
-        if (r && r.email) return { email: r.email, name: r.name || self.accountName(r.email), uid: r.uid || null, kind: r.kind || 'account' };
-        return self.resolveCodeAsync(c);
-      }).catch(function () { return self.resolveCodeAsync(c); });
+      if (s.demo) return this.resolveCodeAsync(c);
+      return cloudReady().then(function (cl) {
+        if (!cl) return self.resolveCodeAsync(c);
+        return cl.dirConnect(c, relation || 'parent', s.email).then(function (r) {
+          if (r && r.email) return { email: r.email, name: r.name || self.accountName(r.email), uid: r.uid || null, kind: r.kind || 'account' };
+          return self.resolveCodeAsync(c);
+        }).catch(function () { return self.resolveCodeAsync(c); });
+      });
     },
     /** my backend links: { inbound:[…people linked to me…], outbound:[…accounts I linked to…] } */
     myLinks: function () {
-      if (!window.SYCloud || s.demo) return Promise.resolve(null);
-      return SYCloud.dirLinks(s.email).catch(function () { return null; });
+      if (s.demo) return Promise.resolve(null);
+      return cloudReady().then(function (cl) { return cl ? cl.dirLinks(s.email).catch(function () { return null; }) : null; });
     },
     /** remove a backend link (dir = 'outbound' for accounts I linked to,
         'inbound' for people linked to me) */
     disconnectLink: function (uid, dir) {
-      if (!window.SYCloud || s.demo || !uid) return Promise.resolve(false);
-      return SYCloud.dirDisconnect(uid, dir || 'outbound', s.email).catch(function () { return false; });
+      if (s.demo || !uid) return Promise.resolve(false);
+      return cloudReady().then(function (cl) { return cl ? cl.dirDisconnect(uid, dir || 'outbound', s.email).catch(function () { return false; }) : false; });
     },
     /** name registered against an account email (from sy-users) */
     accountName: function (email) {
@@ -406,6 +425,14 @@
   // the student having to visit or re-save their profile.
   try {
     if (s.role === 'student') {
+      // publish the parent link code to the backend directory on EVERY student
+      // page (not only /account/), so a parent on another device can always
+      // resolve it — and generate one if the account never had it yet.
+      if (!s.demo) {
+        var _pc = window.SY.get('parentCode', null);
+        if (!_pc) { _pc = String(Math.floor(10000000 + Math.random() * 90000000)); window.SY.set('parentCode', _pc); }
+        window.SY.publishCode(_pc, 'account');
+      }
       var _semail = (s.email || '').toLowerCase();
       for (var _si = 0; _si < localStorage.length; _si++) {
         var _sk = localStorage.key(_si);
@@ -433,7 +460,7 @@
   // linked from elsewhere are pulled onto the same-device roster here — so
   // every school console (people, students, analytics…) sees them.
   try {
-    if ((s.role === 'school' || s.role === 'teacher') && !s.demo && window.SYCloud) {
+    if ((s.role === 'school' || s.role === 'teacher') && !s.demo) {
       var _scode = window.SY.get('schoolCode', null);
       if (_scode && s.role === 'school') window.SY.publishCode(_scode, 'school');
       window.SY.myLinks().then(function (g) {
