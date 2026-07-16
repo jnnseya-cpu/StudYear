@@ -208,7 +208,7 @@
     return null;
   }
   /* the hint tutor surfaces append to their prompts so the model knows it CAN draw */
-  var DIAGRAM_HINT=' When a picture would genuinely help the student (a graph, chart or plotted shape), include one on its own lines as a fenced block EXACTLY like:\n```diagram\n{"kind":"function","expr":"x^2 - 4","xmin":-5,"xmax":5}\n```\nSupported kinds: "function" {expr in x, xmin, xmax}; "bar" {"title","labels":[…],"values":[…]}; "pie" {"title","labels","values"}; "line" {"title","points":[[x,y],…]}. The app renders it as a real picture for the student.';
+  var DIAGRAM_HINT=' DIAGRAMS: you can render REAL pictures ONLY for numeric/graphable content — mathematical functions, bar/pie charts of numbers, and plotted (x,y) data. For anything that is not chartable (anatomy, maps, apparatus, cells, historical scenes) NEVER emit a diagram block — instead give a clearly structured labelled description (numbered parts, position, function). Never reuse the sample below literally; only emit a diagram whose contents come from the current question. To draw, include a fenced block in this format:\n```diagram\n{"kind":"function","expr":"x^2 - 4","xmin":-5,"xmax":5}\n```\nSupported kinds: "function" {expr in x, xmin, xmax}; "bar" {"title","labels":[…],"values":[…]}; "pie" {"title","labels","values"}; "line" {"title","points":[[x,y],…]}. The app renders it as a real picture for the student.';
   function render(md){
     var esc=function(s){return String(s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})};
     /* extract ```diagram blocks first and swap in rendered SVG afterwards */

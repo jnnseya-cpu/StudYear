@@ -551,23 +551,29 @@
             <option value="star">Star graph</option><option value="wheel">Wheel graph</option><option value="path">Path graph</option>
           </optgroup>
           <optgroup label="Images">
-            <option value="image">Educational Image (from a prompt)</option>
+            <option value="image">Labelled diagram (AI writes the parts)</option>
           </optgroup>
         </select></div>
         <div><label class="f">Subject</label><select id="c-v-subj"></select></div>
         <div><label class="f">Level</label><select id="c-v-level"></select></div>
       </div>
       <div id="c-v-datawrap">
-        <label class="f" style="margin-top:10px" id="c-v-datalabel">Data — one per line: label :: value</label>
-        <textarea id="c-v-data" rows="5" placeholder="Maths :: 12&#10;English :: 9&#10;Science :: 15"></textarea>
+        <label class="f" style="margin-top:10px" id="c-v-datalabel">Add your data — no typing tricks needed</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+          <input type="text" id="c-v-lab" placeholder="Label (e.g. Maths)" style="flex:1;min-width:120px">
+          <input type="number" id="c-v-val" placeholder="Value (e.g. 12)" style="width:130px">
+          <button type="button" class="btn sm" id="c-v-add">+ Add</button>
+        </div>
+        <div id="c-v-rows" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"></div>
+        <textarea id="c-v-data" rows="4" placeholder="…or type lines here: Maths :: 12"></textarea>
       </div>
       <div id="c-v-nodewrap" style="display:none;margin-top:10px">
         <label class="f">Number of nodes (3–12)</label><input type="number" id="c-v-nodes" value="6" min="3" max="12">
       </div>
       <div id="c-v-promptwrap" style="display:none;margin-top:10px">
-        <label class="f">Prompt — describe the image or diagram</label>
-        <textarea id="c-v-prompt" rows="3" placeholder="e.g. Labelled diagram of the human heart showing the four chambers and major vessels"></textarea>
-        <div class="note">✨ Premium tool — the photoreal, ultra-detailed render attaches when the AI image backend goes live; for now a labelled study placeholder is saved.</div>
+        <label class="f">What should the diagram show?</label>
+        <textarea id="c-v-prompt" rows="3" placeholder="e.g. The human heart — four chambers and major vessels"></textarea>
+        <div class="note">The AI writes a clear labelled breakdown — every part named, where it sits and what it does — a real study diagram you can revise from.</div>
       </div>
       <div id="c-v-fnwrap" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
         <div><label class="f">Gradient (m)</label><input type="number" id="c-v-m" value="2" step="0.5"></div>
@@ -1860,6 +1866,28 @@ document.getElementById("c-v-kind").addEventListener("input",function(){
   else if(k==="histogram"){lbl.textContent="Values — one per line: range :: frequency";ta.placeholder="0-10 :: 3\n10-20 :: 7\n20-30 :: 12";}
   else{lbl.textContent="Data — one per line: label :: value";ta.placeholder="Maths :: 12\nEnglish :: 9\nScience :: 15";}
 });
+/* Visual Tools: point-and-click data rows so no student fights the ':: ' syntax */
+(function(){
+  const lab=document.getElementById("c-v-lab"),val=document.getElementById("c-v-val"),
+        rows=document.getElementById("c-v-rows"),ta=document.getElementById("c-v-data"),add=document.getElementById("c-v-add");
+  if(!add)return;
+  function syncFromRows(){
+    const items=[...rows.querySelectorAll("[data-vr]")].map(el=>el.getAttribute("data-vr"));
+    ta.value=items.join("\n");
+  }
+  function addRow(l,v){
+    if(!l)return;
+    const chip=document.createElement("span");chip.className="badge";chip.setAttribute("data-vr",l+" :: "+v);
+    chip.style.cssText="display:inline-flex;align-items:center;gap:6px";
+    chip.innerHTML=esc(l)+" · <b>"+esc(String(v))+"</b> <button type='button' style='border:none;background:none;color:var(--ink-3);cursor:pointer;font-size:14px;line-height:1;padding:0'>×</button>";
+    chip.querySelector("button").onclick=()=>{chip.remove();syncFromRows()};
+    rows.appendChild(chip);syncFromRows();
+  }
+  add.onclick=()=>{const l=lab.value.trim(),v=val.value.trim();
+    if(!l){toast("Type a label first");return}
+    addRow(l,v||"0");lab.value="";val.value="";lab.focus();};
+  val.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();add.click()}});
+})();
 document.getElementById("c-v-save").onclick=()=>{
   const title=$v("c-v-title").trim(), kind=$v("c-v-kind"), note=$v("c-v-note").trim();
   if(!title){toast("Give the visual a title");return}
@@ -1868,8 +1896,21 @@ document.getElementById("c-v-save").onclick=()=>{
   else if(kind==="geometry"){chart.shape="triangle";chart.labels=["a","b","c"];}
   else if(kind==="image"){
     const prompt=$v("c-v-prompt").trim();
-    if(prompt.length<5){toast("Describe the image you want");return}
-    chart.prompt=prompt; chart.premium=true;
+    if(prompt.length<5){toast("Say what the diagram should show");return}
+    /* produce a REAL labelled breakdown — AI when available, structured
+       fallback otherwise — and save it as readable revision notes, not a
+       fake photoreal placeholder */
+    const lvl=$v("c-v-level")||PROFILE.level||"GCSE";
+    const doSave=(body)=>saveMine({type:"Labelled Diagram",title,subj:$v("c-v-subj"),level:lvl,body},"v","Labelled diagram saved",["c-v-title","c-v-prompt","c-v-note"]);
+    if(window.SYAI&&SYAI.ready()){
+      toast("Writing your labelled diagram…");
+      SYAI.ask("You are a "+lvl+" teacher. Produce a LABELLED DIAGRAM as structured text a student can revise from. Give: a one-line overview; then a numbered list of every labelled part with its position and its function; then 2–3 exam tips. Clear headings, no images needed.","Labelled diagram of: "+prompt,{maxTokens:900})
+        .then(txt=>doSave(SYAI.render(txt)))
+        .catch(()=>doSave('<h4>'+esc(title)+'</h4><p class="note">Live AI unreachable — labelled breakdown will generate when it reconnects. Your prompt: '+esc(prompt)+'</p>'));
+      return;
+    }
+    doSave('<h4>'+esc(prompt)+'</h4><p>A labelled diagram breakdown will be written by the AI tutor — ask it: “'+esc(prompt)+'” in the AI Tutor for a full parts-and-functions list.</p>');
+    return;
   }else if(V_GRAPHKINDS.includes(kind)){
     chart.nodes=Math.max(3,Math.min(12,+$v("c-v-nodes")||6));
   }else if(kind==="coordinate"||kind==="scatter"){

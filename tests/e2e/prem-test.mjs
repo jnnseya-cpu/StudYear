@@ -33,7 +33,7 @@ ok('AR drop zone advertises pdf + limits', /25 ?MB PDF/.test(await p.locator('#
 await p.fill('#g-fc-topic','Bonding'); await p.click('#g-fc-go');
 await p.waitForTimeout(300);
 const t1=await p.evaluate(()=>document.body.innerText);
-ok('Child Free click on AI Flashcards is blocked with upgrade toast', /Premium tool — upgrade to Student Premium/.test(t1));
+ok('Child Free click on AI Flashcards is blocked with a visible unlock panel', /is a Premium tool/.test(t1) && /Unlock Premium/.test(t1));
 ok('No deck was generated for Child Free', !(await p.evaluate(()=>JSON.parse(localStorage.getItem('sy-u:t@t.test:mine')||'[]').length)));
 // Assignment Review also locked
 await p.evaluate(()=>{location.hash='#review';});await p.waitForTimeout(150);
