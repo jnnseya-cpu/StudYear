@@ -82,6 +82,14 @@ function seedStudent(email,name,opts){
      body:'<h5>Method</h5><p>Halve the x-coefficient, square it, adjust the constant. (x+p)²+q form reveals the turning point (−p, q).</p>'},
     {id:'d2',type:'Revision Notes',title:'Forces — resultant force & F=ma',subj:'Physics',level:'GCSE',mine:true,
      body:'<h5>Core idea</h5><p>Resultant force causes acceleration in its direction: F = ma. Balanced forces → constant velocity (Newton’s First Law).</p>'}]);
+  /* diagnostic history + saved careers settings: the Career Passport and
+     recovery plan demo with one tap, no setup, matched to the seeded quizzes */
+  var dg={when:iso(-4),risk:'HIGH',avg:51,list:[
+    {s:'Physics',mastery:38,target:'7'},{s:'Mathematics',mastery:45,target:'8'},
+    {s:'Chemistry',mastery:54,target:'8'},{s:'English Literature',mastery:66,target:'7'}]};
+  dg.weak=dg.list.filter(function(x){return x.mastery<60});
+  set(ns+'diagnostics',[dg]);
+  set(ns+'career',{interests:['engineering','health','tech'],locality:'Birmingham',style:'balanced',personality:'',income:''});
   set(ns+'activity',[
     {k:'lesson',t:'Interactive lesson: Quadratic Equations',d:'GCSE level — interactive lesson completed.',when:iso(0)},
     {k:'quiz',t:'Chemistry checkpoint 8',d:'86% — best score this term.',when:iso(-1)},
@@ -159,6 +167,11 @@ var ROLES=[
   loaded:function(){var ns='sy-u:authority@demo.studyear:';del(ns);
     set(ns+'profile',{name:'Westbridge Council'});
     set(ns+'authorityCode',LA);
+    /* combined-authority structure pre-loaded: WMCA's seven boroughs with the
+       demo schools already assigned, so the per-council rollups, NEET risk,
+       skills-fund and digital-inclusion cards are live on first open */
+    set(ns+'laUnits',['Birmingham','Coventry','Dudley','Sandwell','Solihull','Walsall','Wolverhampton']);
+    set(ns+'laAssign',{DEMOSCH1:'Birmingham',WBHS22:'Sandwell',STMC15:'Solihull',NPCS08:'Walsall',OAKA31:'Wolverhampton'});
     seedSchoolStore();
     del('sy-la:'+LA+':school:');
     [[SCH,'Riverside Academy (Demo)',6,61,14,89,74,0,{'University':2,'Sixth Form / College':2,'Apprenticeship':1,'Needs support':1}],

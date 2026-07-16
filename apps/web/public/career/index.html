@@ -179,8 +179,10 @@ function subjectSectors(subjNames){
 /* real RESULTS: per-subject average from this account's quiz history */
 function quizMastery(){
   var by={};(SY.get('quizzes',[])||[]).forEach(function(q){
-    if(!q||!q.subj||!(q.total>0))return;
-    (by[q.subj]=by[q.subj]||[]).push(100*q.score/q.total);
+    if(!q||!q.subj)return;
+    var v=(q.total>0)?100*q.score/q.total:(typeof q.pct==='number'?q.pct:null);
+    if(v==null)return;
+    (by[q.subj]=by[q.subj]||[]).push(v);
   });
   var out=[];for(var s in by){out.push({s:s,avg:Math.round(by[s].reduce(function(a,b){return a+b},0)/by[s].length)})}
   return out.sort(function(a,b){return b.avg-a.avg});
