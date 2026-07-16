@@ -686,7 +686,7 @@
       <div id="chat"></div>
       <div class="chips" id="chips"></div>
       <div class="chatline">
-        <input type="text" id="chat-in" placeholder="Ask a question or type a topic…">
+        <input type="text" id="chat-in" placeholder="Type your answer, a question, or a topic…">
         <button class="btn" id="chat-send">Send</button>
       </div>
     </div>
@@ -1529,7 +1529,15 @@ function saveMine(obj,sfx,msg,clearIds){
   mine.push(obj); store.set("mine",mine); addPoints(15); touchStreak();
   logEvent("resource",(obj.subj?obj.subj+" — ":"")+obj.title,(obj.level?"Level: "+obj.level+". ":"")+"Saved to your library.");
   clearIds.forEach(id=>document.getElementById(id).value="");
-  renderResults(); toast(msg+" — find it in 🔎 with the green badge (+15 pts)");
+  /* SHOW the creation, don't just say it saved: jump to Saved Resources with
+     filters cleared so the new item is on screen immediately */
+  try{
+    myOnly=true;const mc=document.getElementById("f-mine");if(mc)mc.checked=true;
+    ["f-subj","f-level","f-type","f-topic","q"].forEach(id=>{const el=document.getElementById(id);if(el)el.value=""});
+  }catch(e){}
+  renderResults(); showTab("search");
+  window.scrollTo({top:0,behavior:"smooth"});
+  toast(msg+" — here it is in your Saved Resources (+15 pts)");
 }
 document.getElementById("c-f-save").onclick=()=>{
   const title=$v("c-f-title").trim(), lines=parseLines("c-f-cards",2).map(p=>p.slice(0,2));
@@ -1955,7 +1963,11 @@ document.getElementById("gen-plan").onclick=()=>{
     if(p&&gradeNum(p.target)&&gradeNum(p.current))w+=Math.max(0,(gradeNum(p.target)-gradeNum(p.current)))*.3;
     return {s,w};
   });
-  const bag=[];weights.forEach(x=>{for(let k=0;k<Math.max(1,Math.round(x.w*2));k++)bag.push(x.s)});
+  /* INTERLEAVED bag: one session per subject per round (weighted rounds), so
+     every chosen subject appears in the first days — never one-subject weeks */
+  const pools=weights.map(x=>({s:x.s,n:Math.max(1,Math.round(x.w*2))}));
+  const bag=[];let more=true;
+  while(more){more=false;for(const p of pools){if(p.n>0){bag.push(p.s);p.n--;if(p.n>0)more=true}}}
 
   const lvl=(PROFILE.level&&PROFILE.level!=="Other")?PROFILE.level:"GCSE";
   /* per-subject rotating spec topic, so every session names a concrete lesson */
@@ -2115,20 +2127,39 @@ function paperCode(board,subj,yr,paper){
   const sc=subj.split(" ").map(w=>w[0]).join("").toUpperCase();
   return `${board.slice(0,3).toUpperCase()}/${sc}${String(yr).slice(2)}/0${paper}`;
 }
+/* REAL routes only — no fabricated paper listings. Two honest doors:
+   1) the official board archives (the actual PDFs, always current);
+   2) generate a real exam-style paper NOW with the Exam Paper Builder. */
+const PP_ARCHIVES={
+  AQA:{name:"AQA past papers & mark schemes",url:"https://www.aqa.org.uk/find-past-papers-and-mark-schemes"},
+  Edexcel:{name:"Pearson Edexcel past papers",url:"https://qualifications.pearson.com/en/support/support-topics/exams/past-papers.html"},
+  OCR:{name:"OCR past paper finder",url:"https://www.ocr.org.uk/qualifications/past-paper-finder/"},
+  WJEC:{name:"WJEC / Eduqas past papers",url:"https://www.wjec.co.uk/home/pastpapers/"},
+  SQA:{name:"SQA past papers",url:"https://www.sqa.org.uk/pastpapers/findpastpaper.htm"},
+  CCEA:{name:"CCEA past papers",url:"https://ccea.org.uk/past-papers-mark-schemes"},
+  CIE:{name:"Cambridge (CIE) past papers",url:"https://www.cambridgeinternational.org/programmes-and-qualifications/"}};
 function renderPapers(){
   const subj=document.getElementById("pp-subj").value, lvl=document.getElementById("pp-level").value;
-  const board=document.getElementById("pp-board").value, yr=document.getElementById("pp-year").value;
-  const boards=board?[board]:["AQA","Edexcel","OCR"];
-  const years=yr?[+yr]:PP_YEARS;
-  let html="";
-  years.forEach(y=>boards.forEach(b=>[1,2].forEach(p=>{
-    html+=`<div class="paper"><div class="yr">${y}</div>
-      <div class="t"><b>${subj} ${lvl} — Paper ${p}</b><div class="m">${b} · June ${y} · ${paperCode(b,subj,y,p)} · question paper + mark scheme + examiner report</div></div>
-      <button class="btn ghost sm" onclick="toast('Demo library — production build streams the PDF from the board archive')">Paper</button>
-      <button class="btn ghost sm" onclick="toast('Mark scheme opens beside the paper for self-marking')">Mark scheme</button>
-      <button class="btn sm" onclick="toast('Added to your planner as a timed past-paper session')">Add to plan</button></div>`;
-  })));
-  document.getElementById("pp-list").innerHTML=html||'<div class="empty">No papers found.</div>';
+  const board=document.getElementById("pp-board").value;
+  const boards=board&&PP_ARCHIVES[board]?[board]:["AQA","Edexcel","OCR"];
+  document.getElementById("pp-list").innerHTML=
+    `<div class="card" style="margin-bottom:10px">
+      <h3 style="font-family:var(--serif);font-weight:500;font-size:16px">📝 Build a real exam-style paper now</h3>
+      <div class="sub">The Exam Paper Builder writes a full ${esc(subj||"subject")} ${esc(lvl||"")} paper — up to 50 questions,
+        branded, with an answer sheet, exported to Word or PDF — and it counts a timed session in your progress.</div>
+      <div style="margin-top:8px"><a class="btn sm solid" href="#create" id="pp-build">Build my ${esc(subj||"")} paper →</a></div>
+    </div>
+    <div class="card">
+      <h3 style="font-family:var(--serif);font-weight:500;font-size:16px">🏛 Official board archives — the real PDFs</h3>
+      <div class="sub">Question papers, mark schemes and examiner reports, direct from the boards.</div>
+      ${boards.map(b=>`<div class="paper"><div class="t"><b>${esc(PP_ARCHIVES[b].name)}</b>
+        <div class="m">Search “${esc(subj||"your subject")} ${esc(lvl||"")}” in the archive</div></div>
+        <a class="btn sm" target="_blank" rel="noopener" href="${PP_ARCHIVES[b].url}">Open archive ↗</a></div>`).join("")}
+      <div class="paper"><div class="t"><b>Physics &amp; Maths Tutor</b><div class="m">Free community archive of papers, mark schemes &amp; topic questions</div></div>
+        <a class="btn sm" target="_blank" rel="noopener" href="https://www.physicsandmathstutor.com/">Open ↗</a></div>
+    </div>`;
+  const bb=document.getElementById("pp-build");
+  if(bb)bb.onclick=()=>{try{sessionStorage.setItem("sy-jump",JSON.stringify({h:"#exam",subj:subj,topic:""}))}catch(e){}};
 }
 ["pp-subj","pp-level","pp-board","pp-year"].forEach(id=>document.getElementById(id).addEventListener("input",renderPapers));
 
@@ -2239,6 +2270,9 @@ function tutorSystemPrompt(){
     "When a diagram is asked for, describe it with clearly labelled parts in a list (you cannot draw). "+
     "End with one quick check-question. Keep it pitched at "+lvl+" level.";
 }
+/* conversation memory: the tutor remembers the exchange, so when it asks a
+   check-question the student can simply ANSWER and be marked/coached on it */
+const chatHist=[];
 function sendChat(){
   const inp=document.getElementById("chat-in");const t=inp.value.trim();if(!t)return;
   addMsg(t,"me");inp.value="";touchStreak();addPoints(3);
@@ -2248,8 +2282,11 @@ function sendChat(){
   if(!isQuiz && !pendingQuiz && window.SYAI && SYAI.ready()){
     const wait=document.createElement("div");wait.className="msg bot";wait.innerHTML="<b>Tutor</b> · <span class='typing'>thinking…</span>";
     chat.appendChild(wait);chat.scrollTop=chat.scrollHeight;
-    SYAI.ask(tutorSystemPrompt(),t,{maxTokens:1100}).then(txt=>{
+    chatHist.push({who:"Student",t:t});
+    const convo=chatHist.slice(-10).map(m=>m.who+": "+m.t).join("\n\n");
+    SYAI.ask(tutorSystemPrompt()+" This is an ongoing conversation — when the student replies to your check-question, mark their answer (say clearly if it is right or wrong and why) before moving on.",convo,{maxTokens:1100}).then(txt=>{
       wait.innerHTML="<b>Tutor</b> · "+SYAI.render(txt||"(no response)");
+      chatHist.push({who:"Tutor",t:String(txt||"").slice(0,1200)});
       chat.scrollTop=chat.scrollHeight;addPoints(2);
     }).catch(err=>{
       wait.innerHTML="<b>Tutor</b> · <span style='color:#f0a0a0'>Couldn't reach the model ("+esc(String(err.message||err)).slice(0,80)+"). Falling back to the built-in tutor.</span>";
@@ -2778,6 +2815,11 @@ function applyJump(){
     }else if(j.h==="#papers"){
       setSelect("pp-subj",j.subj);
       toast("Past papers filtered to "+j.subj);
+    }else if(j.h==="#exam"){
+      setSelect("sx-subj",j.subj);
+      const card=document.getElementById("exam-card");
+      if(card)setTimeout(()=>card.scrollIntoView({behavior:"smooth",block:"start"}),120);
+      toast("Exam Paper Builder set to "+(j.subj||"your subject")+" — choose the length and press Build");
     }
   }catch(e){}
 }
