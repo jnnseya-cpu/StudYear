@@ -66,7 +66,10 @@
       if(!window.SYCloud)throw new Error('Cloud bridge unavailable');
       var tk=await SYCloud.token(email);
       if(!tk)throw new Error('Sign in again to use the server gateway');
-      var rp=await fetch(cc.apiBase.replace(/\/$/,'')+'/aiProxy',{method:'POST',
+      /* same-origin proxy when available (studyear.com/gapi/*) so the gateway
+         works even where cloudfunctions.net is blocked; else call it directly */
+      var gp=(window.__SYGAPI&&window.__SYGAPI.fn)?window.__SYGAPI.fn:cc.apiBase.replace(/\/$/,'');
+      var rp=await fetch(gp+'/aiProxy',{method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+tk},
         body:JSON.stringify({system:system,user:user,maxTokens:maxTokens,
           temperature:opts.temperature!=null?opts.temperature:0.6,image:opts.image||undefined})});

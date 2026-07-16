@@ -29,7 +29,33 @@
   })();
 
   var CFG = null;                       // {apiKey, projectId, storageBucket, apiBase}
-  var CFG_READY = fetchConfig();        // promise; resolves to CFG or null
+
+  /* Same-origin proxy: on the production domain (Vercel), all Google/Firebase
+     endpoints are reachable through /gapi/* rewrites, so a network that blocks
+     googleapis.com / cloudfunctions.net (school filters, etc.) but allows
+     studyear.com can still sign in, link, sync and use AI — the browser never
+     talks to a Google hostname; Vercel makes that hop server-side. Probed once;
+     falls back to calling Google directly (GitHub Pages / offline / dev). */
+  var GAPI = null;                      // { idt, sec, fn, st } base paths, or null = direct
+  function probeProxy() {
+    // Only the production domain (and Vercel previews) carry the /gapi rewrites.
+    // Elsewhere (GitHub Pages, localhost, dev, offline) call Google directly, so
+    // we never emit a stray 404 probe. On production we still probe, so a missing
+    // rewrite safely falls back to direct rather than breaking sign-in.
+    var h = location.hostname || '';
+    if (!(/(^|\.)studyear\.com$/.test(h) || /\.vercel\.app$/.test(h))) return Promise.resolve();
+    return fetch('/gapi/fn/health', { cache: 'no-store' })
+      .then(function (r) {
+        if (r.ok) { GAPI = { idt: '/gapi/idt', sec: '/gapi/sec', fn: '/gapi/fn', st: '/gapi/storage' }; try { window.__SYGAPI = GAPI; } catch (e) {} }
+      }).catch(function () {});
+  }
+  function gbase(kind) {
+    if (GAPI) return GAPI[kind];
+    return ({ idt: 'https://identitytoolkit.googleapis.com', sec: 'https://securetoken.googleapis.com',
+      fn: CFG && CFG.apiBase ? CFG.apiBase.replace(/\/$/, '') : '', st: 'https://firebasestorage.googleapis.com' })[kind];
+  }
+
+  var CFG_READY = fetchConfig().then(function (cfg) { return probeProxy().then(function () { return cfg; }); });
 
   function fetchConfig() {
     return fetch(BASE + 'firebase-config.json', { cache: 'no-cache' })
@@ -74,7 +100,7 @@
   }
 
   function idp(action, body) {
-    return fetch('https://identitytoolkit.googleapis.com/v1/accounts:' + action + '?key=' + encodeURIComponent(CFG.apiKey), {
+    return fetch(gbase('idt') + '/v1/accounts:' + action + '?key=' + encodeURIComponent(CFG.apiKey), {
       method: 'POST', keepalive: true,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
@@ -88,7 +114,7 @@
     if (!t || !t.refreshToken) return null;
     if (t.idToken && Date.now() < t.exp) return t.idToken;
     try {
-      var r = await fetch('https://securetoken.googleapis.com/v1/token?key=' + encodeURIComponent(CFG.apiKey), {
+      var r = await fetch(gbase('sec') + '/v1/token?key=' + encodeURIComponent(CFG.apiKey), {
         method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(t.refreshToken)
       });
@@ -100,7 +126,7 @@
   async function api(path, method, body, email) {
     var tk = await token(email);
     if (!tk) throw new Error('not signed in to cloud');
-    var r = await fetch(CFG.apiBase.replace(/\/$/, '') + path, {
+    var r = await fetch(gbase('fn') + path, {
       method: method || 'GET', keepalive: method === 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tk },
       body: body ? JSON.stringify(body) : undefined
@@ -217,7 +243,7 @@
     var uid = (toks()[email] || {}).uid;
     if (!tk || !uid) throw new Error('not signed in to cloud');
     var object = 'uploads/' + uid + '/' + String(name).replace(/[^\w.\-]+/g, '_');
-    var r = await fetch('https://firebasestorage.googleapis.com/v0/b/' + CFG.storageBucket +
+    var r = await fetch(gbase('st') + '/v0/b/' + CFG.storageBucket +
       '/o?uploadType=media&name=' + encodeURIComponent(object), {
       method: 'POST',
       headers: { 'Content-Type': blob.type || 'application/octet-stream', 'Authorization': 'Firebase ' + tk },
@@ -225,7 +251,7 @@
     });
     if (!r.ok) throw new Error('upload failed (' + r.status + ')');
     var j = await r.json();
-    return { path: object, url: 'https://firebasestorage.googleapis.com/v0/b/' + CFG.storageBucket +
+    return { path: object, url: gbase('st') + '/v0/b/' + CFG.storageBucket +
       '/o/' + encodeURIComponent(object) + '?alt=media&token=' + (j.downloadTokens || '') };
   }
 

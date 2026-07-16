@@ -8,5 +8,11 @@
     "deploymentEnabled": {
       "gh-pages": false
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/gapi/idt/:path*", "destination": "https://identitytoolkit.googleapis.com/:path*" },
+    { "source": "/gapi/sec/:path*", "destination": "https://securetoken.googleapis.com/:path*" },
+    { "source": "/gapi/fn/:path*", "destination": "https://europe-west2-revision-rocket-4nuir.cloudfunctions.net/:path*" },
+    { "source": "/gapi/storage/:path*", "destination": "https://firebasestorage.googleapis.com/:path*" }
+  ]
 }
