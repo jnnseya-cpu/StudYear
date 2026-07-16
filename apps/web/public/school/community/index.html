@@ -82,6 +82,7 @@ function drawMatches(){
 }
 function draw(){drawTypes();drawList();drawMatches()}
 $('add').onclick=function(){var n=$('p-name').value.trim();if(!n){toast('Enter a name');return}var l=get();l.push({name:n,type:$('p-type').value,offer:$('p-offer').value.trim()});set(l);$('p-name').value='';$('p-offer').value='';SY.log('community','Community partner added',n);toast('Partner added');draw()};
+if(!(SY.session&&SY.session.demo)){var _d=document.getElementById('demo');if(_d)_d.style.display='none'}
 $('demo').onclick=function(){var l=get();[['Jaguar Land Rover','business','Work experience'],['University of Birmingham','university','Campus visits & outreach'],['NHS Trust','employer','Healthcare taster days'],['City College','college','T-Level pathways'],['Local FC','sports','Coaching & fitness'],['Central Library','library','Study space & resources'],['Science Museum','museum','STEM trips'],['Rotary Mentors','mentor','1:1 mentoring']].forEach(function(p){if(!l.some(function(x){return x.name===p[0]}))l.push({name:p[0],type:p[1],offer:p[2],demo:true})});set(l);toast('Sample partners added');draw()};
 draw();
 })();

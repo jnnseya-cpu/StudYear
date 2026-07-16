@@ -1146,8 +1146,10 @@ function subjectsFor(lv){return (isUniLevel(lv)?UNI_SUBJECTS:SUBJECTS).slice().s
 function refillSubject(subjId,lv){
   var el=document.getElementById(subjId);if(!el)return;
   var keep=el.value,list=subjectsFor(lv);
-  el.innerHTML="";list.forEach(function(s){var o=document.createElement("option");o.textContent=s;el.appendChild(o)});
-  if(list.indexOf(keep)>=0)el.value=keep;
+  /* preserve a leading placeholder option (e.g. filter's "All subjects") */
+  var blank=(el.options[0]&&el.options[0].value==="")?el.options[0].outerHTML:"";
+  el.innerHTML=blank;list.forEach(function(s){var o=document.createElement("option");o.textContent=s;el.appendChild(o)});
+  if(keep===""||list.indexOf(keep)>=0)el.value=keep;
 }
 /* bind each subject select to its sibling level select so the catalogue
    switches to university subjects the moment a university level is picked */

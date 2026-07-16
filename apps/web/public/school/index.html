@@ -274,6 +274,7 @@
 (function(){
 'use strict';
 var SY=window.SY; if(!SY) return; var S=SY.session;
+var DEMOREF=(S&&S.demo)?'Load the demo school or link students':'Link your students';
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function gradeFor(m){return Math.max(1,Math.min(9,Math.round(1+8*m/100)))}
@@ -433,7 +434,7 @@ function avg(a){return a.length?a.reduce(function(x,y){return x+y},0)/a.length:0
 function renderLeadership(){
   var brainWrap=$('signals');
   if(!M.length){
-    if(brainWrap)brainWrap.innerHTML='<div class="empty" style="grid-column:1/-1">Load the demo school or link students to activate the AI School Brain™.</div>';
+    if(brainWrap)brainWrap.innerHTML='<div class="empty" style="grid-column:1/-1">'+DEMOREF+' to activate the AI School Brain™.</div>';
     ['rank-dept','rank-year','rank-subj','teacher-perf','destinations','ai-recs'].forEach(function(id){var e=$(id);if(e)e.innerHTML='<div class="empty">No data yet.</div>'});
     return;
   }
@@ -573,7 +574,7 @@ function genPlan(fromOfsted){
 }
 function renderImprovement(){
   var plan=planGet();var wrap=$('improve-plan');
-  if(!plan||!plan.areas.length){wrap.innerHTML='<div class="empty">'+(M.length?'Generate a plan — the AI will target your weakest areas and track them to completion.':'Load the demo school or link students, then generate an improvement plan.')+'</div>';return}
+  if(!plan||!plan.areas.length){wrap.innerHTML='<div class="empty">'+(M.length?'Generate a plan — the AI will target your weakest areas and track them to completion.':''+DEMOREF+', then generate an improvement plan.')+'</div>';return}
   var achieved=plan.areas.filter(function(a){return a.status==='achieved'}).length;
   var overall=Math.round(avg(plan.areas.map(function(a){return a.status==='achieved'?100:a.progress})));
   wrap.innerHTML='<div class="rank" style="margin-bottom:6px"><span style="flex:1;font-size:12.5px;color:var(--ink-2)">Overall completion</span><span class="bar"><i style="width:'+overall+'%;background:'+dcol(overall)+'"></i></span><span class="val">'+overall+'%</span></div>'+
@@ -625,7 +626,7 @@ function yourScores(){
 }
 var BM_DIMS=[['teach','Teaching'],['growth','Student growth'],['attend','Attendance'],['exam','Exam performance'],['progress','Progress'],['wellbeing','Wellbeing'],['dest','University destinations'],['skills','Skills'],['innov','Innovation']];
 function renderBenchmark(){
-  var wrap=$('benchmark');if(!M.length){wrap.innerHTML='<div class="empty">Load the demo school or link students to benchmark against comparable schools.</div>';return}
+  var wrap=$('benchmark');if(!M.length){wrap.innerHTML='<div class="empty">'+DEMOREF+' to benchmark against comparable schools.</div>';return}
   var scope=$('bm-scope').value;var ref=BM_REF[scope];var you=yourScores();
   var wins=0;BM_DIMS.forEach(function(d){if(you[d[0]]>=ref[d[0]])wins++});
   wrap.innerHTML='<div class="note" style="font-style:normal;margin-bottom:8px">You lead on <b style="color:var(--good)">'+wins+' of '+BM_DIMS.length+'</b> dimensions vs '+ref.label+'.</div>'+
@@ -641,7 +642,7 @@ $('bm-scope').onchange=renderBenchmark;renderBenchmark();
 
 /* ============ Live School Performance (demographic gaps + readiness) ============ */
 function renderPerformance(){
-  if(!M.length){['gaps','core-prog','readiness','engage'].forEach(function(id){var e=$(id);if(e)e.innerHTML='<div class="empty">Load the demo school or link students.</div>'});return}
+  if(!M.length){['gaps','core-prog','readiness','engage'].forEach(function(id){var e=$(id);if(e)e.innerHTML='<div class="empty">'+DEMOREF+'.</div>'});return}
   function gap(label,flag){
     var yes=M.filter(flag),no=M.filter(function(m){return !flag(m)});
     var ya=yes.length?Math.round(avg(yes.map(function(m){return m.overall}))):null;
@@ -744,7 +745,7 @@ renderMorning();
 
 /* ============ AI Equity Engine ============ */
 function renderEquity(){
-  if(!M.length){$('equity').innerHTML='<div class="empty">Load the demo school or link students to monitor equity.</div>';$('equity-recs').innerHTML='';return}
+  if(!M.length){$('equity').innerHTML='<div class="empty">'+DEMOREF+' to monitor equity.</div>';$('equity-recs').innerHTML='';return}
   var groups=[
     ['Disadvantaged',function(m){return m.disadvantaged||m.pp}],
     ['White working-class',function(m){return m.ethnicity==='White British'&&(m.disadvantaged||m.pp)}],
