@@ -150,6 +150,25 @@
   <div class="tile"><div class="v" id="t-weak">–</div><div class="k">Weakest subject</div></div>
 </div>
 
+<div class="grid" id="primary-checks-wrap" style="display:none">
+  <div class="card c12" id="primary-checks">
+    <h3>🎯 Your practice checks</h3>
+    <div class="sub">The real Year 1 and Year 4 national checks — practise them any time, with a grown-up.</div>
+    <div class="grid" style="margin-top:12px">
+      <div class="card c6" style="margin:0">
+        <h3 style="font-size:16px">📣 Phonics Screening</h3>
+        <div class="sub" id="pc-phonics">40 words · pass mark 32</div>
+        <div style="margin-top:10px"><a class="btn solid" href="../../checks/phonics/" style="text-decoration:none">Start phonics check →</a></div>
+      </div>
+      <div class="card c6" style="margin:0">
+        <h3 style="font-size:16px">✖️ Times Tables Check</h3>
+        <div class="sub" id="pc-mtc">25 questions · 6 seconds each</div>
+        <div style="margin-top:10px"><a class="btn solid" href="../../checks/mtc/" style="text-decoration:none">Start tables check →</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="grid">
   <div class="card c8">
     <h3>How are you feeling today?</h3>
@@ -250,6 +269,17 @@ if(overall!=null){
   $('t-grade').textContent='–';
   $('t-grade-k').textContent=(isPrim?'Attainment':'Predicted grade')+' — take a quiz or diagnostic';
 }
+/* primary practice checks (Phonics Screening + Times Tables Check) — shown to
+   KS1/KS2 learners, with their most recent scores */
+(function(){
+  var sys=SY.attainment(profile.level,0).system;
+  if(!(sys==='eyfs'||sys==='ks1'||sys==='ks2'))return;
+  document.getElementById('primary-checks-wrap').style.display='';
+  var ph=SY.get('check:phonics',null);
+  if(ph)$('pc-phonics').innerHTML='Last: <b style="color:'+(ph.met?'var(--good)':'var(--gold-300)')+'">'+ph.score+'/'+ph.of+'</b>'+(ph.full?(ph.met?' — met the standard 🎉':' — keep practising'):' (practice)');
+  var mt=SY.get('check:mtc',null);
+  if(mt)$('pc-mtc').innerHTML='Last: <b style="color:'+(mt.score>=22?'var(--good)':'var(--gold-300)')+'">'+mt.score+'/'+mt.of+'</b> · '+(mt.avgMs/1000).toFixed(1)+'s avg';
+})();
 /* streak */
 (function(){var s=SY.get('streak',{days:[]}),set={};(s.days||[]).forEach(function(d){set[d]=1});
   var nn=0,d=new Date();while(set[d.toISOString().slice(0,10)]){nn++;d.setDate(d.getDate()-1)}
