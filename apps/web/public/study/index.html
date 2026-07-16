@@ -362,7 +362,7 @@
       </div>
       <label class="f" style="margin-top:10px">Cards</label>
       <textarea id="c-f-cards" rows="7" placeholder="aller :: to go&#10;être :: to be&#10;avoir :: to have"></textarea>
-      <div style="margin-top:12px"><button class="btn" id="c-f-save">Save deck to library</button></div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="c-f-save">Save deck to library</button><button class="btn ghost" id="c-f-ai">✨ Write the cards for me</button></div>
     </div>
     <div class="card c6">
       <h3>Create revision notes<span class="badge prem">Premium</span></h3><div class="sub">saved into the searchable library, tagged as yours</div>
@@ -386,7 +386,7 @@
       </div>
       <label class="f" style="margin-top:10px">Questions</label>
       <textarea id="c-q-qs" rows="7" placeholder="What carries oxygen in blood? :: red blood cells :: white blood cells :: platelets&#10;Which side of the heart pumps to the lungs? :: right :: left"></textarea>
-      <div style="margin-top:12px"><button class="btn" id="c-q-save">Save quiz to library</button></div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="c-q-save">Save quiz to library</button><button class="btn ghost" id="c-q-ai">✨ Write the questions for me</button></div>
       <div class="note">Answer order is shuffled automatically — the correct one is never always first.</div>
     </div>
 
@@ -1524,6 +1524,8 @@ function parseLines(id,minParts){
     .filter(p=>p.length>=minParts);
 }
 function saveMine(obj,sfx,msg,clearIds){
+  /* no extra questions: untitled creations name themselves */
+  if(!obj.title||!String(obj.title).trim())obj.title=(obj.subj?obj.subj+" — ":"")+obj.type+" · "+new Date().toLocaleDateString("en-GB");
   const mine=store.get("mine",[]);
   obj.id="u"+(mine.length+1)+sfx; obj.mine=true;
   mine.push(obj); store.set("mine",mine); addPoints(15); touchStreak();
@@ -1541,29 +1543,54 @@ function saveMine(obj,sfx,msg,clearIds){
 }
 document.getElementById("c-f-save").onclick=()=>{
   const title=$v("c-f-title").trim(), lines=parseLines("c-f-cards",2).map(p=>p.slice(0,2));
-  if(!title||!lines.length){toast("Add a title and at least one card (front :: back)");return}
+  if(!lines.length){toast("Add a title and at least one card (front :: back)");return}
   saveMine({type:"Flashcards",title,subj:$v("c-f-subj"),level:$v("c-f-level"),cards:lines},"f","Deck saved",["c-f-title","c-f-cards"]);
 };
 document.getElementById("c-n-save").onclick=()=>{
   const title=$v("c-n-title").trim(), body=$v("c-n-body").trim();
-  if(!title||!body){toast("Add a title and some notes first");return}
+  if(!body){toast("Add a title and some notes first");return}
   saveMine({type:"Revision Notes",title,subj:$v("c-n-subj"),level:$v("c-n-level"),body},"n","Notes saved",["c-n-title","c-n-body"]);
 };
 document.getElementById("c-q-save").onclick=()=>{
   const title=$v("c-q-title").trim();
   const lines=parseLines("c-q-qs",3).map(p=>p.slice(0,5));
-  if(!title||!lines.length){toast("Add a title and at least one line: question :: correct :: wrong");return}
+  if(!lines.length){toast("Add a title and at least one line: question :: correct :: wrong");return}
   const qs=lines.map(p=>{
     const q=p[0], correct=p[1], wrong=p.slice(2);
     const a=Math.floor(Math.random()*(wrong.length+1));
     const o=wrong.slice(); o.splice(a,0,correct);
     return {q,o,a,exp:"Correct answer: "+correct};
+/* one-tap AI fill: a topic (or just subject+level) is enough — the AI writes
+   the structured content so no student wrestles with :: syntax */
+document.getElementById("c-f-ai").onclick=async()=>{
+  const topic=$v("c-f-title").trim()||$v("c-f-subj"),lvl=$v("c-f-level")||"GCSE";
+  if(!(window.SYAI&&SYAI.ready())){toast("Live AI is warming up — try the AI Flashcard Generator above, it works without it");return}
+  toast("Writing your cards…");
+  try{
+    const txt=await SYAI.ask("Write exactly 8 flashcards for a "+lvl+" student on the topic. Output ONLY lines in the form: front :: back — no numbering, no extra text.","Topic: "+topic,{maxTokens:600});
+    const lines=txt.split("\n").filter(l=>l.includes("::"));
+    if(lines.length){document.getElementById("c-f-cards").value=lines.join("\n");toast(lines.length+" cards written — press Save deck")}
+    else toast("The AI answer had no cards — try a more specific topic");
+  }catch(e){toast("Live AI unreachable — use the AI Flashcard Generator above")}
+};
+document.getElementById("c-q-ai").onclick=async()=>{
+  const topic=$v("c-q-title").trim()||$v("c-q-subj"),lvl=$v("c-q-level")||"GCSE";
+  if(!(window.SYAI&&SYAI.ready())){toast("Live AI is warming up — try the AI Quiz Generator above, it works without it");return}
+  toast("Writing your questions…");
+  try{
+    const txt=await SYAI.ask("Write exactly 6 multiple-choice quiz questions for a "+lvl+" student on the topic. Output ONLY lines in the form: question :: correct answer :: wrong answer :: wrong answer — the CORRECT answer always first, no numbering, no extra text.","Topic: "+topic,{maxTokens:800});
+    const lines=txt.split("\n").filter(l=>(l.match(/::/g)||[]).length>=2);
+    if(lines.length){document.getElementById("c-q-qs").value=lines.join("\n");toast(lines.length+" questions written — press Save quiz")}
+    else toast("The AI answer had no questions — try a more specific topic");
+  }catch(e){toast("Live AI unreachable — use the AI Quiz Generator above")}
+};
+
   });
   saveMine({type:"Quiz",title,subj:$v("c-q-subj"),level:$v("c-q-level"),qs},"q","Quiz saved",["c-q-title","c-q-qs"]);
 };
 document.getElementById("c-t-save").onclick=()=>{
   const title=$v("c-t-title").trim(), events=parseLines("c-t-events",2).map(p=>p.slice(0,2));
-  if(!title||!events.length){toast("Add a title and at least one event (year :: what happened)");return}
+  if(!events.length){toast("Add a title and at least one event (year :: what happened)");return}
   saveMine({type:"Timeline",title,subj:$v("c-t-subj"),level:$v("c-t-level"),events},"t","Timeline saved",["c-t-title","c-t-events"]);
 };
 document.getElementById("c-x-save").onclick=()=>{
@@ -1571,12 +1598,12 @@ document.getElementById("c-x-save").onclick=()=>{
   const clues=parseLines("c-x-clues",2)
     .map(p=>({c:p[0],a:p[1].toUpperCase().replace(/[^A-Z0-9]/g,"")}))
     .filter(x=>x.c&&x.a.length>=2);
-  if(!title||!clues.length){toast("Add a title and at least one clue (clue :: ANSWER)");return}
+  if(!clues.length){toast("Add a title and at least one clue (clue :: ANSWER)");return}
   saveMine({type:"Crossword",title,subj:$v("c-x-subj"),level:$v("c-x-level"),clues},"x","Crossword saved",["c-x-title","c-x-clues"]);
 };
 document.getElementById("c-b-save").onclick=()=>{
   const title=$v("c-b-title").trim(), rows=parseLines("c-b-rows",2).map(p=>p.slice(0,2));
-  if(!title||!rows.length){toast("Add a title and at least one row (left :: right)");return}
+  if(!rows.length){toast("Add a title and at least one row (left :: right)");return}
   saveMine({type:$v("c-b-type"),title,subj:$v("c-b-subj"),level:$v("c-b-level"),
     cols:[$v("c-b-col1").trim()||"Left",$v("c-b-col2").trim()||"Right"],rows},"b","Table saved",["c-b-title","c-b-rows"]);
 };
@@ -1592,7 +1619,7 @@ document.getElementById("c-s-save").onclick=()=>{
   const title=$v("c-s-title").trim();
   const box=id=>$v(id).split("\n").map(s=>s.trim()).filter(Boolean);
   const swot={s:box("c-s-s"),w:box("c-s-w"),o:box("c-s-o"),t:box("c-s-t")};
-  if(!title||!(swot.s.length+swot.w.length+swot.o.length+swot.t.length)){toast("Add a title and at least one point in any box");return}
+  if(!(swot.s.length+swot.w.length+swot.o.length+swot.t.length)){toast("Add a title and at least one point in any box");return}
   saveMine({type:"SWOT analysis",title,subj:$v("c-s-subj"),level:$v("c-s-level"),swot},"s","SWOT saved",["c-s-title","c-s-s","c-s-w","c-s-o","c-s-t"]);
 };
 document.getElementById("c-m-save").onclick=()=>{
