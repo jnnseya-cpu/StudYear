@@ -100,7 +100,7 @@
   </form>
   <div class="alt">
     <a href="../">← Back to home</a>
-    <a href="../app/" style="margin-left:auto">Browse consoles</a>
+    <a href="#" id="forgot" style="margin-left:auto">Forgot password?</a>
   </div>
   <p class="fine">Your account runs on secure cloud sign-in (Firebase Authentication) with end-to-end-encrypted sync —
     passwords are salted &amp; hashed and your learning data is sealed with keys only you hold.
@@ -273,6 +273,27 @@ $('f').addEventListener('submit',async function(e){
   }
 });
 if(wantRole&&!mismatch&&!session)setMode(q.get('signup')==='1'?'up':'in');
+
+/* Forgot password — Firebase sends the reset email via Google's mail
+   infrastructure (works whenever Email/Password auth is enabled). */
+var fg=document.getElementById('forgot');
+if(fg)fg.onclick=async function(e){
+  e.preventDefault();
+  var email=$('email').value.trim();
+  if(!/^\S+@\S+\.\S+$/.test(email)){say('Type your email above first, then click Forgot password.','err');$('email').focus();return}
+  say('Sending your reset link…','info');
+  try{
+    if(window.SYCloud){await SYCloud.whenReady();
+      if(SYCloud.ready()){await SYCloud.resetPassword(email);
+        say('Password reset link sent to <b>'+email.replace(/[<>]/g,'')+'</b> — check your inbox (and spam). It expires in 1 hour.','ok');return;}
+    }
+    say('Cloud sign-in is offline right now — try again shortly, or contact contact@studyear.com.','err');
+  }catch(err){
+    var m=String(err&&err.message||'');
+    if(/EMAIL_NOT_FOUND/.test(m))say('No account found for that email. Use “Create account” above.','err');
+    else say('Could not send the reset link ('+m.slice(0,60)+'). Try again shortly.','err');
+  }
+};
 })();
 </script>
 </body>

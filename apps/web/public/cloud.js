@@ -124,7 +124,24 @@
     }
     saveTok(email, t);
     try { await race(api('/register', 'POST', { name: name, role: role }, email)); } catch (e) {}
+    /* welcome + verify email via Firebase's own delivery (no SMTP needed) */
+    try { if (t && t.idToken) await race(idp('sendOobCode', { requestType: 'VERIFY_EMAIL', idToken: t.idToken })); } catch (e) {}
     schedulePush(email);
+    return true;
+  }
+
+  /* password reset — Firebase sends the reset email through Google's mail
+     infrastructure (works as soon as Email/Password auth is enabled). */
+  async function resetPassword(email) {
+    await whenReady(); if (!CFG) throw new Error('offline');
+    await race(idp('sendOobCode', { requestType: 'PASSWORD_RESET', email: email }));
+    return true;
+  }
+  /* resend the verification email for the signed-in account */
+  async function sendVerify(email) {
+    await whenReady(); if (!CFG) throw new Error('offline');
+    var tk = await token(email); if (!tk) throw new Error('sign in first');
+    await race(idp('sendOobCode', { requestType: 'VERIFY_EMAIL', idToken: tk }));
     return true;
   }
 
@@ -213,7 +230,8 @@
   }
 
   window.SYCloud = { ready: ready, whenReady: whenReady, signUp: signUp, signIn: signIn,
-    restore: restore, push: push, schedulePush: schedulePush, upload: upload, token: token };
+    restore: restore, push: push, schedulePush: schedulePush, upload: upload, token: token,
+    resetPassword: resetPassword, sendVerify: sendVerify };
 
   /* ------------------------------------------- auto-sync hook ------------ */
   /* On consoles (guard.js present, real signed-in session): every store
