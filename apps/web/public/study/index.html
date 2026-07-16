@@ -3460,15 +3460,65 @@ document.getElementById("cg-go").onclick=()=>{
     const sys="You are StudYear's course designer. Write a structured "+level+" "+subject+" course"+(board?" aligned to the "+board+" exam board":"")+(focus?" focused on: "+focus+" (go deep on this topic; only include other modules where they directly support it)":"")+". Produce 4–6 modules. For each module use a '## Module N — <title>' heading, then 3–5 specific subtopics as bullets, then a line '▸ ends with a check quiz'. Be concrete and exam-relevant — real specification content, never generic filler. End with a short 'How to study this course' note."+grounding;
     SYAI.ask(sys,"Subject: "+subject+(focus?"\nFocus topic: "+focus:"")+"\nLevel: "+level+(board?"\nExam board: "+board:""),{maxTokens:1500}).then(txt=>{
       addPoints(10);touchStreak();logEvent("course","AI course: "+cap,head+" — live AI course generated.");
-      document.getElementById("cg-sub").textContent=head+" · live AI course";
-      document.getElementById("cg-out").innerHTML='<div class="card">'+SYAI.render(txt)+'</div>'+
-        '<div style="margin-top:8px"><button class="btn sm" id="cg-savecourse">Save course to library</button></div>';
+      document.getElementById("cg-sub").textContent=head+" · live AI course — every module opens into a real lesson, tutor session and quiz";
+      /* split the AI text into modules so each one becomes a LEARNABLE unit */
+      const parts=[];{const re=/^##\s*(.+)$/gm;let m,marks=[];
+        while((m=re.exec(txt)))marks.push({t:m[1].trim(),i:m.index,e:re.lastIndex});
+        for(let k=0;k<marks.length;k++)parts.push({t:marks[k].t,body:txt.slice(marks[k].e,(marks[k+1]||{i:txt.length}).i).trim()});}
+      const modules=parts.filter(p=>!/how to study/i.test(p.t));
+      const outro=parts.find(p=>/how to study/i.test(p.t));
+      if(modules.length>=2){
+        document.getElementById("cg-out").innerHTML=modules.map((mo,i)=>{
+          const clean=mo.t.replace(/^module\s*\d+\s*[—:-]\s*/i,"");
+          return `<div class="card" style="margin-bottom:10px">
+            <div style="display:flex;align-items:baseline;gap:8px"><div style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);flex:1">Module ${i+1}</div><button class="btn sm ghost" data-cdone="${i}">✓ Mark done</button></div>
+            <h3 style="font-family:var(--serif);font-weight:500;font-size:18px;color:var(--gold-300);margin:2px 0 8px">${esc(clean)}</h3>
+            ${SYAI.render(mo.body)}
+            ${courseModuleActions(subject,clean)}
+          </div>`}).join("")+
+          (outro?`<div class="note" style="margin-top:4px"><b>How to study this course:</b> ${esc(outro.body).slice(0,600)}</div>`:"")+
+          '<div style="margin-top:8px"><button class="btn sm" id="cg-savecourse">Save course to library</button></div>';
+        wireCourse(subject,cap);
+      }else{
+        document.getElementById("cg-out").innerHTML='<div class="card">'+SYAI.render(txt)+courseModuleActions(subject,cap+(focus?" — "+focus:""))+'</div>'+
+          '<div style="margin-top:8px"><button class="btn sm" id="cg-savecourse">Save course to library</button></div>';
+        wireCourse(subject,cap);
+      }
       const sv=document.getElementById("cg-savecourse");if(sv)sv.onclick=()=>{saveMine({type:"Revision Notes",title:cap+(focus?" — "+focus:"")+" — AI course",subj:"",level:level,body:txt},"co","Course saved",[])};
     }).catch(e=>{toast("Live AI error — using the verified outline");cgStatic(subject,level,board,cap,focus)});
     return;
   }
   cgStatic(subject,level,board,cap,focus);
 };
+/* every course module is a LAUNCHPAD: one tap opens the real tool loaded
+   with this module — Interactive Lesson, AI Tutor, or a check quiz. */
+function courseModuleActions(subj,moduleTitle){
+  return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+    <a class="btn sm solid" href="#lesson" data-cj="lesson::${esc(moduleTitle)}">📖 Learn this module</a>
+    <a class="btn sm" href="#tutor" data-cj="tutor::${esc(moduleTitle)}">🤖 Tutor me on it</a>
+    <a class="btn sm" href="#create" data-cj="quiz::${esc(moduleTitle)}">✅ Check quiz</a>
+  </div>`;
+}
+function wireCourse(subj,courseKey){
+  const out=document.getElementById("cg-out");
+  out.querySelectorAll("[data-cj]").forEach(a=>{a.onclick=()=>{
+    const [kind,topic]=a.dataset.cj.split("::");
+    const h=kind==="lesson"?"#lesson":kind==="tutor"?"#tutor":"#create";
+    try{sessionStorage.setItem("sy-jump",JSON.stringify({h:h,subj:subj,topic:topic}))}catch(e){}
+  }});
+  /* per-module progress ticks, persisted per course */
+  const key="courseDone:"+courseKey;
+  const done=store.get(key,{});
+  out.querySelectorAll("[data-cdone]").forEach(b=>{
+    const i=b.dataset.cdone;
+    const paint=()=>{b.textContent=done[i]?"✓ Done":"✓ Mark done";b.style.color=done[i]?"var(--good)":"";b.style.borderColor=done[i]?"rgba(92,187,123,.6)":""};
+    paint();
+    b.onclick=()=>{done[i]=!done[i];store.set(key,done);paint();
+      const total=out.querySelectorAll("[data-cdone]").length,n=Object.keys(done).filter(k=>done[k]).length;
+      toast("Module "+(+i+1)+(done[i]?" done — ":" reopened — ")+n+"/"+total+" complete");
+      if(n===total)addPoints(25);};
+  });
+}
 /* Verified curriculum library — REAL specification structures (AQA-aligned,
    board-neutral where sensible), not generic scaffolds. Used two ways:
    1. grounding for the live AI so generated courses follow the actual spec;
@@ -3660,13 +3710,14 @@ function cgStatic(subject,level,board,cap,focus){
   document.getElementById("cg-sub").textContent=cap+(focused?" — "+focus:"")+" · "+found.tier+(board?" · "+board:"")+" · verified specification structure — "+modules.length+" module"+(modules.length>1?"s":"")+(focused?" matching your topic":"")+", each ending in a quiz.";
   document.getElementById("cg-out").innerHTML=(focused?`<div class="note" style="margin-bottom:8px">🎯 Showing the specification module${modules.length>1?"s":""} covering “${esc(focus)}” — the live AI engine writes a full deep-dive course on this exact topic.</div>`:(focus?`<div class="note" style="margin-bottom:8px">“${esc(focus)}” isn't a named unit in this specification — showing the full course; the live AI engine writes topic-focused courses.</div>`:""))+modules.map((m,i)=>`
     <div class="card" style="margin-bottom:10px">
-      <div style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)">Module ${i+1}</div>
+      <div style="display:flex;align-items:baseline;gap:8px"><div style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);flex:1">Module ${i+1}</div><button class="btn sm ghost" data-cdone="${i}">✓ Mark done</button></div>
       <h3 style="font-family:var(--serif);font-weight:500;font-size:18px;color:var(--gold-300);margin:2px 0 8px">${esc(m.t)}</h3>
       <ul style="margin:0 0 0 18px;font-size:13.5px;color:var(--ink-2)">${m.topics.map(t=>`<li style="margin:4px 0">${esc(t)}</li>`).join("")}</ul>
-      <div style="margin-top:8px;font-size:12px;color:var(--gold-400)">▸ ends with a check quiz on this module</div>
+      ${courseModuleActions(subject,m.t)}
     </div>`).join("")+
     `<div class="note">Built from the real ${esc(found.tier)} specification structure${board?" ("+esc(board)+"-aligned)":""}.
-      The live AI engine expands each module into full lessons and adaptive quizzes.</div>`;
+      Every module opens into a real lesson, tutor session and check quiz.</div>`;
+  wireCourse(subject,cap);
 };
 
 /* ============================ MISC ============================ */
