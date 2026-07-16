@@ -204,11 +204,42 @@
         var dots=spec.points.map(function(p){return '<circle cx="'+sx(+p[0]).toFixed(1)+'" cy="'+sy(+p[1]).toFixed(1)+'" r="3" fill="#F2CE7B"/>'}).join('');
         return svgWrap('<path d="'+d+'" fill="none" stroke="#4FA6E0" stroke-width="2.2"/>'+dots,W,H,e2(spec.title||'Line graph'));
       }
+      /* LABELLED diagram — a real study diagram for anatomy, apparatus, cells,
+         structures: a central subject with labelled callout parts around it. */
+      if(spec.kind==='labelled'&&spec.parts&&spec.parts.length){
+        var parts=spec.parts.slice(0,10),W=470,H=Math.max(220,70+parts.length*40);
+        var cx=W/2,cyTop=64;
+        var subject='<rect x="'+(cx-90)+'" y="30" width="180" height="34" rx="10" fill="rgba(79,166,224,.18)" stroke="#4FA6E0"/>'+
+          '<text x="'+cx+'" y="52" text-anchor="middle" fill="#EDF1F8" font-size="13" font-weight="600">'+e2((spec.title||'Diagram').slice(0,34))+'</text>';
+        var rowsSvg=parts.map(function(p,i){
+          var y=90+i*40,col=DIAG_COLS[i%DIAG_COLS.length];
+          var name=e2(String(p.name||p.label||('Part '+(i+1))).slice(0,34));
+          var role=e2(String(p.role||p.desc||p.function||'').slice(0,58));
+          return '<line x1="'+cx+'" y1="64" x2="40" y2="'+(y+9)+'" stroke="rgba(120,140,190,.35)" stroke-width="1"/>'+
+            '<circle cx="40" cy="'+(y+9)+'" r="5" fill="'+col+'"/>'+
+            '<text x="54" y="'+(y+6)+'" fill="'+col+'" font-size="12.5" font-weight="600">'+name+'</text>'+
+            (role?'<text x="54" y="'+(y+21)+'" fill="#AAB6CC" font-size="11">'+role+'</text>':'');
+        }).join('');
+        return svgWrap(subject+rowsSvg,W,H,e2(spec.caption||'Labelled diagram'));
+      }
+      /* FLOW / CYCLE — a process as connected steps (respiration, water cycle,
+         reaction pathway, historical sequence). */
+      if((spec.kind==='flow'||spec.kind==='cycle')&&spec.steps&&spec.steps.length){
+        var steps=spec.steps.slice(0,7),W=470,bw=W-60,bh=42,gap=20,H=30+steps.length*(bh+gap);
+        var boxes=steps.map(function(st,i){
+          var y=20+i*(bh+gap),col=DIAG_COLS[i%DIAG_COLS.length],label=e2(String(st.text||st.name||st).slice(0,60));
+          var arrow=i<steps.length-1?'<path d="M'+(W/2)+' '+(y+bh)+' l0 '+(gap-6)+'" stroke="#5B6B8C" stroke-width="1.5" marker-end="url(#ar)"/>':'';
+          return '<rect x="30" y="'+y+'" width="'+bw+'" height="'+bh+'" rx="10" fill="rgba(30,22,70,.6)" stroke="'+col+'"/>'+
+            '<text x="'+(W/2)+'" y="'+(y+26)+'" text-anchor="middle" fill="#EDF1F8" font-size="12.5">'+(i+1)+'. '+label+'</text>'+arrow;
+        }).join('');
+        var defs='<defs><marker id="ar" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#5B6B8C"/></marker></defs>';
+        return svgWrap(defs+boxes,W,H,e2(spec.title||(spec.kind==='cycle'?'Cycle':'Process')));
+      }
     }catch(e){}
     return null;
   }
   /* the hint tutor surfaces append to their prompts so the model knows it CAN draw */
-  var DIAGRAM_HINT=' DIAGRAMS: you can render REAL pictures ONLY for numeric/graphable content — mathematical functions, bar/pie charts of numbers, and plotted (x,y) data. For anything that is not chartable (anatomy, maps, apparatus, cells, historical scenes) NEVER emit a diagram block — instead give a clearly structured labelled description (numbered parts, position, function). Never reuse the sample below literally; only emit a diagram whose contents come from the current question. To draw, include a fenced block in this format:\n```diagram\n{"kind":"function","expr":"x^2 - 4","xmin":-5,"xmax":5}\n```\nSupported kinds: "function" {expr in x, xmin, xmax}; "bar" {"title","labels":[…],"values":[…]}; "pie" {"title","labels","values"}; "line" {"title","points":[[x,y],…]}. The app renders it as a real picture for the student.';
+  var DIAGRAM_HINT=' DIAGRAMS — you CAN draw real pictures for the student, so NEVER say you cannot provide a diagram. Choose the right kind for the content and emit ONE fenced ```diagram block with JSON built from THIS question (never copy an example):\n• Anatomy, cells, apparatus, structures (heart, respiratory system, plant cell, circuit) → {"kind":"labelled","title":"<subject>","parts":[{"name":"Trachea","role":"carries air to the lungs"},…]}\n• A process or sequence (breathing, water cycle, a reaction, historical events) → {"kind":"flow","title":"…","steps":[{"text":"Diaphragm contracts"},…]} (use "cycle" if it repeats)\n• A maths function → {"kind":"function","expr":"x^2 - 4","xmin":-5,"xmax":5}\n• Numeric data → {"kind":"bar"|"pie","title":"…","labels":[…],"values":[…]} or {"kind":"line","points":[[x,y],…]}\nNEVER emit a function/graph for non-numeric topics. Put the block on its own lines; the app renders it as a real labelled picture, then continue your explanation.';
   function render(md){
     var esc=function(s){return String(s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})};
     /* extract ```diagram blocks first and swap in rendered SVG afterwards */
