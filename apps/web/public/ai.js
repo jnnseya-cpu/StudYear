@@ -144,9 +144,80 @@
     s=s.replace(/[ \t]{2,}/g,' ').replace(/ ([,.:;!?)])/g,'$1').replace(/\( /g,'(');
     return s;
   }
+  /* ---- teaching pictures: the model emits a ```diagram fenced JSON block;
+     we render it as a real SVG picture. Shared by every tutor surface. ---- */
+  function compileExpr(expr){
+    var src=String(expr||'').replace(/\^/g,'**');
+    if(!/^[0-9x+\-*/(). eE*]*$/.test(src.replace(/sin|cos|tan|sqrt|abs|log|exp|pi/g,'')))return null;
+    src=src.replace(/\b(sin|cos|tan|sqrt|abs|log|exp)\b/g,'Math.$1').replace(/\bpi\b/g,'Math.PI');
+    try{var f=new Function('x','return ('+src+')');f(1);return f}catch(e){return null}
+  }
+  function svgWrap(inner,w,h,title){
+    return '<div style="margin:8px 0;padding:10px;border:1px solid rgba(120,140,190,.35);border-radius:12px;background:rgba(6,11,24,.5)">'+
+      (title?'<div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8FA2C4;margin-bottom:6px">'+title+'</div>':'')+
+      '<svg viewBox="0 0 '+w+' '+h+'" width="100%" style="max-width:460px;display:block" xmlns="http://www.w3.org/2000/svg">'+inner+'</svg></div>';
+  }
+  var DIAG_COLS=['#4FA6E0','#F2CE7B','#5CBB7B','#F472B6','#A78BFA','#F97362','#22D3EE'];
+  function buildDiagram(spec){
+    try{
+      var e2=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+      if(spec.kind==='function'){
+        var f=compileExpr(spec.expr);if(!f)return null;
+        var x0=+spec.xmin||-5,x1=+spec.xmax||5;if(x1<=x0)x1=x0+10;
+        var W=460,H=260,pad=28,pts=[],ys=[];
+        for(var i=0;i<=120;i++){var x=x0+(x1-x0)*i/120;var y=f(x);if(isFinite(y)){pts.push([x,y]);ys.push(y)}}
+        if(!pts.length)return null;
+        var ymin=Math.min.apply(null,ys),ymax=Math.max.apply(null,ys);if(ymax===ymin){ymax+=1;ymin-=1}
+        var sx=function(x){return pad+(x-x0)/(x1-x0)*(W-2*pad)},sy=function(y){return H-pad-(y-ymin)/(ymax-ymin)*(H-2*pad)};
+        var d=pts.map(function(p,i){return (i?'L':'M')+sx(p[0]).toFixed(1)+' '+sy(p[1]).toFixed(1)}).join(' ');
+        var ax='';
+        if(ymin<0&&ymax>0)ax+='<line x1="'+pad+'" x2="'+(W-pad)+'" y1="'+sy(0)+'" y2="'+sy(0)+'" stroke="#5B6B8C" stroke-width="1"/>';
+        if(x0<0&&x1>0)ax+='<line y1="'+pad+'" y2="'+(H-pad)+'" x1="'+sx(0)+'" x2="'+sx(0)+'" stroke="#5B6B8C" stroke-width="1"/>';
+        ax+='<text x="'+(W-pad)+'" y="'+(H-8)+'" fill="#8FA2C4" font-size="11" text-anchor="end">x: '+x0+' … '+x1+'</text>';
+        return svgWrap(ax+'<path d="'+d+'" fill="none" stroke="#4FA6E0" stroke-width="2.4"/>',W,H,'y = '+e2(spec.expr));
+      }
+      if(spec.kind==='bar'&&spec.values&&spec.values.length){
+        var W=460,H=240,pad=30,vals=spec.values.map(Number),labs=spec.labels||[];
+        var max=Math.max.apply(null,vals.concat([1])),bw=(W-2*pad)/vals.length;
+        var bars=vals.map(function(v,i){var h=(v/max)*(H-2*pad-16);
+          return '<rect x="'+(pad+i*bw+4)+'" y="'+(H-pad-h)+'" width="'+(bw-8)+'" height="'+h+'" rx="4" fill="'+DIAG_COLS[i%DIAG_COLS.length]+'"/>'+
+            '<text x="'+(pad+i*bw+bw/2)+'" y="'+(H-pad+14)+'" fill="#AAB6CC" font-size="10.5" text-anchor="middle">'+e2(String(labs[i]||'').slice(0,10))+'</text>'+
+            '<text x="'+(pad+i*bw+bw/2)+'" y="'+(H-pad-h-5)+'" fill="#EDF1F8" font-size="10.5" text-anchor="middle">'+v+'</text>';}).join('');
+        return svgWrap(bars,W,H,e2(spec.title||'Bar chart'));
+      }
+      if(spec.kind==='pie'&&spec.values&&spec.values.length){
+        var W=460,H=240,cx=120,cy=120,r=90,vals=spec.values.map(Number),labs=spec.labels||[];
+        var tot=vals.reduce(function(a,b){return a+b},0)||1,a0=-Math.PI/2,parts='',leg='';
+        vals.forEach(function(v,i){var a1=a0+2*Math.PI*v/tot;
+          var x0p=cx+r*Math.cos(a0),y0p=cy+r*Math.sin(a0),x1p=cx+r*Math.cos(a1),y1p=cy+r*Math.sin(a1);
+          parts+='<path d="M'+cx+' '+cy+' L'+x0p.toFixed(1)+' '+y0p.toFixed(1)+' A'+r+' '+r+' 0 '+(a1-a0>Math.PI?1:0)+' 1 '+x1p.toFixed(1)+' '+y1p.toFixed(1)+' Z" fill="'+DIAG_COLS[i%DIAG_COLS.length]+'"/>';
+          leg+='<rect x="250" y="'+(40+i*22)+'" width="12" height="12" rx="3" fill="'+DIAG_COLS[i%DIAG_COLS.length]+'"/><text x="268" y="'+(51+i*22)+'" fill="#EDF1F8" font-size="12">'+e2(String(labs[i]||'').slice(0,18))+' — '+Math.round(100*v/tot)+'%</text>';
+          a0=a1;});
+        return svgWrap(parts+leg,W,H,e2(spec.title||'Pie chart'));
+      }
+      if(spec.kind==='line'&&spec.points&&spec.points.length>1){
+        var W=460,H=240,pad=30,px=spec.points.map(function(p){return +p[0]}),py=spec.points.map(function(p){return +p[1]});
+        var x0=Math.min.apply(null,px),x1=Math.max.apply(null,px),y0=Math.min.apply(null,py),y1=Math.max.apply(null,py);
+        if(x1===x0)x1++;if(y1===y0)y1++;
+        var sx=function(x){return pad+(x-x0)/(x1-x0)*(W-2*pad)},sy=function(y){return H-pad-(y-y0)/(y1-y0)*(H-2*pad)};
+        var d=spec.points.map(function(p,i){return (i?'L':'M')+sx(+p[0]).toFixed(1)+' '+sy(+p[1]).toFixed(1)}).join(' ');
+        var dots=spec.points.map(function(p){return '<circle cx="'+sx(+p[0]).toFixed(1)+'" cy="'+sy(+p[1]).toFixed(1)+'" r="3" fill="#F2CE7B"/>'}).join('');
+        return svgWrap('<path d="'+d+'" fill="none" stroke="#4FA6E0" stroke-width="2.2"/>'+dots,W,H,e2(spec.title||'Line graph'));
+      }
+    }catch(e){}
+    return null;
+  }
+  /* the hint tutor surfaces append to their prompts so the model knows it CAN draw */
+  var DIAGRAM_HINT=' When a picture would genuinely help the student (a graph, chart or plotted shape), include one on its own lines as a fenced block EXACTLY like:\n```diagram\n{"kind":"function","expr":"x^2 - 4","xmin":-5,"xmax":5}\n```\nSupported kinds: "function" {expr in x, xmin, xmax}; "bar" {"title","labels":[…],"values":[…]}; "pie" {"title","labels","values"}; "line" {"title","points":[[x,y],…]}. The app renders it as a real picture for the student.';
   function render(md){
     var esc=function(s){return String(s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})};
-    var lines=deLatex(String(md||'')).split('\n');var out=[],inList=false;
+    /* extract ```diagram blocks first and swap in rendered SVG afterwards */
+    var diagrams=[];
+    var src=String(md||'').replace(/```(?:diagram)?\s*\n(\{[\s\S]*?\})\s*\n```/g,function(_,json){
+      try{var svg=buildDiagram(JSON.parse(json));if(svg){diagrams.push(svg);return '\n@@SYDIAG'+(diagrams.length-1)+'@@\n'}}catch(e){}
+      return '';
+    });
+    var lines=deLatex(src).split('\n');var out=[],inList=false;
     lines.forEach(function(l){
       var t=esc(l);
       t=t.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/(^|[^*])\*(?!\*)(.+?)\*/g,'$1<i>$2</i>').replace(/`([^`]+)`/g,'<code>$1</code>');
@@ -157,9 +228,11 @@
       else if(t.trim())out.push('<p style="margin:6px 0">'+t+'</p>');
     });
     if(inList)out.push('</ul>');
-    return out.join('');
+    var html=out.join('');
+    diagrams.forEach(function(svg,i){html=html.replace(new RegExp('<p[^>]*>@@SYDIAG'+i+'@@</p>|@@SYDIAG'+i+'@@'),svg)});
+    return html;
   }
-  window.SYAI={ready:ready,provider:provider,config:cfg,ask:ask,render:render,
+  window.SYAI={ready:ready,provider:provider,config:cfg,ask:ask,render:render,diagramHint:DIAGRAM_HINT,
     setConfig:function(o){try{localStorage.setItem('sy-ai-live',JSON.stringify(o))}catch(e){}},
     clear:function(){localStorage.removeItem('sy-ai-live')}};
 })();

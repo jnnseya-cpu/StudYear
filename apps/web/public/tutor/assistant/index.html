@@ -54,7 +54,7 @@ function gen(){
   var s=$('subj').value.trim()||'the subject',l=$('level').value.trim()||'this level',t=$('topic').value.trim()||'the topic';
   if(window.SYAI&&SYAI.ready()){
     $('out').style.display='block';$('out').innerHTML='<div style="opacity:.6">Working with '+SYAI.provider()+'…</div>';
-    SYAI.ask("You are a "+l+" "+s+" private tutor's AI assistant. "+(LIVE_PROMPTS[mode]||LIVE_PROMPTS.plan)+" Use markdown. Be genuinely usable — concrete content, no placeholders.","Topic: "+t,{maxTokens:1400})
+    SYAI.ask("You are a "+l+" "+s+" private tutor's AI assistant. "+(LIVE_PROMPTS[mode]||LIVE_PROMPTS.plan)+" Use markdown. Be genuinely usable — concrete content, no placeholders."+(window.SYAI&&SYAI.diagramHint?SYAI.diagramHint:""),"Topic: "+t,{maxTokens:1400})
       .then(function(txt){$('out').innerHTML='<div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:6px">Live AI · '+esc(mode)+'</div>'+SYAI.render(txt);$('copy').style.display='inline-block'})
       .catch(function(){toast('Live AI error — showing the template');genStatic(s,l,t)});
     return;

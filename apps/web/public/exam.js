@@ -11,7 +11,7 @@
 (function(){
   'use strict';
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-  var LEVELS=['Reception','KS1','KS2','11+','KS3','GCSE','IGCSE','National 5','AS','A-level','Highers','IB','BTEC','University'];
+  var LEVELS=['Reception','KS1','KS2','11+','KS3','GCSE','IGCSE','National 5','AS','A-level','Highers','IB','BTEC','University','Lifelong learning'];
   var BOARDS=['','AQA','Edexcel','OCR','WJEC','CCEA','SQA','CIE','IB'];
   var SUBJECTS=['Mathematics','Further Mathematics','English Language','English Literature','Biology','Chemistry','Physics','Combined Science','Geography','History','Computer Science','Business','Economics','Psychology','Sociology','Religious Studies','French','Spanish','German','Art & Design','Design & Technology','Music','Drama','Physical Education','Verbal Reasoning','Non-Verbal Reasoning'];
   /* command-word rotation for the on-device fallback: [stem, marks, scheme] */
