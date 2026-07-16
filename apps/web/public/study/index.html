@@ -1208,7 +1208,10 @@ function renderResults(){
   const hits=allResources().filter(r=>
     (!mineOnly||r.mine)&&
     (!q || (r.title+" "+r.subj+" "+(r.topic||"")+" "+(r.body||"")+(r.note||"")+JSON.stringify(r.cards||r.qs||r.map||r.events||r.clues||r.rows||r.swot||r.facets||r.slides||r.puzzles||r.chart||"")).toLowerCase().includes(q)) &&
-    (!s||r.subj===s)&&(!l||r.level===l)&&(!t||r.type===t)&&(!tp||r.topic===tp));
+    /* 'My resources only' shows EVERYTHING the student made — the profile-
+       prefilled subject/level/topic filters are ignored so nothing they
+       created is ever hidden; type filter still applies for convenience */
+    (mineOnly||!s||r.subj===s)&&(mineOnly||!l||r.level===l)&&(!t||r.type===t)&&(mineOnly||!tp||r.topic===tp));
   const el=document.getElementById("results");
   el.innerHTML=hits.map(r=>`
     <div class="res" onclick="openRes('${r.id}')">
