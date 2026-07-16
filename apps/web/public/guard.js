@@ -350,7 +350,7 @@
   try {
     if (s.role === 'student') {
       var _kp = window.SY.get('profile', {}) || {};
-      if (/primary|11\+|key stage 1|ks1|\byear [1-6]\b/i.test(String(_kp.level || ''))) {
+      if (/primary|eyfs|reception|\bks[12]\b|key stage [12]|11\+|\byear [1-6]\b/i.test(String(_kp.level || ''))) {
         var kl = document.createElement('link');
         kl.rel = 'stylesheet'; kl.href = base + 'kids.css'; kl.id = 'sy-kids';
         (document.head || document.documentElement).appendChild(kl);

@@ -816,7 +816,7 @@
 <script>
 /* ============================ REFERENCE DATA ============================ */
 const SUBJECTS = ["Accounting", "Biology", "Business Studies", "Chemistry", "Computer Science", "Computing", "Economics", "English", "English Language", "English Literature", "French", "Fun", "Geography", "Government & Politics", "Health & Social Care", "History", "ICT", "Law", "Mathematics", "Media Studies", "Music", "Other", "Philosophy", "Physical Education", "Physics", "Psychology", "Religious Studies", "Science", "Sociology", "Spanish"];
-const LEVELS = ["Primary School", "11+ Exam", "Years 7-9 (KS3)", "GCSE", "IGCSE", "National 5", "BTEC National", "AS", "A2/A-level", "Scottish Highers", "Scottish Advanced Highers", "International Baccalaureate", "University · Undergraduate Year 1","University · Undergraduate Year 2","University · Undergraduate Year 3 / Final","University · Foundation year","University · Master's / Postgraduate", "NEET · Return to learning (16–26)", "Lifelong learning · Adult autodidact", "Fun", "Other", "All Levels"];
+const LEVELS = ["Reception (EYFS · age 4–5)","Key Stage 1 (Years 1–2 · age 5–7)","Key Stage 2 (Years 3–6 · age 7–11)", "11+ Exam", "Years 7-9 (KS3)", "GCSE", "IGCSE", "National 5", "BTEC National", "AS", "A2/A-level", "Scottish Highers", "Scottish Advanced Highers", "International Baccalaureate", "University · Undergraduate Year 1","University · Undergraduate Year 2","University · Undergraduate Year 3 / Final","University · Foundation year","University · Master's / Postgraduate", "NEET · Return to learning (16–26)", "Lifelong learning · Adult autodidact", "Fun", "Other", "All Levels"];
 const TYPES = ["Advantages and disadvantages table", "Audio", "Causes and effects table", "Character analysis", "Compare and contrast table", "Crossword", "Document", "Flashcards", "Grid", "Image", "Mindmap", "Multi-tool", "Other", "Presentation", "Quiz", "Quizsearch", "Revision Cards", "Revision Notes", "SWOT analysis", "Spreadsheet", "Timeline", "Video", "Web Page"];
 const TOPICS = ["America - 19th and 20th century", "An Inspector Calls", "Approaches", "Attachment", "Biological molecules, organic chemistry and biochemistry", "British monarchy - Tudors and Stuarts", "Case studies", "Cells, tissues and organs", "Cellular processes and structure", "Christianity", "Crime and deviance", "Criminal law", "DNA, genetics and evolution", "Education", "Energy", "Ethics", "Families and households", "Grammar and vocabulary", "Human, animal and plant physiology", "Medicine through time (OCR History A)", "Memory", "Modern Britain - 19th century onwards", "Natural hazards", "Philosophy", "Religion and beliefs", "Research methods and techniques", "Russia - 19th and 20th century", "The Cold War", "WWII and Nazi Germany 1939-1945"];
 const SUBJ_COLOURS = {}; SUBJECTS.forEach((s,i)=>SUBJ_COLOURS[s]=["#3987e5","#199e70","#c98500","#5CBB7B","#e66767","#8b7cf6","#3aa7c9"][i%7]);
@@ -2649,7 +2649,7 @@ const DG_QBANK_ALEVEL={
  "English":[{q:"The 'volta' in a sonnet is…",o:["the turn in thought or argument","the final couplet","the rhyme scheme","the iambic rhythm"],a:0}]};
 function dgTier(){
   var lv=String((store.get("profile",{})||{}).level||'').toLowerCase();
-  if(/primary|ks1|\byear [1-6]\b|11\+/.test(lv))return 'primary';
+  if(/primary|eyfs|reception|\bks[12]\b|key stage [12]|\byear [1-6]\b|11\+/.test(lv))return 'primary';
   if(/a2|a-level|\bas\b|higher|baccalaureate|university/.test(lv))return 'alevel';
   return 'gcse';
 }
@@ -2737,7 +2737,7 @@ function dgQuestionPool(){
   const bySubj={};
   const _tier=dgTier();
   const lvOk=r=>{const L=String(r.level||'').toLowerCase();
-    if(_tier==='primary')return /primary|11\+|ks1|\byear [1-6]\b/.test(L);
+    if(_tier==='primary')return /primary|eyfs|reception|\bks[12]\b|key stage [12]|11\+|\byear [1-6]\b/.test(L);
     if(_tier==='alevel')return /a2|a-level|\bas\b|higher|baccalaureate|university/.test(L);
     return !/primary|a2|a-level|higher|baccalaureate|university/.test(L);};
   LIB.forEach(r=>{ if(r.qs&&chosen.includes(r.subj)&&lvOk(r))(bySubj[r.subj]=bySubj[r.subj]||[]).push(...r.qs.map(q=>({q:q.q,o:q.o,a:q.a,subj:r.subj}))) });
