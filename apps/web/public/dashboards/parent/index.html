@@ -343,7 +343,13 @@ el('link-go').onclick=function(){
   var b=el('link-go');b.disabled=true;
   SY.connectCode(code,'parent').then(function(r){
     b.disabled=false;
-    if(!r||!r.email){alert('No account found for that code. Check the code in your child\'s My Account → Connect a parent.');return}
+    if(!r||!r.email){
+      SY.cloudAuthed().then(function(ok){
+        alert(ok?'No account found for that code. Ask your child to open StudYear once, then check the code in My Account → Connect a parent.'
+                :'Reconnect needed — please sign out and sign back in, then try the code again.');
+      });
+      return;
+    }
     var email=r.email,name=r.name||SY.accountName(email);
     var kids=SY.get('children',[]);
     if(kids.some(function(k){return k.email===email})){alert('That child is already linked.');el('link-code').value='';return}

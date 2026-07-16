@@ -1,123 +1,148 @@
-/* StudYear KIDS theme — auto-applied by guard.js for under-12 students
-   (Primary / 11+ study level). A calm, focus-friendly re-skin built on the
-   60-30-10 rule, not a rainbow:
-     60% — soft cream / pale-pastel background (glare-free, low strain)
-     30% — sky-blue & teal structure (nav, headers, card accents)
-     10% — vivid accents (sunny yellow, lime, warm orange) on actions only
-   Text is soft deep-navy, never pure black; never yellow text on light.
-   Works by overriding the OS design tokens so every surface recolours. */
+/* ============================================================================
+   StudYear PRIMARY (Ages 7–11) — auto-applied by guard.js for under-12s.
+   A premium "game world where learning happens", not school software.
+   Design system: Disney + Nintendo + Duolingo + Apple + LEGO.
+
+   The "Magic Ratio"
+     70% calm light backgrounds  (#F7FBFF, white, soft neutrals)
+     20% brand colours           (blue #3B82F6, purple #8B5CF6, green #22C55E)
+     10% reward colours          (gold #FBBF24, orange #F59E0B, coral #FF6B6B)
+
+   Implemented by overriding the OS design tokens so every surface recolours,
+   plus rounded fonts, floating cards, gamified bars and subtle motion.
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap');
 
 :root{
-  /* 60% — light, glare-free surfaces (were deep navy) */
-  --navy-950:#FBF7EE;   /* app background: warm cream */
-  --navy-900:#FFFFFF;   /* cards / panels */
-  --navy-800:#EAF3FB;   /* pale sky tint for secondary surfaces */
-  /* text — soft deep-navy & slate (never harsh black) */
-  --ink:#26315A; --ink-2:#4C5878; --ink-3:#7C87A6;
-  /* 30% — structural sky-blue & teal (readable on light) */
-  --gold-300:#2E86C7; --gold-400:#1AA0A0; --gold-500:#2E86C7;
-  --s1:#2E86C7; --s2:#1AA0A0; --s3:#E08A1E;
-  /* status — softened for a light background */
-  --good:#2E9E4B; --warn:#E08A1E; --crit:#E0554E;
-  --line:rgba(46,134,199,.18);
+  /* rounded, friendly typography */
+  --sans:'Nunito','Baloo 2',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --serif:'Fredoka','Baloo 2','Nunito',sans-serif;
+  /* 70% — calm light surfaces (were deep navy) */
+  --navy-950:#F7FBFF;   /* main background: very light sky */
+  --navy-900:#FFFFFF;   /* cards */
+  --navy-800:#EEF6FF;   /* secondary background */
+  /* text — soft, never pure black */
+  --ink:#1E293B; --ink-2:#475569; --ink-3:#64748B;
+  /* 20% — brand blue as the accent/link token */
+  --gold-300:#3B82F6; --gold-400:#2563EB; --gold-500:#3B82F6;
+  --s1:#3B82F6; --s2:#22C55E; --s3:#F59E0B;
+  /* status */
+  --good:#22C55E; --warn:#F59E0B; --crit:#FF6B6B;
+  --line:#E2E8F0;
 }
 
-/* 60% — soft cream backdrop with the faintest pastel wash (low saturation) */
+/* 70% — very light sky background with the faintest magical wash */
 body{
   background:
-    radial-gradient(1000px 640px at 88% -10%, rgba(46,134,199,.10), transparent 60%),
-    radial-gradient(900px 600px at -8% 15%, rgba(26,160,160,.09), transparent 58%),
-    radial-gradient(760px 560px at 50% 120%, rgba(224,138,30,.07), transparent 60%),
-    linear-gradient(180deg,#FBF7EE 0%,#F3F6FB 60%,#FBF6EF 100%) !important;
+    radial-gradient(1000px 640px at 88% -10%, rgba(59,130,246,.08), transparent 60%),
+    radial-gradient(880px 600px at -8% 16%, rgba(139,92,246,.07), transparent 58%),
+    radial-gradient(760px 560px at 50% 122%, rgba(251,191,36,.06), transparent 60%),
+    linear-gradient(180deg,#F7FBFF 0%,#EEF6FF 60%,#F7FBFF 100%) !important;
   color:var(--ink) !important;
+  font-family:var(--sans) !important;
+  font-size:16px !important;          /* accessibility: ≥16px body */
 }
 
-/* 30% — structural bars: soft sky-frosted, not dark */
-nav.tabs, header, aside, .topbar, .appbar{
-  background:rgba(255,255,255,.78) !important;
-  backdrop-filter:blur(8px);
-  border-color:var(--line) !important;
-}
+/* headings — Fredoka, almost-black ink */
+h1,h2,h3,h4,h5{font-family:var(--serif) !important;color:#1E293B !important;letter-spacing:0 !important}
+h1{font-weight:700 !important}
+.slogo b{color:#3B82F6 !important;font-family:var(--serif) !important}
 
-/* headings: calm deep-navy; the hero can carry a gentle sky→teal sweep */
-h2,h3,h4,h5{color:#26315A !important}
-h1{
-  background:linear-gradient(92deg,#2E86C7 0%,#1AA0A0 100%);
-  -webkit-background-clip:text;background-clip:text;color:transparent !important;
+/* top bars stay light & airy; the SIDEBAR becomes soft navy (premium) */
+nav.tabs, header, .topbar, .appbar{
+  background:rgba(247,251,255,.85) !important;backdrop-filter:blur(8px);border-color:var(--line) !important;
 }
-.slogo b{color:#2E86C7 !important}
+aside{background:#1E3A8A !important;border:none !important;box-shadow:2px 0 24px rgba(30,58,138,.18) !important}
+aside, aside *{color:#EAF1FF !important}
+aside .k,aside .sub,aside small{color:#AEC2F0 !important}
+aside nav a{border-radius:14px !important;font-weight:700 !important}
+aside nav a:hover{background:rgba(255,255,255,.12) !important;color:#FFFFFF !important}
+aside nav a.on{background:#3B82F6 !important;color:#FFFFFF !important;box-shadow:0 0 0 1px rgba(255,255,255,.15),0 8px 20px rgba(59,130,246,.45) !important}
 
-/* cards: clean white, gently rounded, soft shadow, a single sky-teal top bar */
+/* premium floating cards: white, 22px radius, soft shadow, lift on hover */
 .card,.res,.snap,.pack,.plan,.panel,.box{
-  border-radius:18px !important;
-  border:1.5px solid rgba(46,134,199,.16) !important;
+  border-radius:22px !important;
+  border:1px solid #E9F1FB !important;
   background:#FFFFFF !important;
-  box-shadow:0 8px 22px rgba(46,134,199,.08) !important;
+  box-shadow:0 8px 24px rgba(30,41,59,.06) !important;
+  transition:transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s !important;
+}
+.card:hover,.res:hover,.snap:hover,.pack:hover{
+  transform:translateY(-4px) !important;box-shadow:0 16px 34px rgba(59,130,246,.16) !important;border-color:#CFE2FB !important;
 }
 .card::before,.res::before,.snap::before{
-  height:5px !important;opacity:1 !important;
-  background:linear-gradient(90deg,#2E86C7,#1AA0A0) !important;
+  height:5px !important;opacity:1 !important;border-radius:22px 22px 0 0 !important;
+  background:linear-gradient(90deg,#3B82F6,#8B5CF6) !important;
 }
-.card:hover,.res:hover{transform:translateY(-2px);transition:transform .15s;border-color:rgba(26,160,160,.4) !important}
-.tile{background:var(--navy-800) !important;border:1px solid rgba(46,134,199,.14) !important;border-radius:16px !important}
+.tile{background:#F7FBFF !important;border:1px solid #E4EEFB !important;border-radius:18px !important}
 
-/* KPI / big numbers: friendly sky-teal (calm, still lively) */
+/* big numbers / KPIs — gold reward feel */
 .tile .v,.tele .num,.kpi .v,.stat .v,.ring i,.metrics .mv{
-  color:#1AA0A0 !important;font-weight:800 !important;
+  color:#3B82F6 !important;font-weight:800 !important;font-family:var(--serif) !important;
 }
-.k,.mk,.slot-k{color:#2E86C7 !important}
+.k,.mk,.slot-k{color:#64748B !important}
 
-/* 10% — actions only: vivid, inviting. Primary = warm orange; success = lime */
-.btn{border-radius:14px !important;font-weight:700 !important}
+/* buttons — big, rounded, tappable (≥44px). Primary blue; reward gold. */
+.btn{
+  border-radius:18px !important;font-weight:800 !important;min-height:44px !important;
+  transition:transform .18s cubic-bezier(.34,1.56,.64,1), filter .18s, box-shadow .18s !important;
+}
+.btn:active{transform:scale(.95) !important}
 .btn.solid,.btn.primary{
-  background:linear-gradient(135deg,#FBA82B,#F5871F) !important;color:#FFFFFF !important;border:none !important;
-  box-shadow:0 6px 16px rgba(245,135,31,.28) !important;
+  background:#3B82F6 !important;color:#FFFFFF !important;border:none !important;min-height:52px !important;
+  box-shadow:0 8px 20px rgba(59,130,246,.32) !important;
 }
-.btn.solid:hover,.btn.primary:hover{filter:brightness(1.05)}
-.btn:not(.solid):not(.ghost):not(.primary){background:#EAF3FB !important;border:2px solid #2E86C7 !important;color:#1F6FB0 !important}
-.btn.ghost{border:1.5px solid rgba(46,134,199,.32) !important;color:#4C5878 !important}
-.btn.good,.btn.success{background:linear-gradient(135deg,#57C56A,#2E9E4B) !important;color:#fff !important;border:none !important}
+.btn.solid:hover,.btn.primary:hover{background:#2563EB !important;transform:translateY(-2px) !important}
+.btn:not(.solid):not(.ghost):not(.primary){background:#FFFFFF !important;border:2px solid #D6E4FF !important;color:#2563EB !important}
+.btn.ghost{border:2px solid #D6E4FF !important;color:#475569 !important}
+.btn.sm{min-height:38px !important;border-radius:14px !important}
+.btn.good,.btn.success{background:#22C55E !important;color:#fff !important;border:none !important;box-shadow:0 8px 20px rgba(34,197,94,.30) !important}
+.btn.reward,.btn.gold{background:#FBBF24 !important;color:#7A4E00 !important;border:none !important}
+.btn.reward:hover,.btn.gold:hover{background:#F59E0B !important}
 
-/* pills / badges / achievements: sunny yellow accent with dark indigo text */
-.badge,.pill,.qchip,.chip{background:#FFF1C2 !important;border:1px solid #F2C94C !important;color:#5A4A12 !important;border-radius:999px !important}
-.badge.good,.pill.good{background:#DFF3E1 !important;border-color:#57C56A !important;color:#1E6B33 !important}
-.badge.crit,.pill.crit{background:#FBE3E1 !important;border-color:#E0554E !important;color:#8A2620 !important}
+/* pills / badges / achievements — gold reward with dark text (contrast) */
+.badge,.pill,.qchip,.chip{background:#FEF3C7 !important;border:1px solid #FBBF24 !important;color:#92400E !important;border-radius:999px !important;font-weight:700 !important}
+.badge.good,.pill.good{background:#ECFDF5 !important;border-color:#22C55E !important;color:#166534 !important}
+.badge.crit,.pill.crit{background:#FEE2E2 !important;border-color:#FF6B6B !important;color:#B91C1C !important}
+.badge.tutor,.pill.ai{background:#F3EEFE !important;border-color:#8B5CF6 !important;color:#5B21B6 !important}
 
-/* sidebar nav: calm, sky-highlighted active state */
-aside nav a{color:#4C5878 !important;border-radius:12px !important}
-aside nav a:hover{background:rgba(46,134,199,.10) !important;color:#2E86C7 !important}
-aside nav a.on{background:rgba(26,160,160,.14) !important;color:#14707A !important}
+/* progress bars — brand-blue fill (green when complete via .done) */
+.bar{height:14px !important;border-radius:10px !important;background:#E2E8F0 !important;overflow:hidden}
+.bar i{background:linear-gradient(90deg,#60A5FA,#2563EB) !important;border-radius:10px !important}
+.bar.done i,.bar i.done,.complete .bar i{background:linear-gradient(90deg,#34D399,#22C55E) !important}
 
-/* progress bars: gentle sky→teal fill */
-.bar{height:13px !important;border-radius:9px !important;background:#E7EEF6 !important}
-.bar i{background:linear-gradient(90deg,#57C56A,#1AA0A0) !important}
+/* form controls — white, soft blue border, warm focus ring, ≥44px */
+input,select,textarea{border-radius:14px !important;background:#FFFFFF !important;color:#1E293B !important;border:2px solid #D6E4FF !important;min-height:44px !important;font-size:15px !important}
+input::placeholder,textarea::placeholder{color:#94A3B8 !important}
+input:focus,select:focus,textarea:focus{border-color:#3B82F6 !important;box-shadow:0 0 0 4px rgba(59,130,246,.18) !important;outline:none}
 
-/* form controls: white, soft sky border, warm focus ring */
-input,select,textarea{border-radius:12px !important;background:#FFFFFF !important;color:#26315A !important;border:1.5px solid rgba(46,134,199,.30) !important}
-input::placeholder,textarea::placeholder{color:#9AA3BC !important}
-input:focus,select:focus,textarea:focus{border-color:#FBA82B !important;box-shadow:0 0 0 3px rgba(251,168,43,.20) !important}
+/* helper / muted text */
+.note,.sub,.muted,.empty,small{color:#64748B !important}
 
-/* Today's Winning Plan step cards use dark inline styles for the adult theme —
-   flip them to light so they don't read as grey blocks on the cream backdrop */
-#winning-plan{background:linear-gradient(135deg,rgba(46,134,199,.08),rgba(26,160,160,.06)) !important;border-color:rgba(46,134,199,.20) !important}
-#wp-steps a{background:#F4F9FE !important;border-color:rgba(46,134,199,.20) !important}
-#wp-steps a b{color:#26315A !important}
-#wp-steps a b[style*="8FC2EC"],#wp-steps a b:first-child{color:#2E86C7 !important}
-#wp-steps a div{color:#66708F !important}
-#wp-impact,#wp-min,#wp-stretch{color:#4C5878 !important}
+/* notifications / toast */
+.toast{background:#EFF6FF !important;color:#1D4ED8 !important;border:1px solid #BFDBFE !important;border-radius:16px !important;font-weight:700 !important}
 
-/* muted / helper text stays readable on cream */
-.note,.sub,.muted,.empty,small{color:#66708F !important}
+/* Today's Winning Plan step cards carry dark inline styles — flip them light */
+#winning-plan{background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(139,92,246,.06)) !important;border-color:#DBE7FB !important;border-radius:22px !important}
+#wp-steps a{background:#F7FBFF !important;border-color:#DBE7FB !important;border-radius:16px !important}
+#wp-steps a b{color:#1E293B !important}
+#wp-steps a b[style*="8FC2EC"],#wp-steps a b:first-child{color:#3B82F6 !important}
+#wp-steps a div{color:#64748B !important}
+#wp-impact,#wp-min,#wp-stretch{color:#475569 !important}
 
 /* tables */
-th{color:#2E86C7 !important}
-td,tr{border-color:rgba(46,134,199,.12) !important}
+th{color:#3B82F6 !important;font-family:var(--serif) !important}
+td,tr{border-color:#EAF1FB !important}
 
-::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#2E86C7,#1AA0A0) !important;border-radius:10px}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#60A5FA,#3B82F6) !important;border-radius:10px}
 
-/* one small, friendly star — a light touch, not a distraction */
+/* subtle, achievement-reinforcing motion (200–400ms) */
+@keyframes sy-kid-twinkle{0%,100%{transform:scale(1) rotate(0deg);opacity:.9}50%{transform:scale(1.25) rotate(12deg);opacity:1}}
+@keyframes sy-kid-pop{0%{transform:scale(.8);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+.card,.res,.snap{animation:sy-kid-pop .32s ease-out both}
+
+/* one friendly floating star — a magical touch, not a distraction */
 body::after{
-  content:"⭐";position:fixed;top:12px;right:16px;font-size:20px;opacity:.85;
+  content:"⭐";position:fixed;top:12px;right:16px;font-size:22px;opacity:.9;
   animation:sy-kid-twinkle 3s ease-in-out infinite;pointer-events:none;z-index:98;
 }
-@keyframes sy-kid-twinkle{0%,100%{transform:scale(1) rotate(0deg);opacity:.85}50%{transform:scale(1.25) rotate(12deg);opacity:1}}

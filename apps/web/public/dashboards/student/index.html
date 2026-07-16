@@ -210,6 +210,9 @@ $('hi-name').textContent=(profile.name||S.name||'student').split(' ')[0];
 /* ---------- parent link code + QR ---------- */
 var code=SY.get('parentCode',null);
 if(!code){code=String(Math.floor(10000000+Math.random()*90000000));SY.set('parentCode',code)}
+/* publish to the backend directory so a parent on ANY device/account can
+   resolve this code (this is the page students actually read the code from) */
+try{SY.publishCode(code,'account')}catch(e){}
 $('pcode').textContent=code;
 try{
   var qr=qrcode(0,'M');qr.addData(code);qr.make();

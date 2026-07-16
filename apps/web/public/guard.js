@@ -249,6 +249,12 @@
         }).catch(function () { return self.resolveCodeAsync(c); });
       });
     },
+    /** resolves true when this account has a live cloud session (Firebase token)
+        — cross-account linking/sync needs it; used to give a clear message. */
+    cloudAuthed: function () {
+      if (s.demo) return Promise.resolve(false);
+      return cloudReady().then(function (c) { return c ? c.token(s.email).then(function (t) { return !!t; }).catch(function () { return false; }) : false; });
+    },
     /** my backend links: { inbound:[…people linked to me…], outbound:[…accounts I linked to…] } */
     myLinks: function () {
       if (s.demo) return Promise.resolve(null);
@@ -402,16 +408,26 @@
   };
   try { window.SY.applyLearning(); } catch (e) {}
 
-  // ---- KIDS theme: under-12 students (Primary / 11+ study level) get a
-  // fully colourful OS — vivid background, rainbow branding, playful UI.
-  // Applied from the profile automatically; flips off when the level changes.
+  // ---- KIDS theme: under-12 students (Primary / KS1 / KS2 / 11+) get the
+  // StudYear Primary premium theme — light sky background, navy sidebar,
+  // rounded fonts, floating cards. Applied automatically from the study level
+  // (checked across every field it might live in), flips off if it changes.
   try {
     if (s.role === 'student') {
       var _kp = window.SY.get('profile', {}) || {};
-      if (/primary|eyfs|reception|\bks[12]\b|key stage [12]|11\+|\byear [1-6]\b/i.test(String(_kp.level || ''))) {
+      // the level can live in a few fields depending on how the account/school
+      // set it — check them all so the theme is never silently missed
+      var _lvlStr = [_kp.level, _kp.yearGroup, _kp.year, _kp.keyStage, _kp.stage, _kp.phase]
+        .map(function (x) { return String(x || ''); }).join(' ');
+      var _isPrimary = /primary|eyfs|reception|infant|junior|\bks\s*[12]\b|key\s*stage\s*[12]|\b11\s*\+/i.test(_lvlStr)
+        || /\byear\s*[1-6]\b/i.test(_lvlStr);
+      // never treat secondary "Year 7-13" / GCSE / A-level as primary
+      if (/gcse|a-?level|as-?level|\bks\s*[345]\b|key\s*stage\s*[345]|\byear\s*(7|8|9|1[0-3])\b|sixth form|btec|ib\b|undergrad|degree/i.test(_lvlStr)) _isPrimary = false;
+      if (_isPrimary) {
         var kl = document.createElement('link');
         kl.rel = 'stylesheet'; kl.href = base + 'kids.css'; kl.id = 'sy-kids';
         (document.head || document.documentElement).appendChild(kl);
+        document.documentElement.setAttribute('data-sy-kids', '1');
       }
     }
   } catch (e) {}

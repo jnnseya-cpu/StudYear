@@ -260,8 +260,11 @@ $('f').addEventListener('submit',async function(e){
     _pass();
     /* unlock (or backfill) the account's end-to-end encryption keys */
     try{if(window.SYE2E)await SYE2E.setupAccount(email,pw)}catch(err){}
-    /* refresh the cloud session in the background (no-op until go-live) */
-    try{if(window.SYCloud)SYCloud.signIn(email,pw)}catch(err){}
+    /* establish the cloud session BEFORE leaving this page — awaited (with its
+       own 6s internal timeout) so the Firebase token is saved to this device.
+       Without it, cross-account features (parent/school linking, sync) silently
+       fail on the next page because there is no token yet. */
+    try{if(window.SYCloud){await SYCloud.whenReady();if(SYCloud.ready())await SYCloud.signIn(email,pw);}}catch(err){}
     if(wantRole&&authed.role!==wantRole){
       save('sy-session',{name:authed.name,email:authed.email,role:authed.role,ts:new Date().toISOString()});
       say('Signed in — but this account is a <b>'+(LABELS[authed.role]||authed.role)+'</b> account, and this area needs a <b>'+

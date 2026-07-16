@@ -740,7 +740,13 @@ $('link-go').onclick=function(){
   var btn=$('link-go');btn.disabled=true;
   SY.connectCode(code,'parent').then(function(r){
     btn.disabled=false;
-    if(!r||!r.email){toast('No account found for that code. Check it in your child\'s My Account → Connect a parent.');return}
+    if(!r||!r.email){
+      SY.cloudAuthed().then(function(ok){
+        toast(ok?'No account found for that code. Ask your child to open StudYear once, then check the code in My Account → Connect a parent.'
+                :'Reconnect needed — please sign out and sign back in, then try the code again.');
+      });
+      return;
+    }
     var email=r.email,name=r.name||SY.accountName(email);
     var kids=SY.get('children',[]);
     if(kids.some(function(k){return k.email===email})){toast('That child is already linked.');$('link-code').value='';return}
