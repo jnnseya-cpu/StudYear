@@ -11,9 +11,11 @@
 (function(){
   'use strict';
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-  var LEVELS=['Reception','KS1','KS2','11+','KS3','GCSE','IGCSE','National 5','AS','A-level','Highers','IB','BTEC','University','Lifelong learning'];
+  var LEVELS=['Reception','KS1','KS2','11+','KS3','GCSE','IGCSE','National 5','AS','A-level','Highers','IB','BTEC','University','UG Year 1','UG Year 2','UG Year 3 / Final','Foundation year','Masters / PG','Lifelong learning'];
   var BOARDS=['','AQA','Edexcel','OCR','WJEC','CCEA','SQA','CIE','IB'];
-  var SUBJECTS=['Mathematics','Further Mathematics','English Language','English Literature','Biology','Chemistry','Physics','Combined Science','Geography','History','Computer Science','Business','Economics','Psychology','Sociology','Religious Studies','French','Spanish','German','Art & Design','Design & Technology','Music','Drama','Physical Education','Verbal Reasoning','Non-Verbal Reasoning'];
+  var SUBJECTS=['Art & Design','Biology','Business','Chemistry','Combined Science','Computer Science','Design & Technology','Drama','Economics','English Language','English Literature','French','Further Mathematics','Geography','German','History','Mathematics','Music','Non-Verbal Reasoning','Physical Education','Physics','Psychology','Religious Studies','Sociology','Spanish','Verbal Reasoning'];
+  var UNI_SUBJECTS=['Accounting','Biology','Business Management','Chemistry','Computing','Criminology','Dentistry','Economics','Engineering','English Language','English Literature','Environmental Science','French','Geography','Government & Politics','Health & Social Care','History','Human Biology','Law','Marketing','Medicine','Nursing','Pharmacy','Philosophy','Psychology','Sociology','Spanish','Sports Science','Zoology'];
+  function isUni(lv){return /universit|undergrad|\bUG\b|foundation year|master|postgrad|\bPG\b/i.test(String(lv||''))}
   /* command-word rotation for the on-device fallback: [stem, marks, scheme] */
   var TEMPLATES=[
     ['Define the term “{t}”.',2,'1 mark — precise definition naming the key idea; 1 mark — correct use of subject terminology.'],
@@ -159,7 +161,7 @@
           if(d.subject&&list.indexOf(d.subject)<0)list.unshift(d.subject);
           return '<option value="">Select a subject</option>'+list.map(function(s){return '<option'+(s===d.subject?' selected':'')+'>'+esc(s)+'</option>'}).join('');
         })()+'</select></div>'+
-      '<div><label class="f">Level</label><select id="sx-level">'+levels.map(function(l){return '<option'+(l===d.level?' selected':'')+'>'+esc(l)+'</option>'}).join('')+'</select></div>'+
+      '<div><label class="f">Level</label><select id="sx-level" data-uni-src="1">'+levels.map(function(l){return '<option'+(l===d.level?' selected':'')+'>'+esc(l)+'</option>'}).join('')+'</select></div>'+
       '<div><label class="f">Exam board</label><select id="sx-board">'+boards.map(function(b){return '<option'+(b===(d.board||'')?' selected':'')+'>'+esc(b)+'</option>'}).join('')+'</select></div></div>'+
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">'+
       '<div><label class="f">Questions (1–50)</label><input type="number" id="sx-n" value="10" min="1" max="50"></div>'+
@@ -191,6 +193,15 @@
     $('sx-exp-ans').onclick=function(){if(!state)return;
       window.SYExport.menu(this,{word:function(){window.SYExport.word((state.meta.title||'exam-paper')+' — answers',{title:state.meta.title+' — Answer sheet',blocks:wordBlocks(brand,state.meta,state.qs,true)})},
         pdf:function(){window.SYExport.pdf(state.meta.title+' — Answer sheet',answersHtml(brand,state.meta,state.qs))}})};
+    /* subject catalogue follows the level: university subjects when a
+       university level is chosen, school subjects otherwise; alphabetical */
+    (function(){
+      var lvEl=$('sx-level'),sjEl=$('sx-subj');if(!lvEl||!sjEl||opts.subjects)return;
+      function refill(){var keep=sjEl.value,list=(isUni(lvEl.value)?UNI_SUBJECTS:SUBJECTS).slice().sort(function(a,b){return a.localeCompare(b)});
+        sjEl.innerHTML='<option value="">Select a subject</option>'+list.map(function(s){return '<option>'+esc(s)+'</option>'}).join('');
+        if(list.indexOf(keep)>=0)sjEl.value=keep;}
+      lvEl.addEventListener('input',refill);if(isUni(lvEl.value))refill();
+    })();
     $(goId).onclick=async function(){
       var subject=$('sx-subj').value.trim(),level=$('sx-level').value,board=$('sx-board').value;
       var n=Math.max(1,Math.min(50,parseInt($('sx-n').value,10)||10));
