@@ -191,6 +191,22 @@ var ROLES=[
    view is internal. Admins sign in at /auth/?role=admin with the invite code. */
 
 function launch(r,mode){
+  /* NEET / return-to-learning demo: a 19-year-old NOT on any school roll —
+     their own year group, re-entry Career Passport, funded routes first */
+  if(mode==='neet'){
+    var nEmail='neet@demo.studyear',nns='sy-u:'+nEmail+':';
+    seedStudent(nEmail,'Marcus Bailey',{level:'NEET · Return to learning (16–26)',base:34,points:180,acus:250});
+    set(nns+'wallet',{acus:250,plan:'child_free',month:MONTH});
+    set(nns+'career',{interests:['construction','engineering','tech'],locality:'Wolverhampton',style:'practical',personality:'',income:''});
+    set(nns+'profile',{name:'Marcus Bailey',level:'NEET · Return to learning (16–26)',subjects:[
+      {s:'Mathematics',target:5},{s:'English Language',target:5}]});
+    registerUser(nEmail,'student','Marcus Bailey');
+    set('sy-session',{role:'student',name:'Marcus Bailey',email:nEmail,demo:true});
+    var tn=document.getElementById('toast');
+    tn.textContent='Opening Marcus — 19, returning to learning…';tn.style.opacity=1;
+    setTimeout(function(){location.href='../career/'},350);
+    return;
+  }
   var email=(mode==='empty'?(r.role+'.new@demo.studyear'):(r.role+'@demo.studyear'));
   var name=mode==='empty'?('Demo '+r.t):(r.who.split('·')[0].trim());
   if(mode==='empty')del('sy-u:'+email+':');
@@ -206,7 +222,9 @@ ROLES.forEach(function(r){
   var c=document.createElement('div');c.className='card';c.id='card-'+r.role;
   c.innerHTML='<div class="ic">'+r.ic+'</div><h3>'+r.t+'</h3><div class="who">'+r.who+'</div><p>'+r.p+'</p>'+
     '<div class="btns"><button class="btn" data-m="loaded">Launch fully loaded →</button>'+
-    '<button class="btn ghost" data-m="empty">Launch empty</button></div>';
+    '<button class="btn ghost" data-m="empty">Launch empty</button>'+
+    (r.role==='student'?'<button class="btn ghost" data-m="neet">🎯 NEET learner (19) — return to learning →</button>':'')+
+    '</div>';
   c.querySelectorAll('button').forEach(function(b){b.onclick=function(){launch(r,b.dataset.m)}});
   grid.appendChild(c);
 });
