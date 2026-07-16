@@ -114,15 +114,87 @@ var PATHWAYS=[
 ];
 function hasAny(arr,list){return arr.some(function(x){return list.indexOf(x)>=0})}
 
-/* locality-aware employer library */
+/* locality-aware employer library — UK-wide anchors per region; the list a
+   student sees is COMPOSED for them: region anchors + entries driven by
+   their own strongest subjects, quiz results and chosen interests. */
 var LOCAL_EMP={
   birmingham:['Jaguar Land Rover','NHS Birmingham','HS2 / construction','BT / tech','University of Birmingham','Deutsche Bank ops'],
+  london:['Financial services & fintech','NHS trusts','Tech scale-ups','Creative & media studios','Legal chambers','Civil service fast stream'],
+  manchester:['Media City / BBC','Engineering & manufacturing','NHS Greater Manchester','Digital & fintech','Universities'],
+  leeds:['NHS Leeds & health-tech','Financial & legal services','Channel 4 / media','Engineering & manufacturing'],
+  sheffield:['Advanced manufacturing (AMRC)','NHS South Yorkshire','Steel & engineering','Digital agencies'],
+  liverpool:['Port & maritime logistics','NHS Liverpool','Creative & media','Life sciences'],
+  newcastle:['Engineering & offshore energy','NHS North East','Digital & tech (Sage)','Universities'],
+  nottingham:['Boots / pharma & health','Engineering & rail','Financial services (Experian)','Universities'],
+  leicester:['Manufacturing & textiles','NHS Leicester','Logistics & distribution','Space & engineering (NSC)'],
+  coventry:['Automotive & EV engineering','Manufacturing R&D','Logistics','Universities'],
+  bristol:['Aerospace (Airbus, Rolls-Royce)','Digital & creative','NHS Bristol','Green energy & environment'],
+  oxford:['Life sciences & research','Universities & publishing','Health trusts','Motorsport engineering'],
+  cambridge:['Tech & AI (Silicon Fen)','Life sciences & biotech','Universities & research','Health trusts'],
+  southampton:['Port & maritime','Aerospace & defence','NHS South','Universities'],
+  portsmouth:['Naval & defence engineering','Port & maritime','Aerospace','Universities'],
+  plymouth:['Marine engineering & naval base','Ocean science','Tourism & hospitality','Health trusts'],
+  hull:['Offshore wind (Siemens)','Port & logistics','Chemicals & manufacturing','Health trusts'],
+  glasgow:['Shipbuilding & engineering','Financial services','NHS Scotland','Space & satellite tech'],
+  edinburgh:['Financial services & fintech','Tech & AI scale-ups','NHS Scotland','Universities & research'],
+  cardiff:['Media (BBC Cymru)','Financial & professional services','NHS Wales','Advanced manufacturing'],
+  swansea:['Steel & advanced materials','Health & life sciences','Universities','Tourism'],
+  belfast:['Aerospace (Spirit)','Cyber-security & fintech','Health trusts','Film & creative (Titanic Studios)'],
   coastal:['Marine engineering firms','Tourism & hospitality','Renewable / offshore energy','Environmental agencies','Fishing & aquaculture'],
-  london:['Financial services','NHS trusts','Tech scale-ups','Creative & media studios','Legal chambers'],
-  manchester:['Media City / BBC','Engineering & manufacturing','NHS Greater Manchester','Digital & fintech','Universities']
+  rural:['Agri-tech & farming enterprises','Renewable energy projects','Rural NHS & care','Tourism & land management']
 };
-var SECTOR_EMP={tech:['Software & fintech firms','IT apprenticeships'],engineering:['Manufacturers','Rail & infrastructure'],health:['NHS trusts','Care providers'],business:['Banks & professional services'],construction:['Housebuilders','Trades & civil engineering'],creative:['Studios & agencies'],marine:['Ports & marine engineering'],environment:['Renewable energy','Environmental agencies']};
-function localEmployers(loc){loc=(loc||'').toLowerCase();for(var k in LOCAL_EMP){if(loc.indexOf(k)>=0)return LOCAL_EMP[k]}if(/coast|sea|beach|port|marine/.test(loc))return LOCAL_EMP.coastal;return null}
+/* sector → employers, used to individualise every column */
+var SECTOR_EMP={
+  tech:['Software & fintech firms','IT & data apprenticeships'],
+  engineering:['Manufacturers & rail / infrastructure','Green-energy engineering'],
+  health:['NHS trusts','Care providers & health-tech'],
+  business:['Banks & professional services','Consultancies'],
+  construction:['Housebuilders & civil engineering','Trades apprenticeships'],
+  creative:['Studios & agencies','Games & design houses'],
+  media:['Broadcasters & production companies','Digital publishers'],
+  science:['Labs & research institutes','Pharma & biotech'],
+  law:['Solicitors & chambers','Legal apprenticeships (CILEX)'],
+  education:['Schools & trusts','EdTech companies'],
+  sport:['Clubs & academies','Leisure & coaching providers'],
+  environment:['Renewable energy','Environmental agencies'],
+  marine:['Ports & marine engineering'],
+  hospitality:['Hotels, travel & events groups'],
+  agriculture:['Agri-tech & food production']
+};
+/* the student's own results drive sectors too: strong subjects → sectors */
+var SUBJ_SECTOR={
+  'math':'tech','further math':'tech','computer':'tech','computing':'tech',
+  'physic':'engineering','design':'engineering','engineering':'engineering',
+  'biolog':'health','chemist':'science','science':'science','psycholog':'health','pe':'sport','physical ed':'sport',
+  'english':'media','drama':'creative','art':'creative','music':'creative','media':'media','film':'media',
+  'histor':'law','politic':'law','law':'law','religio':'education','sociolog':'education',
+  'business':'business','econom':'business','geograph':'environment','environment':'environment',
+  'french':'business','spanish':'business','german':'business','language':'business'
+};
+function subjectSectors(subjNames){
+  var out=[];subjNames.forEach(function(s){s=String(s||'').toLowerCase();
+    for(var k in SUBJ_SECTOR){if(s.indexOf(k)>=0&&out.indexOf(SUBJ_SECTOR[k])<0)out.push(SUBJ_SECTOR[k])}});
+  return out;
+}
+/* real RESULTS: per-subject average from this account's quiz history */
+function quizMastery(){
+  var by={};(SY.get('quizzes',[])||[]).forEach(function(q){
+    if(!q||!q.subj||!(q.total>0))return;
+    (by[q.subj]=by[q.subj]||[]).push(100*q.score/q.total);
+  });
+  var out=[];for(var s in by){out.push({s:s,avg:Math.round(by[s].reduce(function(a,b){return a+b},0)/by[s].length)})}
+  return out.sort(function(a,b){return b.avg-a.avg});
+}
+var INTL_BY_SECTOR={
+  tech:'Remote-first engineering teams',health:'Global health programmes (WHO, MSF)',
+  business:'Global graduate schemes',engineering:'International infrastructure & energy projects',
+  creative:'Global studios & platforms',media:'International media networks',
+  science:'Research programmes abroad (ERC, CERN)',law:'International law & NGOs',
+  environment:'Climate & conservation projects worldwide',education:'Teach-abroad programmes',
+  hospitality:'Cruise, resort & aviation careers',sport:'International academies & sport science',
+  marine:'Global shipping & offshore',agriculture:'Agri-science exchanges'
+};
+function localEmployers(loc){loc=(loc||'').toLowerCase();for(var k in LOCAL_EMP){if(k!=='coastal'&&k!=='rural'&&loc.indexOf(k)>=0)return LOCAL_EMP[k]}if(/coast|sea|beach|port|marine|island/.test(loc))return LOCAL_EMP.coastal;if(/village|rural|farm|countryside|shire\b/.test(loc))return LOCAL_EMP.rural;return null}
 
 function generate(){
   var a=academicScore();var p=$('c-style').value;var intr=readInterests();var pers=$('c-personality').value;var income=$('c-income').value;var loc=$('c-locality').value.trim();
@@ -146,13 +218,33 @@ function generate(){
       '<div class="meta"><span>💷 '+esc(o.pw.sal)+'</span><span>📊 labour demand: '+demand(o.pw.k)+'</span></div></div>';
   }).join('');
   $('paths-card').style.display='block';
-  /* employers */
-  var le=localEmployers(loc);var sectorEmp=[];intr.forEach(function(x){if(SECTOR_EMP[x])sectorEmp=sectorEmp.concat(SECTOR_EMP[x])});if(!sectorEmp.length)sectorEmp=['Employers across sectors'];
+  /* employers — composed from THIS student's data: quiz results + subject
+     strengths + interests decide the sectors; locality picks the region. */
+  var qm=quizMastery();                                     // real results
+  var strongQuiz=qm.filter(function(x){return x.avg>=60}).map(function(x){return x.s});
+  var mySectors=[];                                          // ranked, deduped
+  intr.forEach(function(x){if(mySectors.indexOf(x)<0)mySectors.push(x)});
+  subjectSectors(strongQuiz.concat(strengths)).forEach(function(x){if(mySectors.indexOf(x)<0)mySectors.push(x)});
+  var sectorEmp=[];var sectorWhy={};
+  mySectors.forEach(function(x){(SECTOR_EMP[x]||[]).forEach(function(e){if(sectorEmp.indexOf(e)<0){sectorEmp.push(e);sectorWhy[e]=x}})});
+  if(!sectorEmp.length)sectorEmp=['Employers across sectors — add subjects & interests to sharpen this'];
+  var le=localEmployers(loc);
+  var localList=(le?le.slice(0,3):[]).concat(sectorEmp.slice(0,le?2:5));
+  var intl=mySectors.map(function(x){return INTL_BY_SECTOR[x]}).filter(Boolean).slice(0,3);
+  intl.push('Study-abroad pathways');
   $('employers').innerHTML=
-    '<div class="emp"><h4>Local'+(loc?' · '+esc(loc):'')+'</h4><div class="e">'+((le||sectorEmp).slice(0,5).map(esc).join('<br>'))+'</div></div>'+
-    '<div class="emp"><h4>National</h4><div class="e">'+sectorEmp.slice(0,5).map(esc).join('<br>')+'<br>UCAS · gov.uk apprenticeships</div></div>'+
-    '<div class="emp"><h4>International</h4><div class="e">Global graduate schemes<br>Overseas apprenticeships<br>Remote-first employers<br>Study-abroad pathways</div></div>';
-  $('coach').innerHTML='🤖 <b>AI Career Coach:</b> based on your data, '+scored[0].pw.t.toLowerCase()+' is your strongest route right now — but keep '+scored[1].pw.t.toLowerCase()+' open. Boost your match by lifting '+(strengths[0]?esc(strengths[0]):'your core subjects')+' and gaining experience in '+(intr.length?esc((INTERESTS.find(function(i){return i[0]===intr[0]})||[])[1]||''):'a field you enjoy')+'.';
+    '<div class="emp"><h4>Local'+(loc?' · '+esc(loc):'')+'</h4><div class="e">'+(localList.length?localList.map(esc).join('<br>'):'Set your town above for local matches')+'</div></div>'+
+    '<div class="emp"><h4>National — matched to your strengths</h4><div class="e">'+sectorEmp.slice(0,5).map(esc).join('<br>')+'<br>UCAS · gov.uk apprenticeships</div></div>'+
+    '<div class="emp"><h4>International</h4><div class="e">'+intl.map(esc).join('<br>')+'</div></div>';
+  /* coach: strongest route from the pathway model, weakest subject from REAL
+     results (quiz history first, profile grades as fallback) */
+  var weakest=(qm.length?qm[qm.length-1]:null);
+  var weakName=weakest?weakest.s:((profile.subjects||[]).slice().sort(function(x,y){return (parseInt(x.current||'5')||5)-(parseInt(y.current||'5')||5)})[0]||{}).s;
+  var strongName=qm.length?qm[0].s:strengths[0];
+  $('coach').innerHTML='🤖 <b>AI Career Coach:</b> based on your data, '+scored[0].pw.t.toLowerCase()+' is your strongest route right now — but keep '+scored[1].pw.t.toLowerCase()+' open. '
+    +(strongName?('Your results are strongest in <b>'+esc(strongName)+'</b>'+(weakest&&qm.length?' ('+qm[0].avg+'%)':'')+'. '):'')
+    +(weakName?('Boost your match by lifting <b>'+esc(weakName)+'</b>'+(weakest?' (currently '+weakest.avg+'%)':'')+' — a focused recovery week moves it fastest. '):'Add subjects in your profile to sharpen this. ')
+    +'Gain experience in '+(mySectors.length?esc((INTERESTS.find(function(i){return i[0]===mySectors[0]})||[mySectors[0],mySectors[0]])[1]):'a field you enjoy')+'.';
   $('emp-card').style.display='block';
   renderAIImpact(intr);
 }
