@@ -198,6 +198,10 @@ function localEmployers(loc){loc=(loc||'').toLowerCase();for(var k in LOCAL_EMP)
 
 function generate(){
   var a=academicScore();var p=$('c-style').value;var intr=readInterests();var pers=$('c-personality').value;var income=$('c-income').value;var loc=$('c-locality').value.trim();
+  /* NEET / return-to-learning (16–26): the passport becomes a re-entry engine —
+     funded routes first (Skills Bootcamps, apprenticeships, adult education),
+     employment-facing pathways boosted, functional Maths & English the spine. */
+  var isNEET=/NEET/i.test(profile.level||'');
   /* passports */
   var strengths=(profile.subjects||[]).slice().sort(function(x,y){return (parseInt(y.current||'5')||5)-(parseInt(x.current||'5')||5)}).slice(0,3).map(function(x){return x.s});
   var skills=[];if(hasAny(intr,['tech','engineering']))skills.push('Digital & technical');if(hasAny(intr,['business']))skills.push('Enterprise');if(hasAny(intr,['creative','media']))skills.push('Creativity');if(a>=70)skills.push('Academic rigour');if(p==='practical')skills.push('Practical / hands-on');if(!skills.length)skills.push('Developing broad skills');
@@ -208,8 +212,8 @@ function generate(){
     '<div class="passrow"><span style="flex:1">Interests mapped</span><span>'+(intr.length?intr.map(function(x){var f=INTERESTS.find(function(i){return i[0]===x});return '<span class="pill">'+esc(f?f[1]:x)+'</span>'}).join(''):'Pick some interests above')+'</span></div>'+
     '<div class="passrow" style="border:0"><span style="flex:1">Academic ability index</span><span style="font-family:var(--serif);color:var(--gold-300)">'+a+'/100</span></div>';
   $('passport-card').style.display='block';
-  /* pathways scored */
-  var scored=PATHWAYS.map(function(pw){var s=Math.round(clamp(pw.score(a,p,intr,pers)+(income==='high'&&/app|trade|business/.test(pw.k)?6:0),4,100));return {pw:pw,s:s}}).sort(function(x,y){return y.s-x.s});
+  /* pathways scored — NEET boosts earn-while-you-learn and funded re-entry routes */
+  var scored=PATHWAYS.map(function(pw){var s=Math.round(clamp(pw.score(a,p,intr,pers)+(income==='high'&&/app|trade|business/.test(pw.k)?6:0)+(isNEET&&/degreeapp|technical|trade|employment/.test(pw.k)?14:0),4,100));return {pw:pw,s:s}}).sort(function(x,y){return y.s-x.s});
   var max=scored[0].s;
   $('paths').innerHTML=scored.map(function(o,i){var pct=Math.round(100*o.s/Math.max(max,1));var c=i===0?'var(--good)':o.s>=55?'var(--gold-500)':'var(--warn)';
     return '<div class="path'+(i===0?' top':'')+'"><div class="ph"><span class="ic">'+o.pw.ic+'</span><b>'+o.pw.t+'</b>'+(i===0?' <span class="badge">best fit</span>':'')+'<span class="fit" style="color:'+c+'">'+o.s+'%</span></div>'+
@@ -230,6 +234,7 @@ function generate(){
   if(!sectorEmp.length)sectorEmp=['Employers across sectors — add subjects & interests to sharpen this'];
   var le=localEmployers(loc);
   var localList=(le?le.slice(0,3):[]).concat(sectorEmp.slice(0,le?2:5));
+  if(isNEET)localList=['Skills Bootcamps — funded, 12–16 weeks (gov.uk)','Apprenticeships 16–26 — earn while you learn','Adult education college — free GCSE Maths & English resits'].concat(localList).slice(0,6);
   var intl=mySectors.map(function(x){return INTL_BY_SECTOR[x]}).filter(Boolean).slice(0,3);
   intl.push('Study-abroad pathways');
   $('employers').innerHTML=
@@ -241,7 +246,8 @@ function generate(){
   var weakest=(qm.length?qm[qm.length-1]:null);
   var weakName=weakest?weakest.s:((profile.subjects||[]).slice().sort(function(x,y){return (parseInt(x.current||'5')||5)-(parseInt(y.current||'5')||5)})[0]||{}).s;
   var strongName=qm.length?qm[0].s:strengths[0];
-  $('coach').innerHTML='🤖 <b>AI Career Coach:</b> based on your data, '+scored[0].pw.t.toLowerCase()+' is your strongest route right now — but keep '+scored[1].pw.t.toLowerCase()+' open. '
+  $('coach').innerHTML=(isNEET?'🎯 <b>Return-to-learning route (16–26):</b> step 1 — free GCSE Maths &amp; English resits (StudYear\'s diagnostic + recovery plan get you exam-ready); step 2 — a funded Skills Bootcamp or apprenticeship in your strongest sector; step 3 — real employment with a qualification behind you. You are not behind, you are re-routing.<br>':'')+
+    '🤖 <b>AI Career Coach:</b> based on your data, '+scored[0].pw.t.toLowerCase()+' is your strongest route right now — but keep '+scored[1].pw.t.toLowerCase()+' open. '
     +(strongName?('Your results are strongest in <b>'+esc(strongName)+'</b>'+(weakest&&qm.length?' ('+qm[0].avg+'%)':'')+'. '):'')
     +(weakName?('Boost your match by lifting <b>'+esc(weakName)+'</b>'+(weakest?' (currently '+weakest.avg+'%)':'')+' — a focused recovery week moves it fastest. '):'Add subjects in your profile to sharpen this. ')
     +'Gain experience in '+(mySectors.length?esc((INTERESTS.find(function(i){return i[0]===mySectors[0]})||[mySectors[0],mySectors[0]])[1]):'a field you enjoy')+'.';

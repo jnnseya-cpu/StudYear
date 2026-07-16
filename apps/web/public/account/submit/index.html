@@ -139,7 +139,7 @@ var toastTimer;function toast(t){var el=$('toast');el.textContent=t;el.style.opa
 function usDate(iso){var d=new Date(iso);return (d.getMonth()+1)+"/"+d.getDate()+"/"+d.getFullYear()}
 
 var SUBJECTS=["Accounting","Biology","Business Studies","Chemistry","Computer Science","Computing","Economics","English","English Language","English Literature","French","Fun","Geography","Government & Politics","Health & Social Care","History","ICT","Law","Mathematics","Media Studies","Music","Other","Philosophy","Physical Education","Physics","Psychology","Religious Studies","Science","Sociology","Spanish"];
-var LEVELS=["Primary School","Years 7-9 (KS3)","GCSE","IGCSE","National 5","BTEC National","AS","A2/A-level","Scottish Highers","Scottish Advanced Highers","International Baccalaureate","University","11+ Exam","Fun","Other"];
+var LEVELS=["Primary School","Years 7-9 (KS3)","GCSE","IGCSE","National 5","BTEC National","AS","A2/A-level","Scottish Highers","Scottish Advanced Highers","International Baccalaureate","University","11+ Exam","NEET · Return to learning (16–26)","Fun","Other"];
 SUBJECTS.forEach(function(s){var o=document.createElement('option');o.textContent=s;$('s-subj').appendChild(o)});
 LEVELS.forEach(function(s){var o=document.createElement('option');o.textContent=s;$('s-level').appendChild(o)});
 var _prof=SY.get('profile',{});
