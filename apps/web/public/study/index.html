@@ -258,6 +258,7 @@
   <button data-t="create">✍️ Create your own</button>
   <button data-t="tutor">🤖 AI Tutor</button>
   <button data-t="lesson">📖 Interactive Lesson</button>
+  <button data-t="practice">🧩 Comprehension &amp; Reasoning</button>
   <button data-t="course">🎓 AI Course</button>
   <button data-t="review">📝 Assignment review</button>
   <button data-t="diag">🩺 Diagnostic</button>
@@ -749,6 +750,38 @@
     <div class="card c7">
       <h3>Your lesson</h3><div class="sub" id="il-sub">Enter a topic and generate a lesson to begin.</div>
       <div id="il-out"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== COMPREHENSION & REASONING ==================== -->
+<section id="tab-practice">
+  <div class="grid">
+    <div class="card c12">
+      <h3>🧩 Comprehension &amp; Reasoning</h3>
+      <div class="sub">Read a text, understand it and answer — and solve problems with or without numbers. Pitched to your level (KS2 to A‑level) and marked with feedback.</div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn ghost sm pr-mode on" data-m="comp">📖 English comprehension</button>
+        <button class="btn ghost sm pr-mode" data-m="solve">🧠 Problem solving</button>
+      </div>
+
+      <div id="pr-comp" class="pr-pane">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px">
+          <div><label class="f">Level</label><select id="pc-level"></select></div>
+          <div><label class="f">Theme <span style="text-transform:none;letter-spacing:0">(optional)</span></label><input type="text" id="pc-theme" placeholder="e.g. space, animals, a mystery, the environment"></div>
+        </div>
+        <div style="margin-top:12px"><button class="btn" id="pc-go">📖 Give me a passage to read</button></div>
+        <div id="pc-out" style="margin-top:14px"></div>
+      </div>
+
+      <div id="pr-solve" class="pr-pane" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px">
+          <div><label class="f">Level</label><select id="ps-level"></select></div>
+          <div><label class="f">Type</label><select id="ps-type"><option value="mixed">Mixed</option><option value="number">With numbers</option><option value="logic">Without numbers (logic &amp; reasoning)</option></select></div>
+        </div>
+        <div style="margin-top:12px"><button class="btn" id="ps-go">🧠 Give me problems to solve</button></div>
+        <div id="ps-out" style="margin-top:14px"></div>
+      </div>
     </div>
   </div>
 </section>
@@ -3934,6 +3967,198 @@ function cgStatic(subject,level,board,cap,focus){
       Every module opens into a real lesson, tutor session and check quiz.</div>`;
   wireCourse(subject,cap);
 };
+
+/* ==================== COMPREHENSION & REASONING ==================== */
+/* Read a text, understand it, answer — and solve problems with or without
+   numbers. Pitched KS2 → A-level (the last stage before university), AI-marked
+   with feedback, and it always works: an offline bank runs if AI is asleep. */
+(function initPractice(){
+  var sec=document.getElementById("tab-practice"); if(!sec) return;
+  /* levels from Key Stage 2 up to (and including) the last pre-university stage */
+  var i0=LEVELS.indexOf("Key Stage 2 (Years 3–6 · age 7–11)");
+  var i1=LEVELS.indexOf("International Baccalaureate");
+  var PRACTICE_LEVELS=(i0>=0&&i1>=i0)?LEVELS.slice(i0,i1+1):["Key Stage 2 (Years 3–6 · age 7–11)","Years 7-9 (KS3)","GCSE","IGCSE","AS","A2/A-level"];
+  var pcL=document.getElementById("pc-level"), psL=document.getElementById("ps-level");
+  PRACTICE_LEVELS.forEach(function(lv){
+    var a=document.createElement("option");a.textContent=lv;pcL.appendChild(a);
+    var b=document.createElement("option");b.textContent=lv;psL.appendChild(b);
+  });
+  var def=(PROFILE.level&&PRACTICE_LEVELS.indexOf(PROFILE.level)>=0)?PROFILE.level:"GCSE";
+  if(PRACTICE_LEVELS.indexOf(def)>=0){pcL.value=def;psL.value=def;}
+  var styleFor=function(lv){return (window.SY&&SY.stageStyle)?SY.stageStyle(lv):"";};
+
+  /* mode toggle */
+  sec.querySelectorAll(".pr-mode").forEach(function(btn){
+    btn.onclick=function(){
+      sec.querySelectorAll(".pr-mode").forEach(function(b){b.classList.remove("on")});
+      btn.classList.add("on");
+      var m=btn.dataset.m;
+      document.getElementById("pr-comp").style.display=(m==="comp")?"":"none";
+      document.getElementById("pr-solve").style.display=(m==="solve")?"":"none";
+    };
+  });
+
+  /* ---- offline banks (used only when the live model is asleep) ---- */
+  var COMP_BANK={
+    primary:{passage:"Milo the fox lived at the edge of Willow Wood. Every morning he trotted to the river to watch the ducks. One frosty day the river had frozen over and the ducks were nowhere to be seen. Milo felt worried — where had his friends gone? He followed their tracks in the snow all the way to a warm hollow under an old oak, where the ducks were huddled together, safe and cosy. Milo curled up beside them until the sun came out.",
+      qs:[["Where did Milo live?",1,"At the edge of Willow Wood."],["Why was Milo worried one frosty day?",2,"The river had frozen over and the ducks were missing, so he thought something had happened to his friends."],["What does the word 'huddled' tell you about the ducks?",2,"That they were pressed close together to stay warm and safe."],["How do you think Milo felt when he found the ducks? Use evidence from the text.",2,"Relieved and happy — he curled up beside them, showing he felt calm once they were safe."],["What kind of animal is Milo, and how do you know?",1,"A fox — the text says 'Milo the fox'."]]},
+    secondary:{passage:"The city had grown used to the river. It carried barges, cooled the summer streets and gave the children somewhere to skim stones. But the river had a memory longer than the city's. Beneath its calm surface lay old channels it had once carved and would, one wet autumn, choose to carve again. When the rain came that year it did not stop, and the water rose with a patience that felt almost deliberate, reclaiming cellars, roads and gardens the city had thought were its own.",
+      qs:[["Give two ways the river was useful to the city.",2,"It carried barges and cooled the summer streets (also: gave children somewhere to skim stones)."],["What does the phrase 'a memory longer than the city's' suggest about the river?",2,"That the river is far older than the city and 'remembers' its former paths — it personifies the river as knowing and enduring."],["How does the writer make the flood feel threatening? Refer to language.",3,"Words like 'patience', 'almost deliberate' and 'reclaiming' personify the water as purposeful, as if it is deliberately taking back what is its own."],["Explain the effect of the word 'reclaiming' in the final sentence.",2,"It implies the land was always the river's, so the flood is a taking-back rather than an accident — unsettling and inevitable."],["What is the writer's main message in this passage?",3,"That nature endures beneath human control and can reassert itself; the city's ownership of the land is temporary and fragile."]]}
+  };
+  var SOLVE_BANK={
+    primary:{number:[["A baker has 96 buns and packs them in trays of 8. How many trays?","12","96 ÷ 8 = 12 trays."],["A film starts at 14:35 and lasts 1 hour 50 minutes. When does it end?","16:25","14:35 + 1h = 15:35, + 50 min = 16:25."],["A jug holds 2 litres. How many 250 ml glasses can you fill?","8","2 L = 2000 ml; 2000 ÷ 250 = 8 glasses."]],
+      logic:[["Tom is taller than Ben. Ben is taller than Sam. Who is shortest?","Sam","Order tallest→shortest: Tom, Ben, Sam — so Sam is shortest."],["If today is Wednesday, what day will it be in 10 days?","Saturday","10 days = 1 week (Wed) + 3 days → Thu, Fri, Sat."],["A pattern goes 2, 4, 8, 16, … what comes next and why?","32","Each number doubles the one before: 16 × 2 = 32."]]},
+    secondary:{number:[["A phone costs £480 after a 20% discount. What was the original price?","£600","£480 is 80% of the price, so price = 480 ÷ 0.8 = £600."],["A train travels 210 km in 2 hours 30 minutes. What is its average speed?","84 km/h","2h30 = 2.5 h; 210 ÷ 2.5 = 84 km/h."],["The ratio of red to blue counters is 3:5. There are 40 counters. How many are red?","15","3+5 = 8 parts; 40 ÷ 8 = 5 per part; red = 3 × 5 = 15."]],
+      logic:[["All squares are rectangles. Some rectangles are not squares. Can a shape be a rectangle but not a square? Explain.","Yes","A rectangle only needs four right angles; a square also needs equal sides, so a non-square rectangle exists (e.g. 2×5)."],["In a code, EACH letter shifts forward by 1 (A→B). Decode 'IFMMP'.","HELLO","Shift each letter back by 1: I→H, F→E, M→L, M→L, P→O = HELLO."],["If it is true that 'no cats are dogs' and 'Rex is a dog', what can you conclude about Rex?","Rex is not a cat","Since no dogs are cats and Rex is a dog, Rex cannot be a cat."]]}
+  };
+  function band(lv){return /Key Stage 2|11\+/i.test(lv)?"primary":"secondary";}
+
+  /* ---- English comprehension ---- */
+  var compState=null;
+  document.getElementById("pc-go").onclick=function(){
+    var lv=pcL.value||def, theme=(document.getElementById("pc-theme").value||"").trim();
+    var out=document.getElementById("pc-out");
+    out.innerHTML='<div class="note">Writing a passage pitched to '+esc(lv)+'…</div>';
+    if(window.SYAI&&SYAI.ready()){
+      var sys="You are an English teacher writing a reading-comprehension exercise for a "+lv+" student."+styleFor(lv)+
+        " Write ONE original passage (150–320 words, age-appropriate in vocabulary and content) "+(theme?("about: "+theme+". "):"")+
+        "then FIVE questions rising in demand (retrieval → inference → vocabulary/language → evaluation). "+
+        "Return EXACTLY this format and nothing else:\nPASSAGE:\n<the passage>\n===\nQ :: <question> :: <marks 1-3> :: <concise mark scheme / model answer>\n(one Q line per question, five lines).";
+      SYAI.ask(sys,"Level: "+lv+(theme?("\nTheme: "+theme):""),{maxTokens:1200}).then(function(txt){
+        var parsed=parseComp(txt);
+        if(!parsed){renderComp(fallbackComp(lv),lv);return;}
+        renderComp(parsed,lv);
+      }).catch(function(){renderComp(fallbackComp(lv),lv);});
+    } else { renderComp(fallbackComp(lv),lv); }
+  };
+  function parseComp(txt){
+    try{
+      var parts=String(txt).split(/\n?===\n?/);
+      if(parts.length<2)return null;
+      var passage=parts[0].replace(/^\s*PASSAGE:\s*/i,"").trim();
+      var qs=parts[1].split("\n").map(function(l){return l.trim()}).filter(function(l){return /::/.test(l)})
+        .map(function(l){var p=l.replace(/^Q\s*\d*\s*::/i,"::").split("::").map(function(s){return s.trim()}).filter(function(s){return s.length});
+          /* after strip, expect [question, marks, scheme] */
+          var q=p[0],mk=parseInt(p[1],10),sc=p.slice(2).join(" — ");
+          if(!q)return null; return [q,(mk>=1&&mk<=6)?mk:2,sc||""];}).filter(Boolean);
+      if(!passage||qs.length<3)return null;
+      return {passage:passage,qs:qs.slice(0,6)};
+    }catch(e){return null;}
+  }
+  function fallbackComp(lv){var b=COMP_BANK[band(lv)];return {passage:b.passage,qs:b.qs.slice()};}
+  function renderComp(data,lv){
+    compState={passage:data.passage,qs:data.qs,lv:lv};
+    var total=data.qs.reduce(function(s,q){return s+q[1]},0);
+    var h='<div class="card" style="background:rgba(6,11,24,.35);border:1px solid rgba(170,182,204,.18)"><div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:6px">Read the passage</div>'+
+      '<div style="font-size:14.5px;line-height:1.8;color:var(--ink-2);white-space:pre-wrap">'+esc(data.passage)+'</div></div>';
+    h+='<div style="margin-top:12px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)">Answer the questions ('+total+' marks)</div>';
+    data.qs.forEach(function(q,i){
+      h+='<div style="margin-top:12px"><label class="f" style="text-transform:none;letter-spacing:0;font-size:13.5px;color:var(--ink-2)"><b>Q'+(i+1)+'.</b> '+esc(q[0])+' <span style="color:var(--ink-3)">('+q[1]+' mark'+(q[1]>1?'s':'')+')</span></label>'+
+        '<textarea id="pc-a'+i+'" rows="2" placeholder="Type your answer…" style="width:100%;margin-top:5px"></textarea></div>';
+    });
+    h+='<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="pc-mark">✔️ Mark my answers</button><button class="btn ghost" id="pc-again">🔄 New passage</button></div><div id="pc-fb" style="margin-top:12px"></div>';
+    document.getElementById("pc-out").innerHTML=h;
+    document.getElementById("pc-again").onclick=function(){document.getElementById("pc-go").click()};
+    document.getElementById("pc-mark").onclick=markComp;
+  }
+  function markComp(){
+    if(!compState)return;
+    var answers=compState.qs.map(function(q,i){var el=document.getElementById("pc-a"+i);return el?el.value.trim():""});
+    if(!answers.some(function(a){return a})){toast("Write at least one answer first");return;}
+    var fb=document.getElementById("pc-fb");
+    var qa=compState.qs.map(function(q,i){return "Q"+(i+1)+" ("+q[1]+" marks): "+q[0]+"\nMark scheme: "+(q[2]||"—")+"\nStudent answer: "+(answers[i]||"(left blank)")}).join("\n\n");
+    var total=compState.qs.reduce(function(s,q){return s+q[1]},0);
+    if(window.SYAI&&SYAI.ready()){
+      fb.innerHTML='<div class="note">Marking your answers…</div>';
+      var sys="You are a supportive but honest "+compState.lv+" English teacher marking reading comprehension."+styleFor(compState.lv)+
+        " For EACH question give: the mark awarded out of the marks shown, one sentence of specific feedback, and a concise model answer. "+
+        "Then give the overall score out of "+total+" and ONE next-step tip. Use markdown with a short bold heading per question.";
+      SYAI.ask(sys,"PASSAGE:\n"+compState.passage+"\n\nQUESTIONS, MARK SCHEMES AND STUDENT ANSWERS:\n"+qa,{maxTokens:1300}).then(function(txt){
+        fb.innerHTML='<div class="card" style="margin-top:4px"><div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:6px">Marked · Live AI</div>'+SYAI.render(txt)+'</div>';
+        saveComp(total);
+      }).catch(function(){markCompOffline(fb,answers,total)});
+    } else { markCompOffline(fb,answers,total); }
+  }
+  function markCompOffline(fb,answers,total){
+    var h='<div class="card" style="margin-top:4px"><div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:6px">Model answers — compare your own</div>';
+    compState.qs.forEach(function(q,i){
+      h+='<div style="margin-top:8px"><b>Q'+(i+1)+' ('+q[1]+' mark'+(q[1]>1?'s':'')+')</b><br><span style="color:var(--ink-3)">Your answer:</span> '+esc(answers[i]||"(blank)")+'<br><span style="color:var(--gold-300)">Model answer:</span> '+esc(q[2]||"—")+'</div>';
+    });
+    h+='<div class="note" style="margin-top:10px">Give yourself a mark where your answer matches the model answer. Total available: '+total+' marks. Reconnect for live AI marking with personal feedback.</div></div>';
+    fb.innerHTML=h; saveComp(total);
+  }
+  function saveComp(total){
+    logEvent("practice","Comprehension · "+compState.lv,compState.qs.length+" questions ("+total+" marks) answered.");
+    try{addPoints(15);touchStreak()}catch(e){}
+    var log=store.get("practiceLog",[]);log.unshift({t:"comprehension",lv:compState.lv,q:compState.qs.length,marks:total,at:Date.now()});store.set("practiceLog",log.slice(0,50));
+  }
+
+  /* ---- Problem solving (with or without numbers) ---- */
+  var solveState=null;
+  document.getElementById("ps-go").onclick=function(){
+    var lv=psL.value||def, type=document.getElementById("ps-type").value||"mixed";
+    var out=document.getElementById("ps-out");
+    out.innerHTML='<div class="note">Setting problems pitched to '+esc(lv)+'…</div>';
+    if(window.SYAI&&SYAI.ready()){
+      var kind=type==="number"?"numerical word problems (arithmetic, ratio, measures, money, time)":
+               type==="logic"?"logical reasoning problems WITHOUT numbers (deduction, sequences, verbal reasoning, puzzles)":
+               "a mix of numerical word problems and logical reasoning puzzles";
+      var sys="You are a "+lv+" teacher writing "+kind+" for a student."+styleFor(lv)+
+        " Write FIVE problems rising in difficulty, each solvable with clear reasoning. "+
+        "Return EXACTLY this format and nothing else, one line per problem:\nP :: <the problem> :: <the final answer only> :: <a short worked solution>";
+      SYAI.ask(sys,"Level: "+lv+"\nType: "+type,{maxTokens:1100}).then(function(txt){
+        var parsed=parseSolve(txt);
+        if(!parsed||!parsed.length){renderSolve(fallbackSolve(lv,type),lv,type);return;}
+        renderSolve(parsed,lv,type);
+      }).catch(function(){renderSolve(fallbackSolve(lv,type),lv,type)});
+    } else { renderSolve(fallbackSolve(lv,type),lv,type); }
+  };
+  function parseSolve(txt){
+    try{
+      return String(txt).split("\n").map(function(l){return l.trim()}).filter(function(l){return /::/.test(l)})
+        .map(function(l){var p=l.replace(/^P\s*\d*\s*::/i,"::").split("::").map(function(s){return s.trim()}).filter(function(s){return s.length});
+          if(p.length<2)return null; return {q:p[0],ans:p[1]||"",sol:p.slice(2).join(" — ")||""};}).filter(Boolean).slice(0,6);
+    }catch(e){return null;}
+  }
+  function fallbackSolve(lv,type){
+    var b=SOLVE_BANK[band(lv)]; var pool=type==="logic"?b.logic.slice():type==="number"?b.number.slice():b.number.concat(b.logic);
+    return pool.slice(0,type==="mixed"?6:3).map(function(x){return {q:x[0],ans:x[1],sol:x[2]}});
+  }
+  function renderSolve(data,lv,type){
+    solveState={qs:data,lv:lv,type:type};
+    var h='<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)">Solve the problems — show your working, then check</div>';
+    data.forEach(function(p,i){
+      h+='<div style="margin-top:12px"><label class="f" style="text-transform:none;letter-spacing:0;font-size:13.5px;color:var(--ink-2)"><b>'+(i+1)+'.</b> '+esc(p.q)+'</label>'+
+        '<input type="text" id="ps-a'+i+'" placeholder="Your answer…" style="width:100%;margin-top:5px">'+
+        '<div id="ps-s'+i+'" style="display:none;margin-top:6px;padding:8px 10px;border-left:2px solid var(--gold-500);background:rgba(6,11,24,.35);border-radius:0 8px 8px 0;font-size:13px;color:var(--ink-2)"></div></div>';
+    });
+    h+='<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="ps-check">✔️ Check answers</button><button class="btn ghost" id="ps-again">🔄 New problems</button></div><div id="ps-score" style="margin-top:12px"></div>';
+    document.getElementById("ps-out").innerHTML=h;
+    document.getElementById("ps-again").onclick=function(){document.getElementById("ps-go").click()};
+    document.getElementById("ps-check").onclick=checkSolve;
+  }
+  function normAns(s){return String(s||"").toLowerCase().replace(/[£$%,\s]/g,"").replace(/(km\/h|kmh|kg|cm|mm|ml|litres?|hours?|hrs?|mins?|minutes?|trays?|glasses?|days?|marks?)/g,"").trim();}
+  function checkSolve(){
+    if(!solveState)return;
+    var right=0;
+    solveState.qs.forEach(function(p,i){
+      var el=document.getElementById("ps-a"+i), given=el?el.value.trim():"";
+      var box=document.getElementById("ps-s"+i);
+      var ok=given&&normAns(given)&&normAns(given)===normAns(p.ans);
+      /* looser numeric containment for answers like "16:25" / "£600" */
+      if(!ok&&given&&normAns(p.ans)&&(normAns(given).indexOf(normAns(p.ans))>=0||normAns(p.ans).indexOf(normAns(given))>=0)&&normAns(given).length>1)ok=true;
+      if(ok)right++;
+      box.style.display="block";
+      box.innerHTML=(given?('<b style="color:'+(ok?'#5CBB7B':'#e66767')+'">'+(ok?'✓ ':'✗ ')+'Your answer: '+esc(given)+'</b><br>'):'<b style="color:#e66767">✗ Not answered</b><br>')+
+        '<span style="color:var(--gold-300)">Answer:</span> '+esc(p.ans)+(p.sol?('<br><span style="color:var(--ink-3)">Working:</span> '+esc(p.sol)):'');
+    });
+    var pct=Math.round(right/solveState.qs.length*100);
+    document.getElementById("ps-score").innerHTML='<div class="card" style="margin-top:4px"><b>Score: '+right+' / '+solveState.qs.length+' ('+pct+'%)</b> — '+(pct>=80?"excellent reasoning!":pct>=50?"solid — review the working on any you missed.":"keep going — read each worked solution, then try new problems.")+'</div>';
+    logEvent("practice","Problem solving · "+solveState.lv,right+"/"+solveState.qs.length+" correct ("+solveState.type+").");
+    try{addPoints(15);touchStreak()}catch(e){}
+    var log=store.get("practiceLog",[]);log.unshift({t:"problem-solving",lv:solveState.lv,q:solveState.qs.length,right:right,at:Date.now()});store.set("practiceLog",log.slice(0,50));
+  }
+})();
 
 /* ============================ MISC ============================ */
 let toastTimer;
