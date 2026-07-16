@@ -51,6 +51,8 @@
   }
   async function ask(system, user, opts){
     var c=cfg();if(!c||(!c.key&&c.provider!=='proxy'))throw new Error('No AI key configured');
+    /* house style for every tool: natural student-readable text, never raw markup */
+    system=String(system||'')+' STYLE RULE: write in plain natural language for a student. NEVER use LaTeX or math markup — no \\( \\), \\frac, ^{ } or $ delimiters. Write maths as readable text symbols: x², 3x² + 12x + 12 = 0, ½, √9, ±, ×, ≤.';
     opts=opts||{};var model=modelFor(c);var maxTokens=opts.maxTokens||1024;
     var img=opts.image?splitDataUrl(opts.image):null;
     var t0=Date.now(),inChars=String(system||'').length+String(user||'').length;
@@ -119,9 +121,32 @@
     }
   }
   /* light markdown -> HTML for rendering model output safely */
+  /* de-LaTeX: models sometimes emit \( x^2 \) style maths — translate it to
+     natural reading text (x², ±, √, ×, fractions) so students never see raw
+     markup. Applied before markdown rendering. */
+  var SUPS={'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','n':'ⁿ','+':'⁺','-':'⁻'};
+  function deLatex(s){
+    s=String(s||'');
+    s=s.replace(/\\\[|\\\]|\\\(|\\\)/g,'');                       // \( \) \[ \]
+    s=s.replace(/\$\$([^$]+)\$\$/g,'$1').replace(/\$([^$\n]{1,80})\$/g,'$1');
+    s=s.replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g,'($1)/($2)');
+    s=s.replace(/\\sqrt\{([^{}]+)\}/g,'√($1)').replace(/\\sqrt\s*(\w)/g,'√$1');
+    s=s.replace(/\\times/g,'×').replace(/\\div/g,'÷').replace(/\\pm/g,'±').replace(/\\cdot/g,'·')
+       .replace(/\\le(?:q)?\b/g,'≤').replace(/\\ge(?:q)?\b/g,'≥').replace(/\\ne(?:q)?\b/g,'≠')
+       .replace(/\\approx/g,'≈').replace(/\\infty/g,'∞').replace(/\\pi\b/g,'π').replace(/\\theta\b/g,'θ')
+       .replace(/\\alpha\b/g,'α').replace(/\\beta\b/g,'β').replace(/\\Delta\b/g,'Δ').replace(/\\degree|\^\{?\\circ\}?/g,'°')
+       .replace(/\\rightarrow|\\to\b/g,'→').replace(/\\%/g,'%');
+    s=s.replace(/\\text\{([^{}]*)\}/g,'$1').replace(/\\mathrm\{([^{}]*)\}/g,'$1');
+    s=s.replace(/\\left|\\right/g,'');
+    s=s.replace(/\^\{([0-9n+\-]{1,3})\}/g,function(_,d){return d.split('').map(function(c){return SUPS[c]||c}).join('')});
+    s=s.replace(/\^([0-9n])/g,function(_,d){return SUPS[d]||'^'+d});
+    s=s.replace(/_\{([^{}]{1,6})\}/g,'$1').replace(/\\[a-zA-Z]+/g,'');   // leftover commands
+    s=s.replace(/[ \t]{2,}/g,' ').replace(/ ([,.:;!?)])/g,'$1').replace(/\( /g,'(');
+    return s;
+  }
   function render(md){
     var esc=function(s){return String(s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})};
-    var lines=String(md||'').split('\n');var out=[],inList=false;
+    var lines=deLatex(String(md||'')).split('\n');var out=[],inList=false;
     lines.forEach(function(l){
       var t=esc(l);
       t=t.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/(^|[^*])\*(?!\*)(.+?)\*/g,'$1<i>$2</i>').replace(/`([^`]+)`/g,'<code>$1</code>');
