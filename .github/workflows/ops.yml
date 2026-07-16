@@ -1,0 +1,42 @@
+# Remote maintenance hand: runs a named script from infra/ops/ on a runner
+# with full network access and the Firebase service-account credentials.
+# Dispatched on demand (by the owner or the assistant via the GitHub API) —
+# replaces "paste this in Cloud Shell" for backend maintenance tasks.
+name: Ops (remote maintenance)
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'Script name in infra/ops/ (without .cjs)'
+        required: true
+        default: 'register-testers'
+      args:
+        description: 'Optional argument string passed to the script'
+        required: false
+        default: ''
+
+jobs:
+  ops:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Write service-account credentials
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      - name: Run task
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+          TASK: ${{ inputs.task }}
+          ARGS: ${{ inputs.args }}
+        run: |
+          # allow only clean script names, resolved strictly inside infra/ops/
+          if ! [[ "$TASK" =~ ^[a-z0-9-]+$ ]]; then echo "invalid task name"; exit 1; fi
+          if [ ! -f "infra/ops/$TASK.cjs" ]; then echo "no such task: infra/ops/$TASK.cjs"; exit 1; fi
+          node "infra/ops/$TASK.cjs" "$ARGS"
