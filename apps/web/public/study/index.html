@@ -1249,7 +1249,8 @@ function openRes(id){
   else if(r.chart) viewChart(r,head);        /* Bar/Pie/Line/Scatter/Coordinate/Function/Geometry */
   else if(r.cols&&r.rows) viewTable(r,head); /* comparison tables + Grid + Spreadsheet */
   else if(r.src) viewMedia(r,head);          /* Audio / Video / Image / Web Page / Document / … */
-  else mbody.innerHTML=head+`<div class="empty">This resource type gets its full viewer when the backend goes live — meanwhile, try the maker in ✍️.</div>`;
+  else if(r.body) mbody.innerHTML=head+`<div class="notes-body">${r.mine?r.body:esc(r.body).replace(/\n/g,"<br>")}</div>`; /* Labelled Diagram + any body-carrying resource */
+  else mbody.innerHTML=head+`<div class="empty">Open this from the maker in ✍️ to view it.</div>`;
 }
 
 /* ---------- visual tools: charts, graphs, geometry ---------- */
