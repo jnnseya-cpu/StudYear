@@ -623,6 +623,33 @@
     }
   } catch (e) {}
 
+  // ---- cloud-unreachable banner ----
+  // Shows ONLY when StudYear's servers are genuinely unreachable — the
+  // same-origin proxy AND a direct call both failed (a network block, e.g. a
+  // school filter). Turns a silent failure (sign-in / linking / sync / AI not
+  // working) into a clear, honest message. Dismissible per session.
+  try {
+    if (!s.demo) {
+      var _cloudBanner = false;
+      var showCloudBanner = function () {
+        if (_cloudBanner) return;
+        try { if (sessionStorage.getItem('sy-cloud-banner-x')) return; } catch (e) {}
+        _cloudBanner = true;
+        var b = document.createElement('div');
+        b.id = 'sy-cloud-banner';
+        b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#B45309;color:#fff;' +
+          'font:600 13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
+          'padding:10px 42px 10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.28);text-align:center';
+        b.innerHTML = '⚠ Can’t reach StudYear’s servers on this network. Sign-in, parent &amp; school linking, sync and AI need internet access to StudYear — try another network (e.g. a phone hotspot).' +
+          '<button aria-label="Dismiss" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:22px;line-height:1;cursor:pointer">×</button>';
+        (document.body || document.documentElement).appendChild(b);
+        b.querySelector('button').onclick = function () { try { sessionStorage.setItem('sy-cloud-banner-x', '1'); } catch (e) {} b.remove(); };
+      };
+      window.addEventListener('sy-cloud-status', function (e) { if (e.detail && e.detail.up === false) showCloudBanner(); });
+      if (window.__SYCLOUD_UP === false) showCloudBanner();
+    }
+  } catch (e) {}
+
   // ---- Progressive Web App + responsive baseline (applied to every guarded page) ----
   // One place wires PWA install + offline + iOS home-screen + a responsive safety net,
   // so all role consoles behave as an installable, screen-fitting app.

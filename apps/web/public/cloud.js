@@ -37,17 +37,30 @@
      talks to a Google hostname; Vercel makes that hop server-side. Probed once;
      falls back to calling Google directly (GitHub Pages / offline / dev). */
   var GAPI = null;                      // { idt, sec, fn, st } base paths, or null = direct
+  var CLOUD_UP = null;                  // null=unknown, true reachable, false unreachable
+  function publishStatus() {
+    try { window.__SYCLOUD_UP = CLOUD_UP; window.dispatchEvent(new CustomEvent('sy-cloud-status', { detail: { up: CLOUD_UP } })); } catch (e) {}
+  }
+  function directHealth() {
+    if (!(CFG && CFG.apiBase)) { CLOUD_UP = false; return; }
+    return fetch(CFG.apiBase.replace(/\/$/, '') + '/health', { cache: 'no-store' })
+      .then(function (r) { CLOUD_UP = !!r.ok; }).catch(function () { CLOUD_UP = false; });
+  }
   function probeProxy() {
     // Only the production domain (and Vercel previews) carry the /gapi rewrites.
     // Elsewhere (GitHub Pages, localhost, dev, offline) call Google directly, so
-    // we never emit a stray 404 probe. On production we still probe, so a missing
-    // rewrite safely falls back to direct rather than breaking sign-in.
+    // we never emit a stray probe. On production we probe; a missing rewrite
+    // safely falls back to a direct health check, and if BOTH fail the cloud is
+    // genuinely unreachable (network block) and we flag it for a banner.
     var h = location.hostname || '';
     if (!(/(^|\.)studyear\.com$/.test(h) || /\.vercel\.app$/.test(h))) return Promise.resolve();
     return fetch('/gapi/fn/health', { cache: 'no-store' })
       .then(function (r) {
-        if (r.ok) { GAPI = { idt: '/gapi/idt', sec: '/gapi/sec', fn: '/gapi/fn', st: '/gapi/storage' }; try { window.__SYGAPI = GAPI; } catch (e) {} }
-      }).catch(function () {});
+        if (r.ok) { GAPI = { idt: '/gapi/idt', sec: '/gapi/sec', fn: '/gapi/fn', st: '/gapi/storage' }; try { window.__SYGAPI = GAPI; } catch (e) {} CLOUD_UP = true; return; }
+        return directHealth();       // proxy missing → is Google reachable directly?
+      })
+      .catch(directHealth)
+      .then(publishStatus);
   }
   function gbase(kind) {
     if (GAPI) return GAPI[kind];
@@ -290,6 +303,7 @@
   window.SYCloud = { ready: ready, whenReady: whenReady, signUp: signUp, signIn: signIn,
     restore: restore, push: push, schedulePush: schedulePush, upload: upload, token: token,
     resetPassword: resetPassword, sendVerify: sendVerify,
+    reachable: function () { return CLOUD_UP; },
     dirPublish: dirPublish, dirResolve: dirResolve, dirConnect: dirConnect,
     dirDisconnect: dirDisconnect, dirLinks: dirLinks };
 
