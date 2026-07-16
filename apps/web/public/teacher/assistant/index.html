@@ -10,6 +10,7 @@
 <script src="../../ai.js"></script>
 <script src="../../export.js"></script>
 <script src="../../exam.js"></script>
+<script src="../../makers.js"></script>
 <div class="shell"><main>
   <div class="k">Institutional staff</div><h1>AI Teaching Assistant</h1>
   <p class="lede">Your AI teaching partner — lesson plans, differentiated work, homework, quizzes, marking, feedback, parent emails and more, in seconds.</p>
@@ -31,6 +32,14 @@
       (min. 10) from the school pool.</p>
     <div class="note" id="exam-pool-note" style="margin:0 0 8px"></div>
     <div id="exam-mount"></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="k">Create your own</div><h2 style="font-family:var(--serif);margin:4px 0 2px">Resource Makers</h2>
+    <p class="lede" style="margin:0 0 8px">The full maker suite — flashcards, quizzes, revision notes, mind maps, topic
+      summaries, essay plans, labelled diagrams and worksheets — written by the live model <b>for your class</b>,
+      pitched to the level, saved to your library and exported to Word or PDF. Costs a few ACUs from the school pool per generation.</p>
+    <div id="makers-mount"></div>
   </div>
 </main></div>
 <script src="../nav.js" data-base="../" data-cur="assistant/"></script>
@@ -114,6 +123,26 @@ if(window.SYExam&&$('exam-mount')){
       SY.log&&SY.log('billing',label+' — '+cost+' school ACUs',(pool.balance)+' ACUs left in the school pool.');
       refreshPool();return true;},
     onBuilt:function(st){SY.log&&SY.log('create','Exam paper built: '+st.meta.title,st.meta.n+' questions · '+st.meta.total+' marks · answer sheet included.')}
+  });
+}
+/* ---- Resource Makers: the student "create your own" suite, for the class ---- */
+if(window.SYMakers&&$('makers-mount')){
+  var mcode=TW.schoolCode||null;
+  SYMakers.mount($('makers-mount'),{
+    context:'teacher',
+    brand:mcode?{name:TW.schoolName||'Your school',line:'Powered by StudYear'}:{name:'StudYear',line:'AI Academic Operating System'},
+    subjects:(SEC.subjects&&SEC.subjects.length)?SEC.subjects:undefined,
+    levels:(SEC.levels&&SEC.levels.length)?SEC.levels:undefined,
+    defaults:{subject:(SEC.subjects&&SEC.subjects[0])||'',level:(SEC.levels&&SEC.levels[0])||'GCSE'},
+    cost:5,
+    spend:function(cost,label){
+      if(!mcode)return true; /* preview until a school is linked */
+      var pool=SY.schoolGet(mcode,'acu',{balance:0,burn:[]});
+      if((pool.balance||0)<cost)return false;
+      pool.balance-=cost;pool.burn=(pool.burn||[]).slice(-6);pool.burn.push(cost);
+      SY.schoolSet(mcode,'acu',pool);
+      SY.log&&SY.log('billing',label+' — '+cost+' school ACUs',(pool.balance)+' ACUs left in the school pool.');
+      return true;}
   });
 }
 })();

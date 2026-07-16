@@ -11,6 +11,7 @@
 <script src="../../ai.js"></script>
 <script src="../../export.js"></script>
 <script src="../../exam.js"></script>
+<script src="../../makers.js"></script>
 <div class="shell"><main>
   <div class="k">Teaching operator</div><h1>AI Teaching Assistant</h1>
   <p class="lede">Explain, diagram, quiz and plan in seconds. Prepare anything for a session — lesson plans, worksheets, quizzes, homework, exam questions and parent updates.</p>
@@ -32,6 +33,14 @@
       with a mark-scheme answer sheet for every question, branded to your tutoring practice, exported as Word or PDF.
       Costs 1 ACU per question (min. 10). <span id="exam-bal"></span></p>
     <div id="exam-mount"></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="k">Create your own</div><h2 style="font-family:var(--serif);margin:4px 0 2px">Resource Makers</h2>
+    <p class="lede" style="margin:0 0 8px">The full maker suite — flashcards, quizzes, revision notes, mind maps, topic
+      summaries, essay plans, labelled diagrams and worksheets — written by the live model <b>for your student</b>,
+      pitched to their level, saved to your library and exported to Word or PDF. A few ACUs per generation from your wallet.</p>
+    <div id="makers-mount"></div>
   </div>
 </main></div>
 <script src="../nav.js" data-base="../" data-cur="assistant/"></script>
@@ -92,6 +101,20 @@ if(window.SYExam&&$('exam-mount')){
       SY.log&&SY.log('billing',label+' — '+cost+' ACUs',(w.acus)+' ACUs remaining.');
       refreshBal();return true;},
     onBuilt:function(st){SY.log&&SY.log('create','Exam paper built: '+st.meta.title,st.meta.n+' questions · '+st.meta.total+' marks · answer sheet included.')}
+  });
+}
+/* ---- Resource Makers: the student "create your own" suite, for the tutee ---- */
+if(window.SYMakers&&$('makers-mount')){
+  SYMakers.mount($('makers-mount'),{
+    context:'tutor',
+    brand:{name:practice,line:'Powered by StudYear'},
+    defaults:{subject:$('subj').value||'',level:'GCSE'},
+    cost:5,
+    spend:function(cost,label){var w=wallet();
+      if((w.acus||0)<cost){toast('Not enough ACUs — '+(w.acus||0)+'/'+cost+' needed. Top up in Plans.');return false}
+      w.acus-=cost;SY.set('wallet',w);
+      SY.log&&SY.log('billing',label+' — '+cost+' ACUs',(w.acus)+' ACUs remaining.');
+      refreshBal();return true;}
   });
 }
 })();
