@@ -230,18 +230,26 @@ var mastery={};Object.keys(by).forEach(function(s){mastery[s]=Math.round(by[s].r
 if(diag)diag.list.forEach(function(x){mastery[x.s]=mastery[x.s]!=null?Math.round((mastery[x.s]+x.mastery)/2):x.mastery});
 var subjKeys=Object.keys(mastery);
 var overall=subjKeys.length?Math.round(subjKeys.reduce(function(a,s){return a+mastery[s]},0)/subjKeys.length):null;
-var weakest=subjKeys.length?subjKeys.reduce(function(a,b){return mastery[a]<mastery[b]?a:b}):(profile.subjects&&profile.subjects[0]?profile.subjects[0].s:'–');
+/* REALITY: a predicted grade and 'weakest subject' only exist once the
+   student has real evidence (a quiz or a diagnostic) — never invented from
+   the profile subject list */
+var weakest=subjKeys.length?subjKeys.reduce(function(a,b){return mastery[a]<mastery[b]?a:b}):null;
 if(overall!=null){
-  var g=gradeFor(overall), firstSub=weakest;
+  var g=gradeFor(overall);
   $('t-grade').textContent='Grade '+g;
-  $('t-grade-k').textContent='Predicted grade'+(firstSub?' · '+firstSub:'');
-}else{$('t-grade').textContent='–';}
+  $('t-grade-k').textContent='Predicted grade'+(weakest?' · '+weakest:'');
+  $('t-grade').title='Based on '+quizzes.length+' quiz'+(quizzes.length===1?'':'zes')+(diag?' + your diagnostic':'');
+}else{
+  $('t-grade').textContent='–';
+  $('t-grade-k').textContent='Predicted grade — take a quiz or diagnostic';
+}
 /* streak */
 (function(){var s=SY.get('streak',{days:[]}),set={};(s.days||[]).forEach(function(d){set[d]=1});
   var nn=0,d=new Date();while(set[d.toISOString().slice(0,10)]){nn++;d.setDate(d.getDate()-1)}
   $('t-streak').innerHTML=nn+' <small>days</small>';})();
 $('t-lessons').textContent=activity.filter(function(a){return a.k==='lesson'||a.k==='course'}).length;
 $('t-weak').textContent=weakest||'–';
+if(!weakest)$('t-weak').nextElementSibling.textContent='Weakest subject — run a diagnostic';
 
 /* ---------- study calendar ---------- */
 var plan=SY.get('plan',null);
