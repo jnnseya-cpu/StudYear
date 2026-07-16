@@ -257,20 +257,97 @@
           Secondary        → GCSE grade 1–9
         Returns { system, band, scaled?, grade?, short, caption, label }. */
     attainment: function (level, masteryPct) {
-      var lv = String(level || ''); var m = Math.max(0, Math.min(100, Math.round(masteryPct || 0)));
-      var isPrimary = /primary|eyfs|reception|infant|junior|\bks\s*[12]\b|key\s*stage\s*[12]|\byear\s*[1-6]\b/i.test(lv)
-        && !/gcse|a-?level|as-?level|\bks\s*[345]\b|key\s*stage\s*[345]|\byear\s*(7|8|9|1[0-3])\b|sixth form|btec|\bib\b|undergrad|degree/i.test(lv);
-      if (isPrimary) {
-        if (/eyfs|reception|nursery/i.test(lv)) {
-          var eb = m >= 65 ? 'Expected' : 'Emerging';
-          return { system: 'eyfs', band: eb, short: eb, caption: 'Early Learning Goals', label: eb + ' (Early Learning Goals)' };
-        }
-        var scaled = Math.round(80 + m * 0.4);                 // 0→80, 50→100, 100→120
-        var band = scaled >= 110 ? 'Greater Depth' : scaled >= 100 ? 'Expected Standard' : 'Working Towards';
-        return { system: 'primary', band: band, scaled: scaled, short: band, caption: 'Scaled score ' + scaled + ' (100 = expected)', label: band + ' · scaled score ' + scaled };
+      var L = String(level || '').toLowerCase();
+      var m = Math.max(0, Math.min(100, Math.round(masteryPct || 0)));
+
+      // University — Master's / Postgraduate: Distinction / Merit / Pass
+      if (/master|postgrad|\bpg\b|\bpgt\b|\bpgr\b|phd|doctora|\bmsc\b|\bmba\b/.test(L)) {
+        var pgb = m >= 70 ? 'Distinction' : m >= 60 ? 'Merit' : m >= 50 ? 'Pass' : 'Fail';
+        return { system: 'pg', band: pgb, short: pgb, caption: 'Postgraduate (' + m + '%)', label: "Master's — " + pgb + ' (' + m + '%)' };
       }
-      var g = Math.max(1, Math.min(9, Math.round(1 + 8 * m / 100)));
-      return { system: 'gcse', grade: g, short: 'Grade ' + g, caption: 'Predicted grade', label: 'Predicted Grade ' + g };
+      // University — Foundation year: Pass / Merit / Distinction
+      if (/foundation year/.test(L)) {
+        var fyb = m >= 70 ? 'Distinction' : m >= 60 ? 'Merit' : m >= 40 ? 'Pass' : 'Fail';
+        return { system: 'foundation', band: fyb, short: fyb, caption: 'Foundation year (' + m + '%)', label: 'Foundation year — ' + fyb + ' (' + m + '%)' };
+      }
+      // University — Undergraduate degree classification: 1st / 2:1 / 2:2 / 3rd
+      if (/undergrad|\bug\b|degree|bachelor|honours|\buniversity\b|\bba\b|\bbsc\b/.test(L)) {
+        var cls, csh;
+        if (m >= 70) { cls = 'First-Class Honours'; csh = '1st'; }
+        else if (m >= 60) { cls = 'Upper Second (2:1)'; csh = '2:1'; }
+        else if (m >= 50) { cls = 'Lower Second (2:2)'; csh = '2:2'; }
+        else if (m >= 40) { cls = 'Third-Class (3rd)'; csh = '3rd'; }
+        else if (m >= 35) { cls = 'Ordinary / Pass degree'; csh = 'Pass'; }
+        else { cls = 'Fail'; csh = 'Fail'; }
+        return { system: 'degree', band: csh, short: csh, caption: 'Degree classification (' + m + '%)', label: cls + ' — ' + m + '%' };
+      }
+      // A-level / AS-level (KS5): A*–E
+      if (/a2|a-?level|\bas\b|ks5|key stage 5|sixth form|year 12|year 13/.test(L)) {
+        var isAS = /\bas\b/.test(L) && !/a2|a-?level/.test(L);
+        var ag = m >= 90 ? 'A*' : m >= 80 ? 'A' : m >= 70 ? 'B' : m >= 60 ? 'C' : m >= 50 ? 'D' : m >= 40 ? 'E' : 'U';
+        if (isAS && ag === 'A*') ag = 'A';
+        return { system: 'alevel', band: ag, short: (ag === 'U' ? 'U' : 'Grade ' + ag), caption: (isAS ? 'AS-level' : 'A-level') + ' grade', label: (isAS ? 'AS-level ' : 'A-level ') + ag + ' (' + m + '%)' };
+      }
+      // BTEC / T-level / vocational: Pass / Merit / Distinction / Distinction*
+      if (/btec|t-?level|vocational|\bcache\b|\bnvq\b|\bhnd\b|\bhnc\b/.test(L)) {
+        var vb = m >= 85 ? 'Distinction*' : m >= 70 ? 'Distinction' : m >= 55 ? 'Merit' : m >= 40 ? 'Pass' : m >= 30 ? 'Near Pass' : 'Unclassified';
+        return { system: 'btec', band: vb, short: vb, caption: 'BTEC / vocational grade', label: 'BTEC — ' + vb + ' (' + m + '%)' };
+      }
+      // International Baccalaureate: subject grade 1–7
+      if (/international baccalaureate|\bib\b/.test(L)) {
+        var ibp = Math.max(1, Math.min(7, Math.round(1 + 6 * m / 100)));
+        return { system: 'ib', grade: ibp, short: ibp + '/7', caption: 'IB subject grade (1–7)', label: 'IB grade ' + ibp + '/7 (' + m + '%)' };
+      }
+      // Scottish qualifications: National 5 / Higher / Advanced Higher (A–D)
+      if (/national 5|nat 5|scottish|advanced higher|\bhighers?\b/.test(L)) {
+        var sg = m >= 70 ? 'A' : m >= 60 ? 'B' : m >= 50 ? 'C' : m >= 40 ? 'D' : 'No award';
+        var sn = /advanced higher/.test(L) ? 'Advanced Higher' : /higher/.test(L) ? 'Higher' : 'National 5';
+        return { system: 'scottish', band: sg, short: 'Grade ' + sg, caption: sn + ' band (A–D)', label: sn + ' ' + sg + ' (' + m + '%)' };
+      }
+      // 11+ (grammar-school selection): standardised score 69–141 (mean 100)
+      if (/11\s*\+|eleven plus|grammar/.test(L)) {
+        var sas = Math.round(69 + m * 0.72); if (sas > 141) sas = 141; if (sas < 69) sas = 69;
+        var pass = sas >= 111;
+        return { system: 'elevenplus', score: sas, band: pass ? 'At/above typical pass' : 'Below typical pass', short: 'SAS ' + sas,
+          caption: 'Standardised score (avg 100; pass ~111+)', label: '11+ standardised score ' + sas + (pass ? ' — at/above the typical grammar pass mark' : ' — below the typical pass mark (varies by school)') };
+      }
+      // GCSE / IGCSE (KS4): grade 9–1 (4 = Standard Pass, 5 = Strong Pass)
+      if (/gcse|igcse|ks4|key stage 4|year 10|year 11/.test(L)) {
+        var g9 = m >= 95 ? 9 : m >= 85 ? 8 : m >= 75 ? 7 : m >= 65 ? 6 : m >= 55 ? 5 : m >= 45 ? 4 : m >= 33 ? 3 : m >= 20 ? 2 : m >= 8 ? 1 : 'U';
+        var gn = g9 === 5 ? ' · Strong Pass' : g9 === 4 ? ' · Standard Pass' : '';
+        return { system: 'gcse', grade: g9, short: (g9 === 'U' ? 'U' : 'Grade ' + g9), caption: 'GCSE grade (9–1)' + gn, label: 'GCSE ' + (g9 === 'U' ? 'Ungraded' : 'Grade ' + g9) + gn + ' (' + m + '%)' };
+      }
+      // KS3 (Years 7–9): same DfE descriptors as primary, tracked vs the year's
+      // Programme of Study, plus an on-track GCSE grade
+      if (/ks3|key stage 3|years? *7|years? *8|years? *9|7-9|7–9/.test(L)) {
+        var kb = m >= 80 ? 'Greater Depth' : m >= 65 ? 'Above expected' : m >= 45 ? 'At expected' : m >= 30 ? 'Working towards' : 'Below expected';
+        var onTrack = m >= 95 ? 9 : m >= 85 ? 8 : m >= 75 ? 7 : m >= 65 ? 6 : m >= 55 ? 5 : m >= 45 ? 4 : m >= 33 ? 3 : m >= 20 ? 2 : 1;
+        return { system: 'ks3', band: kb, projected: onTrack, short: kb, caption: 'Age-related · on track for GCSE ' + onTrack, label: 'KS3: ' + kb + ' — on track for GCSE Grade ' + onTrack };
+      }
+      // KS2 (SATs): scaled score 80–120 + expected/greater-depth band
+      if (/key stage 2|\bks2\b|years? *[3-6]\b|junior/.test(L)) {
+        var sc = Math.round(80 + m * 0.4); if (sc < 80) sc = 80; if (sc > 120) sc = 120;
+        var kb2 = sc >= 110 ? 'Greater Depth' : sc >= 100 ? 'Expected Standard' : 'Working Towards';
+        return { system: 'ks2', scaled: sc, band: kb2, short: kb2, caption: 'Scaled score ' + sc + ' (100 = expected)', label: 'KS2 (SATs): ' + kb2 + ' · scaled score ' + sc };
+      }
+      // KS1: teacher-assessment bands (no scaled score prominence)
+      if (/key stage 1|\bks1\b|years? *[12]\b|infant/.test(L)) {
+        var kb1 = m >= 80 ? 'Greater Depth' : m >= 50 ? 'Expected Standard' : 'Working Towards';
+        return { system: 'ks1', band: kb1, short: kb1, caption: 'Teacher assessment (KS1)', label: 'KS1: ' + kb1 };
+      }
+      // EYFS / Reception: Early Learning Goals — Emerging / Expected
+      if (/eyfs|reception|nursery|early years/.test(L)) {
+        var eb = m >= 65 ? 'Expected' : 'Emerging';
+        return { system: 'eyfs', band: eb, short: eb, caption: 'Early Learning Goals', label: 'EYFS: ' + eb + ' (Early Learning Goals)' };
+      }
+      // NEET / lifelong / adult / other: progress, not a grade
+      if (/neet|lifelong|adult|autodidact|\bfun\b|other|all level/.test(L)) {
+        var prb = m >= 80 ? 'Confident' : m >= 55 ? 'Developing' : m >= 30 ? 'Foundation' : 'Getting started';
+        return { system: 'progress', band: prb, short: m + '%', caption: 'Progress · ' + prb, label: prb + ' — ' + m + '% progress' };
+      }
+      // Fallback: a plain "working at" GCSE-style grade
+      var gf = Math.max(1, Math.min(9, Math.round(1 + 8 * m / 100)));
+      return { system: 'generic', grade: gf, short: 'Grade ' + gf, caption: 'Working at', label: 'Working at Grade ' + gf };
     },
     /** resolves true when this account has a live cloud session (Firebase token)
         — cross-account linking/sync needs it; used to give a clear message. */
