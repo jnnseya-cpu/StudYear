@@ -1078,12 +1078,24 @@ const PREMIUM_TOOLS={
   "g-mm-go":"AI Mind Map Generator","c-m-save":"Mindmap creator",
   "c-v-save":"Visual Tools & Graphs","cg-go":"AI Course Generator",
   "ar-go":"AI Assignment Review","exam-go":"Exam Paper Builder"};
-/* capture-phase: the plan check runs before any tool's own handler */
+/* capture-phase: the plan check runs before any tool's own handler.
+   The lock is a VISIBLE, actionable panel — never just a passing toast that
+   makes the tool look broken. */
 document.addEventListener("click",function(e){
   const b=e.target.closest("button");if(!b||!PREMIUM_TOOLS[b.id]||hasPremium())return;
   e.preventDefault();e.stopImmediatePropagation();
-  toast(PREMIUM_TOOLS[b.id]+" is a Premium tool — upgrade to Student Premium (£10/month) in My account → Plans & top-up.");
   logEvent("billing","Premium tool locked: "+PREMIUM_TOOLS[b.id],"Upgrade to Student Premium or above to unlock the creator toolkit and Assignment Review.");
+  let card=b.closest(".card")||b.parentElement;
+  let note=card.querySelector(".sy-premlock");
+  if(!note){
+    note=document.createElement("div");note.className="sy-premlock";
+    note.style.cssText="margin-top:10px;padding:12px 14px;border:1px solid rgba(242,206,123,.55);border-radius:11px;background:rgba(242,206,123,.10)";
+    b.parentNode.insertBefore(note,b.nextSibling);
+  }
+  note.innerHTML='🔒 <b>'+esc(PREMIUM_TOOLS[b.id])+' is a Premium tool.</b> Your work is kept in the form — unlock it with '+
+    '<b>Student Premium (£10/month)</b> and press the button again.'+
+    '<div style="margin-top:8px"><a class="btn sm solid" href="../account/topup/">Unlock Premium →</a></div>';
+  note.scrollIntoView({behavior:"smooth",block:"center"});
 },true);
 
 /* ============================ TABS ============================ */
@@ -1100,7 +1112,11 @@ document.getElementById("tabs").addEventListener("click",e=>{
 let myOnly=false;
 function applyHash(){
   let h=location.hash.replace("#","");
-  if(h==="mine"){ myOnly=true; const c=document.getElementById("f-mine"); if(c)c.checked=true; h="search"; }
+  if(h==="mine"){ myOnly=true; const c=document.getElementById("f-mine"); if(c)c.checked=true;
+    /* show EVERYTHING the student saved — profile-prefilled filters were
+       silently hiding creations that didn't match subject/level */
+    ["f-subj","f-level","f-type","f-topic","q"].forEach(id=>{const el=document.getElementById(id);if(el)el.value=""});
+    h="search"; }
   /* diagnostic results & the recovery plan both live in the Diagnostic tab —
      the recovery plan is built FROM a diagnostic, so route there and scroll. */
   let scrollTo=null;
