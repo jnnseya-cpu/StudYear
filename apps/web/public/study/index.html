@@ -3075,6 +3075,7 @@ function renderDgReport(rep){
   const isBase=rep.isBaseline||(baseline&&baseline.when===rep.when);
   const growth=(baseline&&!isBase)?rep.avg-baseline.avg:0;
   const toTop=Math.max(0,100-rep.avg);
+  const spellLow=rep.spelling&&rep.spelling.score<70;
   document.getElementById("dg-sub").innerHTML=
     `Taken on ${usDate(rep.when)} · Risk Level: <b style="color:${RISK_COLOR[rep.risk]}">${rep.risk}</b>`+
     (rep.asked?` · ${rep.correct}/${rep.asked} quick questions correct`:" · confidence-only run");
@@ -3104,12 +3105,12 @@ function renderDgReport(rep){
         ${rep.written&&rep.written.quality!=null?`<div class="note" style="margin-top:4px">Writing quality: ${rep.written.quality}%</div>`:""}
         ${rep.written&&rep.written.feedback?`<div style="font-size:13px;color:var(--ink-2);margin-top:6px;line-height:1.6">${esc(rep.written.feedback)}</div>`:""}
         ${(rep.spelling.words&&rep.spelling.words.length)?`<div class="note" style="margin-top:8px">Words to practise: ${rep.spelling.words.map(w=>{const a=Array.isArray(w)?w:[w,""];return "<b style='color:var(--ink)'>"+esc(a[0])+"</b>"+(a[1]?" → "+esc(a[1]):"")}).join(", ")}</div>`:""}
-        ${low?`<div style="margin-top:10px"><button class="btn sm" id="dg-spell">🔤 Start my spelling improvement plan →</button></div>
-          <div class="note" style="margin-top:6px;color:var(--crit)">Spelling is below 70% — this has been added to your record so you and your teacher/parent can support it.</div>`
+        ${low?`<div style="margin-top:10px"><button class="btn sm ghost" id="dg-spell">🔤 Practise spelling now →</button></div>
+          <div class="note" style="margin-top:6px;color:var(--crit)">Spelling is below 70% — it's now on your record and built into your improvement plan below, so you, your teacher and your parent can support it.</div>`
           :`<div class="note" style="margin-top:6px;color:var(--good)">Spelling is at or above 70% — nicely done.</div>`}
       </div>`;})():""}
-    ${rep.weak.length?`<div style="margin-top:14px"><button class="btn" id="dg-recover">Build up my weak areas — recovery plan →</button></div>`
-      :`<p class="note">No subject under 60% — you're on track for the top. Keep momentum with past papers and the planner.</p>`}`;
+    ${(rep.weak.length||spellLow)?`<div style="margin-top:14px"><button class="btn" id="dg-recover">${rep.weak.length?(spellLow?"Build my improvement plan — subjects + spelling":"Build up my weak areas — recovery plan"):"Build my spelling improvement plan"} →</button></div>`
+      :`<p class="note">No subject under 60% and spelling secure — you're on track for the top. Keep momentum with past papers and the planner.</p>`}`;
   const sp=document.getElementById("dg-spell");
   if(sp)sp.onclick=()=>{location.hash="#spelling";};
   const btn=document.getElementById("dg-recover");
@@ -3138,8 +3139,24 @@ function makeRecovery(rep){
         {t:"Past-paper questions on "+w.s+" under exam timing",href:"#papers",cta:"Find past papers",topic:""},
         {t:"Retake the diagnostic after week "+Math.min(2,weeks)+" — measure the climb, re-aim the plan",href:"#diag",cta:"Re-test",topic:""}]};
   });
+  /* spelling is part of the improvement plan: when the diagnostic's written
+     question flagged spelling under 70%, add a dedicated spelling step with
+     its own weekly targets, one-tap actions and a scheduled practice slot. */
+  const spellLow=rep.spelling&&rep.spelling.score<70;
+  if(spellLow){
+    const from=rep.spelling.score;
+    const words=(rep.spelling.words||[]).map(w=>Array.isArray(w)?w[0]:w).filter(Boolean);
+    const sweeks=Math.max(1,Math.ceil((80-from)/12));
+    steps.push({s:"Spelling & writing",from:from,aim:80,phase:"Daily spelling practice",daily:"10 min every day",weeks:sweeks,
+      topics:words.slice(0,3),
+      actions:[
+        {t:"Spelling test — dictation practice at your level"+(words.length?" and on your missed words":""),href:"#spelling",cta:"Open Spelling",topic:""},
+        {t:"AI Tutor: ask for a memory trick for "+(words[0]?"“"+words[0]+"”":"each tricky word"),href:"#tutor",cta:"Ask the tutor",topic:"spelling of "+(words.slice(0,6).join(", ")||"tricky words")},
+        {t:"Write a short paragraph, then re-read it and fix every spelling by hand",href:"#lesson",cta:"Practise writing",topic:""},
+        {t:"Retake the diagnostic — question 10 re-checks your spelling (aim 70%+)",href:"#diag",cta:"Re-test",topic:""}]});
+  }
   const plan={when:new Date().toISOString(),risk:rep.risk,
-    title:weak.length>2?"Comprehensive Academic Recovery Plan":"Initial Academic Recovery Plan",
+    title:weak.length?(weak.length>2?"Comprehensive Academic Recovery Plan":"Initial Academic Recovery Plan"):"Spelling Improvement Plan",
     steps:steps};
   const hist=store.get("recoveries",[]); hist.unshift(plan); store.set("recoveries",hist.slice(0,30));
   const saved=store.get("plan",{plan:[],done:{}});
@@ -3149,8 +3166,9 @@ function makeRecovery(rep){
   const RC_TIMES=["09:00","14:00","19:00"];
   const cur=new Date();cur.setHours(0,0,0,0);
   function nextWeekday(){do{cur.setDate(cur.getDate()+1)}while(cur.getDay()===0||cur.getDay()===6);return isoOf(cur)}
-  const week={n:(saved.plan&&saved.plan.length?saved.plan[saved.plan.length-1].n+1:1),
-    days:weak.concat(weak).slice(0,5).map((w,i)=>{const slot=i%3;return {date:nextWeekday(),slot:slot,time:RC_TIMES[slot],subj:w.s,topic:(typeof DIAG_TOPICS!=="undefined"&&DIAG_TOPICS[w.s]&&DIAG_TOPICS[w.s][0])||(w.s+" foundations"),mins:40,priority:"HIGH",mode:"RECOVERY · "+w.s+" foundations"}})};
+  const days=weak.concat(weak).slice(0,spellLow?4:5).map((w,i)=>{const slot=i%3;return {date:nextWeekday(),slot:slot,time:RC_TIMES[slot],subj:w.s,topic:(typeof DIAG_TOPICS!=="undefined"&&DIAG_TOPICS[w.s]&&DIAG_TOPICS[w.s][0])||(w.s+" foundations"),mins:40,priority:"HIGH",mode:"RECOVERY · "+w.s+" foundations"}});
+  if(spellLow){const slot=days.length%3;days.push({date:nextWeekday(),slot:slot,time:RC_TIMES[slot],subj:"Spelling",topic:"Spelling & writing practice",mins:15,priority:"HIGH",mode:"SPELLING · daily practice"});}
+  const week={n:(saved.plan&&saved.plan.length?saved.plan[saved.plan.length-1].n+1:1),days:days};
   saved.plan=(saved.plan||[]).concat([week]); store.set("plan",saved); renderPlan(); addPoints(10);
   logEvent("plan","Recovery plan generated","A personalised recovery plan was added to your account.");
   renderRpHistory();
