@@ -460,7 +460,8 @@ Array.prototype.forEach.call(document.querySelectorAll('[data-sort]'),function(b
 
 if(laGet('demo',false)){var db=$('demobar');db.style.display='flex';db.innerHTML='🎓 <b style="color:#e0b566">Demo authority loaded</b> — sample connected schools &amp; programmes. <b>No AI cost.</b> <button class="btn sm" id="clr" style="margin-left:auto;padding:5px 11px">Clear demo</button>';
   $('clr').onclick=function(){var re=new RegExp('^sy-la:'+code+':');var rm=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(re.test(k))rm.push(k)}rm.forEach(function(k){localStorage.removeItem(k)});location.reload()};}
-$('demo-btn').onclick=function(){
+if(!(SY.session&&SY.session.demo)){$('demo-btn').style.display='none'}
+else $('demo-btn').onclick=function(){
   var names=['Elmwood High','Northgate Academy','Riverside College','St Aidan\'s','Parkview Secondary','Meadow Trust'];
   function rnd(a,b){return Math.round(a+Math.random()*(b-a))}
   names.forEach(function(nm,i){

@@ -803,7 +803,9 @@ if(DEMO){var db=$('demobar');db.style.display='flex';db.innerHTML='🎓 <b style
     SY.schoolSet(code,'safeguard',[]);var p=SY.schoolGet(code,'acu',{});if(p.demo){SY.schoolSet(code,'acu',{balance:0,burn:[]})}
     location.reload();};
 }
-$('demo-btn').onclick=function(){loadDemoSchool()};
+/* demo seeding is a demo-account tool — never shown on live accounts */
+if(!(SY.session&&SY.session.demo)){$('demo-btn').style.display='none'}
+else $('demo-btn').onclick=function(){loadDemoSchool()};
 
 function loadDemoSchool(){
   var fn=['Aisha','Liam','Sofia','Noah','Zara','Ethan','Maya','Oliver','Amara','Jacob','Priya','Leo','Chloe','Musa','Grace','Daniel','Hannah','Yusuf','Ella','Ben','Nadia','Theo','Ivy','Omar','Ruby','Kai','Freya','Isaac','Lena','Ade','Skye','Rohan','Elsie','Marcus','Nia','Felix','Aria','Sam','Bella','Idris','Poppy','Reuben','Anya','Callum','Esme','Zaid','Lily','Dev','Willow','Kofi'];

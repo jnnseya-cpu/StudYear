@@ -188,7 +188,8 @@ if(students.some(function(s){return s.demo})||sessions.some(function(s){return s
   var db=$('demobar');db.style.display='flex';db.innerHTML='🎓 <b style="color:#e0b566">Demo data loaded</b> — sample students &amp; sessions. <b>No AI credits used.</b> <button class="btn sm" id="clr" style="margin-left:auto;padding:5px 11px">Clear demo</button>';
   $('clr').onclick=function(){SY.set('tutorStudents',students.filter(function(s){return !s.demo}));SY.set('tutorSessions',sessions.filter(function(s){return !s.demo}));location.reload()};
 }
-$('demo-btn').onclick=function(){
+if(!(SY.session&&SY.session.demo)){$('demo-btn').style.display='none'}
+else $('demo-btn').onclick=function(){
   var twoMonths=new Date(Date.now()-60*86400000).toISOString();
   var st=[{name:'Mark Harris',email:null,level:'A2/A-level',subjects:['Mathematics','English','Physics','Geography'],progress:76,weak:'Mathematics',pending:50,stage:'inactive',demo:true,updatedAt:twoMonths}];
   var se=[{student:'Mark Harris',subject:'General',when:twoMonths,status:'scheduled',rate:parseFloat(profile.hourlyRate)||35,demo:true}];
