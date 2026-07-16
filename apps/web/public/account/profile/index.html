@@ -155,9 +155,9 @@
     <div><label class="f">Primary Exam Board</label><select id="p-board"></select></div>
   </div>
 
-  <label class="f">What subjects are you studying and what are your target grades?</label>
+  <label class="f">What subjects are you studying, and what are you working at and aiming for?</label>
   <table class="subj" id="subj-table">
-    <tr><th>Subject</th><th>Current grade</th><th>Target grade</th><th></th></tr>
+    <tr><th>Subject</th><th>Working at</th><th>Target</th><th></th></tr>
   </table>
   <div class="row">
     <select id="subj-add" style="max-width:280px"></select>
@@ -296,16 +296,39 @@ $('cv-remove').onclick=function(){cover=null;drawCover()};
 drawPhoto();drawCover();
 
 /* ---------- subjects & target grades ---------- */
-function gradeSel(val){
-  var s='<select>'+GRADES.map(function(g){return '<option'+(g===val?' selected':'')+'>'+g+'</option>'}).join('')+'</select>';
-  return s;
+/* The grade scale follows the study level — a Year-5 child sets Working
+   Towards / Expected / Greater Depth, a GCSE student 9–1, a degree student
+   1st / 2:1 / 2:2 / 3rd — never a one-size 9–1 list. Ordered HIGH → LOW so
+   index 0 is always the top (aspirational) target. */
+function gradesForLevel(level){
+  var L=String(level||'').toLowerCase();
+  if(/reception|eyfs|nursery/.test(L)) return ['Expected','Emerging'];
+  if(/ks1|key stage 1|ks2|key stage 2/.test(L)) return ['Greater Depth','Expected Standard','Working Towards'];
+  if(/ks3|key stage 3|year *7|year *8|year *9/.test(L)) return ['Greater Depth','Above','At expected','Working towards','Below'];
+  if(/11\s*\+|eleven/.test(L)) return ['Above pass','Pass standard','Working towards pass'];
+  if(/gcse|igcse/.test(L)) return ['9','8','7','6','5','4','3','2','1','U'];
+  if(/international baccalaureate|\bib\b/.test(L)) return ['7','6','5','4','3','2','1'];
+  if(/national 5|scottish|advanced higher|\bhighers?\b/.test(L)) return ['A','B','C','D','No award'];
+  if(/btec|t-?level|vocational/.test(L)) return ['Distinction*','Distinction','Merit','Pass','Near Pass'];
+  if(/a2|a-?level|\bas\b/.test(L)) return ['A*','A','B','C','D','E','U'];
+  if(/master|postgrad|\bpg\b/.test(L)) return ['Distinction','Merit','Pass'];
+  if(/undergrad|degree|\bug\b|university|foundation year|honours/.test(L)) return ['1st','2:1','2:2','3rd','Pass'];
+  if(/neet|lifelong|adult|autodidact/.test(L)) return ['Confident','Developing','Foundation','Getting started'];
+  return GRADES; // Fun / Other / generic
+}
+function curLevel(){return $('p-level').value||profile.level||'GCSE';}
+function gradeSel(val,opts){
+  return '<select>'+opts.map(function(g){return '<option'+(g===val?' selected':'')+'>'+g+'</option>'}).join('')+'</select>';
 }
 function drawSubjects(){
-  var t=$('subj-table');
+  var t=$('subj-table'), opts=gradesForLevel(curLevel());
   t.querySelectorAll('tr:not(:first-child)').forEach(function(r){r.remove()});
   subjects.forEach(function(sub,i){
+    /* remap any value that isn't valid at this level so the row is coherent */
+    if(opts.indexOf(sub.target)<0)sub.target=opts[0];
+    if(opts.indexOf(sub.current)<0)sub.current=opts[Math.min(opts.length-1,Math.ceil(opts.length/2))];
     var tr=document.createElement('tr');
-    tr.innerHTML='<td>'+sub.s+'</td><td class="cur">'+gradeSel(sub.current)+'</td><td class="tgt">'+gradeSel(sub.target)+'</td>'+
+    tr.innerHTML='<td>'+sub.s+'</td><td class="cur">'+gradeSel(sub.current,opts)+'</td><td class="tgt">'+gradeSel(sub.target,opts)+'</td>'+
       '<td style="text-align:right"><button class="btn ghost sm">×</button></td>';
     tr.querySelector('.cur select').onchange=function(){subjects[i].current=this.value};
     tr.querySelector('.tgt select').onchange=function(){subjects[i].target=this.value};
@@ -313,15 +336,17 @@ function drawSubjects(){
     t.appendChild(tr);
   });
 }
-/* StudYear personalises every student toward the top mark — new subjects
-   default their target to the highest grade (Grade 9 / 100%). */
-var TOP_GRADE=GRADES[0]; // "9"
 $('subj-add').onchange=function(){
   var s=this.value;this.value='';
   if(!s)return;
   if(subjects.some(function(x){return x.s===s})){toast(s+' is already in your list');return}
-  subjects.push({s:s,current:'4',target:TOP_GRADE});drawSubjects();
+  /* StudYear personalises toward the top mark: default target to the highest
+     grade for this level, current to a realistic mid-band. */
+  var opts=gradesForLevel(curLevel());
+  subjects.push({s:s,current:opts[Math.min(opts.length-1,Math.ceil(opts.length/2))],target:opts[0]});drawSubjects();
 };
+/* changing the study level re-scales every subject's grade options */
+$('p-level').addEventListener('change',function(){drawSubjects();});
 drawSubjects();
 
 /* ---------- learning profile ---------- */
