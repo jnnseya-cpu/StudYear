@@ -35,7 +35,12 @@
     if(k==='eleven')return ELEVEN_SUBJECTS.slice();
     if(isUni(lv))return UNI_SUBJECTS.slice();
     return SUBJECTS.slice();}
-  function examStyle(kind){
+  function examStyle(kind,subject){
+    /* reasoning subjects define the paper type regardless of level — a
+       "Non-Verbal Reasoning" paper must never be maths/algebra or verbal. */
+    var s=String(subject||'').toLowerCase();
+    if(/non-?verbal/.test(s)) return 'This is a NON-VERBAL REASONING paper. EVERY question must be a non-verbal reasoning item described FULLY IN WORDS (there are no pictures): shape sequences and what comes next; rotations and reflections; odd-shape-out; "each shape gains/loses one side or line"; analogies between described shapes; counting sides, lines or dots; completing a described pattern or grid. Describe each shape precisely (its name, number of sides, shading, arrows, position) so a child can answer on paper. Single best answer, 1 mark each. NEVER write arithmetic, algebra, verbal or curriculum-knowledge questions.';
+    if(/verbal reasoning/.test(s)) return 'This is a VERBAL REASONING paper. EVERY question must be a classic verbal reasoning item: letter and number codes, analogies ("big is to small as tall is to __"), synonyms and antonyms, odd-one-out, letter series, hidden words, word–number logic and short logic puzzles. Self-contained, single best answer, 1 mark each. NEVER write arithmetic, algebra or subject-knowledge questions.';
     switch(kind){
       case 'ks1': return 'These are children aged 5–7 (Key Stage 1 / early years). Use VERY simple, one-step questions in short concrete language with familiar contexts (toys, animals, family). PHONICS: ask the child to sound out and read a simple word, spot the first/last sound, or count the sounds (phonemes); include the odd read-it pseudo-word as in the phonics screening check. MATHS: number bonds, counting on, adding and taking away within 20, doubling, and the 2, 5 and 10 times tables. READING: a one- or two-sentence passage then a literal question. 1 mark each. NEVER use command words like "evaluate" or "analyse".';
       case 'ks2': return 'These are Key Stage 2 pupils (ages 7–11) sitting SATs-style questions — match the national curriculum tests. MATHS: mix ARITHMETIC (a calculation to work out — +, −, ×, ÷, fractions, percentages) with REASONING (a short real-life word problem, sometimes multi-step, with money, time or measures). ENGLISH READING: give a 2–4 sentence passage then retrieval, inference ("why…"), and vocabulary ("find and copy a word that means…") questions. GRAMMAR/PUNCTUATION/SPELLING (SPaG): identify word classes (noun, verb, adjective, adverb), add or correct punctuation, or choose the correct spelling. 1–3 marks, plain child-friendly language, no GCSE command words.';
@@ -72,8 +77,12 @@
     if(/science|biolog|chem|physic/.test(s))return 'science';
     return 'maths';}
   function stageFallback(kind,subject,n){
-    var banks=STAGE_BANK[kind];if(!banks)return null;
-    var pool=banks[poolKey(subject)]||banks.maths||banks.english||banks.vr;
+    var key=poolKey(subject);
+    /* reasoning subjects always draw from the 11+ verbal/non-verbal bank,
+       whatever the level — a KS2 "Non-Verbal Reasoning" paper must be NVR. */
+    var banks=(key==='vr'||key==='nvr')?STAGE_BANK.eleven:STAGE_BANK[kind];
+    if(!banks)return null;
+    var pool=banks[key]||banks.maths||banks.english||banks.vr;
     if(!pool||!pool.length)return null;
     var out=[];for(var i=0;i<n;i++){var t=pool[i%pool.length];out.push({q:t[0],marks:t[1],a:t[2]});}
     return out;}
@@ -138,7 +147,7 @@
       var count=Math.min(batch,n-start);
       if(onProgress)onProgress(start,n);
       var sys='You are an experienced '+level+' '+subject+' assessment writer'+(board?' writing to the '+board+' specification':'')+
-        '. '+examStyle(stageKind(level))+' Difficulty: '+difficulty+
+        '. '+examStyle(stageKind(level),subject)+' Difficulty: '+difficulty+
         '. Return EXACTLY this format for each question, nothing else:\n'+
         'Q<number> [<marks> marks] <question text on one line>\n'+
         'A<number>: <mark-scheme answer showing where each mark is earned>\n'+
