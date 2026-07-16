@@ -1,108 +1,123 @@
-/* StudYear KIDS theme — applied automatically by guard.js when a signed-in
-   student's Study Level is Primary / 11+ (under-12s). This is a WHOLESALE
-   re-skin, not a tint: it overrides the OS design tokens so every surface,
-   text colour and accent flips to a bright, light, playful children's palette
-   — cream-and-rainbow background, dark readable text, candy buttons, big
-   rounded cards. Additive on shared classes; nothing breaks if one is absent. */
+/* StudYear KIDS theme — auto-applied by guard.js for under-12 students
+   (Primary / 11+ study level). A calm, focus-friendly re-skin built on the
+   60-30-10 rule, not a rainbow:
+     60% — soft cream / pale-pastel background (glare-free, low strain)
+     30% — sky-blue & teal structure (nav, headers, card accents)
+     10% — vivid accents (sunny yellow, lime, warm orange) on actions only
+   Text is soft deep-navy, never pure black; never yellow text on light.
+   Works by overriding the OS design tokens so every surface recolours. */
 
 :root{
-  /* light surfaces (were deep navy) */
-  --navy-950:#FFF6FB; --navy-900:#FFFFFF; --navy-800:#F4ECFF;
-  /* dark, high-contrast text on the new light background */
-  --ink:#241B4E; --ink-2:#5A4E8F; --ink-3:#8A7EBB;
-  /* candy accents (readable on light) */
-  --gold-300:#C4179E; --gold-400:#7A3CF0; --gold-500:#2B6CF6;
-  --s1:#2B6CF6; --s2:#0BA26B; --s3:#E0810B;
-  --good:#15A34A; --warn:#E0810B; --crit:#E23A55;
-  --line:rgba(122,60,240,.22);
+  /* 60% — light, glare-free surfaces (were deep navy) */
+  --navy-950:#FBF7EE;   /* app background: warm cream */
+  --navy-900:#FFFFFF;   /* cards / panels */
+  --navy-800:#EAF3FB;   /* pale sky tint for secondary surfaces */
+  /* text — soft deep-navy & slate (never harsh black) */
+  --ink:#26315A; --ink-2:#4C5878; --ink-3:#7C87A6;
+  /* 30% — structural sky-blue & teal (readable on light) */
+  --gold-300:#2E86C7; --gold-400:#1AA0A0; --gold-500:#2E86C7;
+  --s1:#2E86C7; --s2:#1AA0A0; --s3:#E08A1E;
+  /* status — softened for a light background */
+  --good:#2E9E4B; --warn:#E08A1E; --crit:#E0554E;
+  --line:rgba(46,134,199,.18);
 }
 
-/* bright rainbow-on-cream backdrop (overrides the navy radial gradients) */
+/* 60% — soft cream backdrop with the faintest pastel wash (low saturation) */
 body{
   background:
-    radial-gradient(900px 620px at 88% -8%, rgba(255,105,180,.30), transparent 60%),
-    radial-gradient(820px 560px at -8% 18%, rgba(64,196,255,.28), transparent 58%),
-    radial-gradient(760px 620px at 50% 118%, rgba(255,196,0,.26), transparent 60%),
-    radial-gradient(620px 460px at 20% -6%, rgba(122,60,240,.18), transparent 55%),
-    linear-gradient(180deg,#FFF9FD 0%,#F3F0FF 55%,#FFF6F0 100%) !important;
+    radial-gradient(1000px 640px at 88% -10%, rgba(46,134,199,.10), transparent 60%),
+    radial-gradient(900px 600px at -8% 15%, rgba(26,160,160,.09), transparent 58%),
+    radial-gradient(760px 560px at 50% 120%, rgba(224,138,30,.07), transparent 60%),
+    linear-gradient(180deg,#FBF7EE 0%,#F3F6FB 60%,#FBF6EF 100%) !important;
   color:var(--ink) !important;
 }
 
-/* sticky bars / nav that hard-code the deep navy → make them light + frosted */
+/* 30% — structural bars: soft sky-frosted, not dark */
 nav.tabs, header, aside, .topbar, .appbar{
-  background:rgba(255,255,255,.72) !important;
+  background:rgba(255,255,255,.78) !important;
   backdrop-filter:blur(8px);
+  border-color:var(--line) !important;
 }
 
-/* headings & big numbers: rainbow gradient text (works on light) */
-h1,.slogo b{
-  background:linear-gradient(92deg,#7A3CF0 0%,#C4179E 38%,#2B6CF6 72%,#0BA26B 100%);
+/* headings: calm deep-navy; the hero can carry a gentle sky→teal sweep */
+h2,h3,h4,h5{color:#26315A !important}
+h1{
+  background:linear-gradient(92deg,#2E86C7 0%,#1AA0A0 100%);
   -webkit-background-clip:text;background-clip:text;color:transparent !important;
 }
-h2,h3,h4{color:#3A2A7A !important}
+.slogo b{color:#2E86C7 !important}
 
-/* cards: white, chunky, rounded, with a rainbow top bar */
-.card,.res,.snap,.pack,.plan,.tile,.panel,.box{
-  border-radius:22px !important;
-  border:2px solid rgba(122,60,240,.20) !important;
+/* cards: clean white, gently rounded, soft shadow, a single sky-teal top bar */
+.card,.res,.snap,.pack,.plan,.panel,.box{
+  border-radius:18px !important;
+  border:1.5px solid rgba(46,134,199,.16) !important;
   background:#FFFFFF !important;
-  box-shadow:0 10px 26px rgba(122,60,240,.10) !important;
+  box-shadow:0 8px 22px rgba(46,134,199,.08) !important;
 }
 .card::before,.res::before,.snap::before{
-  height:6px !important;opacity:1 !important;
-  background:linear-gradient(90deg,#FF6B9D,#FFC400,#3DDC84,#40C4FF,#B388FF) !important;
+  height:5px !important;opacity:1 !important;
+  background:linear-gradient(90deg,#2E86C7,#1AA0A0) !important;
 }
-.card:hover,.res:hover{transform:translateY(-3px);transition:transform .15s;border-color:rgba(255,127,80,.55) !important}
+.card:hover,.res:hover{transform:translateY(-2px);transition:transform .15s;border-color:rgba(26,160,160,.4) !important}
+.tile{background:var(--navy-800) !important;border:1px solid rgba(46,134,199,.14) !important;border-radius:16px !important}
 
-/* KPI / stat numbers glow in candy gradient */
+/* KPI / big numbers: friendly sky-teal (calm, still lively) */
 .tile .v,.tele .num,.kpi .v,.stat .v,.ring i,.metrics .mv{
-  background:linear-gradient(92deg,#7A3CF0 5%,#FF6B9D 50%,#2B6CF6 95%) !important;
-  -webkit-background-clip:text;background-clip:text;color:transparent !important;
-  font-weight:800 !important;
+  color:#1AA0A0 !important;font-weight:800 !important;
 }
-.k,.mk,.slot-k{color:#C4179E !important}
+.k,.mk,.slot-k{color:#2E86C7 !important}
 
-/* buttons: big, rounded, candy */
-.btn{border-radius:16px !important;font-weight:700 !important}
-.btn.solid,.btn.primary{background:linear-gradient(135deg,#FF6B9D,#7A3CF0) !important;color:#fff !important;border:none !important;box-shadow:0 6px 18px rgba(122,60,240,.30) !important}
-.btn:not(.solid):not(.ghost):not(.primary){background:#F4ECFF !important;border:2px solid #7A3CF0 !important;color:#5A2ED0 !important}
-.btn.ghost{border:2px solid rgba(122,60,240,.35) !important;color:#5A4E8F !important}
+/* 10% — actions only: vivid, inviting. Primary = warm orange; success = lime */
+.btn{border-radius:14px !important;font-weight:700 !important}
+.btn.solid,.btn.primary{
+  background:linear-gradient(135deg,#FBA82B,#F5871F) !important;color:#FFFFFF !important;border:none !important;
+  box-shadow:0 6px 16px rgba(245,135,31,.28) !important;
+}
+.btn.solid:hover,.btn.primary:hover{filter:brightness(1.05)}
+.btn:not(.solid):not(.ghost):not(.primary){background:#EAF3FB !important;border:2px solid #2E86C7 !important;color:#1F6FB0 !important}
+.btn.ghost{border:1.5px solid rgba(46,134,199,.32) !important;color:#4C5878 !important}
+.btn.good,.btn.success{background:linear-gradient(135deg,#57C56A,#2E9E4B) !important;color:#fff !important;border:none !important}
 
-/* pills, badges, chips */
-.badge,.pill,.qchip,.chip{background:rgba(255,196,0,.18) !important;border:1px solid rgba(224,129,11,.45) !important;color:#8A5A00 !important;border-radius:999px !important}
+/* pills / badges / achievements: sunny yellow accent with dark indigo text */
+.badge,.pill,.qchip,.chip{background:#FFF1C2 !important;border:1px solid #F2C94C !important;color:#5A4A12 !important;border-radius:999px !important}
+.badge.good,.pill.good{background:#DFF3E1 !important;border-color:#57C56A !important;color:#1E6B33 !important}
+.badge.crit,.pill.crit{background:#FBE3E1 !important;border-color:#E0554E !important;color:#8A2620 !important}
 
-/* sidebar nav */
-aside nav a{color:#5A4E8F !important;border-radius:12px !important}
-aside nav a:hover{background:rgba(255,196,0,.20) !important;color:#C4179E !important}
-aside nav a.on{background:linear-gradient(90deg,rgba(255,107,157,.22),rgba(64,196,255,.20)) !important;color:#3A2A7A !important}
+/* sidebar nav: calm, sky-highlighted active state */
+aside nav a{color:#4C5878 !important;border-radius:12px !important}
+aside nav a:hover{background:rgba(46,134,199,.10) !important;color:#2E86C7 !important}
+aside nav a.on{background:rgba(26,160,160,.14) !important;color:#14707A !important}
 
-/* progress bars */
-.bar{height:14px !important;border-radius:10px !important;background:#EEE7FF !important}
-.bar i{background:linear-gradient(90deg,#3DDC84,#40C4FF,#B388FF) !important}
+/* progress bars: gentle sky→teal fill */
+.bar{height:13px !important;border-radius:9px !important;background:#E7EEF6 !important}
+.bar i{background:linear-gradient(90deg,#57C56A,#1AA0A0) !important}
 
-/* form controls: light with playful borders */
-input,select,textarea{border-radius:14px !important;background:#FFFFFF !important;color:#241B4E !important;border:2px solid rgba(122,60,240,.35) !important}
-input::placeholder,textarea::placeholder{color:#9A8FC0 !important}
-input:focus,select:focus,textarea:focus{border-color:#FFB300 !important;box-shadow:0 0 0 4px rgba(255,196,0,.22) !important}
+/* form controls: white, soft sky border, warm focus ring */
+input,select,textarea{border-radius:12px !important;background:#FFFFFF !important;color:#26315A !important;border:1.5px solid rgba(46,134,199,.30) !important}
+input::placeholder,textarea::placeholder{color:#9AA3BC !important}
+input:focus,select:focus,textarea:focus{border-color:#FBA82B !important;box-shadow:0 0 0 3px rgba(251,168,43,.20) !important}
 
-/* generic muted / note text stays readable on light */
-.note,.sub,.muted,.empty,small{color:#6A5EA0 !important}
+/* Today's Winning Plan step cards use dark inline styles for the adult theme —
+   flip them to light so they don't read as grey blocks on the cream backdrop */
+#winning-plan{background:linear-gradient(135deg,rgba(46,134,199,.08),rgba(26,160,160,.06)) !important;border-color:rgba(46,134,199,.20) !important}
+#wp-steps a{background:#F4F9FE !important;border-color:rgba(46,134,199,.20) !important}
+#wp-steps a b{color:#26315A !important}
+#wp-steps a b[style*="8FC2EC"],#wp-steps a b:first-child{color:#2E86C7 !important}
+#wp-steps a div{color:#66708F !important}
+#wp-impact,#wp-min,#wp-stretch{color:#4C5878 !important}
+
+/* muted / helper text stays readable on cream */
+.note,.sub,.muted,.empty,small{color:#66708F !important}
 
 /* tables */
-th{color:#7A3CF0 !important}
-td,tr{border-color:rgba(122,60,240,.14) !important}
+th{color:#2E86C7 !important}
+td,tr{border-color:rgba(46,134,199,.12) !important}
 
-/* pretty scrollbar */
-::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#FF6B9D,#7A3CF0,#40C4FF) !important;border-radius:10px}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#2E86C7,#1AA0A0) !important;border-radius:10px}
 
-/* friendly floating stars */
+/* one small, friendly star — a light touch, not a distraction */
 body::after{
-  content:"⭐";position:fixed;top:12px;right:16px;font-size:22px;opacity:.9;
-  animation:sy-kid-twinkle 2.6s ease-in-out infinite;pointer-events:none;z-index:98;
+  content:"⭐";position:fixed;top:12px;right:16px;font-size:20px;opacity:.85;
+  animation:sy-kid-twinkle 3s ease-in-out infinite;pointer-events:none;z-index:98;
 }
-body::before{
-  content:"🌈";position:fixed;bottom:14px;left:16px;font-size:22px;opacity:.85;
-  animation:sy-kid-float 4s ease-in-out infinite;pointer-events:none;z-index:98;
-}
-@keyframes sy-kid-twinkle{0%,100%{transform:scale(1) rotate(0deg);opacity:.9}50%{transform:scale(1.35) rotate(18deg);opacity:1}}
-@keyframes sy-kid-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes sy-kid-twinkle{0%,100%{transform:scale(1) rotate(0deg);opacity:.85}50%{transform:scale(1.25) rotate(12deg);opacity:1}}

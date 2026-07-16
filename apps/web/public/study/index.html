@@ -49,6 +49,9 @@
   input:focus,select:focus,textarea:focus{border-color:var(--gold-500)}
   select option{background:#101B33}
   label.f{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px}
+  label.tf{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);padding:3px 0;cursor:pointer}
+  label.tf input{width:auto;accent-color:var(--gold-500)}
+  label.tf small{color:var(--ink-3)}
   .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);
     font:600 13px var(--sans);border-radius:9px;padding:10px 18px;cursor:pointer;letter-spacing:.03em}
   .btn:hover{background:rgba(77,157,224,.22)}
@@ -298,6 +301,21 @@
         <div><label class="f">Study hours per week</label><input type="number" id="p-hours" min="1" max="40" placeholder="e.g. 15"></div>
         <div><label class="f">Overall Target Grade</label><select id="p-target"><option value="">Select a grade</option><option>9</option><option>8</option><option>7</option><option>6</option><option>5</option><option>4</option><option>A*</option><option>A</option><option>B</option><option>C</option></select></div>
         <div><label class="f">Preferred Learning Style <span style="text-transform:none;letter-spacing:0">(optional)</span></label><select id="p-style"><option value="">Select a style</option><option>Visual</option><option>Auditory</option><option>Reading &amp; writing</option><option>Kinaesthetic</option></select></div>
+      </div>
+      <label class="f" style="margin-top:12px">When can you study? <span style="text-transform:none;letter-spacing:0">(so nothing lands while you're in school)</span></label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px">
+        <div class="card" style="margin:0;padding:12px">
+          <div class="f" style="margin:0 0 6px">School days (Mon–Fri)</div>
+          <label class="tf"><input type="checkbox" class="p-wd" value="0"> Before school <small>· 7:30</small></label>
+          <label class="tf"><input type="checkbox" class="p-wd" value="1" checked> After school <small>· 16:30</small></label>
+          <label class="tf"><input type="checkbox" class="p-wd" value="2" checked> Evening <small>· 19:30</small></label>
+        </div>
+        <div class="card" style="margin:0;padding:12px">
+          <div class="f" style="margin:0 0 6px">Weekends (Sat–Sun)</div>
+          <label class="tf"><input type="checkbox" class="p-we" value="0" checked> Morning <small>· 10:00</small></label>
+          <label class="tf"><input type="checkbox" class="p-we" value="1" checked> Afternoon <small>· 14:00</small></label>
+          <label class="tf"><input type="checkbox" class="p-we" value="2"> Evening <small>· 19:00</small></label>
+        </div>
       </div>
       <label class="f" style="margin-top:10px">What are your weak areas? <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
       <input type="text" id="p-weak" placeholder="e.g. Algebra in Maths, essay structure in History…">
@@ -1991,7 +2009,13 @@ pAdd.addEventListener("input",function(){
   if(selectedSubs.some(x=>x.toLowerCase()===s.toLowerCase())){toast(s+" is already in this plan");return}
   selectedSubs.push(s);drawChips();savePlanForm();
 });
-(function(){const d=new Date();d.setDate(d.getDate()+35);document.getElementById("p-exam").value=d.toISOString().slice(0,10)})();
+(function(){const d=new Date();d.setDate(d.getDate()+35);document.getElementById("p-exam").value=isoOf(d);
+  /* prefill the study-availability windows from last time */
+  try{var av=store.get("planAvail",null);
+    if(av){document.querySelectorAll(".p-wd").forEach(function(c){c.checked=(av.wd||[]).indexOf(+c.value)>-1});
+           document.querySelectorAll(".p-we").forEach(function(c){c.checked=(av.we||[]).indexOf(+c.value)>-1});}
+  }catch(e){}
+})();
 
 /* autosave the form */
 const PFORM_IDS=["p-exam","p-hours","p-target","p-style","p-weak","p-strong"];
@@ -2061,6 +2085,14 @@ document.getElementById("gen-plan").onclick=()=>{
   const target=document.getElementById("p-target").value;
   const style=document.getElementById("p-style").value||LEARN.style||"";
   const weakTxt=document.getElementById("p-weak").value, strongTxt=document.getElementById("p-strong").value;
+  /* when can the student actually study — so nothing lands during school hours.
+     Slot index 0/1/2 maps to the times below; weekdays and weekends differ. */
+  let wdSlots=Array.from(document.querySelectorAll(".p-wd:checked")).map(x=>+x.value).sort();
+  let weSlots=Array.from(document.querySelectorAll(".p-we:checked")).map(x=>+x.value).sort();
+  if(!wdSlots.length&&!weSlots.length){wdSlots=[1,2];weSlots=[0,1];}   // nothing picked → sensible default
+  const WD_TIMES=["07:30","16:30","19:30"], WD_NAMES=["Before school","After school","Evening"];
+  const WE_TIMES=["10:00","14:00","19:00"], WE_NAMES=["Morning","Afternoon","Evening"];
+  store.set("planAvail",{wd:wdSlots,we:weSlots});                       // remember for next time
   const daysLeft=Math.max(7,Math.round((exam-today)/86400000));
   /* adapt to the learning profile + today's mood */
   const sessionMins=[20,25,30,40,60].includes(LEARN.session)?LEARN.session:40;
@@ -2118,7 +2150,7 @@ document.getElementById("gen-plan").onclick=()=>{
   }
 
   /* how many days we schedule, and how many slots per day (from the student's own session length) */
-  const SLOT_TIMES=["09:00","14:00","19:00"], SLOT_NAMES=["Morning","Afternoon","Evening"];
+  const slotsFor=d=>((d.getDay()===0||d.getDay()===6)?weSlots:wdSlots);
   let sessionsPerWeek=Math.max(3,Math.round(hours*60/sessionMins));
   const shortWindow=daysLeft<=10;
   /* gentle pace or low energy → fewer, calmer sessions with more recap; fast pace → a touch more */
@@ -2131,14 +2163,17 @@ document.getElementById("gen-plan").onclick=()=>{
   const recap=pace==="gentle";
 
   /* build the list of study dates (tomorrow → day before the exam): a plan
-     made today starts the next day, never on a day that's already half gone */
-  const studyDates=[];
+     made today starts the next day, and only on days the student is free
+     (weekday/weekend availability), thinned to daysPerWeek per week. */
+  const studyDates=[]; const perWk={};
   for(let off=1;;off++){
     const date=new Date(today);date.setDate(date.getDate()+off);
     if(date>=exam)break;                                           // exam day itself stays free
     if(off>71)break;
-    const inWeekIdx=(off-1)%7;
-    if(shortWindow||inWeekIdx<daysPerWeek)studyDates.push(date);   // thin long windows to daysPerWeek/week
+    if(!slotsFor(date).length)continue;                            // in school / not available
+    const wkB=Math.floor((off-1)/7);
+    if(!shortWindow){ if((perWk[wkB]||0)>=daysPerWeek)continue; perWk[wkB]=(perWk[wkB]||0)+1; }
+    studyDates.push(date);
   }
 
   const DOW=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
@@ -2147,13 +2182,17 @@ document.getElementById("gen-plan").onclick=()=>{
     const off=Math.round((date-today)/86400000), wkN=Math.floor(off/7)+1;
     let wk=plan.find(x=>x.n===wkN); if(!wk){wk={n:wkN,days:[]};plan.push(wk)}
     const finalStretch=(exam-date)/86400000<=7 && !shortWindow;
-    for(let sIdx=0;sIdx<dailySessions;sIdx++){
+    const wknd=(date.getDay()===0||date.getDay()===6);
+    const daySlots=wknd?weSlots:wdSlots, dTimes=wknd?WE_TIMES:WD_TIMES, dNames=wknd?WE_NAMES:WD_NAMES;
+    const nSess=Math.max(1,Math.min(dailySessions,daySlots.length));
+    for(let sIdx=0;sIdx<nSess;sIdx++){
+      const slotIdx=daySlots[sIdx];
       const subj=bag[cursor%bag.length];cursor++;
       const focus=matchArea(weakTxt,subj);
       const topic=sessionTopic(subj,focus);
-      const isRecap=recap&&sIdx===dailySessions-1;
+      const isRecap=recap&&sIdx===nSess-1;
       wk.days.push({date:isoOf(date),d:DOW[date.getDay()].slice(0,3),dow:DOW[date.getDay()],
-        subj,level:lvl,topic,slot:sIdx,time:SLOT_TIMES[sIdx]||"19:00",mins:sessionMins,
+        subj,level:lvl,topic,slot:sIdx,slotName:dNames[slotIdx],time:dTimes[slotIdx]||"19:00",mins:sessionMins,
         priority:priorityFor(subj),
         mode:isRecap?("Recap & consolidate · "+topic):activityFor(subj,cursor,finalStretch),finalStretch});
     }
@@ -2205,7 +2244,7 @@ function renderPlan(){
     html+=`<div class="day-card"><h4>${d==="undated"?"Scheduled sessions":longDay(d)}</h4>`+
       `<div class="dow-lead">${d==="undated"?"":(new Date(d+"T00:00:00").toLocaleDateString("en-GB",{weekday:"long"}))}</div>`+
       sessions.map((s,i)=>{
-        const isDone=!!done[s.key], topic=s.topic||s.subj, slot=SLOT_NAMES[s.slot!=null?s.slot:i]||("Session "+(i+1)), pri=s.priority||"MEDIUM";
+        const isDone=!!done[s.key], topic=s.topic||s.subj, slot=s.slotName||["Morning","Afternoon","Evening"][s.slot!=null?s.slot:i]||("Session "+(i+1)), pri=s.priority||"MEDIUM";
         return `<div class="slotrow">
           <div class="slot-k">${slot}<small>${s.time||""}</small></div>
           <label class="sess-body ${isDone?"done":""}" style="cursor:pointer;display:block">
