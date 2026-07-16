@@ -344,6 +344,20 @@
   };
   try { window.SY.applyLearning(); } catch (e) {}
 
+  // ---- KIDS theme: under-12 students (Primary / 11+ study level) get a
+  // fully colourful OS — vivid background, rainbow branding, playful UI.
+  // Applied from the profile automatically; flips off when the level changes.
+  try {
+    if (s.role === 'student') {
+      var _kp = window.SY.get('profile', {}) || {};
+      if (/primary|11\+|key stage 1|ks1|\byear [1-6]\b/i.test(String(_kp.level || ''))) {
+        var kl = document.createElement('link');
+        kl.rel = 'stylesheet'; kl.href = base + 'kids.css'; kl.id = 'sy-kids';
+        (document.head || document.documentElement).appendChild(kl);
+      }
+    }
+  } catch (e) {}
+
   // ---- school-managed profile bridge (runs on every guarded page) ----
   // My School and the private account stay separate surfaces, but they share
   // data in the background: a private student manages their own year group;

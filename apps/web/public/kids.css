@@ -1,0 +1,49 @@
+/* StudYear KIDS theme — applied automatically by guard.js when a signed-in
+   student's Study Level is Primary School / 11+ (under-12s). A vivid,
+   playful layer over the whole OS: bright background, rainbow accents,
+   chunky rounded shapes, glowing numbers. Additive on shared classes —
+   nothing breaks if a class is absent. */
+
+body{
+  background:
+    radial-gradient(900px 600px at 85% -10%, rgba(255,105,180,.28), transparent 60%),
+    radial-gradient(800px 550px at -10% 20%, rgba(64,224,208,.22), transparent 55%),
+    radial-gradient(900px 700px at 50% 115%, rgba(255,196,0,.18), transparent 60%),
+    radial-gradient(600px 400px at 25% -5%, rgba(138,92,246,.25), transparent 55%),
+    linear-gradient(180deg,#141033 0%,#1a1445 45%,#120e2e 100%) !important;
+}
+.card,.res,.snap,.pack,.plan{
+  border-radius:22px !important;
+  border-width:2px !important;
+  background:linear-gradient(180deg,rgba(70,50,140,.45),rgba(30,22,70,.85)) !important;
+}
+.card::before,.res::before,.snap::before{
+  height:5px !important;opacity:1 !important;
+  background:linear-gradient(90deg,#FF6B9D,#FFC400,#3DDC84,#40C4FF,#B388FF) !important;
+}
+.card:hover,.res:hover{transform:translateY(-2px);transition:transform .15s;border-color:rgba(255,196,0,.55) !important}
+h1{background:linear-gradient(92deg,#FFC400 5%,#FF6B9D 40%,#40C4FF 80%);-webkit-background-clip:text;background-clip:text;color:transparent !important}
+.k{color:#FFC400 !important}
+.tile .v,.tele .num,.kpi .v,.stat .v{
+  background:linear-gradient(92deg,#FFD54F 10%,#FF8A9D 50%,#82CFFF 90%) !important;
+  -webkit-background-clip:text;background-clip:text;color:transparent !important;
+}
+.btn{border-radius:16px !important}
+.btn.solid{background:linear-gradient(135deg,#FF6B9D,#8B5CF6) !important;box-shadow:0 4px 18px rgba(255,107,157,.35)}
+.btn:not(.solid):not(.ghost){border-color:#40C4FF !important;color:#82CFFF !important}
+.badge,.pill{background:rgba(255,196,0,.14) !important;border-color:rgba(255,196,0,.4) !important}
+aside{background:linear-gradient(180deg,rgba(138,92,246,.16),rgba(20,16,51,0)) !important}
+aside nav a:hover{background:rgba(255,196,0,.15) !important;color:#FFD54F !important}
+aside nav a.on{background:linear-gradient(90deg,rgba(255,107,157,.25),rgba(64,196,255,.18)) !important;color:#fff !important}
+.slogo b{background:linear-gradient(92deg,#FFC400,#FF6B9D,#40C4FF);-webkit-background-clip:text;background-clip:text;color:transparent !important}
+.bar{height:12px !important;border-radius:8px !important}
+.bar i{background:linear-gradient(90deg,#3DDC84,#40C4FF) !important}
+input,select,textarea{border-radius:14px !important;border-color:rgba(138,92,246,.45) !important}
+input:focus,select:focus,textarea:focus{border-color:#FFC400 !important;box-shadow:0 0 0 3px rgba(255,196,0,.18)}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#FF6B9D,#8B5CF6,#40C4FF) !important;border-radius:8px}
+/* a friendly star twinkle in the corner of every page */
+body::after{
+  content:"⭐";position:fixed;top:10px;right:14px;font-size:18px;opacity:.85;
+  animation:sy-kid-twinkle 2.6s ease-in-out infinite;pointer-events:none;z-index:98;
+}
+@keyframes sy-kid-twinkle{0%,100%{transform:scale(1) rotate(0deg);opacity:.85}50%{transform:scale(1.35) rotate(18deg);opacity:1}}

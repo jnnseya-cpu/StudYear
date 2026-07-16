@@ -69,6 +69,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','GTM-5GNC8F6G');</script>
 <link rel="stylesheet" href="../pub.css">
+<link rel="stylesheet" href="../theme.css">
 <link rel="canonical" href="https://www.studyear.com/blog/">
 </head>
 <body>
@@ -136,12 +137,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   function drawPosts(){
     var open=decodeURIComponent(location.hash.replace('#',''));
     var featured=posts.find(function(p){return (p.slug||p.id)===open});
-    wrap.innerHTML=(featured?('<div class="card" id="featured" style="border-color:rgba(217,174,85,.5)">'+
+    /* a shared link (#slug) opens JUST that article — a clean single-post
+       page with a way back to the full list, never the list itself */
+    wrap.innerHTML=featured?('<p style="margin:0 0 14px"><a href="#" id="back-all" style="font-size:13px">← All articles</a></p>'+
+      '<div class="card" id="featured" style="border-color:rgba(217,174,85,.5)">'+
       '<div class="meta">'+esc(featured.category||'Article')+' · '+(featured.readTime||3)+' min read</div>'+
       '<h2 style="margin-top:8px">'+esc(featured.title)+'</h2>'+mdlite(featured.body)+
       (featured.tags&&featured.tags.length?'<p class="meta" style="letter-spacing:.06em">'+featured.tags.map(function(t){return '#'+esc(t)}).join(' ')+'</p>':'')+
-      shareRow(featured)+'</div>'):'')+
-    posts.map(function(p){
+      shareRow(featured)+'</div>')
+    :posts.map(function(p){
       return '<div class="card" id="'+esc(p.slug||p.id)+'"><div class="meta">'+esc(p.category||'Article')+' · '+(p.readTime||3)+' min read'+(p.seoScore?' · SEO '+p.seoScore:'')+'</div>'+
         '<h2 style="margin-top:8px">'+esc(p.title)+'</h2>'+
         '<p>'+esc(p.excerpt||p.metaDesc||'')+'</p>'+
@@ -151,6 +155,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     }).join('');
     wrap.querySelectorAll('[data-copy]').forEach(function(a){a.onclick=function(e){e.preventDefault();
       try{navigator.clipboard.writeText(a.dataset.copy);a.textContent='✓ Copied'}catch(err){}}});
+    var back=document.getElementById('back-all');
+    if(back)back.onclick=function(e){e.preventDefault();history.replaceState(null,'',location.pathname);drawPosts();window.scrollTo({top:0,behavior:'smooth'})};
     if(featured)setTimeout(function(){var f=document.getElementById('featured');if(f)f.scrollIntoView({behavior:'smooth'})},60);
   }
   if(posts.length){

@@ -15,6 +15,15 @@ export default function AccountChooser() {
   const [session, setSession] = useState<{ name: string; role: string } | null>(null);
 
   useEffect(() => {
+    // premium colour lift — same enhancement layer every console gets
+    if (!document.getElementById('sy-theme')) {
+      const th = document.createElement('link');
+      th.id = 'sy-theme'; th.rel = 'stylesheet'; th.href = `${BASE}/theme.css`;
+      document.head.appendChild(th);
+    }
+  }, []);
+
+  useEffect(() => {
     // legacy deep links: /app#school → /app/school/
     const h = window.location.hash.replace('#', '');
     if (PERSONAS.some((p) => p.slug === h)) {

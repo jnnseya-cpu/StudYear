@@ -11,24 +11,24 @@ body{
     radial-gradient(700px 500px at 30% -8%, rgba(242,206,123,.07), transparent 55%),
     linear-gradient(180deg,#0A1330 0%,#081026 45%,#070D20 100%) !important;
 }
-.card,.res,.snap{
+.card,.res,.snap,.pcard{
   position:relative;
   background:linear-gradient(180deg,rgba(32,44,80,.46),rgba(11,20,40,.82)) !important;
   border-color:rgba(126,148,198,.30) !important;
 }
-.card::before,.res::before,.snap::before{
+.card::before,.res::before,.snap::before,.pcard::before{
   content:"";position:absolute;left:0;right:0;top:0;height:2px;
   border-radius:inherit;border-bottom-left-radius:0;border-bottom-right-radius:0;
   background:linear-gradient(90deg,var(--sy-acc1,#4FA6E0),var(--sy-acc2,#8B5CF6));
   opacity:.9;pointer-events:none;
 }
-.card:nth-of-type(6n+1),.res:nth-of-type(6n+1),.snap:nth-of-type(6n+1){--sy-acc1:#4FA6E0;--sy-acc2:#8B5CF6}
-.card:nth-of-type(6n+2),.res:nth-of-type(6n+2),.snap:nth-of-type(6n+2){--sy-acc1:#F2CE7B;--sy-acc2:#F97362}
-.card:nth-of-type(6n+3),.res:nth-of-type(6n+3),.snap:nth-of-type(6n+3){--sy-acc1:#34D399;--sy-acc2:#22D3EE}
-.card:nth-of-type(6n+4),.res:nth-of-type(6n+4),.snap:nth-of-type(6n+4){--sy-acc1:#F472B6;--sy-acc2:#A78BFA}
-.card:nth-of-type(6n+5),.res:nth-of-type(6n+5),.snap:nth-of-type(6n+5){--sy-acc1:#F59E0B;--sy-acc2:#F2CE7B}
-.card:nth-of-type(6n),.res:nth-of-type(6n),.snap:nth-of-type(6n)  {--sy-acc1:#22D3EE;--sy-acc2:#34D399}
-.card:hover,.res:hover,.snap:hover{border-color:rgba(150,175,230,.45) !important}
+.card:nth-of-type(6n+1),.res:nth-of-type(6n+1),.snap:nth-of-type(6n+1),.pcard:nth-of-type(6n+1){--sy-acc1:#4FA6E0;--sy-acc2:#8B5CF6}
+.card:nth-of-type(6n+2),.res:nth-of-type(6n+2),.snap:nth-of-type(6n+2),.pcard:nth-of-type(6n+2){--sy-acc1:#F2CE7B;--sy-acc2:#F97362}
+.card:nth-of-type(6n+3),.res:nth-of-type(6n+3),.snap:nth-of-type(6n+3),.pcard:nth-of-type(6n+3){--sy-acc1:#34D399;--sy-acc2:#22D3EE}
+.card:nth-of-type(6n+4),.res:nth-of-type(6n+4),.snap:nth-of-type(6n+4),.pcard:nth-of-type(6n+4){--sy-acc1:#F472B6;--sy-acc2:#A78BFA}
+.card:nth-of-type(6n+5),.res:nth-of-type(6n+5),.snap:nth-of-type(6n+5),.pcard:nth-of-type(6n+5){--sy-acc1:#F59E0B;--sy-acc2:#F2CE7B}
+.card:nth-of-type(6n),.res:nth-of-type(6n),.snap:nth-of-type(6n),.pcard:nth-of-type(6n)  {--sy-acc1:#22D3EE;--sy-acc2:#34D399}
+.card:hover,.res:hover,.snap:hover,.pcard:hover{border-color:rgba(150,175,230,.45) !important}
 /* KPI / stat numbers glow gold→sky */
 .tile .v,.tele .num,.kpi .v,.stat .v{
   background:linear-gradient(92deg,#F6D992 10%,#8FC2EC 90%);

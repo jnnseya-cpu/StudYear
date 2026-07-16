@@ -84,22 +84,46 @@ function slugify(s){return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').re
 function words(s){return (s||'').trim().split(/\s+/).filter(Boolean).length}
 function readTime(body){return Math.max(1,Math.round(words(body)/200))}
 
-/* ---- AI Writer (template-based, no AI cost) ---- */
+/* ---- AI Writer — live model when the gateway is up (admin AI is free),
+   with the on-device template as fallback. Posts are FIT-FOR-PURPOSE:
+   a hard sub-3-minute read (≤600 words), 3–5 subheadings, one CTA. ---- */
 $('write').onclick=function(){
   var topic=$('topic').value.trim();if(!topic){toast('Enter a topic');return}
   var cat=$('cat').value;var kw=$('kw').value.trim()||topic.split(' ').slice(0,2).join(' ');
   var title=topic.replace(/^\w/,function(c){return c.toUpperCase()});
+  if(window.SYAI&&SYAI.ready()){
+    toast('AI Writer drafting with '+SYAI.provider()+'…');
+    var sys="You are StudYear's blog writer. Write a publish-ready blog post for the category '"+cat+"' with focus keyword '"+kw+"'. HARD LIMIT 550 words total — a sub-3-minute read; never exceed it. Structure: 3–5 '## ' subheadings, short practical paragraphs, evidence-based, UK education context, end with a one-line StudYear call-to-action (free assessment). Output format exactly: first line 'TITLE: <compelling title, 30–60 characters, containing the keyword>'; second line 'META: <meta description, 120–160 characters, containing the keyword>'; then a blank line; then the post body in markdown.";
+    SYAI.ask(sys,'Topic: '+topic,{maxTokens:900}).then(function(txt){
+      var mT=txt.match(/^TITLE:\s*(.+)$/mi),mM=txt.match(/^META:\s*(.+)$/mi);
+      var body=txt.replace(/^TITLE:.*$/mi,'').replace(/^META:.*$/mi,'').trim();
+      /* enforce the 3-minute cap even if the model overruns */
+      var w=body.split(/\s+/);if(w.length>600)body=w.slice(0,600).join(' ')+'…';
+      $('editor').style.display='block';
+      $('e-title').value=(mT?mT[1].trim():title).slice(0,70);
+      $('e-meta').value=(mM?mM[1].trim():'').slice(0,170);
+      $('e-body').value=body;
+      $('e-tags').value=[kw,cat,'StudYear','study tips','revision'].join(', ');
+      current={id:'p'+Date.now(),keyword:kw,category:cat};
+      toast('Live AI draft ready — review, then run SEO');runSeo();
+      $('seo-card').scrollIntoView({behavior:'smooth',block:'nearest'});
+    }).catch(function(){toast('Live AI unavailable — using the built-in writer');writeTemplate(topic,cat,kw,title)});
+    return;
+  }
+  writeTemplate(topic,cat,kw,title);
+};
+function writeTemplate(topic,cat,kw,title){
   var meta='Discover '+kw.toLowerCase()+' — practical, evidence-based guidance from StudYear on '+topic.toLowerCase()+' to help students, parents and teachers get results.';
   var body='## Why '+kw+' matters\n'+kw.charAt(0).toUpperCase()+kw.slice(1)+' is one of the highest-impact things you can focus on. Here is what the data shows and how StudYear puts it to work.\n\n'+
     '## The evidence\nStudents who apply '+kw.toLowerCase()+' consistently outperform those who don\'t. It works because it targets how memory and motivation actually function — not how we wish they did.\n\n'+
-    '## How to apply it this week\n1. Start small and specific.\n2. Space it out across several short sessions.\n3. Test yourself instead of re-reading.\n4. Track progress so you can see it working.\n\n## How StudYear helps\nStudYear automates '+kw.toLowerCase()+' inside every study plan — so students do the right thing at the right time, and parents and teachers can see it happening live.\n\n## The bottom line\n'+title+' is not about working harder. It is about working the way learning actually works. Start your free assessment and let the plan build itself.';
+    '## How to apply it this week\n1. Start small and specific — pick one topic, not a whole subject.\n2. Space it out across several short sessions rather than one long one; twenty focused minutes beats two distracted hours.\n3. Test yourself instead of re-reading — retrieval is what builds durable memory, and it tells you instantly what still needs work.\n4. Track progress so you can see it working; visible momentum is the strongest motivator a student has.\n\n## The mistakes to avoid\nMost students fall into the same traps: highlighting instead of recalling, cramming the night before, and practising only what already feels comfortable. '+kw.charAt(0).toUpperCase()+kw.slice(1)+' fixes all three — but only if it is planned, not left to willpower on a tired Tuesday evening.\n\n## How StudYear helps\nStudYear automates '+kw.toLowerCase()+' inside every study plan — the diagnostic finds the gaps, the planner schedules the right sessions at the right time, and parents and teachers can see it happening live on their own dashboards.\n\n## The bottom line\n'+title+' is not about working harder. It is about working the way learning actually works. Start your free assessment and let the plan build itself.';
   $('editor').style.display='block';
   $('e-title').value=title;$('e-meta').value=meta;$('e-body').value=body;
   $('e-tags').value=[kw,cat,'StudYear','study tips','revision'].join(', ');
   current={id:'p'+Date.now(),keyword:kw,category:cat};
   toast('Draft written — review, then run SEO');runSeo();
   $('seo-card').scrollIntoView({behavior:'smooth',block:'nearest'});
-};
+}
 
 /* ---- AI SEO agent ---- */
 function analyse(){
@@ -110,7 +134,7 @@ function analyse(){
     {ok:kw&&title.toLowerCase().indexOf(kw)>=0,t:'Focus keyword in title'},
     {ok:meta.length>=120&&meta.length<=160,t:'Meta description 120–160 ('+meta.length+')'},
     {ok:kw&&meta.toLowerCase().indexOf(kw)>=0,t:'Keyword in meta description'},
-    {ok:words(body)>=300,t:'Body ≥ 300 words ('+words(body)+')'},
+    {ok:words(body)>=250&&words(body)<=600,t:'Sub-3-minute read — 250–600 words ('+words(body)+' · '+readTime(body)+' min)'},
     {ok:(body.match(/##/g)||[]).length>=3,t:'Has 3+ subheadings'},
     {ok:tags.length>=3,t:'3+ tags'},
     {ok:/studyear|assessment|plan/i.test(body),t:'Internal link / CTA present'}
