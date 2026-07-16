@@ -815,7 +815,7 @@
 
 <script>
 /* ============================ REFERENCE DATA ============================ */
-const SUBJECTS = ["Accounting", "Biology", "Business Studies", "Chemistry", "Computer Science", "Computing", "Economics", "English", "English Language", "English Literature", "French", "Fun", "Geography", "Government & Politics", "Health & Social Care", "History", "ICT", "Law", "Mathematics", "Media Studies", "Music", "Other", "Philosophy", "Physical Education", "Physics", "Psychology", "Religious Studies", "Science", "Sociology", "Spanish"];
+const SUBJECTS = ["Accounting", "Art & Design", "Biology", "Business Studies", "Chemistry", "Combined Science", "Computer Science", "Computing", "Design & Technology", "Drama", "Economics", "English", "English Language", "English Literature", "French", "Further Mathematics", "Geography", "German", "Government & Politics", "Health & Social Care", "History", "ICT", "Law", "Mathematics", "Media Studies", "Music", "Philosophy", "Physical Education", "Physics", "Psychology", "Religious Studies", "Science", "Sociology", "Spanish", "Fun", "Other"];
 const LEVELS = ["Reception (EYFS · age 4–5)","Key Stage 1 (Years 1–2 · age 5–7)","Key Stage 2 (Years 3–6 · age 7–11)", "11+ Exam", "Years 7-9 (KS3)", "GCSE", "IGCSE", "National 5", "BTEC National", "AS", "A2/A-level", "Scottish Highers", "Scottish Advanced Highers", "International Baccalaureate", "University · Undergraduate Year 1","University · Undergraduate Year 2","University · Undergraduate Year 3 / Final","University · Foundation year","University · Master's / Postgraduate", "NEET · Return to learning (16–26)", "Lifelong learning · Adult autodidact", "Fun", "Other", "All Levels"];
 const TYPES = ["Advantages and disadvantages table", "Audio", "Causes and effects table", "Character analysis", "Compare and contrast table", "Crossword", "Document", "Flashcards", "Grid", "Image", "Mindmap", "Multi-tool", "Other", "Presentation", "Quiz", "Quizsearch", "Revision Cards", "Revision Notes", "SWOT analysis", "Spreadsheet", "Timeline", "Video", "Web Page"];
 const TOPICS = ["America - 19th and 20th century", "An Inspector Calls", "Approaches", "Attachment", "Biological molecules, organic chemistry and biochemistry", "British monarchy - Tudors and Stuarts", "Case studies", "Cells, tissues and organs", "Cellular processes and structure", "Christianity", "Crime and deviance", "Criminal law", "DNA, genetics and evolution", "Education", "Energy", "Ethics", "Families and households", "Grammar and vocabulary", "Human, animal and plant physiology", "Medicine through time (OCR History A)", "Memory", "Modern Britain - 19th century onwards", "Natural hazards", "Philosophy", "Religion and beliefs", "Research methods and techniques", "Russia - 19th and 20th century", "The Cold War", "WWII and Nazi Germany 1939-1945"];
@@ -1141,7 +1141,7 @@ function fillSelect(el,items,withBlank){ items.forEach(x=>{const o=document.crea
    is selected; alphabetical like every other list in the OS */
 const UNI_SUBJECTS=["Accounting","Biology","Business Management","Chemistry","Computing","Criminology","Dentistry","Economics","Engineering","English Language","English Literature","Environmental Science","French","Geography","Government & Politics","Health & Social Care","History","Human Biology","Law","Marketing","Medicine","Nursing","Other","Pharmacy","Philosophy","Psychology","Sociology","Spanish","Sports Science","Zoology"];
 function isUniLevel(lv){return /universit|undergrad|\bUG\b|foundation year|master|postgrad|\bPG\b/i.test(String(lv||''))}
-function subjectsFor(lv){return (isUniLevel(lv)?UNI_SUBJECTS:SUBJECTS).slice().sort(function(a,b){return a.localeCompare(b)})}
+function subjectsFor(lv){var last={Fun:1,Other:2};return (isUniLevel(lv)?UNI_SUBJECTS:SUBJECTS).slice().sort(function(a,b){return (last[a]||0)-(last[b]||0)||a.localeCompare(b)})}
 /* repopulate a subject <select> to match a level, keeping the choice if valid */
 function refillSubject(subjId,lv){
   var el=document.getElementById(subjId);if(!el)return;
@@ -2875,8 +2875,14 @@ function makeRecovery(rep){
     steps:steps};
   const hist=store.get("recoveries",[]); hist.unshift(plan); store.set("recoveries",hist.slice(0,30));
   const saved=store.get("plan",{plan:[],done:{}});
+  /* schedule the recovery week onto the next 5 weekdays, rotating
+     Morning/Afternoon/Evening so each session's label and clock time agree
+     (was hard-coded to 19:00 on every row regardless of the slot name). */
+  const RC_TIMES=["09:00","14:00","19:00"];
+  const cur=new Date();cur.setHours(0,0,0,0);
+  function nextWeekday(){do{cur.setDate(cur.getDate()+1)}while(cur.getDay()===0||cur.getDay()===6);return cur.toISOString().slice(0,10)}
   const week={n:(saved.plan&&saved.plan.length?saved.plan[saved.plan.length-1].n+1:1),
-    days:weak.concat(weak).slice(0,5).map((w,i)=>({d:["Mon","Tue","Wed","Thu","Fri"][i],subj:w.s,time:"19:00",mins:40,mode:"RECOVERY · "+w.s+" foundations"}))};
+    days:weak.concat(weak).slice(0,5).map((w,i)=>{const slot=i%3;return {date:nextWeekday(),slot:slot,time:RC_TIMES[slot],subj:w.s,topic:(typeof DIAG_TOPICS!=="undefined"&&DIAG_TOPICS[w.s]&&DIAG_TOPICS[w.s][0])||(w.s+" foundations"),mins:40,priority:"HIGH",mode:"RECOVERY · "+w.s+" foundations"}})};
   saved.plan=(saved.plan||[]).concat([week]); store.set("plan",saved); renderPlan(); addPoints(10);
   logEvent("plan","Recovery plan generated","A personalised recovery plan was added to your account.");
   renderRpHistory();
@@ -3020,9 +3026,12 @@ document.getElementById("dd-run").onclick = () => {
   const btn=document.getElementById("dd-plan");
   if(btn) btn.onclick=()=>{
     const saved = store.get("plan",{plan:[],done:{}});
+    /* schedule onto the next weekdays with slot-matched times (not all 19:00) */
+    const DD_TIMES=["09:00","14:00","19:00"];
+    const dc=new Date();dc.setHours(0,0,0,0);
+    const ddNext=function(){do{dc.setDate(dc.getDate()+1)}while(dc.getDay()===0||dc.getDay()===6);return dc.toISOString().slice(0,10)};
     const week = { n:(saved.plan&&saved.plan.length?saved.plan[saved.plan.length-1].n+1:1), days:
-      weak.slice(0,7).concat(weak.slice(0, Math.max(0,5-weak.length))).slice(0,5).map((w,i)=>(
-        {d:["Mon","Tue","Wed","Thu","Fri"][i], subj:subj, time:"19:00", mins:40, mode:"RECOVERY · "+w.t}))};
+      weak.slice(0,7).concat(weak.slice(0, Math.max(0,5-weak.length))).slice(0,5).map(function(w,i){var slot=i%3;return {date:ddNext(), slot:slot, time:DD_TIMES[slot], subj:subj, topic:w.t, mins:40, priority:"HIGH", mode:"RECOVERY · "+w.t}})};
     saved.plan=(saved.plan||[]).concat([week]); store.set("plan",saved);
     renderPlan(); addPoints(10);
     logEvent("plan","Recovery plan generated","A personalised recovery plan was added to your account.");
