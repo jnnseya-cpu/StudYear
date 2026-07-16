@@ -13,6 +13,7 @@
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
   var LEVELS=['Reception','KS1','KS2','11+','KS3','GCSE','IGCSE','National 5','AS','A-level','Highers','IB','BTEC','University'];
   var BOARDS=['','AQA','Edexcel','OCR','WJEC','CCEA','SQA','CIE','IB'];
+  var SUBJECTS=['Mathematics','Further Mathematics','English Language','English Literature','Biology','Chemistry','Physics','Combined Science','Geography','History','Computer Science','Business','Economics','Psychology','Sociology','Religious Studies','French','Spanish','German','Art & Design','Design & Technology','Music','Drama','Physical Education','Verbal Reasoning','Non-Verbal Reasoning'];
   /* command-word rotation for the on-device fallback: [stem, marks, scheme] */
   var TEMPLATES=[
     ['Define the term “{t}”.',2,'1 mark — precise definition naming the key idea; 1 mark — correct use of subject terminology.'],
@@ -26,16 +27,45 @@
     ['Suggest how {t} could be applied to an unfamiliar situation.',4,'1 mark — sensible application; 2 marks — method/steps outlined; 1 mark — limitation or condition noted.'],
     ['Evaluate the importance of {t}. Justify your answer.',6,'Level-marked: 1–2 marks one-sided points; 3–4 marks balanced points both ways; 5–6 marks balanced argument with a justified conclusion.']
   ];
+  /* natural fallback topics per subject — questions name REAL content, never
+     'Define the term "Mathematics"' */
+  var FALLBACK_TOPICS={
+    'Mathematics':['fractions and percentages','solving linear equations','quadratic equations','ratio and proportion','angles in polygons','probability','averages and range'],
+    'Biology':['cell structure','photosynthesis','enzymes','the circulatory system','natural selection','food chains and ecosystems'],
+    'Chemistry':['atomic structure','ionic and covalent bonding','acids and alkalis','rates of reaction','the periodic table','electrolysis'],
+    'Physics':['forces and motion','energy transfers','electrical circuits','waves','magnetism','pressure in fluids'],
+    'Combined Science':['cells and organisation','chemical reactions','energy','forces','ecosystems','atomic structure'],
+    'Geography':['rivers and flooding','coastal erosion','urbanisation','climate change','tectonic hazards','development and inequality'],
+    'History':['causes of the First World War','life in Nazi Germany','the Cold War','medicine through time','the Norman Conquest','civil rights'],
+    'English Language':['persuasive writing techniques','analysing language in fiction','structure and its effects','comparing viewpoints','descriptive writing'],
+    'English Literature':['Macbeth','An Inspector Calls','A Christmas Carol','power and conflict poetry','character and theme analysis'],
+    'Computer Science':['algorithms and flowcharts','binary and data representation','networks','programming constructs','cyber security'],
+    'Business':['the marketing mix','cash flow','business ownership','motivation and retention','break-even analysis'],
+    'French':['family and relationships','school life','holidays and travel','future plans','healthy living'],
+    'Spanish':['family and relationships','school life','holidays and travel','future plans','healthy living'],
+    'Religious Studies':['beliefs about God','religious practices','peace and conflict','crime and punishment','relationships and families'],
+    'Psychology':['memory models','conformity and obedience','attachment','research methods'],
+    'Economics':['supply and demand','price elasticity','market failure','fiscal and monetary policy']};
   function fallbackQuestions(n,subject,level,topics){
-    var ts=(topics&&topics.length?topics:[subject]).filter(Boolean);
+    var ts=(topics&&topics.length?topics:(FALLBACK_TOPICS[subject]||[subject])).filter(Boolean);
     var out=[];
     for(var i=0;i<n;i++){
       var tpl=TEMPLATES[i%TEMPLATES.length];
-      var t=ts[Math.floor(i/TEMPLATES.length)%ts.length]||subject;
-      out.push({q:tpl[0].replace(/\{t\}/g,t).replace(/\{s\}/g,subject),marks:tpl[1],
+      var t=ts[i%ts.length]||subject;
+      var q=tpl[0].replace(/\{t\}/g,t).replace(/\{s\}/g,subject);
+      if(t===subject)q=q.replace(' in '+subject+'.','.'); // avoid 'X is important in X'
+      out.push({q:q,marks:tpl[1],
         a:tpl[2]+' Pitch expected depth at '+level+' standard.'});
     }
     return out;
+  }
+  /* mark-scheme answers rendered as readable point-by-point lines, whether
+     they arrive as AI-written numbered lines or template semicolon points */
+  function fmtAnswer(a){
+    var s=esc(String(a||'').trim());
+    if(/\n/.test(s))return s.split(/\n+/).map(function(l){return '<div style="margin:3px 0">'+l.trim()+'</div>'}).join('');
+    if(/;\s/.test(s))return s.split(/;\s+/).map(function(l){return '<div style="margin:3px 0">• '+l.replace(/\.$/,'')+'</div>'}).join('');
+    return s;
   }
   async function liveQuestions(n,subject,level,board,topics,difficulty,onProgress){
     var out=[],batch=10;
@@ -90,7 +120,7 @@
     return headerHtml(brand,meta,true)+qs.map(function(x,i){
       return '<div style="margin:12px 0;page-break-inside:avoid;border-left:3px solid #2E6BC4;padding-left:10px">'+
         '<div style="font-size:13.5px"><b>Q'+(i+1)+'.</b> '+esc(x.q)+' <span style="color:#555">['+x.marks+']</span></div>'+
-        '<div style="font-size:13px;margin-top:4px;white-space:pre-wrap">'+esc(x.a)+'</div></div>';
+        '<div style="font-size:13px;margin-top:4px;line-height:1.55">'+fmtAnswer(x.a)+'</div></div>';
     }).join('')+'<div class="meta" style="margin-top:18px;border-top:1px solid #ccc;padding-top:8px">END OF MARK SCHEME · Produced with '+esc(brand.name)+'</div>';
   }
   function wordBlocks(brand,meta,qs,isAnswers){
@@ -99,7 +129,12 @@
       {p:meta.n+' questions · Total '+meta.total+' marks'+(isAnswers?'':' · Name: ____________  Class: ________')}];
     qs.forEach(function(x,i){
       blocks.push({p:'Q'+(i+1)+'. '+x.q+'  ['+x.marks+' mark'+(x.marks===1?'':'s')+']'});
-      blocks.push({p:isAnswers?('Answer: '+x.a):'Answer: ............................................................................................................'});
+      if(isAnswers){
+        var lines=/\n/.test(x.a)?String(x.a).split(/\n+/):(/;\s/.test(x.a)?String(x.a).split(/;\s+/).map(function(l){return '• '+l}):['Answer: '+x.a]);
+        lines.forEach(function(l){if(l.trim())blocks.push({p:l.trim()})});
+      }else{
+        blocks.push({p:'Answer: ............................................................................................................'});
+      }
     });
     blocks.push({p:(isAnswers?'END OF MARK SCHEME':'END OF PAPER')+' · Produced with '+brand.name});
     return blocks;
@@ -107,6 +142,7 @@
   function mount(el,opts){
     opts=opts||{};var brand=opts.brand||{name:'StudYear',line:'AI Academic Operating System'};
     var levels=opts.levels||LEVELS,boards=opts.boards||BOARDS;
+    var subjects=(opts.subjects&&opts.subjects.length?opts.subjects.slice():SUBJECTS.slice());
     var d=opts.defaults||{};var goId=opts.goId||'sx-go';
     /* one-tap handoff from the student record / interventions: another page
        stages sy-prefill-exam and the builder arrives pre-filled — teachers
@@ -118,7 +154,11 @@
     el.innerHTML=
       '<label class="f">Paper title</label><input type="text" id="sx-title" value="'+esc(d.title||'')+'" placeholder="e.g. End of Unit Test — Forces & Motion">'+
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px">'+
-      '<div><label class="f">Subject</label><input type="text" id="sx-subj" placeholder="Any subject" value="'+esc(d.subject||'')+'"></div>'+
+      '<div><label class="f">Subject</label><select id="sx-subj">'+
+        (function(){var list=subjects.slice();
+          if(d.subject&&list.indexOf(d.subject)<0)list.unshift(d.subject);
+          return '<option value="">Select a subject</option>'+list.map(function(s){return '<option'+(s===d.subject?' selected':'')+'>'+esc(s)+'</option>'}).join('');
+        })()+'</select></div>'+
       '<div><label class="f">Level</label><select id="sx-level">'+levels.map(function(l){return '<option'+(l===d.level?' selected':'')+'>'+esc(l)+'</option>'}).join('')+'</select></div>'+
       '<div><label class="f">Exam board</label><select id="sx-board">'+boards.map(function(b){return '<option'+(b===(d.board||'')?' selected':'')+'>'+esc(b)+'</option>'}).join('')+'</select></div></div>'+
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">'+
@@ -157,7 +197,7 @@
       var title=$('sx-title').value.trim()||(subject+' — '+level+' exam paper');
       var topics=$('sx-topics').value.split(',').map(function(t){return t.trim()}).filter(Boolean);
       var diff=$('sx-diff').value;
-      if(!subject){$('sx-status').textContent='Enter a subject first.';return}
+      if(!subject){$('sx-status').textContent='Select a subject first.';return}
       var cost=Math.max(10,n);
       if(opts.spend&&!opts.spend(cost,'Exam paper: '+title+' ('+n+' questions)'))return;
       var btn=$(goId);btn.disabled=true;

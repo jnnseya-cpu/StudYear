@@ -50,7 +50,7 @@ let p=await newPage('student',{role:'student',keys:{
 await p.goto(B+'/study/#create',{waitUntil:'networkidle'});
 ok('Student exam card present with Premium badge', await p.evaluate(()=>{const c=document.getElementById('exam-card');return !!(c&&c.querySelector('.badge.prem'))}));
 await mockExamAI(p);
-await p.fill('#sx-subj','History');
+await p.selectOption('#sx-subj','History');
 await p.fill('#sx-n','50');
 await p.fill('#sx-title','Weimar Germany mock');
 await p.click('#exam-go');
@@ -93,7 +93,7 @@ ok('Teacher: exam mount rendered', await p.locator('#exam-mount #exam-go').count
 const pn=await p.locator('#exam-pool-note').innerText();
 ok('Teacher: school pool shown', /School pool: 500 ACUs at Riverside Academy/.test(pn.replace(/ /g,' ')));
 await mockExamAI(p);
-await p.fill('#sx-subj','Physics');await p.fill('#sx-n','12');
+await p.selectOption('#sx-subj','Physics');await p.fill('#sx-n','12');
 await p.click('#exam-go');
 await p.waitForFunction(()=>/answer sheet ready/.test((document.getElementById('sx-status')||{}).textContent||''),null,{timeout:8000}).catch(()=>{});
 ok('Teacher: paper built', /12 questions/.test(await p.locator('#sx-status').innerText()));
@@ -109,7 +109,7 @@ p=await newPage('tutor',{role:'tutor',keys:{
 }});
 await p.goto(B+'/tutor/assistant/',{waitUntil:'networkidle'});
 ok('Tutor: exam mount rendered', await p.locator('#exam-mount #exam-go').count()>0);
-await p.fill('#sx-subj','French');await p.fill('#sx-n','8');
+await p.selectOption('#sx-subj','French');await p.fill('#sx-n','8');
 await p.click('#exam-go'); // no SYAI key → fallback templates
 await p.waitForFunction(()=>/answer sheet ready/.test((document.getElementById('sx-status')||{}).textContent||''),null,{timeout:6000}).catch(()=>{});
 const tout=await p.locator('#sx-out').innerText();
