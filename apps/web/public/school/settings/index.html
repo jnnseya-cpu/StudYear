@@ -179,7 +179,7 @@ var SECTIONS=[
    {k:'country',l:'Country',t:'select',opts:COUNTRIES,req:1},
    {k:'county',l:'County / province',t:'text'},
    {k:'city',l:'City',t:'text'},
-   {k:'postcode',l:'Postcode',t:'text'},
+   {k:'postcode',l:'Postcode',t:'text',ph:'e.g. B4 7XG — GPS & map auto-fill'},
    {k:'addr1',l:'Address line 1',t:'text',w:1},
    {k:'addr2',l:'Address line 2',t:'text',w:1},
    {k:'gps',l:'GPS location',t:'text',ph:'51.5074, -0.1278'},
@@ -417,6 +417,13 @@ SECTIONS.forEach(function(sec){
     else if(data[fl.k]!=null)input.value=data[fl.k];
     input.dataset.k=fl.k;if(fl.req)input.dataset.req='1';
     input.oninput=function(){data[fl.k]=input.value;refresh()};input.onchange=function(){data[fl.k]=input.value;refresh()};
+    /* postcode → GPS + Google Maps link, auto-filled via the free UK
+       postcodes.io lookup (no key). Fires on blur; never overwrites values
+       the user typed themselves. */
+    if(fl.k==='postcode'){
+      input.setAttribute('autocomplete','postal-code');
+      input.addEventListener('blur',function(){autofillFromPostcode(input.value)});
+    }
     box.appendChild(input);grid.appendChild(box);
   });
   card.appendChild(grid);form.appendChild(card);
@@ -472,6 +479,33 @@ $('save').onclick=function(){
   toast('School registration saved');refresh();
 };
 
+/* ---- postcode → GPS + Maps link (postcodes.io, free, UK, CORS-enabled) ---- */
+function setFieldValue(k,v){
+  data[k]=v;
+  var inp=document.querySelector('[data-k="'+k+'"]');if(inp)inp.value=v;
+}
+var _pcLast='';
+function autofillFromPostcode(pc){
+  pc=(pc||'').trim();if(!pc||pc===_pcLast)return;_pcLast=pc;
+  var clean=pc.replace(/\s+/g,'');
+  if(!/^[A-Za-z]{1,2}\d[A-Za-z\d]?\d[A-Za-z]{2}$/.test(clean))return; /* UK postcode shape only */
+  fetch('https://api.postcodes.io/postcodes/'+encodeURIComponent(clean))
+    .then(function(r){return r.ok?r.json():null})
+    .then(function(j){
+      if(!j||!j.result)return;var res=j.result;
+      var lat=res.latitude,lon=res.longitude;
+      if(lat==null||lon==null)return;
+      /* only fill blanks — never clobber what the user typed */
+      if(!(data.gps&&(''+data.gps).trim()))setFieldValue('gps',lat.toFixed(5)+', '+lon.toFixed(5));
+      if(!(data.mapsLink&&(''+data.mapsLink).trim()))setFieldValue('mapsLink','https://www.google.com/maps?q='+lat+','+lon);
+      if(!(data.city&&(''+data.city).trim())&&(res.admin_district||res.parish))setFieldValue('city',res.admin_district||res.parish);
+      if(!(data.county&&(''+data.county).trim())&&(res.admin_county||res.region))setFieldValue('county',res.admin_county||res.region);
+      if(!(data.country&&(''+data.country).trim())&&res.country){var inp=document.querySelector('[data-k="country"]');if(inp&&[].some.call(inp.options,function(o){return o.value===res.country})){setFieldValue('country',res.country);}}
+      try{refresh()}catch(e){}
+      try{showMap()}catch(e){}
+      var st=document.getElementById('mapwrap');
+    }).catch(function(){});
+}
 /* ---- Google Maps location space ---- */
 function mapQuery(){
   if(data.mapsLink&&/https?:\/\//.test(data.mapsLink))return null; /* use link directly */
