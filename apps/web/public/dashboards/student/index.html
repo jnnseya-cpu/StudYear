@@ -238,13 +238,17 @@ var overall=subjKeys.length?Math.round(subjKeys.reduce(function(a,s){return a+ma
    the profile subject list */
 var weakest=subjKeys.length?subjKeys.reduce(function(a,b){return mastery[a]<mastery[b]?a:b}):null;
 if(overall!=null){
-  var g=gradeFor(overall);
-  $('t-grade').textContent='Grade '+g;
-  $('t-grade-k').textContent='Predicted grade'+(weakest?' · '+weakest:'');
-  $('t-grade').title='Based on '+quizzes.length+' quiz'+(quizzes.length===1?'':'zes')+(diag?' + your diagnostic':'');
+  /* primary children get Working Towards / Expected / Greater Depth (+ scaled
+     score), NOT a GCSE 1–9 grade; secondary keeps the predicted grade */
+  var att=SY.attainment(profile.level,overall);
+  $('t-grade').textContent=att.short;
+  $('t-grade').style.fontSize=att.system==='gcse'?'':'22px';
+  $('t-grade-k').textContent=att.caption+(weakest?' · '+weakest:'');
+  $('t-grade').title=att.label+' — based on '+quizzes.length+' quiz'+(quizzes.length===1?'':'zes')+(diag?' + your diagnostic':'');
 }else{
+  var isPrim=SY.attainment(profile.level,0).system!=='gcse';
   $('t-grade').textContent='–';
-  $('t-grade-k').textContent='Predicted grade — take a quiz or diagnostic';
+  $('t-grade-k').textContent=(isPrim?'Attainment':'Predicted grade')+' — take a quiz or diagnostic';
 }
 /* streak */
 (function(){var s=SY.get('streak',{days:[]}),set={};(s.days||[]).forEach(function(d){set[d]=1});

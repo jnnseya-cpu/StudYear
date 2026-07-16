@@ -249,6 +249,29 @@
         }).catch(function () { return self.resolveCodeAsync(c); });
       });
     },
+    /** Attainment for a study level — the correct national framework, not a
+        one-size GCSE grade. Primary children (England) are NOT graded 1–9:
+          EYFS (Reception) → Early Learning Goals: Emerging / Expected
+          KS1/KS2          → Working Towards / Expected Standard / Greater Depth
+                             + a KS2-style scaled score (80–120, 100 = expected)
+          Secondary        → GCSE grade 1–9
+        Returns { system, band, scaled?, grade?, short, caption, label }. */
+    attainment: function (level, masteryPct) {
+      var lv = String(level || ''); var m = Math.max(0, Math.min(100, Math.round(masteryPct || 0)));
+      var isPrimary = /primary|eyfs|reception|infant|junior|\bks\s*[12]\b|key\s*stage\s*[12]|\byear\s*[1-6]\b/i.test(lv)
+        && !/gcse|a-?level|as-?level|\bks\s*[345]\b|key\s*stage\s*[345]|\byear\s*(7|8|9|1[0-3])\b|sixth form|btec|\bib\b|undergrad|degree/i.test(lv);
+      if (isPrimary) {
+        if (/eyfs|reception|nursery/i.test(lv)) {
+          var eb = m >= 65 ? 'Expected' : 'Emerging';
+          return { system: 'eyfs', band: eb, short: eb, caption: 'Early Learning Goals', label: eb + ' (Early Learning Goals)' };
+        }
+        var scaled = Math.round(80 + m * 0.4);                 // 0→80, 50→100, 100→120
+        var band = scaled >= 110 ? 'Greater Depth' : scaled >= 100 ? 'Expected Standard' : 'Working Towards';
+        return { system: 'primary', band: band, scaled: scaled, short: band, caption: 'Scaled score ' + scaled + ' (100 = expected)', label: band + ' · scaled score ' + scaled };
+      }
+      var g = Math.max(1, Math.min(9, Math.round(1 + 8 * m / 100)));
+      return { system: 'gcse', grade: g, short: 'Grade ' + g, caption: 'Predicted grade', label: 'Predicted Grade ' + g };
+    },
     /** resolves true when this account has a live cloud session (Firebase token)
         — cross-account linking/sync needs it; used to give a clear message. */
     cloudAuthed: function () {

@@ -2495,7 +2495,9 @@ function renderProgress(){
   if(qz.length||dg){
     const qavg=qz.length?qz.reduce((a,b)=>a+b.pct,0)/qz.length:null;
     const m=qavg!==null&&dg?Math.round((qavg+dg.avg)/2):Math.round(qavg!==null?qavg:dg.avg);
-    document.getElementById("pt-grade").textContent="Grade "+Math.max(1,Math.min(9,Math.round(1+8*m/100)));
+    const _att=SY.attainment(PROFILE.level,m);
+    const _pt=document.getElementById("pt-grade");_pt.textContent=_att.short;_pt.title=_att.label;
+    if(_att.system!=="gcse")_pt.style.fontSize="20px";
   }
   const plan=store.get("plan",null);
   if(plan&&plan.plan){
@@ -2619,8 +2621,8 @@ document.getElementById("imp-go").onclick=()=>{
       <h3 style="font-family:var(--serif);font-weight:500;color:var(--gold-300)">Executive Summary</h3>
       <div class="sub">A high-level overview of your current academic standing and path forward.</div>
       <div class="tiles" style="grid-template-columns:repeat(2,1fr);margin:10px 0">
-        <div class="tile"><div class="v">${gradeWord(overall)}</div><div class="k">Predicted grade</div></div>
-        <div class="tile"><div class="v">${esc(String(targetTxt))}</div><div class="k">Target grade</div></div>
+        <div class="tile"><div class="v">${esc(SY.attainment(PROFILE.level,overall).short)}</div><div class="k">${SY.attainment(PROFILE.level,overall).caption}</div></div>
+        <div class="tile"><div class="v">${esc(String(targetTxt))}</div><div class="k">Target</div></div>
       </div>
       <p style="font-size:13.5px;color:var(--ink-2)">“${esc(name)}, your target is ambitious and achievable with focused effort.
         Your current trajectory points to <b>${gradeWord(overall)}</b> overall — this plan is your direct pathway to close the gap.
@@ -3054,13 +3056,14 @@ document.getElementById("dd-run").onclick = () => {
   const mastery = ratings.map(r=>Math.round(100*r/3));
   const avg = Math.round(mastery.reduce((a,b)=>a+b,0)/mastery.length);
   const pred = gradeFor(avg);
+  const predAtt = SY.attainment(PROFILE.level, avg);
   const weak = topics.map((t,i)=>({t,m:mastery[i]})).filter(x=>x.m<60).sort((a,b)=>a.m-b.m);
   addPoints(25); touchStreak();
   logEvent("diagnostic","Topic deep-dive completed",subj+" — topic-by-topic mastery map generated.");
   document.getElementById("dd-out").innerHTML = `
     <div class="tiles" style="grid-template-columns:repeat(3,1fr);margin-top:16px">
       <div class="tile"><div class="v">${avg}%</div><div class="k">${esc(subj)} mastery</div></div>
-      <div class="tile"><div class="v">Grade ${pred}</div><div class="k">Predicted now</div></div>
+      <div class="tile"><div class="v">${esc(predAtt.short)}</div><div class="k">${predAtt.caption}</div></div>
       <div class="tile"><div class="v" style="color:${pred>=target?"var(--good)":"var(--warn)"}">${pred>=target?"On target":"Gap: "+(target-pred)}</div><div class="k">Target · Grade ${target}</div></div>
     </div>
     ${topics.map((t,i)=>`<div class="mrow"><span>${t}</span><div class="bar"><i style="width:${mastery[i]}%;background:${mastery[i]<60?"var(--crit)":mastery[i]<80?"var(--warn)":"var(--good)"}"></i></div><span class="pc">${mastery[i]}%</span></div>`).join("")}
@@ -3231,6 +3234,7 @@ function arStatic(title,text,subj,level){
     {k:"Development",v:score(1,30+Math.min(50,Math.floor(words/40)))}];
   const overall=Math.round(crit.reduce((a,b)=>a+b.v,0)/crit.length);
   const grade=gradeFor(overall);
+  const arAtt=SY.attainment(level,overall);
   const strengths=[], targets=[];
   (firstIsThesis?strengths:targets).push(firstIsThesis?"Clear thesis in your opening — you answer the question early.":"Open with a thesis: answer the question in your first two sentences.");
   (quotes>=2?strengths:targets).push(quotes>=2?"Good use of evidence — "+quotes+" embedded quotes/examples.":"Add embedded evidence — quotes or specific examples to back each point.");
@@ -3243,7 +3247,7 @@ function arStatic(title,text,subj,level){
   document.getElementById("ar-sub").textContent=(title||"Your assignment")+" · "+level+(subj?" · "+subj:"")+" · "+words+" words";
   document.getElementById("ar-out").innerHTML=`
     <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
-      <div class="tile"><div class="v">Grade ${grade}</div><div class="k">Predicted</div></div>
+      <div class="tile"><div class="v">${esc(arAtt.short)}</div><div class="k">${arAtt.caption}</div></div>
       <div class="tile"><div class="v">${overall}%</div><div class="k">Overall</div></div>
       <div class="tile"><div class="v" style="font-size:20px">${words}</div><div class="k">Words · ${sentences.length} sentences</div></div>
     </div>
@@ -3276,6 +3280,7 @@ document.getElementById("pg-go").onclick=()=>{
   const qAvg=qz.length?Math.round(qz.reduce((a,b)=>a+b.pct,0)/qz.length):null;
   const mastery=qAvg!=null&&dRow?Math.round((qAvg+dRow.mastery)/2):(qAvg!=null?qAvg:dRow.mastery);
   const grade=gradeFor(mastery);
+  const att=SY.attainment(PROFILE.level,mastery);
   const target=(PROFILE.subjects||[]).find(x=>x.s===subj);
   const tgt=target&&target.target?target.target:null;
   /* trend from last few quiz scores */
@@ -3288,12 +3293,12 @@ document.getElementById("pg-go").onclick=()=>{
   document.getElementById("pg-sub").textContent=subj+" · based on "+qz.length+" quiz"+(qz.length!==1?"zes":"")+(dRow?" + your latest diagnostic":"");
   document.getElementById("pg-out").innerHTML=`
     <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
-      <div class="tile"><div class="v">Grade ${grade}</div><div class="k">Predicted now</div></div>
+      <div class="tile"><div class="v">${esc(att.short)}</div><div class="k">${att.caption}</div></div>
       <div class="tile"><div class="v">${mastery}%</div><div class="k">Current mastery</div></div>
       <div class="tile"><div class="v" style="color:${tgt&&grade>=(+tgt||0)?"var(--good)":"var(--warn)"}">${tgt?("Target "+tgt):"—"}</div><div class="k">${tgt?(grade>=(+tgt||0)?"On track":"Gap to close"):"Set a target in Edit Profile"}</div></div>
     </div>
     <p style="font-size:13.5px;color:var(--ink-2);margin-top:12px">Your ${esc(subj)} scores are <b style="color:${trend==="improving"?"var(--good)":trend==="slipping"?"var(--crit)":"var(--gold-300)"}">${trend}</b>.
-      With current momentum, the realistic band is <b>Grade ${Math.min(grade,band)}–${band}</b>.
+      With current momentum, the realistic band is <b>${att.system==="gcse"?("Grade "+Math.min(grade,band)+"–"+band):(esc(att.band)+(att.scaled?(" · scaled ~"+att.scaled):""))}</b>.
       ${mastery<60?"Focus on the weakest topics — a diagnostic will pinpoint them.":mastery<80?"Push exam technique and past papers to reach the top band.":"You're in strong shape — keep the streak going and stay sharp with timed papers."}</p>
     ${qz.length>=2?`<div style="margin-top:12px">${(function(){
       const W=560,H=150,P=28,n=qz.length;
