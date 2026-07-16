@@ -36,6 +36,40 @@
   main>section{display:none;margin-top:26px}
   main>section.on{display:block}
 
+  /* floating "Ask the tutor" pop-up — available inside lessons & courses */
+  #tp-fab{position:fixed;right:20px;bottom:20px;z-index:120;display:none;align-items:center;gap:9px;
+    border:none;border-radius:30px;padding:12px 18px 12px 15px;cursor:pointer;
+    background:linear-gradient(135deg,#3D8FD1,#2E6BC4);color:#fff;font:600 13.5px var(--sans);
+    box-shadow:0 8px 26px rgba(46,107,196,.5)}
+  #tp-fab:hover{filter:brightness(1.08)}
+  #tp-fab .dot{width:9px;height:9px;border-radius:50%;background:#7CF3B0;box-shadow:0 0 0 0 rgba(124,243,176,.7);animation:tpPulse 2s infinite}
+  @keyframes tpPulse{0%{box-shadow:0 0 0 0 rgba(124,243,176,.6)}70%{box-shadow:0 0 0 7px rgba(124,243,176,0)}100%{box-shadow:0 0 0 0 rgba(124,243,176,0)}}
+  #tp-panel{position:fixed;right:20px;bottom:20px;z-index:121;width:min(380px,calc(100vw - 32px));height:min(560px,calc(100vh - 40px));
+    display:none;flex-direction:column;border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    background:linear-gradient(180deg,rgba(16,27,51,.98),rgba(11,18,32,.99));box-shadow:0 18px 50px rgba(0,0,0,.55)}
+  #tp-panel.open{display:flex}
+  #tp-head{display:flex;align-items:center;gap:9px;padding:13px 15px;border-bottom:1px solid var(--line);background:rgba(46,107,196,.14)}
+  #tp-head .ti{font:600 13.5px var(--sans);color:var(--ink);flex:1}
+  #tp-head .tx{background:none;border:none;color:var(--ink-2);font-size:19px;cursor:pointer;line-height:1}
+  #tp-ctx{font-size:11px;color:var(--gold-300);padding:8px 15px 0}
+  #tp-msgs{flex:1;overflow-y:auto;padding:12px 15px;display:flex;flex-direction:column;gap:10px}
+  #tp-msgs .m{font-size:13.5px;line-height:1.65;border-radius:12px;padding:9px 12px;max-width:88%}
+  #tp-msgs .m.me{align-self:flex-end;background:rgba(77,157,224,.2);color:var(--ink)}
+  #tp-msgs .m.bot{align-self:flex-start;background:rgba(6,11,24,.55);color:var(--ink-2);border:1px solid var(--line)}
+  #tp-msgs .m.bot b{color:var(--gold-300)}
+  #tp-quick{display:flex;gap:6px;flex-wrap:wrap;padding:0 15px 8px}
+  #tp-quick button{font-size:11.5px;color:var(--ink-2);border:1px solid var(--line);background:none;border-radius:14px;padding:5px 10px;cursor:pointer}
+  #tp-quick button:hover{color:var(--gold-300);border-color:var(--gold-500)}
+  #tp-in-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line)}
+  #tp-in{flex:1;resize:none;height:40px;font-size:13.5px}
+  @media(max-width:520px){#tp-panel{right:8px;bottom:8px}}
+
+  /* spelling test */
+  .sp-word{font-family:var(--serif);font-size:30px;letter-spacing:.02em;color:var(--gold-300);text-align:center;padding:14px}
+  .sp-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(170,182,204,.1)}
+  .sp-row .w{flex:1;font-size:14px}
+  .sp-ok{color:var(--good)}.sp-no{color:var(--crit)}
+
   .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.62),rgba(11,18,32,.9));padding:20px 22px;position:relative}
   .card h3{font-size:13px;font-weight:600;letter-spacing:.02em}
   .card .sub{font-size:11.5px;color:var(--ink-3);margin:3px 0 12px}
@@ -259,6 +293,7 @@
   <button data-t="tutor">🤖 AI Tutor</button>
   <button data-t="lesson">📖 Interactive Lesson</button>
   <button data-t="practice">🧩 Comprehension &amp; Reasoning</button>
+  <button data-t="spelling">🔤 Spelling</button>
   <button data-t="course">🎓 AI Course</button>
   <button data-t="review">📝 Assignment review</button>
   <button data-t="diag">🩺 Diagnostic</button>
@@ -786,6 +821,52 @@
   </div>
 </section>
 
+<!-- ============================ SPELLING ============================ -->
+<section id="tab-spelling">
+  <div class="grid">
+    <div class="card c7">
+      <h3>🔤 Spelling test</h3>
+      <div class="sub">Listen to each word, then type it — spell-checkers and paste are off, so it's all you.
+        Pitched to your level, marked instantly, with the tricky ones to practise.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+        <div><label class="f">Level</label><select id="sp-level"></select></div>
+        <div><label class="f">Word set</label><select id="sp-set">
+          <option value="tricky">Commonly misspelled words</option>
+          <option value="topic">From a topic…</option>
+          <option value="curriculum">Curriculum spellings for my level</option>
+        </select></div>
+      </div>
+      <div id="sp-topic-wrap" style="display:none;margin-top:8px"><label class="f">Topic</label><input type="text" id="sp-topic" placeholder="e.g. science, the Victorians, space"></div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="sp-go">🔊 Start spelling test</button>
+        <span class="note" id="sp-voicenote" style="align-self:center"></span>
+      </div>
+      <div id="sp-test" style="display:none;margin-top:14px">
+        <div class="card" style="background:rgba(6,11,24,.35)">
+          <div class="note" id="sp-progress"></div>
+          <div class="sp-word" id="sp-current">— — —</div>
+          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+            <button class="btn ghost sm" id="sp-say">🔊 Say it again</button>
+            <button class="btn ghost sm" id="sp-context">💬 Use it in a sentence</button>
+          </div>
+          <div id="sp-sentence" class="note" style="text-align:center;margin-top:6px"></div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <input type="text" id="sp-input" placeholder="Type the word…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="flex:1">
+            <button class="btn" id="sp-next">Enter →</button>
+          </div>
+        </div>
+      </div>
+      <div id="sp-out" style="margin-top:14px"></div>
+    </div>
+    <div class="card c5">
+      <h3>📈 Your spelling</h3>
+      <div class="sub">Every test builds your record. Master the words you miss and your score climbs.</div>
+      <div id="sp-stats"></div>
+      <div id="sp-practice" style="margin-top:12px"></div>
+    </div>
+  </div>
+</section>
+
 <!-- ============================ AI COURSE ============================ -->
 <section id="tab-course">
   <div class="grid">
@@ -863,6 +944,16 @@
 
 <div id="modal"><div class="box"><button class="x" onclick="closeModal()">×</button><div id="modal-body"></div></div></div>
 <div id="toast"></div>
+
+<!-- floating AI tutor pop-up (lessons & courses) -->
+<button id="tp-fab"><span class="dot"></span>Ask the tutor</button>
+<div id="tp-panel" role="dialog" aria-label="AI tutor">
+  <div id="tp-head"><span>🤖</span><span class="ti">StudYear tutor</span><button class="tx" id="tp-close" aria-label="Close">×</button></div>
+  <div id="tp-ctx"></div>
+  <div id="tp-msgs"></div>
+  <div id="tp-quick"></div>
+  <div id="tp-in-row"><textarea id="tp-in" placeholder="Ask anything about this…"></textarea><button class="btn sm" id="tp-send">Send</button></div>
+</div>
 
 <script>
 /* ============================ REFERENCE DATA ============================ */
@@ -2822,44 +2913,114 @@ function dgQuestionPool(){
   LIB.forEach(r=>{ if(r.qs&&chosen.includes(r.subj)&&lvOk(r))(bySubj[r.subj]=bySubj[r.subj]||[]).push(...r.qs.map(q=>({q:q.q,o:q.o,a:q.a,subj:r.subj}))) });
   chosen.forEach(s=>{ const bank=dgBankFor(s); if(bank.length)(bySubj[s]=bySubj[s]||[]).push(...bank.map(q=>({...q,subj:s}))) });
   const covered=Object.keys(bySubj);
-  /* assess all subjects at once: ≥1 question per subject, then fill up to a sensible cap */
-  const target=Math.min(Math.max(10,covered.length),16);
+  /* 10-question diagnostic: 9 quick multiple-choice questions (≥1 per subject
+     where possible) + a 10th written question added by the renderer. */
+  const MCQ=9;
   const picks=[], used=new Set();
-  covered.forEach(s=>{const q=shuffle(bySubj[s].slice())[0];if(q){picks.push(q);used.add(q.q)}});
+  covered.forEach(s=>{if(picks.length>=MCQ)return;const q=shuffle(bySubj[s].slice())[0];if(q){picks.push(q);used.add(q.q)}});
   const rest=shuffle(covered.flatMap(s=>bySubj[s]).filter(q=>!used.has(q.q)));
-  for(const q of rest){ if(picks.length>=target)break; if(!used.has(q.q)){picks.push(q);used.add(q.q)} }
-  if(picks.length<10){ // pad from the STUDENT'S level tier if the run is tiny
+  for(const q of rest){ if(picks.length>=MCQ)break; if(!used.has(q.q)){picks.push(q);used.add(q.q)} }
+  if(picks.length<MCQ){ // pad from the STUDENT'S level tier if the run is tiny
     const padSrc=dgTier()==='primary'?DG_QBANK_PRIMARY:dgTier()==='alevel'?{...DG_QBANK,...DG_QBANK_ALEVEL}:DG_QBANK;
     const extra=shuffle(Object.keys(padSrc).flatMap(s=>padSrc[s].map(q=>({...q,subj:s}))).filter(q=>!used.has(q.q)));
-    for(const q of extra){ if(picks.length>=10)break; picks.push(q);used.add(q.q) }
+    for(const q of extra){ if(picks.length>=MCQ)break; picks.push(q);used.add(q.q) }
   }
-  return shuffle(picks);
+  return shuffle(picks).slice(0,MCQ);
 }
 document.getElementById("dg-quiz").onclick=()=>{
   if(!dgSubs.length){toast("Add at least one subject");return}
   dgQs=dgQuestionPool(); dgAnswers=new Array(dgQs.length).fill(null);
-  document.getElementById("dg-sub").textContent="Answer the "+dgQs.length+" quick questions ("+({primary:"Primary level",alevel:"A-level",gcse:"GCSE level"})[dgTier()]+" — matched to your profile), then generate your report.";
+  document.getElementById("dg-sub").textContent="Answer the "+dgQs.length+" quick questions plus the written question 10 ("+({primary:"Primary level",alevel:"A-level",gcse:"GCSE level"})[dgTier()]+" — matched to your profile), then generate your report.";
+  const wn=dgQs.length+1;
   document.getElementById("dg-out").innerHTML=dgQs.map((q,i)=>`
     <div style="margin-bottom:14px">
       <div style="font-size:14px;margin-bottom:4px"><b>${i+1}.</b> ${esc(q.q)} <span class="badge">${esc(q.subj)}</span></div>
       ${q.o.map((o,j)=>`<button class="q-opt" data-q="${i}" data-j="${j}" style="margin:4px 0;padding:9px 12px">${esc(o)}</button>`).join("")}
     </div>`).join("")+
-    `<div style="margin-top:10px"><button class="btn" id="dg-report">Generate my diagnostic report →</button></div>`;
+    `<div style="margin:18px 0 8px;border-top:1px solid var(--line);padding-top:16px">
+      <div style="font-size:14px;margin-bottom:4px"><b>${wn}.</b> Written answer <span class="badge">Writing &amp; spelling</span></div>
+      <div class="note" style="margin:2px 0 8px">${esc(dgWrittenPrompt())} Write at least <b>100 characters</b> in your own words. Spell-checkers, autocorrect and paste are switched off — this checks your own writing and spelling.</div>
+      <textarea id="dg-written" rows="6" placeholder="Write your answer here — take your time and try your best with spelling…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="width:100%"></textarea>
+      <div class="note" id="dg-wcount" style="margin-top:5px">0 characters — 100 minimum</div>
+    </div>
+    <div style="margin-top:10px"><button class="btn" id="dg-report">Generate my diagnostic report →</button></div>`;
   document.querySelectorAll("#dg-out .q-opt").forEach(b=>b.onclick=()=>{
     const qi=+b.dataset.q; dgAnswers[qi]=+b.dataset.j;
     document.querySelectorAll(`#dg-out .q-opt[data-q="${qi}"]`).forEach(x=>x.style.borderColor=x===b?"var(--gold-500)":"rgba(170,182,204,.2)");
   });
+  /* write & delete only: block paste, cut, copy, drop and the right-click menu */
+  const wta=document.getElementById("dg-written");
+  ["paste","cut","copy","drop","dragover","contextmenu"].forEach(ev=>wta.addEventListener(ev,e=>{e.preventDefault();if(ev==="paste")toast("Paste is off here — please type your answer");}));
+  wta.addEventListener("input",()=>{const n=wta.value.trim().length;
+    document.getElementById("dg-wcount").innerHTML=n+" characters"+(n>=100?' <span style="color:var(--good)">✓ enough</span>':" — 100 minimum");});
   document.getElementById("dg-report").onclick=()=>{
     if(dgAnswers.some(a=>a===null)){toast("Answer every question first — "+(dgAnswers.filter(a=>a!==null).length)+"/"+dgQs.length+" done");return}
-    dgGenerate();
+    const txt=(document.getElementById("dg-written").value||"").trim();
+    if(txt.length<100){toast("Write at least 100 characters in the written answer ("+txt.length+"/100)");document.getElementById("dg-written").focus();return}
+    const btn=document.getElementById("dg-report");btn.disabled=true;btn.textContent="Marking your writing & spelling…";
+    evaluateWritten(txt).then(w=>dgGenerate(w)).catch(()=>dgGenerate(null));
   };
 };
+/* ---- written-answer prompt + spelling assessment ---- */
+function dgWrittenPrompt(){
+  const tier=dgTier();
+  const subj=(PROFILE.subjects&&PROFILE.subjects[0]&&PROFILE.subjects[0].s)||"something you enjoy learning about";
+  if(tier==='primary')return "Write about your favourite subject or a story you like. Tell me what happens and why you like it.";
+  if(tier==='alevel')return "Explain a key idea from "+subj+" and evaluate why it matters — argue your view with reasons and an example.";
+  return "Explain something you have learned in "+subj+" recently. Describe what it is, how it works and why it matters, using full sentences.";
+}
+/* common misspellings → correction: detected offline with near-zero false positives */
+const SPELL_FIX={teh:"the",recieve:"receive",recieved:"received",seperate:"separate",definately:"definitely",definatly:"definitely",occured:"occurred",occuring:"occurring",untill:"until",wich:"which",becuase:"because",becasue:"because",freind:"friend",freinds:"friends",thier:"their",beleive:"believe",beleived:"believed",tommorow:"tomorrow",tomorow:"tomorrow",alot:"a lot",cant:"can't",dont:"don't",wont:"won't",didnt:"didn't",doesnt:"doesn't",wasnt:"wasn't",arent:"aren't",wierd:"weird",enviroment:"environment",goverment:"government",neccessary:"necessary",neccesary:"necessary",accomodate:"accommodate",embarass:"embarrass",embarassed:"embarrassed",begining:"beginning",writting:"writing",diffrent:"different",diffrence:"difference",arguement:"argument",basicly:"basically",becuse:"because",similer:"similar",surprize:"surprise",truely:"truly",usualy:"usually",gonna:"going to",noticable:"noticeable",occassion:"occasion",publically:"publicly",rythm:"rhythm",succesful:"successful",successfull:"successful",tommorrow:"tomorrow",unfortunatly:"unfortunately",wheather:"whether",whent:"went",ppl:"people",ur:"your",cos:"because",aswell:"as well",infront:"in front",everytime:"every time",eventhough:"even though",incase:"in case",theres:"there's",wheres:"where's",whos:"who's",youre:"you're",shouldnt:"shouldn't",couldnt:"couldn't",wouldnt:"wouldn't",hadnt:"hadn't",hasnt:"hasn't",isnt:"isn't",
+  shoud:"should",verry:"very",importent:"important",futur:"future",alway:"always",allways:"always",
+  becomeing:"becoming",comming:"coming",runing:"running",geting:"getting",stoped:"stopped",planed:"planned",
+  hapend:"happened",happend:"happened",tho:"though",thru:"through",nite:"night",skool:"school",wot:"what",
+  luv:"love",gud:"good",plz:"please",thx:"thanks",peaple:"people",littel:"little",yesteray:"yesterday",
+  familys:"families",storys:"stories",babys:"babies",partys:"parties",potatos:"potatoes",tomatos:"tomatoes",
+  especialy:"especially",finaly:"finally",
+  relly:"really",realy:"really",prety:"pretty",littl:"little",bcoz:"because",bcuz:"because",
+  cuz:"because",wanna:"want to",gotta:"got to",kinda:"kind of",dunno:"don't know",gimme:"give me"};
+function offlineSpell(text){
+  const raw=String(text).split(/\s+/).map(w=>w.replace(/^[^A-Za-z']+|[^A-Za-z']+$/g,"")).filter(w=>/[A-Za-z]/.test(w));
+  const words=raw.filter(w=>w.length>=1);
+  let wrong=[];
+  words.forEach(w=>{const low=w.toLowerCase();
+    if(SPELL_FIX[low]&&low!=="its"){wrong.push([w,SPELL_FIX[low]]);}
+    else if(/(.)\1\1/.test(low)){wrong.push([w,"check the letters"]);} /* 3+ repeated letters */
+  });
+  const total=words.length||1;
+  const score=Math.max(0,Math.round(100*(total-wrong.length)/total));
+  return {score,words:wrong.slice(0,20),total};
+}
+function evaluateWritten(text){
+  const lvl=PROFILE.level||"GCSE";
+  if(window.SYAI&&SYAI.ready()){
+    const sys="You are marking a "+lvl+" student's short written answer for CONTENT and SPELLING."+((window.SY&&SY.stageStyle)?SY.stageStyle(lvl):"")+
+      " Judge spelling strictly but fairly for the level (ignore proper nouns and reasonable subject terms). Return STRICTLY this format and nothing else:\n"+
+      "SPELLING: <integer 0-100 = percentage of words spelled correctly>\n"+
+      "MISSPELLED: <word=correction; word=correction ... or the single word none>\n"+
+      "QUALITY: <integer 0-100 for how well the answer is written and reasoned>\n"+
+      "FEEDBACK: <two sentences: one on the content, one on the spelling, encouraging and specific>";
+    return SYAI.ask(sys,"STUDENT ANSWER:\n"+text,{maxTokens:600}).then(function(out){
+      try{
+        const S=/SPELLING:\s*(\d{1,3})/i.exec(out),Q=/QUALITY:\s*(\d{1,3})/i.exec(out),
+          M=/MISSPELLED:\s*([\s\S]*?)\n(?:QUALITY|FEEDBACK)/i.exec(out),F=/FEEDBACK:\s*([\s\S]*)$/i.exec(out);
+        let words=[];const ms=M?M[1].trim():"";
+        if(ms&&!/^none$/i.test(ms))words=ms.split(/[;\n]/).map(p=>p.split("=").map(s=>s.trim())).filter(p=>p[0]).map(p=>[p[0],p[1]||"correction"]).slice(0,20);
+        const sc=S?Math.max(0,Math.min(100,+S[1])):offlineSpell(text).score;
+        return {text,spelling:{score:sc,words},quality:Q?Math.max(0,Math.min(100,+Q[1])):null,feedback:F?F[1].trim().slice(0,400):"",live:true};
+      }catch(e){const o=offlineSpell(text);return {text,spelling:{score:o.score,words:o.words},quality:null,feedback:"",live:false};}
+    }).catch(function(){const o=offlineSpell(text);return {text,spelling:{score:o.score,words:o.words},quality:null,feedback:"",live:false};});
+  }
+  const o=offlineSpell(text);
+  return Promise.resolve({text,spelling:{score:o.score,words:o.words},quality:null,feedback:"",live:false});
+}
 document.getElementById("dg-skip").onclick=()=>{
   if(!dgSubs.length){toast("Add at least one subject");return}
   dgQs=null;dgAnswers=null;dgGenerate();
 };
 
-function dgGenerate(){
+function dgGenerate(written){
+  const bysubjBtn=document.getElementById("dg-report");if(bysubjBtn){bysubjBtn.disabled=false;bysubjBtn.textContent="Generate my diagnostic report →";}
   const bySubj={};
   if(dgQs)dgQs.forEach((q,i)=>{
     (bySubj[q.subj]=bySubj[q.subj]||{ok:0,n:0});
@@ -2878,6 +3039,22 @@ function dgGenerate(){
   const weak=list.filter(x=>x.mastery<60);
   const report={when:new Date().toISOString(),avg,risk,list,weak:weak.map(w=>w.s),
     asked:dgQs?dgQs.length:0,correct:dgQs?dgQs.filter((q,i)=>dgAnswers[i]===q.a).length:0};
+  /* written answer + spelling become part of the assessment record */
+  if(written&&written.spelling){
+    report.written={quality:written.quality,feedback:written.feedback,chars:(written.text||"").length,live:written.live};
+    report.spelling={score:written.spelling.score,words:written.spelling.words||[]};
+    /* a spelling score under 70% is logged to the record and flags the spelling section */
+    if(written.spelling.score<70){
+      const rec=store.get("spellingRecord",{});
+      rec.flagged=true; rec.lastScore=written.spelling.score; rec.when=todayKey();
+      rec.words=Array.from(new Set([].concat(rec.words||[],(written.spelling.words||[]).map(w=>Array.isArray(w)?w[0]:w)))).slice(0,60);
+      store.set("spellingRecord",rec);
+      store.set("spellingNeedsWork",true);
+      logEvent("spelling","Spelling flagged in diagnostic — "+written.spelling.score+"%","Below the 70% threshold. A spelling improvement plan has been added to your record — open the Spelling tab.");
+    } else {
+      logEvent("spelling","Spelling checked in diagnostic — "+written.spelling.score+"%","At or above the 70% threshold — solid spelling.");
+    }
+  }
   const hist=store.get("diagnostics",[]); hist.unshift(report); store.set("diagnostics",hist.slice(0,30));
   /* the FIRST diagnostic is the baseline — the point every tool builds up from */
   let baseline=store.get("baseline",null);
@@ -2921,8 +3098,20 @@ function renderDgReport(rep){
       return `<div class="mrow"><span>${esc(x.s)}</span>
       <div class="bar"><i style="width:${x.mastery}%;background:${x.mastery<60?"var(--crit)":x.mastery<80?"var(--warn)":"var(--good)"}"></i></div>
       <span class="pc">${x.mastery}%${g!=null?` <span style="color:${g>=0?"var(--good)":"var(--crit)"}">${g>=0?"▲+":"▼"}${Math.abs(g)}</span>`:""} · target ${esc(String(x.target||"9"))}</span></div>`}).join("")}
+    ${rep.spelling?(()=>{const s=rep.spelling.score,low=s<70;
+      return `<div style="margin-top:16px;border:1px solid ${low?"rgba(230,103,103,.4)":"rgba(92,187,123,.4)"};background:${low?"rgba(230,103,103,.08)":"rgba(92,187,123,.08)"};border-radius:10px;padding:12px 14px">
+        <div style="display:flex;align-items:center;gap:8px"><b style="flex:1">Writing &amp; spelling</b><span style="font-weight:700;color:${low?"var(--crit)":"var(--good)"}">Spelling ${s}%</span></div>
+        ${rep.written&&rep.written.quality!=null?`<div class="note" style="margin-top:4px">Writing quality: ${rep.written.quality}%</div>`:""}
+        ${rep.written&&rep.written.feedback?`<div style="font-size:13px;color:var(--ink-2);margin-top:6px;line-height:1.6">${esc(rep.written.feedback)}</div>`:""}
+        ${(rep.spelling.words&&rep.spelling.words.length)?`<div class="note" style="margin-top:8px">Words to practise: ${rep.spelling.words.map(w=>{const a=Array.isArray(w)?w:[w,""];return "<b style='color:var(--ink)'>"+esc(a[0])+"</b>"+(a[1]?" → "+esc(a[1]):"")}).join(", ")}</div>`:""}
+        ${low?`<div style="margin-top:10px"><button class="btn sm" id="dg-spell">🔤 Start my spelling improvement plan →</button></div>
+          <div class="note" style="margin-top:6px;color:var(--crit)">Spelling is below 70% — this has been added to your record so you and your teacher/parent can support it.</div>`
+          :`<div class="note" style="margin-top:6px;color:var(--good)">Spelling is at or above 70% — nicely done.</div>`}
+      </div>`;})():""}
     ${rep.weak.length?`<div style="margin-top:14px"><button class="btn" id="dg-recover">Build up my weak areas — recovery plan →</button></div>`
       :`<p class="note">No subject under 60% — you're on track for the top. Keep momentum with past papers and the planner.</p>`}`;
+  const sp=document.getElementById("dg-spell");
+  if(sp)sp.onclick=()=>{location.hash="#spelling";};
   const btn=document.getElementById("dg-recover");
   if(btn)btn.onclick=()=>makeRecovery(rep);
   document.getElementById("tab-diag").scrollIntoView({behavior:"smooth",block:"start"});
@@ -4158,6 +4347,202 @@ function cgStatic(subject,level,board,cap,focus){
     try{addPoints(15);touchStreak()}catch(e){}
     var log=store.get("practiceLog",[]);log.unshift({t:"problem-solving",lv:solveState.lv,q:solveState.qs.length,right:right,at:Date.now()});store.set("practiceLog",log.slice(0,50));
   }
+})();
+
+/* ============ FLOATING AI TUTOR POP-UP (lessons & courses) ============ */
+/* A help chat that rides along inside the Interactive Lesson and AI Course,
+   so a student stuck mid-lesson can ask a question without leaving the page.
+   It knows what lesson/course is open and answers in that context. */
+(function initTutorPop(){
+  var fab=document.getElementById("tp-fab"),panel=document.getElementById("tp-panel");
+  if(!fab||!panel)return;
+  var msgs=document.getElementById("tp-msgs"),inp=document.getElementById("tp-in"),
+      ctxEl=document.getElementById("tp-ctx"),quick=document.getElementById("tp-quick");
+  var hist=[],lastKey="";
+  function activeTab(){var b=document.querySelector("#tabs button.on");return b?b.dataset.t:"";}
+  function ctxInfo(){
+    var t=activeTab();
+    if(t==="lesson"){
+      if(typeof _L!=="undefined"&&_L){
+        return {on:true,label:'Lesson: '+_L.topic+(_L.subj?' · '+_L.subj:'')+' · '+_L.level,
+          sys:'The student is working through an interactive lesson on "'+_L.topic+'"'+(_L.subj?' in '+_L.subj:'')+' at '+_L.level+' level. Answer questions in the context of THIS lesson and help them grasp this exact topic.'};
+      }
+      var it=(document.getElementById("il-topic")||{}).value||"", il=(document.getElementById("il-level")||{}).value||PROFILE.level||"";
+      return {on:true,label:'Interactive Lesson'+(it?': '+it:''),
+        sys:'The student is about to start an interactive lesson'+(it?' on "'+it+'"':'')+(il?' at '+il+' level':'')+'. Help them understand the topic and get the most from the lesson.'};
+    }
+    if(t==="course"){
+      var subj=(document.getElementById("cg-subject")||{}).value||"";
+      var lvl=(document.getElementById("cg-level")||{}).value||PROFILE.level||"";
+      var top=(document.getElementById("cg-topic")||{}).value||"";
+      return {on:true,label:'Course'+(subj?': '+subj:'')+(lvl?' · '+lvl:'')+(top?' · '+top:''),
+        sys:'The student is building or studying an AI course'+(subj?' in '+subj:'')+(lvl?' at '+lvl+' level':'')+(top?', focused on '+top:'')+'. Help them understand the material and how to make the most of the course.'};
+    }
+    return {on:false};
+  }
+  function refreshVisibility(){
+    var c=ctxInfo();
+    if(c.on){ if(!panel.classList.contains("open"))fab.style.display="flex"; ctxEl.textContent="📍 "+c.label; }
+    else { fab.style.display="none"; if(panel.classList.contains("open"))panel.classList.remove("open"); }
+  }
+  if(typeof showTab==="function"){ var _st=showTab; showTab=function(t){_st(t);refreshVisibility();}; try{window.showTab=showTab;}catch(e){} }
+  window.addEventListener("hashchange",function(){setTimeout(refreshVisibility,30)});
+  document.addEventListener("click",function(){setTimeout(refreshVisibility,60)},true);
+  function addMsg(txt,who,isHtml){var d=document.createElement("div");d.className="m "+who;d.innerHTML=(who==="bot"?"<b>Tutor</b> · ":"")+(isHtml?txt:esc(txt));msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return d;}
+  function renderQuick(){
+    var chips=["Explain this more simply","Give me an example","I'm stuck — help me","Quiz me on this"];
+    quick.innerHTML=chips.map(function(c){return '<button>'+esc(c)+'</button>'}).join("");
+    quick.querySelectorAll("button").forEach(function(b){b.onclick=function(){inp.value=b.textContent;send();}});
+  }
+  function open(){var c=ctxInfo();if(!c.on)return;panel.classList.add("open");fab.style.display="none";ctxEl.textContent="📍 "+c.label;
+    if(lastKey!==c.label){lastKey=c.label;hist.length=0;msgs.innerHTML="";
+      addMsg("Hi! I'm right here while you learn. Ask me anything about <b>"+esc(c.label.replace(/^(Lesson|Course):?\s*/,''))+"</b> — a simpler explanation, a worked example, or help if you're stuck.","bot",true);
+      renderQuick();}
+    inp.focus();
+  }
+  function close(){panel.classList.remove("open");refreshVisibility();}
+  function send(){
+    var t=inp.value.trim();if(!t)return;
+    addMsg(t,"me");inp.value="";
+    var c=ctxInfo();
+    try{logEvent("tutor","Lesson tutor: "+(t.length>50?t.slice(0,50)+"…":t),"Asked the pop-up tutor while learning.");}catch(e){}
+    if(window.SYAI&&SYAI.ready()){
+      var wait=addMsg("thinking…","bot",true);
+      hist.push({who:"Student",t:t});
+      var convo=hist.slice(-8).map(function(m){return m.who+": "+m.t}).join("\n\n");
+      var sys=(typeof tutorSystemPrompt==="function"?tutorSystemPrompt():"You are StudYear's AI tutor.")+" "+c.sys+" This is a quick in-lesson help chat — keep answers short and focused, teach the method (not just the answer), and end with one check-question.";
+      SYAI.ask(sys,convo,{maxTokens:900}).then(function(txt){
+        wait.innerHTML="<b>Tutor</b> · "+SYAI.render(txt||"(no response)");hist.push({who:"Tutor",t:String(txt||"").slice(0,900)});msgs.scrollTop=msgs.scrollHeight;
+      }).catch(function(){wait.innerHTML="<b>Tutor</b> · I couldn't reach the live model just now — try the full AI Tutor tab, or ask again in a moment.";});
+      return;
+    }
+    addMsg("The live tutor needs a connection. Open the <b>AI Tutor</b> tab for the built-in helper, or try again when you're back online.","bot",true);
+  }
+  fab.onclick=open;
+  document.getElementById("tp-close").onclick=close;
+  document.getElementById("tp-send").onclick=send;
+  inp.addEventListener("keydown",function(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}});
+  refreshVisibility();
+})();
+
+/* ==================== SPELLING TEST & IMPROVEMENT ==================== */
+/* Dictation-style: the device READS a word aloud, the student types it with
+   spell-check/autocorrect/paste off, then it marks, gives tips and tracks a
+   spelling record that links to the diagnostic spelling flag. */
+(function initSpelling(){
+  var sec=document.getElementById("tab-spelling");if(!sec)return;
+  var lvlSel=document.getElementById("sp-level"),setSel=document.getElementById("sp-set"),
+      topicWrap=document.getElementById("sp-topic-wrap");
+  var i1=LEVELS.indexOf("International Baccalaureate");
+  var SPELL_LEVELS=LEVELS.slice(0,(i1>=0?i1+1:12));
+  SPELL_LEVELS.forEach(function(lv){var o=document.createElement("option");o.textContent=lv;lvlSel.appendChild(o);});
+  var def=(PROFILE.level&&SPELL_LEVELS.indexOf(PROFILE.level)>=0)?PROFILE.level:"GCSE";
+  if(SPELL_LEVELS.indexOf(def)>=0)lvlSel.value=def;
+  setSel.onchange=function(){topicWrap.style.display=setSel.value==="topic"?"":"none";};
+  var canSpeak=("speechSynthesis" in window);
+  document.getElementById("sp-voicenote").textContent=canSpeak?"":"No device voice — the word will flash briefly instead.";
+  function band(lv){return /Reception|EYFS|Key Stage 1|\bYears? 1-2\b/i.test(lv)?"ks1":
+    /Key Stage 2|11\+/i.test(lv)?"ks2":/KS3|Years? 7-9/i.test(lv)?"ks3":"senior";}
+  var BANK={
+    ks1:["the","said","you","they","because","school","friend","people","water","where","there","went","little","house","night","play","today","again","many","would"],
+    ks2:["separate","believe","different","favourite","because","caught","thought","weight","early","famous","natural","special","actually","material","possible","promise","various","surprise","strength","business"],
+    ks3:["definitely","necessary","embarrass","rhythm","conscience","government","occurred","parallel","privilege","recommend","argument","environment","independent","exaggerate","interrupt","persuade","relevant","sincerely","technique","vehicle"],
+    senior:["accommodate","conscientious","phenomenon","liaison","bureaucracy","entrepreneur","hierarchy","questionnaire","millennium","occurrence","perseverance","pronunciation","reminiscence","sovereignty","unforeseen","acquiesce","idiosyncrasy","juxtaposition","malfeasance","conscious"]
+  };
+  var state=null;
+  function speak(w){if(!canSpeak)return;try{speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(w);u.rate=.82;u.lang="en-GB";speechSynthesis.speak(u);}catch(e){}}
+  function speakSentence(s){if(!canSpeak)return;try{speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(s);u.rate=.9;u.lang="en-GB";speechSynthesis.speak(u);}catch(e){}}
+  function startWith(words){
+    words=(words||[]).filter(Boolean);if(!words.length){toast("No words to test");return;}
+    state={words:words.map(function(w){return typeof w==="string"?{w:w,sentence:""}:w}),i:0,answers:[]};
+    document.getElementById("sp-test").style.display="";document.getElementById("sp-out").innerHTML="";showWord();
+  }
+  function showWord(){
+    var s=state,cur=s.words[s.i];
+    document.getElementById("sp-progress").textContent="Word "+(s.i+1)+" of "+s.words.length;
+    document.getElementById("sp-sentence").textContent="";
+    var inp=document.getElementById("sp-input");inp.value="";inp.focus();
+    var el=document.getElementById("sp-current");
+    if(canSpeak){el.textContent="🔊 Listen…";speak(cur.w);}
+    else{el.textContent=cur.w;setTimeout(function(){if(state===s&&s.words[s.i]===cur)el.textContent="✏️ Now spell it";},1600);}
+  }
+  document.getElementById("sp-say").onclick=function(){if(state)speak(state.words[state.i].w);};
+  document.getElementById("sp-context").onclick=function(){
+    if(!state)return;var cur=state.words[state.i],el=document.getElementById("sp-sentence");
+    if(cur.sentence){el.textContent='“'+cur.sentence+'”';speakSentence(cur.sentence);return;}
+    if(window.SYAI&&SYAI.ready()){el.textContent="…";
+      SYAI.ask("Use the given word in ONE short, natural sentence a "+lvlSel.value+" student understands. Do NOT spell the word letter by letter. Return only the sentence.","Word: "+cur.w,{maxTokens:60}).then(function(t){cur.sentence=String(t).trim().replace(/^["']|["']$/g,"");el.textContent='“'+cur.sentence+'”';speakSentence(cur.sentence);}).catch(function(){el.textContent="(no sentence right now)";});}
+    else el.textContent="(a sentence needs a connection)";
+  };
+  function submit(){
+    if(!state)return;var inp=document.getElementById("sp-input"),given=inp.value.trim();
+    if(!given){toast("Type the word you heard");return;}
+    var cur=state.words[state.i];
+    state.answers.push({w:cur.w,given:given,ok:given.toLowerCase()===cur.w.toLowerCase()});
+    if(state.i<state.words.length-1){state.i++;showWord();}else finish();
+  }
+  document.getElementById("sp-next").onclick=submit;
+  var spIn=document.getElementById("sp-input");
+  spIn.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();submit();}});
+  ["paste","drop","contextmenu"].forEach(function(ev){spIn.addEventListener(ev,function(e){e.preventDefault();if(ev==="paste")toast("Paste is off — type the word");});});
+  function finish(){
+    var a=state.answers,right=a.filter(function(x){return x.ok}).length,pct=Math.round(100*right/a.length);
+    document.getElementById("sp-test").style.display="none";
+    var wrong=a.filter(function(x){return !x.ok});
+    var h='<div class="card"><div style="display:flex;align-items:center;gap:8px"><b style="flex:1">Result</b><span style="font-weight:700;color:'+(pct>=70?"var(--good)":"var(--crit)")+'">'+right+' / '+a.length+' ('+pct+'%)</span></div>';
+    h+=a.map(function(x){return '<div class="sp-row"><span class="w">'+(x.ok?'<span class="sp-ok">✓</span> ':'<span class="sp-no">✗</span> ')+esc(x.w)+'</span>'+(x.ok?'':'<span class="note">you wrote: '+esc(x.given)+'</span>')+'</div>';}).join("");
+    h+='<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">'+(wrong.length?'<button class="btn sm" id="sp-retry">🔁 Practise the '+wrong.length+' I missed</button>':'')+'<button class="btn ghost sm" id="sp-new">New test</button></div><div id="sp-tips"></div></div>';
+    document.getElementById("sp-out").innerHTML=h;
+    if(wrong.length){
+      document.getElementById("sp-retry").onclick=function(){startWith(wrong.map(function(x){return x.w}));};
+      if(window.SYAI&&SYAI.ready()){var tipbox=document.getElementById("sp-tips");tipbox.className="note";tipbox.style.marginTop="10px";tipbox.textContent="Getting spelling tips…";
+        SYAI.ask("For each word give a SHORT memory tip to spell it (syllable break or mnemonic). One line per word as 'word :: tip'.","Words: "+wrong.map(function(x){return x.w}).join(", "),{maxTokens:400}).then(function(t){tipbox.innerHTML=SYAI.render(t);}).catch(function(){tipbox.textContent="";});}
+    }
+    document.getElementById("sp-new").onclick=function(){document.getElementById("sp-out").innerHTML="";};
+    var rec=store.get("spellingRecord",{});
+    rec.tests=(rec.tests||0)+1;rec.lastScore=pct;rec.when=todayKey();
+    rec.words=Array.from(new Set([].concat(rec.words||[],wrong.map(function(x){return x.w})).filter(Boolean))).slice(0,80);
+    /* mastered any words this round → drop them from the list */
+    var mastered=a.filter(function(x){return x.ok}).map(function(x){return x.w.toLowerCase()});
+    rec.words=rec.words.filter(function(w){return mastered.indexOf(String(w).toLowerCase())<0});
+    if(pct>=80){rec.flagged=false;store.set("spellingNeedsWork",false);}
+    else if(pct<70){rec.flagged=true;store.set("spellingNeedsWork",true);}
+    store.set("spellingRecord",rec);
+    var log=store.get("spellingLog",[]);log.unshift({pct:pct,n:a.length,at:Date.now()});store.set("spellingLog",log.slice(0,50));
+    try{logEvent("spelling","Spelling test — "+pct+"%",right+"/"+a.length+" correct at "+lvlSel.value+" level.");addPoints(pct>=70?15:8);touchStreak();}catch(e){}
+    renderStats();state=null;
+  }
+  function renderStats(){
+    var rec=store.get("spellingRecord",{}),log=store.get("spellingLog",[]);
+    var el=document.getElementById("sp-stats"),pr=document.getElementById("sp-practice");
+    if(!log.length&&!rec.flagged){el.innerHTML='<div class="note">Take your first spelling test to start your record.</div>';pr.innerHTML="";return;}
+    var last=log[0]?log[0].pct:(rec.lastScore||0);
+    el.innerHTML='<div class="tiles" style="grid-template-columns:repeat(3,1fr)">'+
+      '<div class="tile"><div class="v">'+last+'%</div><div class="k">Last score</div></div>'+
+      '<div class="tile"><div class="v">'+(rec.tests||log.length||0)+'</div><div class="k">Tests taken</div></div>'+
+      '<div class="tile"><div class="v" style="color:'+(rec.flagged?"var(--crit)":"var(--good)")+'">'+(rec.flagged?"Focus":"On track")+'</div><div class="k">Status</div></div></div>'+
+      (rec.flagged?'<div class="note" style="margin-top:8px;color:var(--crit)">Spelling was flagged in your diagnostic. Practise below — reach 80% to clear it.</div>':"");
+    if(rec.words&&rec.words.length){
+      pr.innerHTML='<div class="note" style="margin-bottom:6px">Words on your list to master:</div>'+
+        '<div style="display:flex;gap:6px;flex-wrap:wrap">'+rec.words.slice(0,30).map(function(w){return '<span class="badge">'+esc(w)+'</span>'}).join("")+'</div>'+
+        '<div style="margin-top:10px"><button class="btn sm" id="sp-mylist">🔊 Test me on my list</button></div>';
+      document.getElementById("sp-mylist").onclick=function(){startWith(rec.words.slice(0,20));};
+    } else pr.innerHTML='<div class="note">No words on your practice list — great spelling!</div>';
+  }
+  renderStats();
+  document.getElementById("sp-go").onclick=function(){
+    var lv=lvlSel.value,setk=setSel.value,go=document.getElementById("sp-go");
+    if(setk==="tricky"){startWith(shuffle(BANK[band(lv)].slice()).slice(0,12));return;}
+    var topic=setk==="topic"?((document.getElementById("sp-topic").value||"general knowledge").trim()):("the "+lv+" curriculum");
+    if(window.SYAI&&SYAI.ready()){
+      go.disabled=true;go.textContent="Preparing words…";
+      SYAI.ask("List 12 spelling words suitable for a "+lv+" student"+(setk==="topic"?(" about "+topic):(" from the "+lv+" curriculum"))+". Age-appropriate difficulty, real single words only. Return ONLY the words separated by commas.","Level: "+lv,{maxTokens:200}).then(function(t){
+        var ws=String(t).split(/[,\n]/).map(function(s){return s.trim().replace(/[^A-Za-z'-]/g,"")}).filter(function(s){return s.length>1}).slice(0,12);
+        go.disabled=false;go.textContent="🔊 Start spelling test";
+        if(ws.length<4){startWith(shuffle(BANK[band(lv)].slice()).slice(0,12));toast("Using the built-in list");}else startWith(ws);
+      }).catch(function(){go.disabled=false;go.textContent="🔊 Start spelling test";startWith(shuffle(BANK[band(lv)].slice()).slice(0,12));});
+    } else {startWith(shuffle(BANK[band(lv)].slice()).slice(0,12));toast("Offline — using the built-in list");}
+  };
 })();
 
 /* ============================ MISC ============================ */
