@@ -245,7 +245,7 @@ function publishTutor(pub){
       delivery:deliveryList(),verified:!!data.verified,published:true});
   }
   try{localStorage.setItem('sy-tutors',JSON.stringify(reg))}catch(e){}
-  SY.publishCode(id);
+  SY.publishCode(id,'tutor');
 }
 
 /* compliance data (declared before render so section 16 can use it) */

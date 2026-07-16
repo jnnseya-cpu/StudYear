@@ -318,13 +318,22 @@ function saveConsent(){consent.parent=$('cs-parent').checked;consent.schoolToPar
 $('cs-parent').onchange=function(){saveConsent();toast(consent.parent?'Linked parents can see your progress':'Parent access turned off')};
 $('cs-school').onchange=function(){saveConsent();toast(consent.schoolToParent?'Parents can also see your school data':'School data hidden from parents')};
 
-function drawLinkedParents(){
-  var links=SY.get('parentLinks',[]);
+function drawLinkedParents(links){
+  links=links||SY.get('parentLinks',[]);
   $('linked-parents').innerHTML=links.length
     ? 'Linked parent'+(links.length>1?'s':'')+': '+links.map(function(p){return '<b style="color:var(--gold-300)">'+ (p.name||p.email) +'</b>'}).join(', ')
     : 'No parent linked yet — share your code above.';
 }
 drawLinkedParents();
+/* merge parents who linked from another account/device (backend directory) */
+try{SY.myLinks().then(function(g){
+  if(!g||!g.inbound)return;
+  var links=SY.get('parentLinks',[]).slice();
+  g.inbound.filter(function(l){return l.relation==='parent'||l.relation==='guardian'}).forEach(function(l){
+    if(l.email&&!links.some(function(p){return p.email===l.email})) links.push({email:l.email,name:l.name||l.email});
+  });
+  SY.set('parentLinks',links);drawLinkedParents(links);
+}).catch(function(){});}catch(e){}
 
 var school=SY.get('schoolLink',null);
 function drawSchool(){
@@ -336,17 +345,23 @@ function drawSchool(){
 }
 drawSchool();
 $('school-link').onclick=function(){
-  var c=document.getElementById('school-code').value.trim();
+  var c=document.getElementById('school-code').value.trim().toUpperCase();
   if(c.length<4){toast('Enter the join code your teacher gave you');return}
-  var name=SY.schoolGet(c,'name',null);
-  school={code:c,name:name||('School '+c),when:new Date().toISOString()};
-  SY.set('schoolLink',school);
-  /* register this student on the school roster so teachers see them */
-  var roster=SY.schoolGet(c,'roster',[]);
-  if(!roster.some(function(x){return x.email===S.email})){roster.push({email:S.email,name:profile.name||S.name});SY.schoolSet(c,'roster',roster)}
-  SY.log('account','Linked to '+school.name,'Your school can now set work and see your progress.');
-  drawSchool();
-  toast('Linked to '+school.name+' — your teachers can now set work');
+  var btn=$('school-link');btn.disabled=true;
+  /* connect on the backend so the school sees this student on any device;
+     falls back to the same-device school store when offline */
+  SY.connectCode(c,'student').then(function(r){
+    btn.disabled=false;
+    var name=(r&&r.name)||SY.schoolGet(c,'name',null);
+    school={code:c,name:name||('School '+c),when:new Date().toISOString()};
+    SY.set('schoolLink',school);
+    /* register this student on the same-device school roster too */
+    var roster=SY.schoolGet(c,'roster',[]);
+    if(!roster.some(function(x){return x.email===S.email})){roster.push({email:S.email,name:profile.name||S.name});SY.schoolSet(c,'roster',roster)}
+    SY.log('account','Linked to '+school.name,'Your school can now set work and see your progress.');
+    drawSchool();
+    toast('Linked to '+school.name+' — your teachers can now set work');
+  });
 };
 
 /* ---------- change password ---------- */

@@ -339,24 +339,33 @@ function render(){
 
 el('link-go').onclick=function(){
   var code=el('link-code').value.trim();
-  if(!/^\d{4,}$/.test(code)){alert('Enter the numeric link code from your child\'s account.');return}
-  var email=SY.resolveCode(code);
-  if(!email){alert('No account found for that code. Check the code in your child\'s My Account → Connect a parent.');return}
-  var kids=SY.get('children',[]);
-  if(kids.some(function(k){return k.email===email})){alert('That child is already linked.');el('link-code').value='';return}
-  kids.push({email:email,name:SY.accountName(email),when:new Date().toISOString()});
-  SY.set('children',kids);
-  /* record the link on the child's side so they can see who's linked */
-  try{
-    var pl=SY.readAccount(email,'parentLinks',[]);
-    if(!pl.some(function(p){return p.email===SY.session.email})){pl.push({email:SY.session.email,name:SY.session.name,when:new Date().toISOString()});
-      SY.writeAccount(email,'parentLinks',pl);}
-  }catch(e){}
-  SY.log('family','Linked child: '+SY.accountName(email),'You can now see their shared progress.');
-  el('link-code').value='';
-  render();
+  if(!/^[A-Za-z0-9-]{4,}$/.test(code)){alert('Enter the link code from your child\'s account.');return}
+  var b=el('link-go');b.disabled=true;
+  SY.connectCode(code,'parent').then(function(r){
+    b.disabled=false;
+    if(!r||!r.email){alert('No account found for that code. Check the code in your child\'s My Account → Connect a parent.');return}
+    var email=r.email,name=r.name||SY.accountName(email);
+    var kids=SY.get('children',[]);
+    if(kids.some(function(k){return k.email===email})){alert('That child is already linked.');el('link-code').value='';return}
+    kids.push({email:email,name:name,uid:r.uid||null,when:new Date().toISOString()});
+    SY.set('children',kids);
+    /* same-device: also stamp the link on the child's side so they see it offline */
+    try{
+      var pl=SY.readAccount(email,'parentLinks',[]);
+      if(!pl.some(function(p){return p.email===SY.session.email})){pl.push({email:SY.session.email,name:SY.session.name,when:new Date().toISOString()});
+        SY.writeAccount(email,'parentLinks',pl);}
+    }catch(e){}
+    SY.log('family','Linked child: '+name,'You can now see their shared progress.');
+    el('link-code').value='';
+    render();
+  });
 };
 render();
+try{SY.myLinks().then(function(g){
+  if(!g||!g.outbound)return;var kids=SY.get('children',[]),added=false;
+  g.outbound.forEach(function(l){if(l.email&&!kids.some(function(k){return k.email===l.email})){kids.push({email:l.email,name:l.name||SY.accountName(l.email),uid:l.uid||null,when:new Date().toISOString()});added=true;}});
+  if(added){SY.set('children',kids);render();}
+}).catch(function(){});}catch(e){}
 })();
 </script>
 </body>

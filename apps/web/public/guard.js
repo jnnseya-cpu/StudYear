@@ -198,10 +198,49 @@
     // by the student's own consent flags. Production swaps this for Firestore
     // documents with security rules enforcing the same consent contract.
 
-    /** map a share code -> this account's email so a linker can resolve it */
-    publishCode: function (code) { try { localStorage.setItem('sy-code:' + code, s.email); } catch (e) {} },
-    /** resolve a share code to an account email (or null) */
+    /** map a share code -> this account's email so a linker can resolve it.
+        Same-device via localStorage (offline/demo) AND, for real cloud
+        sessions, published to the backend directory so a linker on a
+        different account/device can resolve it too. */
+    publishCode: function (code, kind) {
+      try { localStorage.setItem('sy-code:' + code, s.email); } catch (e) {}
+      try { if (window.SYCloud && !s.demo) SYCloud.dirPublish(String(code), kind || 'account', s.email); } catch (e) {}
+    },
+    /** resolve a share code to an account email (or null) — same-device only */
     resolveCode: function (code) { try { return localStorage.getItem('sy-code:' + String(code).trim()); } catch (e) { return null; } },
+    /** resolve a share code across accounts/devices: tries the backend
+        directory first (real cross-device link), then the local map.
+        Resolves to { email, name, uid, kind } or null. */
+    resolveCodeAsync: function (code) {
+      var c = String(code).trim(), local = this.resolveCode(c), self = this;
+      var loc = local ? { email: local, name: self.accountName(local), uid: null, kind: 'account', local: true } : null;
+      if (!window.SYCloud || s.demo) return Promise.resolve(loc);
+      return SYCloud.dirResolve(c, s.email).then(function (r) {
+        if (r && r.email) return { email: r.email, name: r.name || self.accountName(r.email), uid: r.uid || null, kind: r.kind || 'account' };
+        return loc;
+      }).catch(function () { return loc; });
+    },
+    /** establish a link to the code's owner on the backend (both sides see it);
+        resolves to the target { email, name, uid, kind } or the local fallback. */
+    connectCode: function (code, relation) {
+      var c = String(code).trim(), self = this;
+      if (!window.SYCloud || s.demo) return this.resolveCodeAsync(c);
+      return SYCloud.dirConnect(c, relation || 'parent', s.email).then(function (r) {
+        if (r && r.email) return { email: r.email, name: r.name || self.accountName(r.email), uid: r.uid || null, kind: r.kind || 'account' };
+        return self.resolveCodeAsync(c);
+      }).catch(function () { return self.resolveCodeAsync(c); });
+    },
+    /** my backend links: { inbound:[…people linked to me…], outbound:[…accounts I linked to…] } */
+    myLinks: function () {
+      if (!window.SYCloud || s.demo) return Promise.resolve(null);
+      return SYCloud.dirLinks(s.email).catch(function () { return null; });
+    },
+    /** remove a backend link (dir = 'outbound' for accounts I linked to,
+        'inbound' for people linked to me) */
+    disconnectLink: function (uid, dir) {
+      if (!window.SYCloud || s.demo || !uid) return Promise.resolve(false);
+      return SYCloud.dirDisconnect(uid, dir || 'outbound', s.email).catch(function () { return false; });
+    },
     /** name registered against an account email (from sy-users) */
     accountName: function (email) {
       try {
@@ -385,6 +424,28 @@
         }
         break;
       }
+    }
+  } catch (e) {}
+
+  // ---- school directory bridge (runs on every guarded school page) ----
+  // The join code is the school's share code: published to the backend
+  // directory so a student on any device can link to it, and students who
+  // linked from elsewhere are pulled onto the same-device roster here — so
+  // every school console (people, students, analytics…) sees them.
+  try {
+    if ((s.role === 'school' || s.role === 'teacher') && !s.demo && window.SYCloud) {
+      var _scode = window.SY.get('schoolCode', null);
+      if (_scode && s.role === 'school') window.SY.publishCode(_scode, 'school');
+      window.SY.myLinks().then(function (g) {
+        if (!g || !g.inbound || !_scode) return;
+        var _r = window.SY.schoolGet(_scode, 'roster', []) || [], _add = false;
+        g.inbound.filter(function (l) { return l.relation === 'student'; }).forEach(function (l) {
+          if (l.email && !_r.some(function (x) { return String(x.email).toLowerCase() === String(l.email).toLowerCase(); })) {
+            _r.push({ email: l.email, name: l.name || String(l.email).split('@')[0], year: '' }); _add = true;
+          }
+        });
+        if (_add) window.SY.schoolSet(_scode, 'roster', _r);
+      }).catch(function () {});
     }
   } catch (e) {}
 

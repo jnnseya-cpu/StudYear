@@ -229,9 +229,43 @@
       '/o/' + encodeURIComponent(object) + '?alt=media&token=' + (j.downloadTokens || '') };
   }
 
+  /* ------------------------------------------------ link directory ------- */
+  /* Cross-account / cross-device linking. A share code published by one
+     account resolves on any other, and connecting records the link on both
+     sides' server documents — so a parent on their phone links to a child on
+     a laptop. All methods no-op / reject cleanly when the cloud is offline,
+     letting the caller fall back to the same-device localStorage path. */
+  async function dirPublish(code, kind, email) {
+    await whenReady(); if (!CFG || !email) return false;
+    try { await api('/directory', 'POST', { op: 'publish', code: code, kind: kind || 'account' }, email); return true; }
+    catch (e) { return false; }
+  }
+  async function dirResolve(code, email) {
+    await whenReady(); if (!CFG || !email) return null;
+    try { var j = await api('/directory?op=resolve&code=' + encodeURIComponent(code), 'GET', null, email); return j && j.ok ? j : null; }
+    catch (e) { return null; }
+  }
+  async function dirConnect(code, relation, email) {
+    await whenReady(); if (!CFG || !email) return null;
+    try { var j = await api('/directory', 'POST', { op: 'connect', code: code, relation: relation || 'parent' }, email); return j && j.ok ? j : null; }
+    catch (e) { return null; }
+  }
+  async function dirDisconnect(uid, dir, email) {
+    await whenReady(); if (!CFG || !email) return false;
+    try { await api('/directory', 'POST', { op: 'disconnect', uid: uid, dir: dir || 'outbound' }, email); return true; }
+    catch (e) { return false; }
+  }
+  async function dirLinks(email) {
+    await whenReady(); if (!CFG || !email) return null;
+    try { var j = await api('/directory?op=links', 'GET', null, email); return j && j.ok ? j : null; }
+    catch (e) { return null; }
+  }
+
   window.SYCloud = { ready: ready, whenReady: whenReady, signUp: signUp, signIn: signIn,
     restore: restore, push: push, schedulePush: schedulePush, upload: upload, token: token,
-    resetPassword: resetPassword, sendVerify: sendVerify };
+    resetPassword: resetPassword, sendVerify: sendVerify,
+    dirPublish: dirPublish, dirResolve: dirResolve, dirConnect: dirConnect,
+    dirDisconnect: dirDisconnect, dirLinks: dirLinks };
 
   /* ------------------------------------------- auto-sync hook ------------ */
   /* On consoles (guard.js present, real signed-in session): every store

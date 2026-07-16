@@ -490,6 +490,122 @@ export const notify = onRequest({ region: 'europe-west2', cors: true }, async (r
   }
 });
 
+// -------------------------------------------------------- link directory ----
+/**
+ * /directory — the cross-account/cross-device link registry.
+ *
+ * The static OS previews linking with same-device localStorage (sy-code:*),
+ * which cannot connect a parent on their phone to a child on a laptop. This
+ * function is the production swap the client comments promise: share codes and
+ * the resulting links live in Firestore, so a code generated on one account
+ * resolves on any other, on any device.
+ *
+ * Only public directory fields (email, name, kind) cross the boundary — never
+ * a user's end-to-end-encrypted data. Each side reads only ITS OWN links doc.
+ *
+ *   POST { op:'publish',  code, kind }            register my share code
+ *   GET  ?op=resolve&code=XXXX                    code -> { uid, email, name, kind }
+ *   POST { op:'connect',  code, relation }        link me <-> the code's owner
+ *   POST { op:'disconnect', uid, dir }            remove a link (dir=inbound|outbound)
+ *   GET  ?op=links                                my { inbound:[], outbound:[] }
+ */
+const LINK_KINDS = ['account', 'school', 'tutor', 'class'];
+const LINK_RELATIONS = ['parent', 'student', 'teacher', 'guardian', 'mentor'];
+async function accountName(uid: string, fallback: string | null): Promise<string> {
+  const d = await db.doc(`users/${uid}`).get();
+  return (d.data()?.name as string) || fallback || 'Account';
+}
+export const directory = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const user = await requireUser(req.headers.authorization);
+    const op = String(req.query.op ?? req.body?.op ?? '');
+    const myEmail = user.email ?? null;
+
+    if (op === 'publish') {
+      const code = String(req.body?.code ?? '').trim();
+      const kind = String(req.body?.kind ?? 'account');
+      if (!/^[A-Za-z0-9-]{4,24}$/.test(code)) throw httpError(400, 'invalid code');
+      if (!LINK_KINDS.includes(kind)) throw httpError(400, 'invalid kind');
+      const existing = await db.doc(`shareCodes/${code}`).get();
+      // a code already owned by another account cannot be hijacked
+      if (existing.exists && existing.data()!.uid !== user.uid) throw httpError(409, 'code already in use');
+      await db.doc(`shareCodes/${code}`).set({
+        uid: user.uid, email: myEmail, name: await accountName(user.uid, myEmail),
+        kind, updatedAt: FieldValue.serverTimestamp(),
+      });
+      res.json({ ok: true, code });
+      return;
+    }
+
+    if (op === 'resolve') {
+      const code = String(req.query.code ?? req.body?.code ?? '').trim();
+      if (!code) throw httpError(400, 'code required');
+      const d = await db.doc(`shareCodes/${code}`).get();
+      if (!d.exists) throw httpError(404, 'no account for that code');
+      const v = d.data()!;
+      res.json({ ok: true, code, uid: v.uid, email: v.email ?? null, name: v.name ?? null, kind: v.kind ?? 'account' });
+      return;
+    }
+
+    if (op === 'connect') {
+      const code = String(req.body?.code ?? '').trim();
+      const relation = String(req.body?.relation ?? 'parent');
+      if (!code) throw httpError(400, 'code required');
+      if (!LINK_RELATIONS.includes(relation)) throw httpError(400, 'invalid relation');
+      const d = await db.doc(`shareCodes/${code}`).get();
+      if (!d.exists) throw httpError(404, 'no account for that code');
+      const target = d.data()!;
+      if (target.uid === user.uid) throw httpError(400, 'cannot link to yourself');
+      const meName = await accountName(user.uid, myEmail);
+      const now = FieldValue.serverTimestamp();
+      // the code owner gains an inbound link; the connector an outbound one —
+      // each account reads only its own subtree, so nobody sees anyone else's graph
+      const batch = db.batch();
+      batch.set(db.doc(`links/${target.uid}/inbound/${user.uid}`),
+        { relation, email: myEmail, name: meName, kind: target.kind ?? 'account', code, at: now }, { merge: true });
+      batch.set(db.doc(`links/${user.uid}/outbound/${target.uid}`),
+        { relation, email: target.email ?? null, name: target.name ?? null, kind: target.kind ?? 'account', code, at: now }, { merge: true });
+      await batch.commit();
+      await audit('LINK_CONNECTED', user.uid, { target: target.uid, relation, kind: target.kind ?? 'account' });
+      res.json({ ok: true, uid: target.uid, email: target.email ?? null, name: target.name ?? null, kind: target.kind ?? 'account' });
+      return;
+    }
+
+    if (op === 'disconnect') {
+      const uid = String(req.body?.uid ?? '').trim();
+      const dir = String(req.body?.dir ?? 'outbound');
+      if (!uid) throw httpError(400, 'uid required');
+      if (dir === 'outbound') {
+        await db.doc(`links/${user.uid}/outbound/${uid}`).delete().catch(() => null);
+        await db.doc(`links/${uid}/inbound/${user.uid}`).delete().catch(() => null);
+      } else {
+        await db.doc(`links/${user.uid}/inbound/${uid}`).delete().catch(() => null);
+        await db.doc(`links/${uid}/outbound/${user.uid}`).delete().catch(() => null);
+      }
+      res.json({ ok: true });
+      return;
+    }
+
+    if (op === 'links') {
+      const [inb, outb] = await Promise.all([
+        db.collection(`links/${user.uid}/inbound`).get(),
+        db.collection(`links/${user.uid}/outbound`).get(),
+      ]);
+      const shape = (d: FirebaseFirestore.QueryDocumentSnapshot) => {
+        const v = d.data();
+        return { uid: d.id, relation: v.relation ?? null, email: v.email ?? null, name: v.name ?? null, kind: v.kind ?? 'account', code: v.code ?? null };
+      };
+      res.json({ ok: true, inbound: inb.docs.map(shape), outbound: outb.docs.map(shape) });
+      return;
+    }
+
+    throw httpError(400, 'unknown op');
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
 // ------------------------------------------------------ E2E-encrypted sync ----
 /**
  * POST /sync — the end-to-end encryption boundary.

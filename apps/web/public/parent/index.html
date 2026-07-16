@@ -736,17 +736,22 @@ $('advisor-in').addEventListener('keydown',function(e){if(e.key==='Enter')askAdv
 /* ---- link a child ---- */
 $('link-go').onclick=function(){
   var code=$('link-code').value.trim();
-  if(!/^\d{4,}$/.test(code)){toast('Enter the numeric link code from your child\'s account.');return}
-  var email=SY.resolveCode(code);
-  if(!email){toast('No account found for that code.');return}
-  var kids=SY.get('children',[]);
-  if(kids.some(function(k){return k.email===email})){toast('That child is already linked.');$('link-code').value='';return}
-  kids.push({email:email,name:SY.accountName(email),when:new Date().toISOString()});
-  SY.set('children',kids);
-  try{var pl=SY.readAccount(email,'parentLinks',[]);
-    if(!pl.some(function(p){return p.email===SY.session.email})){pl.push({email:SY.session.email,name:SY.session.name});SY.writeAccount(email,'parentLinks',pl);}}catch(e){}
-  SY.log('family','Linked child: '+SY.accountName(email),'Live monitoring active.');
-  $('link-code').value=''; toast('Linked — live intelligence active'); render();
+  if(!/^[A-Za-z0-9-]{4,}$/.test(code)){toast('Enter the link code from your child\'s account.');return}
+  var btn=$('link-go');btn.disabled=true;
+  SY.connectCode(code,'parent').then(function(r){
+    btn.disabled=false;
+    if(!r||!r.email){toast('No account found for that code. Check it in your child\'s My Account → Connect a parent.');return}
+    var email=r.email,name=r.name||SY.accountName(email);
+    var kids=SY.get('children',[]);
+    if(kids.some(function(k){return k.email===email})){toast('That child is already linked.');$('link-code').value='';return}
+    kids.push({email:email,name:name,uid:r.uid||null,when:new Date().toISOString()});
+    SY.set('children',kids);
+    /* same-device: also stamp the link on the child's side so they see it offline */
+    try{var pl=SY.readAccount(email,'parentLinks',[]);
+      if(!pl.some(function(p){return p.email===SY.session.email})){pl.push({email:SY.session.email,name:SY.session.name});SY.writeAccount(email,'parentLinks',pl);}}catch(e){}
+    SY.log('family','Linked child: '+name,'Live monitoring active.');
+    $('link-code').value=''; toast('Linked to '+name+' — live intelligence active'); render();
+  });
 };
 
 /* ---- tabs ---- */
@@ -809,7 +814,24 @@ document.querySelectorAll('#elite-suite [data-tab]').forEach(function(a){a.oncli
   };
 })();
 
+/* pull children linked on another device (backend directory) into this view */
+function mergeCloudChildren(){
+  try{
+    return SY.myLinks().then(function(g){
+      if(!g||!g.outbound)return;
+      var kids=SY.get('children',[]),added=false;
+      g.outbound.forEach(function(l){
+        if(!l.email)return;
+        if(kids.some(function(k){return k.email===l.email}))return;
+        kids.push({email:l.email,name:l.name||SY.accountName(l.email),uid:l.uid||null,when:new Date().toISOString()});added=true;
+      });
+      if(added){SY.set('children',kids);render();}
+    }).catch(function(){});
+  }catch(e){return Promise.resolve();}
+}
+
 render();
+mergeCloudChildren();
 })();
 </script>
 <script>
