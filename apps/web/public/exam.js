@@ -16,6 +16,67 @@
   var SUBJECTS=['Art & Design','Biology','Business','Chemistry','Combined Science','Computer Science','Design & Technology','Drama','Economics','English Language','English Literature','French','Further Mathematics','Geography','German','History','Mathematics','Music','Non-Verbal Reasoning','Physical Education','Physics','Psychology','Religious Studies','Sociology','Spanish','Verbal Reasoning'];
   var UNI_SUBJECTS=['Accounting','Biology','Business Management','Chemistry','Computing','Criminology','Dentistry','Economics','Engineering','English Language','English Literature','Environmental Science','French','Geography','Government & Politics','Health & Social Care','History','Human Biology','Law','Marketing','Medicine','Nursing','Pharmacy','Philosophy','Psychology','Sociology','Spanish','Sports Science','Zoology'];
   function isUni(lv){return /universit|undergrad|\bUG\b|foundation year|master|postgrad|\bPG\b/i.test(String(lv||''))}
+  /* ---- stage-appropriate assessment: the questions themselves match the
+     national assessment for the learner's stage (KS1 phonics & number bonds,
+     KS2 SATs arithmetic/reasoning/SPaG, 11+ verbal & non-verbal reasoning,
+     GCSE command words, A-level/degree extended analysis). ---- */
+  var PRIMARY_SUBJECTS=['Arithmetic','English Reading','Grammar & Punctuation (SPaG)','Mathematics','Non-Verbal Reasoning','Phonics','Science','Spelling','Times Tables','Verbal Reasoning'];
+  var ELEVEN_SUBJECTS=['English Comprehension','Mathematics','Non-Verbal Reasoning','Spelling & Vocabulary','Verbal Reasoning'];
+  function stageKind(lv){lv=String(lv||'').toLowerCase();
+    if(/reception|eyfs|nursery|\bks1\b|key stage 1/.test(lv))return 'ks1';
+    if(/11\s*\+|eleven plus/.test(lv))return 'eleven';
+    if(/\bks2\b|key stage 2/.test(lv))return 'ks2';
+    if(/\bks3\b|key stage 3|year *7|year *8|year *9/.test(lv))return 'ks3';
+    if(isUni(lv))return 'degree';
+    if(/a-?level|\bas\b|higher|\bib\b|btec|national 5/.test(lv))return 'alevel';
+    return 'gcse';}
+  function subjectsFor(lv){var k=stageKind(lv);
+    if(k==='ks1'||k==='ks2')return PRIMARY_SUBJECTS.slice();
+    if(k==='eleven')return ELEVEN_SUBJECTS.slice();
+    if(isUni(lv))return UNI_SUBJECTS.slice();
+    return SUBJECTS.slice();}
+  function examStyle(kind){
+    switch(kind){
+      case 'ks1': return 'These are children aged 5–7 (Key Stage 1 / early years). Use VERY simple, one-step questions in short concrete language with familiar contexts (toys, animals, family). PHONICS: ask the child to sound out and read a simple word, spot the first/last sound, or count the sounds (phonemes); include the odd read-it pseudo-word as in the phonics screening check. MATHS: number bonds, counting on, adding and taking away within 20, doubling, and the 2, 5 and 10 times tables. READING: a one- or two-sentence passage then a literal question. 1 mark each. NEVER use command words like "evaluate" or "analyse".';
+      case 'ks2': return 'These are Key Stage 2 pupils (ages 7–11) sitting SATs-style questions — match the national curriculum tests. MATHS: mix ARITHMETIC (a calculation to work out — +, −, ×, ÷, fractions, percentages) with REASONING (a short real-life word problem, sometimes multi-step, with money, time or measures). ENGLISH READING: give a 2–4 sentence passage then retrieval, inference ("why…"), and vocabulary ("find and copy a word that means…") questions. GRAMMAR/PUNCTUATION/SPELLING (SPaG): identify word classes (noun, verb, adjective, adverb), add or correct punctuation, or choose the correct spelling. 1–3 marks, plain child-friendly language, no GCSE command words.';
+      case 'eleven': return 'This is 11+ grammar-school selection (age 10–11). Use classic 11+ item types. VERBAL REASONING: letter/number codes, analogies ("big is to small as tall is to __"), odd-one-out, synonyms & antonyms, letter series, simple word logic. NON-VERBAL REASONING described fully in words (shape sequences, rotations, reflections, odd-shape-out, "shapes gain one side each time") — describe every shape precisely so NO picture is needed. MATHS: multi-step problem solving with measures, money and time. ENGLISH: comprehension and vocabulary. Single best answer, 1 mark each, quick timed-test style.';
+      case 'ks3': return 'These are Key Stage 3 pupils (Years 7–9) building towards GCSE. Clear curriculum questions a little below GCSE demand, some short "explain" questions. 1–4 marks.';
+      case 'alevel': return 'A-level / Level 3 standard. Extended application and analysis/evaluation questions; some longer 6–12 mark items with levels-based mark schemes; assume strong subject foundations.';
+      case 'degree': return 'Undergraduate / postgraduate level. Critical, essay and applied problem questions requiring analysis, evaluation and reference to theory or the literature; higher mark tariffs and academic register.';
+      default: return 'GCSE (grade 9–1) exam style. Use proper command words (state, describe, explain, calculate, compare, analyse, evaluate) with marks matched to demand (1–6), and a mark scheme showing where each mark is earned.';
+    }
+  }
+  /* real, stage-appropriate questions for the on-device fallback (demo/offline);
+     live accounts get AI questions styled by examStyle above. [q, marks, answer] */
+  var STAGE_BANK={
+    ks1:{
+      maths:[['What is 3 + 5?',1,'8.'],['What is 10 − 4?',1,'6.'],['What is double 6?',1,'12.'],['2 × 5 = ?',1,'10.'],['Count on: 7, 8, 9, __, __',1,'10 and 11.'],['6 + __ = 10. What is the missing number?',1,'4.'],['10 × 3 = ?',1,'30.'],['What is 5 + 5?',1,'10.'],['Which is bigger: 8 or 5?',1,'8.'],['Half of 8 is __?',1,'4.']],
+      english:[['Sound out and read this word: s-u-n. What is the word?',1,'sun.'],['Which word begins with the same sound as “fish”? frog / dog / cat',1,'frog.'],['How many sounds (phonemes) are in the word “cat”?',1,'3 (c-a-t).'],['Read these — which is a REAL word? “ship” or “vodo”',1,'ship (vodo is a pseudo-word).'],['Fill the missing letter: c_t — a small furry pet.',1,'a → cat.'],['Which word rhymes with “hat”? cat / dog / sun',1,'cat.'],['Say the first sound in the word “dog”.',1,'d.'],['Read the word: b-e-d. What is it?',1,'bed.']]
+    },
+    ks2:{
+      maths:[['Work out 3,482 + 1,675.',1,'5,157.'],['Work out 6 × 8.',1,'48.'],['Work out 1,000 − 356.',1,'644.'],['What is 3/4 of 20?',1,'15.'],['What is 25% of 80?',1,'20.'],['Work out 144 ÷ 12.',1,'12.'],['A pencil costs 45p. How much do 6 pencils cost? Give your answer in pounds.',2,'£2.70 (6 × 45p = 270p).'],['There are 32 children in a class. 3/8 have school dinners. How many is that?',2,'12 (32 ÷ 8 = 4, then 4 × 3).'],['A film starts at 14:35 and lasts 1 hour 50 minutes. What time does it end?',2,'16:25.'],['Round 3,748 to the nearest hundred.',1,'3,700.']],
+      english:[['Read: “The old house stood at the end of the lane, its garden overgrown.” Find and copy one word that shows the garden was not cared for.',1,'overgrown.'],['Circle the adjective: “The enormous elephant splashed in the river.”',1,'enormous.'],['Add the missing punctuation: what time does the train leave',1,'What time does the train leave?'],['Choose the correct spelling: necessary / neccessary.',1,'necessary.'],['Which word is the verb? “The dog barked loudly.”',1,'barked.'],['Write the plural of “baby”.',1,'babies.'],['Underline the adverb: “She sang beautifully.”',1,'beautifully.'],['Read: “Tom raced home because it had started to rain.” Why did Tom race home?',1,'Because it had started to rain.']],
+      science:[['Name the process by which plants make their food.',1,'Photosynthesis.'],['Which organ pumps blood around the body?',1,'The heart.'],['Name the three states of matter.',2,'Solid, liquid and gas.'],['What do we call an animal that eats only plants?',1,'A herbivore.'],['Name the force that pulls objects towards the Earth.',1,'Gravity.'],['Which part of a plant takes in water from the soil?',1,'The roots.']]
+    },
+    eleven:{
+      vr:[['If the code for CAT is 3-1-20 (A=1, B=2 …), what is the code for DOG?',1,'4-15-7.'],['Find the odd one out: apple, banana, carrot, grape, pear.',1,'carrot — it is a vegetable; the rest are fruit.'],['Complete: “big” is to “small” as “tall” is to __.',1,'short.'],['Which word means the same as “rapid”? slow / quick / heavy / late',1,'quick.'],['Which word is the opposite of “ancient”? old / modern / dusty / historic',1,'modern.'],['What comes next: 2, 4, 8, 16, __?',1,'32 (each number doubles).'],['Continue the series: A, C, E, G, __?',1,'I (skip one letter each time).'],['Odd one out: square, circle, triangle, rectangle?',1,'circle — it has no straight sides or corners.']],
+      nvr:[['A pattern goes: circle, square, circle, square, circle, __. What shape comes next?',1,'square.'],['Shapes gain one side each time: triangle (3), square (4), pentagon (5), __? Name the next shape.',1,'hexagon (6 sides).'],['A shape has 8 straight sides. What is its name?',1,'octagon.'],['A shape has 5 straight sides. What is its name?',1,'pentagon.'],['If a triangle is turned upside down, how many sides does it still have?',1,'3 — turning a shape never changes its number of sides.']],
+      maths:[['A jug holds 2 litres. How many 250 ml cups can be filled from it?',1,'8 (2000 ÷ 250).'],['A train leaves at 09:45 and arrives at 11:20. How long is the journey?',1,'1 hour 35 minutes.'],['What is 15% of 200?',1,'30.'],['Work out 7 × 12.',1,'84.'],['Half of a number is 24. What is the number?',1,'48.']],
+      english:[['Which word means the same as “brave”? timid / bold / quiet / weak',1,'bold.'],['Choose the correct spelling: seperate / separate.',1,'separate.'],['Give an antonym (opposite) of “expand”.',1,'contract / shrink.'],['Which is spelt correctly: definately / definitely?',1,'definitely.']]
+    }
+  };
+  function poolKey(subject){var s=String(subject||'').toLowerCase();
+    if(/non-?verbal/.test(s))return 'nvr';
+    if(/verbal/.test(s))return 'vr';
+    if(/phonic|spell|read|english|grammar|spag|vocab|compreh|literac/.test(s))return 'english';
+    if(/science|biolog|chem|physic/.test(s))return 'science';
+    return 'maths';}
+  function stageFallback(kind,subject,n){
+    var banks=STAGE_BANK[kind];if(!banks)return null;
+    var pool=banks[poolKey(subject)]||banks.maths||banks.english||banks.vr;
+    if(!pool||!pool.length)return null;
+    var out=[];for(var i=0;i<n;i++){var t=pool[i%pool.length];out.push({q:t[0],marks:t[1],a:t[2]});}
+    return out;}
   /* command-word rotation for the on-device fallback: [stem, marks, scheme] */
   var TEMPLATES=[
     ['Define the term “{t}”.',2,'1 mark — precise definition naming the key idea; 1 mark — correct use of subject terminology.'],
@@ -49,6 +110,8 @@
     'Psychology':['memory models','conformity and obedience','attachment','research methods'],
     'Economics':['supply and demand','price elasticity','market failure','fiscal and monetary policy']};
   function fallbackQuestions(n,subject,level,topics){
+    var sf=stageFallback(stageKind(level),subject,n);   // KS1/KS2/11+ get real stage questions
+    if(sf)return sf;
     var ts=(topics&&topics.length?topics:(FALLBACK_TOPICS[subject]||[subject])).filter(Boolean);
     var out=[];
     for(var i=0;i<n;i++){
@@ -74,12 +137,12 @@
     for(var start=0;start<n;start+=batch){
       var count=Math.min(batch,n-start);
       if(onProgress)onProgress(start,n);
-      var sys='You are a senior '+level+' '+subject+' examiner'+(board?' writing to the '+board+' specification':'')+
-        '. Write exam-style questions with full mark-scheme answers. Difficulty: '+difficulty+
+      var sys='You are an experienced '+level+' '+subject+' assessment writer'+(board?' writing to the '+board+' specification':'')+
+        '. '+examStyle(stageKind(level))+' Difficulty: '+difficulty+
         '. Return EXACTLY this format for each question, nothing else:\n'+
         'Q<number> [<marks> marks] <question text on one line>\n'+
-        'A<number>: <mark-scheme answer as numbered points showing where each mark is earned>\n'+
-        'Vary command words (define, state, describe, explain, compare, analyse, evaluate, calculate where the subject allows). Marks per question between 1 and 6. Real curriculum content, never placeholders.';
+        'A<number>: <mark-scheme answer showing where each mark is earned>\n'+
+        'Keep every question fully self-contained — no images required. Real curriculum content, never placeholders.';
       var user='Write questions '+(start+1)+' to '+(start+count)+' of a '+n+'-question '+subject+' exam paper for '+level+
         (topics.length?' covering these topics: '+topics.join('; ')+'.':'.')+
         ' Continue numbering from Q'+(start+1)+'.';
@@ -197,10 +260,12 @@
        university level is chosen, school subjects otherwise; alphabetical */
     (function(){
       var lvEl=$('sx-level'),sjEl=$('sx-subj');if(!lvEl||!sjEl||opts.subjects)return;
-      function refill(){var keep=sjEl.value,list=(isUni(lvEl.value)?UNI_SUBJECTS:SUBJECTS).slice().sort(function(a,b){return a.localeCompare(b)});
+      function refill(){var keep=sjEl.value,list=subjectsFor(lvEl.value).slice().sort(function(a,b){return a.localeCompare(b)});
         sjEl.innerHTML='<option value="">Select a subject</option>'+list.map(function(s){return '<option>'+esc(s)+'</option>'}).join('');
         if(list.indexOf(keep)>=0)sjEl.value=keep;}
-      lvEl.addEventListener('input',refill);if(isUni(lvEl.value))refill();
+      lvEl.addEventListener('input',refill);
+      /* refill on load when the initial level isn't the default GCSE subject set */
+      var _k0=stageKind(lvEl.value);if(isUni(lvEl.value)||_k0==='ks1'||_k0==='ks2'||_k0==='eleven')refill();
     })();
     $(goId).onclick=async function(){
       var subject=$('sx-subj').value.trim(),level=$('sx-level').value,board=$('sx-board').value;

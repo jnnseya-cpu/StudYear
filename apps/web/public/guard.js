@@ -349,6 +349,28 @@
       var gf = Math.max(1, Math.min(9, Math.round(1 + 8 * m / 100)));
       return { system: 'generic', grade: gf, short: 'Grade ' + gf, caption: 'Working at', label: 'Working at Grade ' + gf };
     },
+    /** one-line guidance the AI generators append so questions match the
+        learner's national assessment style (SATs, 11+ reasoning, phonics,
+        GCSE command words, degree essays) rather than a one-size format. */
+    stageStyle: function (level) {
+      var L = String(level || '').toLowerCase();
+      var k = /reception|eyfs|nursery|\bks1\b|key stage 1/.test(L) ? 'ks1'
+        : /11\s*\+|eleven plus/.test(L) ? 'eleven'
+        : /\bks2\b|key stage 2/.test(L) ? 'ks2'
+        : /\bks3\b|key stage 3|year *7|year *8|year *9/.test(L) ? 'ks3'
+        : /universit|undergrad|degree|master|\bpg\b|\bug\b|foundation year/.test(L) ? 'degree'
+        : /a-?level|\bas\b|higher|\bib\b|btec|national 5/.test(L) ? 'alevel'
+        : 'gcse';
+      return ({
+        ks1: ' Pitch for ages 5–7 (KS1): very simple one-step questions — sounding out and reading simple words (phonics), counting, number bonds, adding/taking away within 20, and the 2, 5 and 10 times tables. Short, concrete language; no hard vocabulary or exam command words.',
+        ks2: ' Pitch for KS2 SATs (ages 7–11): for maths mix straight arithmetic with short real-life reasoning word problems (money, time, measures, fractions, percentages); for reading use retrieval, inference and vocabulary; for grammar use word classes, punctuation and spelling. Plain child-friendly language.',
+        eleven: ' Pitch for 11+ grammar-school selection (age 10–11): verbal reasoning (letter/number codes, analogies, synonyms & antonyms, odd-one-out, letter series), non-verbal reasoning described fully in words (shape sequences, rotations, sides), and multi-step maths problems. Each question self-contained, single best answer.',
+        ks3: ' Pitch for KS3 (Years 7–9): solid curriculum questions a little below GCSE demand, building key knowledge and some short reasoning.',
+        gcse: ' Pitch at GCSE (grade 9–1) with exam-accurate content and proper command words.',
+        alevel: ' Pitch at A-level / Level 3: application, analysis and evaluation, assuming strong foundations.',
+        degree: ' Pitch at undergraduate/postgraduate level: critical, applied and theory-referenced.'
+      })[k] || '';
+    },
     /** resolves true when this account has a live cloud session (Firebase token)
         — cross-account linking/sync needs it; used to give a clear message. */
     cloudAuthed: function () {

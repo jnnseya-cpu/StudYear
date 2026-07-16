@@ -1638,7 +1638,7 @@ document.getElementById("c-f-ai").onclick=async()=>{
   if(!(window.SYAI&&SYAI.ready())){toast("Live AI is warming up — try the AI Flashcard Generator above, it works without it");return}
   toast("Writing your cards…");
   try{
-    const txt=await SYAI.ask("Write exactly 8 flashcards for a "+lvl+" student on the topic. Output ONLY lines in the form: front :: back — no numbering, no extra text.","Topic: "+topic,{maxTokens:600});
+    const txt=await SYAI.ask("Write exactly 8 flashcards for a "+lvl+" student on the topic."+((window.SY&&SY.stageStyle)?SY.stageStyle(lvl):"")+" Output ONLY lines in the form: front :: back — no numbering, no extra text.","Topic: "+topic,{maxTokens:600});
     const lines=txt.split("\n").filter(l=>l.includes("::"));
     if(lines.length){document.getElementById("c-f-cards").value=lines.join("\n");toast(lines.length+" cards written — press Save deck")}
     else toast("The AI answer had no cards — try a more specific topic");
@@ -1649,7 +1649,7 @@ document.getElementById("c-q-ai").onclick=async()=>{
   if(!(window.SYAI&&SYAI.ready())){toast("Live AI is warming up — try the AI Quiz Generator above, it works without it");return}
   toast("Writing your questions…");
   try{
-    const txt=await SYAI.ask("Write exactly 6 multiple-choice quiz questions for a "+lvl+" student on the topic. Output ONLY lines in the form: question :: correct answer :: wrong answer :: wrong answer — the CORRECT answer always first, no numbering, no extra text.","Topic: "+topic,{maxTokens:800});
+    const txt=await SYAI.ask("Write exactly 6 multiple-choice quiz questions for a "+lvl+" student on the topic."+((window.SY&&SY.stageStyle)?SY.stageStyle(lvl):"")+" Output ONLY lines in the form: question :: correct answer :: wrong answer :: wrong answer — the CORRECT answer always first, no numbering, no extra text.","Topic: "+topic,{maxTokens:800});
     const lines=txt.split("\n").filter(l=>(l.match(/::/g)||[]).length>=2);
     if(lines.length){document.getElementById("c-q-qs").value=lines.join("\n");toast(lines.length+" questions written — press Save quiz")}
     else toast("The AI answer had no questions — try a more specific topic");
@@ -1782,7 +1782,7 @@ document.getElementById("g-fc-go").onclick=()=>{
   if(topic.length<3){toast("Enter a topic for your flashcards");return}
   if(window.SYAI&&SYAI.ready()){
     toast("Writing flashcards with "+SYAI.provider()+"…");
-    SYAI.ask("Create exactly 10 study flashcards for a "+($v("g-fc-level")||"GCSE")+" student on the topic. Return ONLY lines in the format 'front :: back' — no headings, no numbering. Fronts are precise questions/terms; backs are accurate, concise answers.","Topic: "+topic,{maxTokens:900}).then(t=>{
+    SYAI.ask("Create exactly 10 study flashcards for a "+($v("g-fc-level")||"GCSE")+" student on the topic."+((window.SY&&SY.stageStyle)?SY.stageStyle($v("g-fc-level")):"")+" Return ONLY lines in the format 'front :: back' — no headings, no numbering. Fronts are precise questions/terms; backs are accurate, concise answers.","Topic: "+topic,{maxTokens:900}).then(t=>{
       const cards=String(t).split("\n").map(l=>{const p=l.split("::").map(s=>s.trim());if(p[0])p[0]=p[0].replace(/^[-*)\s]*\d*[.)]?\s*/,"").trim()||p[0];return p}).filter(p=>p.length>=2&&p[0]&&p[1]).map(p=>p.slice(0,2));
       if(cards.length<3){toast("Model returned too few cards — using the library");fcStatic(topic);return}
       saveMine({type:"Flashcards",title:topic+" — AI deck",subj:$v("g-fc-subj"),level:$v("g-fc-level"),cards:cards.slice(0,12)},"gf","AI flashcards generated",["g-fc-topic"]);
@@ -1811,7 +1811,7 @@ document.getElementById("g-qz-go").onclick=()=>{
   const n=Math.max(3,Math.min(10,+$v("g-qz-n")||5));
   if(window.SYAI&&SYAI.ready()){
     toast("Writing your quiz with "+SYAI.provider()+"…");
-    SYAI.ask("Write exactly "+n+" multiple-choice questions for a "+($v("g-qz-level")||"GCSE")+" student on the topic. Return ONLY lines in the format 'question :: correct answer :: wrong :: wrong :: wrong' (4 options total, correct FIRST). After each question line, you may add a line 'exp:: one-sentence explanation'. No numbering or headings. Questions must be factually accurate and specific to the topic.","Topic: "+topic,{maxTokens:1200}).then(t=>{
+    SYAI.ask("Write exactly "+n+" multiple-choice questions for a "+($v("g-qz-level")||"GCSE")+" student on the topic."+((window.SY&&SY.stageStyle)?SY.stageStyle($v("g-qz-level")):"")+" Return ONLY lines in the format 'question :: correct answer :: wrong :: wrong :: wrong' (4 options total, correct FIRST). After each question line, you may add a line 'exp:: one-sentence explanation'. No numbering or headings. Questions must be factually accurate and specific to the topic.","Topic: "+topic,{maxTokens:1200}).then(t=>{
       const qs=[];let last=null;
       String(t).split("\n").forEach(l=>{l=l.trim();if(!l)return;
         if(/^exp\s*::/i.test(l)){if(last)last.exp=l.replace(/^exp\s*::\s*/i,"");return}
@@ -2426,6 +2426,7 @@ function tutorSystemPrompt(){
   return "You are StudYear's AI Tutor for a "+lvl+" student"+(subs?" studying "+subs:"")+". "+soc+" "+
     "Teach the method, never just the final answer. Be clear, encouraging and concise. Use short paragraphs, bold key terms and numbered steps or bullet lists. "+
     "End with one quick check-question. Keep it pitched at "+lvl+" level."+
+    ((window.SY&&SY.stageStyle)?SY.stageStyle(lvl):"")+
     (window.SYAI&&SYAI.diagramHint?SYAI.diagramHint:"");
 }
 /* conversation memory: the tutor remembers the exchange, so when it asks a
