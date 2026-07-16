@@ -54,7 +54,7 @@
 <script src="../export.js"></script>
 <div class="shell">
 <aside><a class="slogo" href="../">⌂ <b>StudYear</b></a><div class="role">Local Authority</div><nav>
-  <a href="./" class="on">Overview</a><a href="#schools">Schools</a><a href="#equity">Equity &amp; gap</a><a href="#attendance">Attendance</a><a href="#programmes">Programmes &amp; funding</a><a href="#impact">Impact evidence</a><a href="#youth">Youth Guarantee</a><a href="#" id="signout">Sign out</a>
+  <a href="./" class="on">Overview</a><a href="#boroughs">Boroughs &amp; councils</a><a href="#schools">Schools</a><a href="#equity">Equity &amp; gap</a><a href="#attendance">Attendance</a><a href="#programmes">Programmes &amp; funding</a><a href="#impact">Impact evidence</a><a href="#youth">Youth Guarantee</a><a href="#skills">Skills fund</a><a href="#inclusion">Digital inclusion</a><a href="#" id="signout">Sign out</a>
 </nav></aside>
 <main>
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span class="live">● Live</span><span class="k" style="margin:0">Councils · youth programmes · intervention funds</span><button class="btn" id="demo-btn" style="margin-left:auto">Load demo</button></div>
@@ -113,7 +113,30 @@
       <div style="margin:0 0 6px"><button class="btn sm" id="export-pack">⬇ Export evidence pack — Excel · Word · PDF · PowerPoint</button></div>
       <div id="impact-list"></div></div>
 
+    <div class="card c12" id="boroughs"><h3>🏛 Region structure — councils &amp; boroughs</h3>
+      <div class="sub">Works for any shape of authority: a combined authority models its constituent councils
+        (one-tap presets for the English CAs below), a single council can model its districts or localities — or run
+        flat with no sub-units. Assign each connected school to its unit for per-council rollups.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+        <select id="b-preset" style="background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 13px var(--sans);padding:8px 10px">
+          <option value="">Quick-start preset…</option>
+          <option value="wmca">West Midlands CA (7 boroughs)</option>
+          <option value="gmca">Greater Manchester CA (10)</option>
+          <option value="wyca">West Yorkshire CA (5)</option>
+          <option value="lcr">Liverpool City Region (6)</option>
+          <option value="syca">South Yorkshire CA (4)</option>
+          <option value="neca">North East CA (7)</option>
+          <option value="clear">Single authority — no sub-units</option>
+        </select>
+        <input id="b-new" placeholder="Add a council / borough / district…" style="flex:1;min-width:180px;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 13px var(--sans);padding:8px 10px">
+        <button class="btn sm" id="b-add">Add</button>
+      </div>
+      <div id="borough-roll"></div>
+      <div id="borough-assign" style="margin-top:12px"></div>
+    </div>
     <div class="card c6" id="youth"><h3>Youth Guarantee — destinations</h3><div class="sub">Employability through attainment, across the area · apprenticeship-first</div><div id="destinations"></div></div>
+    <div class="card c6" id="skills"><h3>🎓 Skills &amp; adult education pipeline</h3><div class="sub">Adult Skills Fund lens — post-16 destinations and the adult-skills handoff, live from school data</div><div id="skills-pipe"></div></div>
+    <div class="card c6" id="inclusion"><h3>📶 Digital inclusion &amp; funded learning</h3><div class="sub">Digital-poverty priorities by borough + learners funded through sponsor gift codes</div><div id="inclusion-body"></div></div>
     <div class="card c6"><h3>Wellbeing &amp; safeguarding</h3><div class="sub">Aggregate signals (KCSIE workflows in the secure backend)</div><div id="safeguard"></div></div>
 
     <div class="card c12"><h3>Compliance &amp; licensing</h3>
@@ -287,6 +310,56 @@ function draw(){
   var well=S.length?avg(S.map(function(s){return s.wellbeing||0})):0;var alerts=S.reduce(function(a,s){return a+(s.safeguard||0)},0);
   $('safeguard').innerHTML=S.length?('<div class="row"><span class="rag" style="background:'+(well>=70?'var(--good)':well>=55?'var(--warn)':'var(--crit)')+'"></span><span style="flex:1">Average wellbeing</span><b>'+well+'%</b></div><div class="row"><span class="rag" style="background:'+(alerts?'var(--crit)':'var(--good)')+'"></span><span style="flex:1">Safeguarding alerts (area)</span><b style="color:'+(alerts?'var(--crit)':'var(--good)')+'">'+alerts+'</b></div><div class="note">Case detail stays in each school under KCSIE; the authority sees counts only.</div>'):'<div class="empty">No data yet.</div>';
 
+  /* ---- Region structure: any combined authority's councils, any single
+     authority's districts. Rollups per unit from the same live school feed. */
+  var units=SY.get('laUnits',[]);
+  var assign=SY.get('laAssign',{});
+  var byU={};units.forEach(function(u){byU[u]=[]});var unassigned=[];
+  S.forEach(function(s){var u=assign[s.schoolCode];if(u&&byU[u])byU[u].push(s);else unassigned.push(s)});
+  function wavg(list,f){var t=0,n=0;list.forEach(function(s){var w=s.students||1;t+=f(s)*w;n+=w});return n?Math.round(t/n):0}
+  $('borough-roll').innerHTML=units.length?(
+    '<div class="row th"><span style="flex:1">Council / unit</span><span style="width:64px;text-align:right">Schools</span><span style="width:80px;text-align:right">Students</span><span style="width:92px;text-align:right">Attainment</span><span style="width:72px;text-align:right">PP gap</span><span style="width:88px;text-align:right">NEET risk</span></div>'+
+    units.map(function(u){var L=byU[u]||[];var st=L.reduce(function(a,s){return a+(s.students||0)},0);
+      var at=L.length?wavg(L,function(s){return s.avg||0}):0;
+      var gap=L.length?avg(L.map(function(s){return s.ppGap||0})):0;
+      var neetR=L.length?Math.min(35,Math.round(avg(L.map(function(s){return s.persistentAbs||0}))*0.7+Math.max(0,55-at)*0.4)):0;
+      return '<div class="row"><span style="flex:1">'+esc(u)+' <a href="#" data-bdel="'+esc(u)+'" style="font-size:10px;color:var(--ink-3);text-decoration:none;margin-left:6px" title="remove unit">✕</a></span>'+
+        '<span style="width:64px;text-align:right">'+L.length+'</span>'+
+        '<span style="width:80px;text-align:right">'+st.toLocaleString()+'</span>'+
+        '<span style="width:92px;text-align:right;color:'+(L.length?(at>=60?'var(--good)':'var(--warn)'):'var(--ink-3)')+'">'+(L.length?at+'%':'—')+'</span>'+
+        '<span style="width:72px;text-align:right">'+(L.length?gap+' pts':'—')+'</span>'+
+        '<span style="width:88px;text-align:right;color:'+(neetR>15?'var(--crit)':'var(--ink-2)')+'">'+(L.length?'≈'+neetR+'%':'—')+'</span></div>';
+    }).join('')+
+    (unassigned.length?'<div class="note">'+unassigned.length+' school'+(unassigned.length>1?'s':'')+' not yet assigned — use the selectors below.</div>':'')
+  ):'<div class="empty">Running flat (no sub-units). Pick a combined-authority preset above, or add your own districts.</div>';
+  $('borough-assign').innerHTML=(units.length&&S.length)?('<div class="sub" style="margin-bottom:6px">Assign schools to councils</div>'+S.map(function(s){
+    return '<div class="row"><span style="flex:1">'+esc(s.name||s.schoolCode)+'</span><select data-bassign="'+esc(s.schoolCode)+'" style="width:200px;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:8px;color:var(--ink);font:400 12.5px var(--sans);padding:6px 8px"><option value="">— council —</option>'+
+      units.map(function(u){return '<option'+((assign[s.schoolCode]||'')===u?' selected':'')+'>'+esc(u)+'</option>'}).join('')+'</select></div>';
+  }).join('')):'';
+  Array.prototype.forEach.call(document.querySelectorAll('[data-bassign]'),function(sel){sel.onchange=function(){assign[sel.dataset.bassign]=sel.value;SY.set('laAssign',assign);draw()}});
+  Array.prototype.forEach.call(document.querySelectorAll('[data-bdel]'),function(a){a.onclick=function(e){e.preventDefault();SY.set('laUnits',units.filter(function(u){return u!==a.dataset.bdel}));draw()}});
+
+  /* ---- Skills & adult education pipeline (Adult Skills Fund lens) ---- */
+  var appr=0,needsN=0;Object.keys(dest).forEach(function(k){if(/apprentice/i.test(k))appr+=dest[k];if(/support|neet|unknown/i.test(k))needsN+=dest[k]});
+  $('skills-pipe').innerHTML=Object.keys(dest).length?(
+    '<div class="row"><span style="flex:1">Post-16 apprenticeship pipeline</span><b style="color:var(--gold-300)">'+appr.toLocaleString()+' learners · '+Math.round(100*appr/dtot)+'%</b></div>'+
+    '<div class="row"><span style="flex:1">Adult-skills handoff (needs support post-16)</span><b style="color:'+(needsN?'var(--crit)':'var(--good)')+'">'+needsN.toLocaleString()+' learners</b></div>'+
+    '<div class="row"><span style="flex:1">Career Passports live in schools</span><b style="color:var(--good)">employer-matched by results</b></div>'+
+    '<div class="note">The needs-support cohort is the authority’s devolved adult-education pipeline — target skills funding here; Career Passports feed sector demand (health, engineering, digital) per council.</div>'
+  ):'<div class="empty">Connect schools to build the skills pipeline.</div>';
+
+  /* ---- Digital inclusion & funded learning ---- */
+  var gifts=[];try{gifts=JSON.parse(localStorage.getItem('sy-gifts'))||[]}catch(e){}
+  var redeemedG=gifts.filter(function(g){return g.redeemed}).length;
+  var priority=units.map(function(u){var L=byU[u]||[];return L.length?{u:u,gap:avg(L.map(function(s){return s.ppGap||0}))}:null})
+    .filter(Boolean).sort(function(a,b){return b.gap-a.gap}).slice(0,3);
+  $('inclusion-body').innerHTML=
+    '<div class="row"><span style="flex:1">Learners funded via gift codes</span><b style="color:var(--gold-300)">'+redeemedG.toLocaleString()+'</b></div>'+
+    '<div class="row"><span style="flex:1">Gift codes issued (area)</span><b>'+gifts.length.toLocaleString()+'</b></div>'+
+    (priority.length?('<div class="row th" style="margin-top:6px"><span style="flex:1">Digital-poverty priority councils</span><span style="width:80px;text-align:right">PP gap</span></div>'+
+      priority.map(function(x){return '<div class="row"><span style="flex:1">'+esc(x.u)+'</span><span style="width:80px;text-align:right;color:var(--crit)">'+x.gap+' pts</span></div>'}).join('')):'')+
+    '<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><a class="btn sm" href="../fund/">Open Fund-a-Student →</a><span class="note" style="margin:0">Sponsors, employers and diaspora fund named learners: www.studyear.com/fund/</span></div>';
+
   wireDrilldowns(S,progs,dest,dtot);
 }
 
@@ -311,6 +384,23 @@ function wireDrilldowns(S,progs,dest,dtot){
   var sg=$('safeguard');if(sg&&S.length){var rows=sg.querySelectorAll('.row');if(rows[0]){rows[0].classList.add('clik');rows[0].onclick=function(){openModal('Wellbeing by school','Average wellbeing index per school',tableFrom(['School','Wellbeing'],S.slice().sort(function(a,b){return (a.wellbeing||0)-(b.wellbeing||0)}).map(function(s){return [esc(s.name||s.schoolCode),(s.wellbeing||0)+'%']})))}}if(rows[1]){rows[1].classList.add('clik');rows[1].onclick=function(){openModal('Safeguarding alerts by school','Counts only — case detail stays in schools under KCSIE',tableFrom(['School','Alerts'],S.filter(function(s){return s.safeguard}).sort(function(a,b){return (b.safeguard||0)-(a.safeguard||0)}).map(function(s){return [esc(s.name||s.schoolCode),(s.safeguard||0)]})))}}}
 }
 
+/* region-structure controls: presets for the English combined authorities,
+   free-text add for any council/district, clear = flat single authority */
+var CA_PRESETS={
+  wmca:['Birmingham','Coventry','Dudley','Sandwell','Solihull','Walsall','Wolverhampton'],
+  gmca:['Bolton','Bury','Manchester','Oldham','Rochdale','Salford','Stockport','Tameside','Trafford','Wigan'],
+  wyca:['Bradford','Calderdale','Kirklees','Leeds','Wakefield'],
+  lcr:['Halton','Knowsley','Liverpool','Sefton','St Helens','Wirral'],
+  syca:['Barnsley','Doncaster','Rotherham','Sheffield'],
+  neca:['County Durham','Gateshead','Newcastle upon Tyne','North Tyneside','Northumberland','South Tyneside','Sunderland']
+};
+$('b-preset').onchange=function(){var v=this.value;this.value='';if(!v)return;
+  if(v==='clear'){SY.set('laUnits',[]);toast('Running flat — no sub-units');draw();return}
+  SY.set('laUnits',CA_PRESETS[v].slice());toast('Structure loaded — now assign your schools to councils');draw();
+};
+$('b-add').onclick=function(){var v=$('b-new').value.trim();if(!v)return;
+  var u=SY.get('laUnits',[]);if(u.indexOf(v)<0)u.push(v);SY.set('laUnits',u);$('b-new').value='';toast('Added '+v);draw();
+};
 $('p-add').onclick=function(){
   var name=$('p-name').value.trim();if(!name){toast('Name the programme');return}
   var S=schools();var baseline=S.length?avg(S.map(function(s){return s.avg||0})):55;
