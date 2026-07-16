@@ -170,6 +170,14 @@
 </div>
 
 <div class="grid">
+  <div class="card c12" id="standing-card">
+    <h3>Your subjects — working at &amp; target</h3>
+    <div class="sub">Your real standing from the quizzes, diagnostics and checks you have done — shown in your stage's grading. Nothing is invented.</div>
+    <div id="standing" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<div class="grid">
   <div class="card c8">
     <h3>How are you feeling today?</h3>
     <div class="sub">A quick check-in — StudYear adapts today's plan to your energy and stress. No one else sees this.</div>
@@ -287,6 +295,39 @@ if(overall!=null){
 $('t-lessons').textContent=activity.filter(function(a){return a.k==='lesson'||a.k==='course'}).length;
 $('t-weak').textContent=weakest||'–';
 if(!weakest)$('t-weak').nextElementSibling.textContent='Weakest subject — run a diagnostic';
+
+/* ---------- subject standing: real working-at vs target, in this stage's
+   grading (Working Towards/Expected/Greater Depth, 9–1, 1st/2:1…) ---------- */
+(function(){
+  var lvl=profile.level, subs=(profile.subjects||[]);
+  function barCol(m){return m>=80?'var(--good)':m>=50?'#F2CE7B':'var(--crit)'}
+  function row(name,waHtml,tgtHtml,pct,evidence){
+    return '<div style="display:grid;grid-template-columns:minmax(120px,1.4fr) 1.5fr 1.2fr;gap:10px 14px;align-items:center;padding:10px 0;border-top:1px solid var(--line)">'+
+      '<div style="font-weight:600">'+esc(name)+'</div>'+
+      '<div style="font-size:13.5px">'+waHtml+
+        (pct!=null?'<div style="height:7px;border-radius:6px;background:rgba(170,182,204,.18);margin-top:6px;overflow:hidden"><i style="display:block;height:100%;width:'+pct+'%;background:'+barCol(pct)+'"></i></div>':'')+
+      '</div>'+
+      '<div style="font-size:13.5px;text-align:right">'+tgtHtml+'</div>'+
+      '</div>';
+  }
+  var rows=subs.map(function(sub){
+    var m=mastery[sub.s];
+    var wa=(m!=null)?('Working at <b style="color:var(--ink)">'+esc(SY.attainment(lvl,m).short)+'</b> <span style="color:var(--ink-3)">· '+m+'%</span>')
+                    :'<span style="color:var(--ink-3)">Not assessed yet — take a quiz or diagnostic</span>';
+    var tgt=sub.target?('Target <b style="color:var(--gold-300)">'+esc(sub.target)+'</b>'):'<span style="color:var(--ink-3)">—</span>';
+    return row(sub.s,wa,tgt,(m!=null?m:null));
+  });
+  /* primary practice checks appear as their own standing rows when taken */
+  var att0=SY.attainment(lvl,0);
+  if(att0.system==='ks1'||att0.system==='ks2'||att0.system==='eyfs'){
+    var ph=SY.get('check:phonics',null);
+    if(ph)rows.push(row('Phonics screening','Scored <b style="color:var(--ink)">'+ph.score+'/'+ph.of+'</b>'+(ph.full?(ph.met?' <span style="color:var(--good)">· met</span>':' <span style="color:#F2CE7B">· keep practising</span>'):''),'Pass mark <b style="color:var(--gold-300)">32/40</b>',ph.full?Math.round(ph.score/40*100):null));
+    var mt=SY.get('check:mtc',null);
+    if(mt)rows.push(row('Times tables check','Scored <b style="color:var(--ink)">'+mt.score+'/'+mt.of+'</b> <span style="color:var(--ink-3)">· '+(mt.avgMs/1000).toFixed(1)+'s avg</span>','Target <b style="color:var(--gold-300)">25/25</b>',Math.round(mt.score/25*100)));
+  }
+  $('standing').innerHTML=rows.length?rows.join(''):
+    '<div class="empty" style="padding:6px 0">Add your subjects in <a href="../../account/profile/" style="color:var(--gold-300)">Edit Profile</a> to see your standing here.</div>';
+})();
 
 /* ---------- study calendar ---------- */
 var plan=SY.get('plan',null);

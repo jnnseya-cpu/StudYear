@@ -10,8 +10,12 @@
 
    Implemented by overriding the OS design tokens so every surface recolours,
    plus rounded fonts, floating cards, gamified bars and subtle motion.
+
+   NOTE: the rounded web font is loaded NON-blockingly by guard.js (a print→all
+   <link> swap), NOT via @import here — an @import to a blocked/slow font host
+   (school filters, privacy tools) would hold back this entire stylesheet and
+   leave the child on the dark theme. The theme must never depend on the font.
    ========================================================================== */
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap');
 
 :root{
   /* rounded, friendly typography */

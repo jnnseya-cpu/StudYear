@@ -550,6 +550,15 @@
         kl.rel = 'stylesheet'; kl.href = base + 'kids.css'; kl.id = 'sy-kids';
         (document.head || document.documentElement).appendChild(kl);
         document.documentElement.setAttribute('data-sy-kids', '1');
+        // rounded kid font — loaded NON-blocking (print→all swap) so a blocked
+        // font host can never delay or prevent the theme from applying
+        if (!document.getElementById('sy-kids-font')) {
+          var kf = document.createElement('link');
+          kf.id = 'sy-kids-font'; kf.rel = 'stylesheet'; kf.media = 'print';
+          kf.href = 'https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap';
+          kf.onload = function () { this.media = 'all'; };
+          (document.head || document.documentElement).appendChild(kf);
+        }
       }
     }
   } catch (e) {}
