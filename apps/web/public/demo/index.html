@@ -111,7 +111,7 @@ function seedSchoolStore(){
     {email:'student@demo.studyear',name:'Emily Carter',cohort:'10A',year:'Year 10'},
     {email:'jayden@demo.studyear',name:'Jayden Osei',cohort:'10A',year:'Year 10'},
     {email:'sofia@demo.studyear',name:'Sofia Almeida',cohort:'10A',year:'Year 10'},
-    {email:'liam@demo.studyear',name:'Liam Whitfield',cohort:'11B',year:'Year 11'},
+    {email:'liam@demo.studyear',name:'Liam Whitfield',cohort:'11B',year:'Year 11',send:true},
     {email:'aisha@demo.studyear',name:'Aisha Rahman',cohort:'11B',year:'Year 11'},
     {email:'tomas@demo.studyear',name:'Tomas Kovacs',cohort:'11B',year:'Year 11'}]);
   /* light live accounts behind the roster so drill-downs show real data */
@@ -129,6 +129,33 @@ function seedSchoolStore(){
   set('sy-school:'+SCH+':recordAccess',{'student@demo.studyear':{parent:true,by:'school@demo.studyear',when:iso(-7)}});
   seedHomework();
   seedEngagement();
+  seedSchoolOS();
+}
+/* Phase 3 school-OS demo data: structure, admissions pipeline, an exam session
+   with results, and a role assignment — so the leadership MIS + AI agents show
+   a full picture. Shapes mirror SYStructure/SYAdmissions/SYExams/SYRoles. */
+function seedSchoolOS(){
+  var P='sy-school:'+SCH+':',T='teacher@demo.studyear',TN='Daniel Mensah';
+  set(P+'structure',{years:['Year 10','Year 11'],subjects:['Mathematics','Physics','Chemistry','English Literature','History','Geography'],
+    classes:[{id:'c1',name:'10A/Ma1',year:'Year 10',subject:'Mathematics',teacher:T,teacherName:TN},
+             {id:'c2',name:'10A/Sc1',year:'Year 10',subject:'Physics',teacher:T,teacherName:TN},
+             {id:'c3',name:'11B/Ma2',year:'Year 11',subject:'Mathematics',teacher:T,teacherName:TN}]});
+  set(P+'admissions',[
+    {id:'ad1',name:'Oliver Bennett',year:'Year 10',stage:'offer',contact:'bennett@family.demo',notes:'',at:iso(-12),history:[{stage:'enquiry',at:iso(-20)},{stage:'application',at:iso(-16)},{stage:'assessment',at:iso(-14)},{stage:'offer',at:iso(-12)}]},
+    {id:'ad2',name:'Maya Patel',year:'Year 10',stage:'assessment',contact:'patel@family.demo',notes:'',at:iso(-8),history:[{stage:'enquiry',at:iso(-11)},{stage:'application',at:iso(-9)},{stage:'assessment',at:iso(-8)}]},
+    {id:'ad3',name:'Harry Dawson',year:'Year 11',stage:'enquiry',contact:'dawson@family.demo',notes:'',at:iso(-3),history:[{stage:'enquiry',at:iso(-3)}]},
+    {id:'ad4',name:'Grace Miller',year:'Year 10',stage:'accepted',contact:'miller@family.demo',notes:'',at:iso(-6),history:[{stage:'enquiry',at:iso(-15)},{stage:'application',at:iso(-12)},{stage:'offer',at:iso(-9)},{stage:'accepted',at:iso(-6)}]}]);
+  set(P+'exams',{sessions:[
+    {id:'ex1',name:'Y11 Maths Paper 1 (Mock)',subject:'Mathematics',board:'AQA',date:iso(-5),group:'Year 11',scheme:'gcse91'},
+    {id:'ex2',name:'Y10 Physics End-of-Unit',subject:'Physics',board:'',date:iso(-2),group:'Year 10',scheme:'gcse91'}],
+    entries:{ex1:{'liam@demo.studyear':{grade:'4',mark:'52'},'aisha@demo.studyear':{grade:'7',mark:'78'},'tomas@demo.studyear':{grade:'5',mark:'61'}},
+             ex2:{'student@demo.studyear':{grade:'8',mark:'84'},'jayden@demo.studyear':{grade:'5',mark:'58'},'sofia@demo.studyear':{grade:'7',mark:'72'}}}});
+  set(P+'roles',{roles:[
+    {id:'leader',name:'School leader',perms:{View:true,Create:true,Edit:true,Delete:true,Approve:true,Publish:true,Export:true,Share:true,Assign:true,Close:true,AccessAI:true,ViewSensitive:true,ManagePermissions:true,Impersonate:true,CrossSchool:true,Historical:true}},
+    {id:'teacher',name:'Teacher',perms:{View:true,Create:true,Edit:true,Approve:false,Publish:true,Export:true,Share:true,Assign:true,Close:false,AccessAI:true,ViewSensitive:false,ManagePermissions:false,Impersonate:false,CrossSchool:false,Historical:false,Delete:false}},
+    {id:'ta',name:'Teaching assistant',perms:{View:true,AccessAI:true}},
+    {id:'safeguard',name:'Safeguarding lead',perms:{View:true,ViewSensitive:true,Historical:true,Export:true}}],
+    assignments:{'teacher@demo.studyear':'teacher','school@demo.studyear':'leader'}});
 }
 /* Satchel-One school-engagement demo data: timetable, announcements, documents
    and behaviour points — so the school/teacher/student/parent consoles show the

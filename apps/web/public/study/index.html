@@ -250,6 +250,7 @@
 <script src="../exam.js"></script>
 <script src="../homework.js"></script>
 <script src="../schoolsuite.js"></script>
+<script src="../reach.js"></script>
 <div class="wrap">
 
 <header class="page">
@@ -294,6 +295,7 @@
   <button data-t="notices">📣 Notices</button>
   <button data-t="documents">📎 Documents</button>
   <button data-t="behaviour">🎁 My points</button>
+  <button data-t="settings">⚙ Settings</button>
   <button data-t="planner">🗓 Study planner</button>
   <button data-t="papers">📄 Past papers</button>
   <button data-t="create">✍️ Create your own</button>
@@ -840,6 +842,14 @@
   </div></div>
 </section>
 
+<!-- ============================ SETTINGS ============================ -->
+<section id="tab-settings">
+  <div class="grid"><div class="card c12">
+    <h3>⚙ Access &amp; data settings</h3><div class="sub">Low-data mode for slow connections, your language, and an offline study pack you can use with no internet.</div>
+    <div id="rc-mount" style="margin-top:12px"></div>
+  </div></div>
+</section>
+
 <!-- ==================== COMPREHENSION & REASONING ==================== -->
 <section id="tab-practice">
   <div class="grid">
@@ -1308,6 +1318,7 @@ function showTab(t){
   if(t==="notices"&&window.SYAnnounce){try{SYAnnounce.mountFeed(document.getElementById("an-mount"),{role:"students",email:_em});}catch(e){}}
   if(t==="documents"&&window.SYDocs){try{SYDocs.mountBrowse(document.getElementById("dc-mount"),{role:"students",viewerEmail:_em});}catch(e){}}
   if(t==="behaviour"&&window.SYBehaviour){try{SYBehaviour.mountStudent(document.getElementById("bh-mount"),{email:_em});}catch(e){}}
+  if(t==="settings"&&window.SYReach){try{SYReach.mountSettings(document.getElementById("rc-mount"));}catch(e){}}
 }
 document.getElementById("tabs").addEventListener("click",e=>{
   const b=e.target.closest("button"); if(!b) return;

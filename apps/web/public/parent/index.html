@@ -120,6 +120,7 @@
 <script src="../record.js"></script>
 <script src="../homework.js"></script>
 <script src="../schoolsuite.js"></script>
+<script src="../reach.js"></script>
 <div class="wrap">
 
 <div class="top">
@@ -213,7 +214,9 @@
   <div class="card c6"><h3>🗓 Your child's timetable</h3><div class="sub">Their weekly lessons as published by school.</div><div id="tt-parent-mount" style="margin-top:10px"></div></div>
   <div class="card c6"><h3>📎 School documents</h3><div class="sub">Letters, policies and resources shared with parents.</div><div id="dc-parent-mount" style="margin-top:10px"></div></div>
   <div class="card c12"><h3>✉️ Message the school</h3><div class="sub">A private message thread with your child's school.</div><div id="cm-parent-mount" style="margin-top:10px"></div></div>
+  <div class="card c6"><h3>⚙ Access &amp; data settings</h3><div class="sub">Low-data mode, language, and an offline pack of your child's work.</div><div id="rc-parent-mount" style="margin-top:10px"></div></div>
 </div>
+<script>try{if(window.SYReach)SYReach.mountSettings(document.getElementById('rc-parent-mount'));}catch(e){}</script>
 
 <!-- deep view (per most-recent child) -->
 <div id="deep" style="display:none">

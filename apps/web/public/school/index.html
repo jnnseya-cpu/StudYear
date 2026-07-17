@@ -79,6 +79,9 @@
 <body>
 <script src="../guard.js" data-role="school" data-base="../"></script>
 <script src="../schoolsuite.js"></script>
+<script src="../schoolos.js"></script>
+<script src="../agents.js"></script>
+<script src="../reach.js"></script>
 <div class="shell">
 <aside>
   <a class="slogo" href="../">⌂ <b class="wm">StudYear</b></a>
@@ -278,6 +281,25 @@
     <div class="card c12"><h3>👤 Student 360</h3><div class="sub">Every student's connected record — attainment, attendance, behaviour, homework, interventions and an AI briefing.</div><div id="s360-school-mount" style="margin-top:10px"></div></div>
     <div class="card c6"><h3>✉️ Family messaging</h3><div class="sub">Private message threads with each family.</div><div id="cm-school-mount" style="margin-top:10px"></div></div>
     <div class="card c6"><h3>🪑 Seating plans</h3><div class="sub">Arrange any class into a seating grid.</div><div id="se-school-mount" style="margin-top:10px"></div></div>
+  </div>
+
+  <!-- ==================== AI INTELLIGENCE (the moat) ==================== -->
+  <div class="grid" style="margin-top:16px">
+    <div class="card c12"><h3>🧠 AI intelligence agents</h3><div class="sub">Live findings computed from your school's real data — homework, attendance, behaviour, mastery and operations — each with a recommended action.</div><div id="ag-school-mount" style="margin-top:10px"></div></div>
+  </div>
+
+  <!-- ==================== SCHOOL OPERATING SYSTEM (MIS) ==================== -->
+  <div class="grid" style="margin-top:16px">
+    <div class="card c12"><h3>🏗 Academic structure</h3><div class="sub">Year groups, subjects and teaching classes — the canonical model the rest of the OS maps onto.</div><div id="os-struct-mount" style="margin-top:10px"></div></div>
+    <div class="card c6"><h3>📝 Admissions</h3><div class="sub">Applicant pipeline: enquiry → application → offer → enrolled (auto-adds to the roster).</div><div id="os-adm-mount" style="margin-top:10px"></div></div>
+    <div class="card c6"><h3>🎓 Examinations</h3><div class="sub">Exam sessions, entries and results across grade schemes; feeds Student 360 and readiness.</div><div id="os-exam-mount" style="margin-top:10px"></div></div>
+    <div class="card c12"><h3>🔐 Roles &amp; permissions</h3><div class="sub">Define what each role may do across 16 permission dimensions, and assign staff — the audit-ready access model.</div><div id="os-roles-mount" style="margin-top:10px"></div></div>
+  </div>
+
+  <!-- ==================== REACH & INTEGRATIONS ==================== -->
+  <div class="grid" style="margin-top:16px">
+    <div class="card c6"><h3>🔌 Integrations hub</h3><div class="sub">Connect Google Classroom, Teams, your MIS (Wonde/SIMS/Arbor), SSO and payments. External systems map into StudYear's model.</div><div id="ig-school-mount" style="margin-top:10px"></div></div>
+    <div class="card c6"><h3>📲 Parent communication channels</h3><div class="sub">Email &amp; push work now; SMS, WhatsApp and Voice activate once their provider is connected.</div><div id="ch-school-mount" style="margin-top:10px"></div></div>
   </div>
 </main>
 </div>
@@ -886,6 +908,13 @@ function loadDemoSchool(){
     if(window.SYStudent360) SYStudent360.mount(document.getElementById('s360-school-mount'),{code:code});
     if(window.SYComms) SYComms.mountStaff(document.getElementById('cm-school-mount'),{code:code,byName:nm});
     if(window.SYSeating) SYSeating.mountEditor(document.getElementById('se-school-mount'),{code:code});
+    if(window.SYAgents) SYAgents.mountConsole(document.getElementById('ag-school-mount'),{code:code});
+    if(window.SYStructure) SYStructure.mountSchool(document.getElementById('os-struct-mount'),{code:code});
+    if(window.SYAdmissions) SYAdmissions.mountSchool(document.getElementById('os-adm-mount'),{code:code});
+    if(window.SYExams) SYExams.mountSchool(document.getElementById('os-exam-mount'),{code:code});
+    if(window.SYRoles) SYRoles.mountSchool(document.getElementById('os-roles-mount'),{code:code});
+    if(window.SYIntegrations) SYIntegrations.mountSchool(document.getElementById('ig-school-mount'),{code:code});
+    if(window.SYChannels) SYChannels.mountSchool(document.getElementById('ch-school-mount'),{code:code});
   }catch(e){}
 })();
 </script>
