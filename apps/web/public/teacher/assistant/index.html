@@ -11,6 +11,7 @@
 <script src="../../export.js"></script>
 <script src="../../exam.js"></script>
 <script src="../../makers.js"></script>
+<script src="../../homework.js"></script>
 <div class="shell"><main>
   <div class="k">Institutional staff</div><h1>AI Teaching Assistant</h1>
   <p class="lede">Your AI teaching partner — lesson plans, differentiated work, homework, quizzes, marking, feedback, parent emails and more, in seconds.</p>
@@ -24,6 +25,13 @@
   </div>
   <div class="out" id="out" style="display:none"></div>
   <div class="note">Preview generates from structured templates on-device (no AI credits). Live models adapt to each student's Academic Twin with the backend.</div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="k">Set &amp; track</div><h2 style="font-family:var(--serif);margin:4px 0 2px">Homework</h2>
+    <p class="lede" style="margin:0 0 8px">Set homework to your class — students get it in their To-Do automatically, submit online,
+      and you mark it with AI-suggested feedback. Parents see it's done. Draft instructions with AI in one click.</p>
+    <div id="hw-teach-mount"></div>
+  </div>
 
   <div class="card" style="margin-top:16px">
     <div class="k">Assessment</div><h2 style="font-family:var(--serif);margin:4px 0 2px">Exam Paper Builder</h2>
@@ -101,6 +109,15 @@ function genStatic(s,l,t){
 }
 $('go').onclick=gen;
 
+/* ---- Homework: set to the class, students submit, teacher marks, parents see ---- */
+if(window.SYHomework&&$('hw-teach-mount')){
+  SYHomework.mountTeacher($('hw-teach-mount'),{
+    schoolCode:TW.schoolCode||SY.get('schoolCode',null),
+    teacher:SY.session.email, teacherName:SY.session.name,
+    subjects:(SEC.subjects&&SEC.subjects.length)?SEC.subjects:undefined,
+    levels:(SEC.levels&&SEC.levels.length)?SEC.levels:undefined
+  });
+}
 /* ---- Exam Paper Builder: branded to the school, metered from the school ACU pool ---- */
 if(window.SYExam&&$('exam-mount')){
   var code=TW.schoolCode||null;

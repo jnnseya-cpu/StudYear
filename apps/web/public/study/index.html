@@ -248,6 +248,7 @@
 <script src="../ai.js"></script>
 <script src="../export.js"></script>
 <script src="../exam.js"></script>
+<script src="../homework.js"></script>
 <div class="wrap">
 
 <header class="page">
@@ -287,6 +288,7 @@
 </div>
 <nav class="tabs" id="tabs">
   <button data-t="search" class="on">🔎 Find resources</button>
+  <button data-t="homework">📥 Homework</button>
   <button data-t="planner">🗓 Study planner</button>
   <button data-t="papers">📄 Past papers</button>
   <button data-t="create">✍️ Create your own</button>
@@ -789,6 +791,18 @@
   </div>
 </section>
 
+<!-- ============================ HOMEWORK ============================ -->
+<section id="tab-homework">
+  <div class="grid">
+    <div class="card c12">
+      <h3>📥 Homework from your teacher</h3>
+      <div class="sub">Everything your teacher sets appears here. Open a task to read it, get AI help to understand it,
+        check your draft, then submit — your teacher marks it and your parent can see it's done.</div>
+      <div id="hw-mount" style="margin-top:12px"></div>
+    </div>
+  </div>
+</section>
+
 <!-- ==================== COMPREHENSION & REASONING ==================== -->
 <section id="tab-practice">
   <div class="grid">
@@ -1251,6 +1265,7 @@ function showTab(t){
   document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));
   document.querySelectorAll("main>section").forEach(s=>s.classList.toggle("on",s.id==="tab-"+t));
   if(t==="progress") renderProgress();
+  if(t==="homework"&&window.SYHomework){try{SYHomework.mountStudent(document.getElementById("hw-mount"),{email:(SY&&SY.session&&SY.session.email)||""});}catch(e){}}
 }
 document.getElementById("tabs").addEventListener("click",e=>{
   const b=e.target.closest("button"); if(!b) return;

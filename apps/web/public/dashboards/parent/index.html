@@ -73,6 +73,7 @@
 </head>
 <body>
 <script src="../../guard.js" data-role="parent" data-base="../../"></script>
+<script src="../../homework.js"></script>
 <div id="tip"></div>
 <div class="wrap">
 
@@ -104,6 +105,11 @@ if(h.indexOf('../')===0&&h.indexOf('app/')===-1&&h!=='../'+s.role+'/')a.remove()
     </div>
   </div>
   <div id="children"></div>
+  <div class="card c12" id="hw-parent-card" style="margin-top:14px;display:none">
+    <h3 style="font-family:var(--serif)">📥 Homework</h3>
+    <div class="note" style="font-style:normal;margin-bottom:4px">What your child's teachers have set, whether it's submitted, and the grades &amp; feedback.</div>
+    <div id="hw-parent-mount"></div>
+  </div>
 </section>
 
 <!-- ============================== PARENT (sample analytics) ============================== -->
@@ -335,6 +341,14 @@ function render(){
   el('children').querySelectorAll('[data-unlink]').forEach(function(b){b.onclick=function(){
     var kids=SY.get('children',[]);kids.splice(+b.dataset.unlink,1);SY.set('children',kids);render();
   }});
+  /* homework the child's teachers set — status, grades & feedback */
+  try{
+    var hwCard=el('hw-parent-card');
+    if(hwCard&&window.SYHomework){
+      if(kids.length){ hwCard.style.display=''; SYHomework.mountParent(el('hw-parent-mount'),{children:kids}); }
+      else hwCard.style.display='none';
+    }
+  }catch(e){}
 }
 
 function doLink(code,retried){
