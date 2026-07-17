@@ -423,32 +423,61 @@
               '<div style="font-size:13px;color:#AEBBD6;line-height:1.55;margin-bottom:14px">Confirm your password for <b style="color:#EAF1FF">' + String(s.email || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }) + '</b> so linking and sync work on this network. Your sign-in stays active.</div>' +
               '<input type="password" id="sy-reauth-pw" autocomplete="current-password" placeholder="Your StudYear password" style="width:100%;padding:12px 13px;border-radius:10px;border:1px solid rgba(150,170,210,.4);background:#0A1224;color:#fff;font-size:14px;outline:none;box-sizing:border-box">' +
               '<div id="sy-reauth-err" style="color:#FF8A8A;font-size:12.5px;margin-top:9px;display:none"></div>' +
+              '<div id="sy-reauth-reset" style="font-size:12.5px;margin-top:10px;display:none"><a href="#" id="sy-reauth-resetlink" style="color:#8FC2EC;text-decoration:underline">Email me a link to reset my cloud password</a></div>' +
               '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">' +
               '<button id="sy-reauth-cancel" type="button" style="padding:10px 15px;border-radius:9px;border:1px solid rgba(150,170,210,.3);background:none;color:#AEBBD6;font-weight:600;cursor:pointer">Cancel</button>' +
               '<button id="sy-reauth-ok" type="button" style="padding:10px 18px;border-radius:9px;border:none;background:#3D8FD1;color:#fff;font-weight:700;cursor:pointer">Reconnect</button></div>';
             ov.appendChild(card);
             (document.body || document.documentElement).appendChild(ov);
             var pw = card.querySelector('#sy-reauth-pw'), err = card.querySelector('#sy-reauth-err'),
-              okB = card.querySelector('#sy-reauth-ok'), cB = card.querySelector('#sy-reauth-cancel');
+              okB = card.querySelector('#sy-reauth-ok'), cB = card.querySelector('#sy-reauth-cancel'),
+              resetWrap = card.querySelector('#sy-reauth-reset'), resetLink = card.querySelector('#sy-reauth-resetlink');
             setTimeout(function () { try { pw.focus(); } catch (e) {} }, 60);
             function done(v) { try { ov.remove(); } catch (e) {} resolve(v); }
+            function fail(msg, offerReset) {
+              okB.disabled = false; okB.textContent = 'Reconnect';
+              err.textContent = msg; err.style.display = 'block';
+              if (resetWrap) resetWrap.style.display = offerReset ? 'block' : 'none';
+              try { pw.select(); } catch (e) {}
+            }
             function submit() {
               var p = pw.value;
               if (!p) { err.textContent = 'Enter your password.'; err.style.display = 'block'; return; }
               okB.disabled = true; okB.textContent = 'Reconnecting…'; err.style.display = 'none';
-              /* provision-or-sign-in: if this account was never mirrored into
-                 the cloud (created while the network blocked the servers),
-                 signIn fails — so fall back to signUp with the same password to
-                 create the cloud account and obtain a token. */
-              Promise.resolve(cl.signIn(s.email, p)).then(function (r) {
-                if (r) return true;
-                if (cl.signUp) return Promise.resolve(cl.signUp(s.email, p, s.name, s.role)).catch(function () { return false; });
-                return false;
-              }).then(function (r) {
-                if (r) { try { if (cl.reconnect) cl.reconnect(); } catch (e) {} done(true); }
-                else { okB.disabled = false; okB.textContent = 'Reconnect'; err.textContent = "That password wasn't recognised. Please try again."; err.style.display = 'block'; try { pw.select(); } catch (e) {} }
-              }).catch(function () { okB.disabled = false; okB.textContent = 'Reconnect'; err.textContent = "Couldn't reach StudYear just now — please try again."; err.style.display = 'block'; });
+              if (resetWrap) resetWrap.style.display = 'none';
+              /* reauth reports WHY it failed, so the message is honest: a wrong
+                 password, a cloud password that drifted from the local one, or a
+                 network/server problem are no longer all shown as "wrong password". */
+              var attempt = cl.reauth
+                ? cl.reauth(s.email, p)
+                : Promise.resolve(cl.signIn(s.email, p)).then(function (r) {
+                    if (r) return { ok: true };
+                    if (cl.signUp) return Promise.resolve(cl.signUp(s.email, p, s.name, s.role)).then(function (x) { return { ok: !!x, reason: x ? 'provisioned' : 'wrong_password' }; }).catch(function () { return { ok: false, reason: 'network' }; });
+                    return { ok: false, reason: 'wrong_password' };
+                  });
+              Promise.resolve(attempt).then(function (res) {
+                res = res || { ok: false, reason: 'network' };
+                if (res.ok) { try { if (cl.reconnect) cl.reconnect(); } catch (e) {} done(true); return; }
+                if (res.reason === 'wrong_password')
+                  fail("That password doesn't match your StudYear cloud account. If you've changed your password on another device, reset your cloud password below.", true);
+                else if (res.reason === 'weak_password')
+                  fail('Your cloud account needs a password of at least 6 characters. Reset it below, then reconnect.', true);
+                else if (res.reason === 'offline')
+                  fail("StudYear's cloud isn't configured on this build. Linking works once you're online on the live site.", false);
+                else
+                  fail("Couldn't reach StudYear's servers on this network — this is a connection problem, not your password. Linking keeps retrying; try again, or switch networks (e.g. mobile data).", false);
+              }).catch(function () { fail("Couldn't reach StudYear just now — please try again.", false); });
             }
+            if (resetLink) resetLink.onclick = function (e) {
+              e.preventDefault();
+              if (!cl.resetPassword) return;
+              resetLink.textContent = 'Sending…';
+              Promise.resolve(cl.resetPassword(s.email)).then(function () {
+                err.style.display = 'block'; err.style.color = '#8ee0a5';
+                err.textContent = 'Reset link sent to ' + String(s.email || '') + ' — set a new password, then reconnect here with it.';
+                if (resetWrap) resetWrap.style.display = 'none';
+              }).catch(function () { resetLink.textContent = 'Couldn\'t send the reset email — try again.'; });
+            };
             okB.onclick = submit; cB.onclick = function () { done(false); };
             pw.addEventListener('keydown', function (e) { if (e.key === 'Enter') submit(); });
           });

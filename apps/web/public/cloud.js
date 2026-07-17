@@ -168,38 +168,63 @@
     return all[email];
   }
 
-  function idp(action, body) {
-    return fetch(gbase('idt') + '/v1/accounts:' + action + '?key=' + encodeURIComponent(CFG.apiKey), {
+  function idpAt(base, action, body) {
+    return fetch(base + '/v1/accounts:' + action + '?key=' + encodeURIComponent(CFG.apiKey), {
       method: 'POST', keepalive: true,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
-    }).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error((j.error && j.error.message) || 'auth failed'); return j; }); });
+    }).then(function (r) { return r.json().then(function (j) { if (!r.ok) { var e = new Error((j.error && j.error.message) || 'auth failed'); e.authError = true; throw e; } return j; }); });
+  }
+  /* A rejection from idpAt is either a real auth error (marked authError — the
+     server answered, e.g. INVALID_PASSWORD) or a transport failure (fetch threw,
+     e.g. a broken proxy rewrite / blocked host). Auth errors propagate; transport
+     failures on the proxy retry the SAME call DIRECTLY against Google, which works
+     on any network that allows googleapis.com — so a dead proxy never blocks sign-in. */
+  function idp(action, body) {
+    return idpAt(gbase('idt'), action, body).catch(function (e) {
+      if (!e || e.authError) throw e;                 // real auth error — surface it
+      if (!GAPI) throw e;                              // already direct — nothing to fall back to
+      return idpAt('https://identitytoolkit.googleapis.com', action, body);
+    });
   }
 
-  /** valid ID token for the account, refreshing when expired; null if none */
+  /** valid ID token for the account, refreshing when expired; null if none.
+      The refresh retries directly against Google if the proxy transport fails,
+      mirroring idp() — a broken proxy must not silently invalidate the session. */
+  function refreshAt(base, refreshToken) {
+    return fetch(base + '/v1/token?key=' + encodeURIComponent(CFG.apiKey), {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(refreshToken)
+    });
+  }
   async function token(email) {
     if (!CFG) return null;
     var t = toks()[email];
     if (!t || !t.refreshToken) return null;
     if (t.idToken && Date.now() < t.exp) return t.idToken;
     try {
-      var r = await fetch(gbase('sec') + '/v1/token?key=' + encodeURIComponent(CFG.apiKey), {
-        method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(t.refreshToken)
-      });
+      var r;
+      try { r = await refreshAt(gbase('sec'), t.refreshToken); }
+      catch (e) { if (!GAPI) throw e; r = await refreshAt('https://securetoken.googleapis.com', t.refreshToken); }
       if (!r.ok) return null;
       return saveTok(email, await r.json()).idToken;
     } catch (e) { return null; }
   }
 
-  async function api(path, method, body, email) {
-    var tk = await token(email);
-    if (!tk) throw new Error('not signed in to cloud');
-    var r = await fetch(gbase('fn') + path, {
+  function apiAt(base, path, method, tk, body) {
+    return fetch(base + path, {
       method: method || 'GET', keepalive: method === 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tk },
       body: body ? JSON.stringify(body) : undefined
     });
+  }
+  async function api(path, method, body, email) {
+    var tk = await token(email);
+    if (!tk) throw new Error('not signed in to cloud');
+    var direct = CFG && CFG.apiBase ? CFG.apiBase.replace(/\/$/, '') : '';
+    var r;
+    try { r = await apiAt(gbase('fn'), path, method, tk, body); }
+    catch (e) { if (!GAPI || !direct) throw e; r = await apiAt(direct, path, method, tk, body); } // proxy dead → direct
     var j = await r.json().catch(function () { return {}; });
     if (!r.ok) throw new Error(j.error || ('api ' + r.status));
     return j;
@@ -247,6 +272,42 @@
       schedulePush(email);
       return true;
     } catch (e) { return false; }
+  }
+
+  /* Diagnostic reconnect: sign in, and if the account was never mirrored to the
+     cloud, provision it — returning WHY it failed instead of a single opaque
+     boolean. This lets the UI tell a genuinely-wrong password apart from a
+     server/network problem apart from a cloud password that drifted from the
+     local one — the three cases the old signIn collapsed into "wrong password".
+       -> { ok:true, reason:'signed_in'|'provisioned' }
+       -> { ok:false, reason:'offline'|'network'|'wrong_password'|'weak_password' } */
+  async function reauth(email, pw) {
+    await whenReady();
+    if (!CFG) return { ok: false, reason: 'offline' };
+    try {
+      saveTok(email, await race(idp('signInWithPassword', { email: email, password: pw, returnSecureToken: true })));
+      schedulePush(email);
+      return { ok: true, reason: 'signed_in' };
+    } catch (e) {
+      var m = String((e && e.message) || '');
+      if (/INVALID_PASSWORD|INVALID_LOGIN_CREDENTIALS|MISSING_PASSWORD/.test(m)) return { ok: false, reason: 'wrong_password' };
+      if (/EMAIL_NOT_FOUND/.test(m)) {
+        // account exists locally but was never created in the cloud — make it now
+        try {
+          saveTok(email, await race(idp('signUp', { email: email, password: pw, returnSecureToken: true })));
+          try { await race(api('/register', 'POST', { name: '', role: '' }, email)); } catch (e2) {}
+          try { schedulePush(email); } catch (e3) {}
+          return { ok: true, reason: 'provisioned' };
+        } catch (e4) {
+          var m2 = String((e4 && e4.message) || '');
+          if (/EMAIL_EXISTS/.test(m2)) return { ok: false, reason: 'wrong_password' }; // race: exists w/ another pw
+          if (/WEAK_PASSWORD/.test(m2)) return { ok: false, reason: 'weak_password' };
+          return { ok: false, reason: 'network' };
+        }
+      }
+      // cloud timeout / Failed to fetch / TypeError → transport, not a bad password
+      return { ok: false, reason: 'network' };
+    }
   }
 
   /* same digest the auth page and admin bulk-import use */
@@ -356,7 +417,7 @@
     catch (e) { return null; }
   }
 
-  window.SYCloud = { ready: ready, whenReady: whenReady, signUp: signUp, signIn: signIn,
+  window.SYCloud = { ready: ready, whenReady: whenReady, signUp: signUp, signIn: signIn, reauth: reauth,
     restore: restore, push: push, schedulePush: schedulePush, upload: upload, token: token,
     resetPassword: resetPassword, sendVerify: sendVerify,
     reachable: function () { return CLOUD_UP; }, reconnect: reconnect,
