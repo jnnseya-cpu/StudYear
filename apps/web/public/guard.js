@@ -217,7 +217,21 @@
     publishCode: function (code, kind) {
       try { localStorage.setItem('sy-code:' + code, s.email); } catch (e) {}
       if (s.demo) return;
-      cloudReady().then(function (c) { if (c) { try { c.dirPublish(String(code), kind || 'account', s.email); } catch (e) {} } });
+      var tries = 0;
+      function attempt() {
+        cloudReady().then(function (c) {
+          if (!c) return;
+          try {
+            Promise.resolve(c.dirPublish(String(code), kind || 'account', s.email)).then(function (ok) {
+              // token may settle a moment after load — retry a few times so the
+              // code always reaches the backend and a parent on another device
+              // can resolve it without either side re-signing in.
+              if (!ok && ++tries < 4) setTimeout(attempt, 2500);
+            });
+          } catch (e) {}
+        });
+      }
+      attempt();
     },
     /** resolve a share code to an account email (or null) — same-device only */
     resolveCode: function (code) { try { return localStorage.getItem('sy-code:' + String(code).trim()); } catch (e) { return null; } },
@@ -377,6 +391,28 @@
       if (s.demo) return Promise.resolve(false);
       return cloudReady().then(function (c) { return c ? c.token(s.email).then(function (t) { return !!t; }).catch(function () { return false; }) : false; });
     },
+    /** Guarantee a live cloud session before an action that needs the backend
+        (linking, sync). If the token is missing — e.g. the first sign-in ran
+        while the network was blocking the servers — reconnect inline by
+        confirming the password, so the user never has to sign fully out.
+        Resolves true once a token is present. */
+    ensureCloud: function () {
+      if (s.demo) return Promise.resolve(false);
+      var self = this;
+      return this.cloudAuthed().then(function (ok) {
+        if (ok) return true;
+        return cloudReady().then(function (cl) {
+          if (!cl || !cl.signIn) return false;
+          var pw = window.prompt('Quick reconnect for ' + (s.email || 'your account') +
+            ':\n\nConfirm your StudYear password so linking and sync work on this network. (Your sign-in stays active.)');
+          if (!pw) return false;
+          return Promise.resolve(cl.signIn(s.email, pw)).then(function (r) {
+            if (r) { try { if (cl.reconnect) cl.reconnect(); } catch (e) {} }
+            return !!r;
+          }).catch(function () { return false; });
+        });
+      });
+    },
     /** my backend links: { inbound:[…people linked to me…], outbound:[…accounts I linked to…] } */
     myLinks: function () {
       if (s.demo) return Promise.resolve(null);
@@ -532,26 +568,24 @@
 
   // ---- KIDS theme: under-12 students (Primary / KS1 / KS2 / 11+) get the
   // StudYear Primary premium theme — light sky background, navy sidebar,
-  // rounded fonts, floating cards. Applied automatically from the study level
-  // (checked across every field it might live in), flips off if it changes.
+  // rounded fonts, floating cards. Applied automatically from the study level.
+  //
+  // It must NEVER silently fail: the study level lives in the personal profile
+  // which can be encrypted (E2E) and, on a device where the key hasn't been
+  // unlocked yet, momentarily unreadable — returning {} and mis-detecting the
+  // child as secondary. So we cache the primary/secondary decision in a PLAIN
+  // per-account flag, apply the theme SYNCHRONOUSLY from that flag on every
+  // page, and re-evaluate a few times as the profile becomes readable.
   try {
     if (s.role === 'student') {
-      var _kp = window.SY.get('profile', {}) || {};
-      // the level can live in a few fields depending on how the account/school
-      // set it — check them all so the theme is never silently missed
-      var _lvlStr = [_kp.level, _kp.yearGroup, _kp.year, _kp.keyStage, _kp.stage, _kp.phase]
-        .map(function (x) { return String(x || ''); }).join(' ');
-      var _isPrimary = /primary|eyfs|reception|infant|junior|\bks\s*[12]\b|key\s*stage\s*[12]|\b11\s*\+/i.test(_lvlStr)
-        || /\byear\s*[1-6]\b/i.test(_lvlStr);
-      // never treat secondary "Year 7-13" / GCSE / A-level as primary
-      if (/gcse|a-?level|as-?level|\bks\s*[345]\b|key\s*stage\s*[345]|\byear\s*(7|8|9|1[0-3])\b|sixth form|btec|ib\b|undergrad|degree/i.test(_lvlStr)) _isPrimary = false;
-      if (_isPrimary) {
-        var kl = document.createElement('link');
-        kl.rel = 'stylesheet'; kl.href = base + 'kids.css'; kl.id = 'sy-kids';
-        (document.head || document.documentElement).appendChild(kl);
+      var _KIDFLAG = 'sy-kids:' + (s.email || 'anon');
+      var applyKids = function () {
+        var l = document.getElementById('sy-kids');
+        if (l) return;
+        l = document.createElement('link');
+        l.rel = 'stylesheet'; l.href = base + 'kids.css'; l.id = 'sy-kids';
+        (document.head || document.documentElement).appendChild(l);
         document.documentElement.setAttribute('data-sy-kids', '1');
-        // rounded kid font — loaded NON-blocking (print→all swap) so a blocked
-        // font host can never delay or prevent the theme from applying
         if (!document.getElementById('sy-kids-font')) {
           var kf = document.createElement('link');
           kf.id = 'sy-kids-font'; kf.rel = 'stylesheet'; kf.media = 'print';
@@ -559,7 +593,51 @@
           kf.onload = function () { this.media = 'all'; };
           (document.head || document.documentElement).appendChild(kf);
         }
-      }
+      };
+      var removeKids = function () {
+        var l = document.getElementById('sy-kids'); if (l) l.remove();
+        document.documentElement.removeAttribute('data-sy-kids');
+      };
+      // classify the level string: 'primary' | 'secondary' | '' (unknown)
+      var classify = function () {
+        var kp = window.SY.get('profile', {}) || {};
+        var str = [kp.level, kp.yearGroup, kp.year, kp.keyStage, kp.stage, kp.phase]
+          .map(function (x) { return String(x || ''); }).join(' ');
+        // school-managed level is a second authoritative source
+        try {
+          var em = (s.email || '').toLowerCase();
+          for (var i = 0; i < localStorage.length; i++) {
+            var kk = localStorage.key(i), mm = kk && kk.match(/^sy-school:([^:]+):roster$/);
+            if (!mm) continue;
+            var mg = window.SY.schoolGet(mm[1], 'managed:' + em, {}) || {};
+            if (mg.level) str += ' ' + mg.level;
+          }
+        } catch (e) {}
+        if (!str.trim()) return '';
+        if (/gcse|a-?level|as-?level|\bks\s*[345]\b|key\s*stage\s*[345]|\byear\s*(7|8|9|1[0-3])\b|sixth form|btec|ib\b|undergrad|degree|college|university/i.test(str)) return 'secondary';
+        if (/primary|eyfs|reception|infant|junior|\bks\s*[12]\b|key\s*stage\s*[12]|\b11\s*\+|\byear\s*[1-6]\b/i.test(str)) return 'primary';
+        return '';
+      };
+      var evaluate = function () {
+        var c = classify();
+        if (c === 'primary') { try { localStorage.setItem(_KIDFLAG, '1'); } catch (e) {} applyKids(); }
+        else if (c === 'secondary') { try { localStorage.setItem(_KIDFLAG, '0'); } catch (e) {} removeKids(); }
+        else { // unknown right now — fall back to the last known decision
+          var cached = null; try { cached = localStorage.getItem(_KIDFLAG); } catch (e) {}
+          if (cached === '1') applyKids();
+        }
+      };
+      // 1) instant: apply from the cached flag with zero delay (no dark flash)
+      try { if (localStorage.getItem(_KIDFLAG) === '1') applyKids(); } catch (e) {}
+      // 2) evaluate now, then again as the profile/E2E key becomes readable
+      evaluate();
+      setTimeout(evaluate, 250);
+      setTimeout(evaluate, 900);
+      setTimeout(evaluate, 2000);
+      try {
+        document.addEventListener('DOMContentLoaded', evaluate);
+        window.addEventListener('sy-e2e-ready', evaluate);
+      } catch (e) {}
     }
   } catch (e) {}
 
@@ -623,30 +701,61 @@
     }
   } catch (e) {}
 
-  // ---- cloud-unreachable banner ----
-  // Shows ONLY when StudYear's servers are genuinely unreachable — the
-  // same-origin proxy AND a direct call both failed (a network block, e.g. a
-  // school filter). Turns a silent failure (sign-in / linking / sync / AI not
-  // working) into a clear, honest message. Dismissible per session.
+  // ---- gentle self-healing connectivity indicator ----
+  // The OS never blames the user's network or tells them to switch. On the
+  // production domain we use the same-origin proxy, so real sign-in / linking /
+  // sync / AI calls work without the client ever reaching Google directly. If a
+  // background health check can't be confirmed, we show a small, calm
+  // "reconnecting" pill (bottom, not a scary top bar), keep retrying quietly,
+  // and remove it the moment connectivity is confirmed. Work is saved locally
+  // and syncs automatically — so a blip is never a dead end.
   try {
     if (!s.demo) {
-      var _cloudBanner = false;
-      var showCloudBanner = function () {
-        if (_cloudBanner) return;
-        try { if (sessionStorage.getItem('sy-cloud-banner-x')) return; } catch (e) {}
-        _cloudBanner = true;
-        var b = document.createElement('div');
-        b.id = 'sy-cloud-banner';
-        b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#B45309;color:#fff;' +
-          'font:600 13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
-          'padding:10px 42px 10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.28);text-align:center';
-        b.innerHTML = '⚠ Can’t reach StudYear’s servers on this network. Sign-in, parent &amp; school linking, sync and AI need internet access to StudYear — try another network (e.g. a phone hotspot).' +
-          '<button aria-label="Dismiss" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:22px;line-height:1;cursor:pointer">×</button>';
-        (document.body || document.documentElement).appendChild(b);
-        b.querySelector('button').onclick = function () { try { sessionStorage.setItem('sy-cloud-banner-x', '1'); } catch (e) {} b.remove(); };
+      var _pill = null, _retryTimer = null, _tries = 0;
+      var removePill = function () {
+        if (_retryTimer) { clearTimeout(_retryTimer); _retryTimer = null; }
+        _tries = 0;
+        if (_pill) { _pill.remove(); _pill = null; }
       };
-      window.addEventListener('sy-cloud-status', function (e) { if (e.detail && e.detail.up === false) showCloudBanner(); });
-      if (window.__SYCLOUD_UP === false) showCloudBanner();
+      var scheduleRetry = function () {
+        if (_retryTimer) return;
+        var delay = Math.min(30000, 3000 * Math.pow(1.6, Math.min(_tries, 6)));
+        _retryTimer = setTimeout(function () {
+          _retryTimer = null; _tries++;
+          try {
+            if (window.SYCloud && SYCloud.reconnect) {
+              Promise.resolve(SYCloud.reconnect()).then(function () {
+                if (window.__SYCLOUD_UP === false) scheduleRetry();
+              });
+            } else { scheduleRetry(); }
+          } catch (e) { scheduleRetry(); }
+        }, delay);
+      };
+      var showPill = function () {
+        if (_pill) return;
+        _pill = document.createElement('div');
+        _pill.id = 'sy-cloud-pill';
+        _pill.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:99999;' +
+          'background:rgba(17,24,39,.92);color:#E5EDF7;border:1px solid rgba(148,163,184,.28);' +
+          'font:600 12.5px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
+          'padding:9px 14px;border-radius:999px;box-shadow:0 6px 22px rgba(0,0,0,.32);display:flex;align-items:center;gap:9px;max-width:calc(100vw - 24px)';
+        _pill.innerHTML = '<span style="width:9px;height:9px;border-radius:50%;background:#F5B301;box-shadow:0 0 0 0 rgba(245,179,1,.6);animation:syPulse 1.6s infinite;flex:none"></span>' +
+          '<span>Reconnecting to StudYear… your work is saved and will sync automatically.</span>';
+        try {
+          var st = document.createElement('style');
+          st.textContent = '@keyframes syPulse{0%{box-shadow:0 0 0 0 rgba(245,179,1,.55)}70%{box-shadow:0 0 0 7px rgba(245,179,1,0)}100%{box-shadow:0 0 0 0 rgba(245,179,1,0)}}';
+          document.head.appendChild(st);
+        } catch (e) {}
+        (document.body || document.documentElement).appendChild(_pill);
+        scheduleRetry();
+      };
+      window.addEventListener('sy-cloud-status', function (e) {
+        if (!e.detail) return;
+        if (e.detail.up === false) showPill();
+        else removePill();                 // up === true OR null (unknown/optimistic) → all clear
+      });
+      // React only to a definite "down"; optimistic/unknown stays silent.
+      if (window.__SYCLOUD_UP === false) showPill();
     }
   } catch (e) {}
 

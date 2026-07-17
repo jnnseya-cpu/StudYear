@@ -734,19 +734,20 @@ $('advisor-go').onclick=askAdvisor;
 $('advisor-in').addEventListener('keydown',function(e){if(e.key==='Enter')askAdvisor()});
 
 /* ---- link a child ---- */
-$('link-go').onclick=function(){
-  var code=$('link-code').value.trim();
-  if(!/^[A-Za-z0-9-]{4,}$/.test(code)){toast('Enter the link code from your child\'s account.');return}
+function doLink(code,retried){
   var btn=$('link-go');btn.disabled=true;
-  SY.connectCode(code,'parent').then(function(r){
-    btn.disabled=false;
+  return SY.connectCode(code,'parent').then(function(r){
     if(!r||!r.email){
-      SY.cloudAuthed().then(function(ok){
-        toast(ok?'No account found for that code. Ask your child to open StudYear once, then check the code in My Account → Connect a parent.'
-                :'Reconnect needed — please sign out and sign back in, then try the code again.');
+      return SY.cloudAuthed().then(function(ok){
+        if(ok){btn.disabled=false;toast('No account found for that code. Ask your child to open StudYear once, then check the code in My Account → Connect a parent.');return;}
+        if(retried){btn.disabled=false;toast('Still can\'t reach StudYear to link — check your connection and try again shortly.');return;}
+        return SY.ensureCloud().then(function(done){
+          if(!done){btn.disabled=false;toast('Reconnect cancelled — confirm your password to link across devices.');return;}
+          return doLink(code,true);
+        });
       });
-      return;
     }
+    btn.disabled=false;
     var email=r.email,name=r.name||SY.accountName(email);
     var kids=SY.get('children',[]);
     if(kids.some(function(k){return k.email===email})){toast('That child is already linked.');$('link-code').value='';return}
@@ -757,7 +758,12 @@ $('link-go').onclick=function(){
       if(!pl.some(function(p){return p.email===SY.session.email})){pl.push({email:SY.session.email,name:SY.session.name});SY.writeAccount(email,'parentLinks',pl);}}catch(e){}
     SY.log('family','Linked child: '+name,'Live monitoring active.');
     $('link-code').value=''; toast('Linked to '+name+' — live intelligence active'); render();
-  });
+  }).catch(function(){btn.disabled=false;toast('Couldn\'t link just now — please try again in a moment.');});
+}
+$('link-go').onclick=function(){
+  var code=$('link-code').value.trim();
+  if(!/^[A-Za-z0-9-]{4,}$/.test(code)){toast('Enter the link code from your child\'s account.');return}
+  doLink(code,false);
 };
 
 /* ---- tabs ---- */

@@ -41,27 +41,69 @@
   function publishStatus() {
     try { window.__SYCLOUD_UP = CLOUD_UP; window.dispatchEvent(new CustomEvent('sy-cloud-status', { detail: { up: CLOUD_UP } })); } catch (e) {}
   }
+  function useProxy() {
+    GAPI = { idt: '/gapi/idt', sec: '/gapi/sec', fn: '/gapi/fn', st: '/gapi/storage' };
+    try { window.__SYGAPI = GAPI; } catch (e) {}
+  }
+  function isProdHost() {
+    var h = location.hostname || '';
+    return /(^|\.)studyear\.com$/.test(h) || /\.vercel\.app$/.test(h);
+  }
   function directHealth() {
     if (!(CFG && CFG.apiBase)) { CLOUD_UP = false; return; }
     return fetch(CFG.apiBase.replace(/\/$/, '') + '/health', { cache: 'no-store' })
       .then(function (r) { CLOUD_UP = !!r.ok; }).catch(function () { CLOUD_UP = false; });
   }
-  function probeProxy() {
-    // Only the production domain (and Vercel previews) carry the /gapi rewrites.
-    // Elsewhere (GitHub Pages, localhost, dev, offline) call Google directly, so
-    // we never emit a stray probe. On production we probe; a missing rewrite
-    // safely falls back to a direct health check, and if BOTH fail the cloud is
-    // genuinely unreachable (network block) and we flag it for a banner.
-    var h = location.hostname || '';
-    if (!(/(^|\.)studyear\.com$/.test(h) || /\.vercel\.app$/.test(h))) return Promise.resolve();
+  /* Confirm the same-origin proxy in the BACKGROUND — never a gate. The page
+     already loaded from this origin, so /gapi/* is reachable and Vercel makes
+     the Google hop server-side; real sign-in / linking / sync / AI calls work
+     even if this health check 404s or cold-starts. We retry quietly, and only
+     the status flag (for a soft "reconnecting" hint) depends on it. */
+  function verifyProxy(tries) {
     return fetch('/gapi/fn/health', { cache: 'no-store' })
       .then(function (r) {
-        if (r.ok) { GAPI = { idt: '/gapi/idt', sec: '/gapi/sec', fn: '/gapi/fn', st: '/gapi/storage' }; try { window.__SYGAPI = GAPI; } catch (e) {} CLOUD_UP = true; return; }
-        return directHealth();       // proxy missing → is Google reachable directly?
+        if (r.ok) { CLOUD_UP = true; publishStatus(); return; }
+        throw new Error('probe ' + r.status);
       })
-      .catch(directHealth)
-      .then(publishStatus);
+      .catch(function () {
+        if (tries > 1) {
+          return new Promise(function (res) { setTimeout(res, 2000); })
+            .then(function () { return verifyProxy(tries - 1); });
+        }
+        /* Health unconfirmed after retries. The health function is optional —
+           real sign-in / linking / sync / AI still route through the same-origin
+           proxy. So we DON'T probe Google directly (the very host a filtered
+           network blocks); we leave status "unknown" and stay optimistic. */
+        CLOUD_UP = null; publishStatus();
+      });
   }
+  function isLocalHost() {
+    var h = location.hostname || '';
+    return h === 'localhost' || h === '127.0.0.1' || h === '' || h === '0.0.0.0' || /\.local$/.test(h);
+  }
+  function probeProxy() {
+    if (isProdHost()) {
+      // Optimistic on production: use the same-origin proxy immediately so the
+      // user never depends on their network reaching Google directly. Confirm
+      // in the background; do NOT block startup or flag "unreachable" up front.
+      useProxy(); CLOUD_UP = true; publishStatus();
+      verifyProxy(4);
+      return Promise.resolve();
+    }
+    // Localhost / dev / file: stay silent (status unknown) — no probes, no pill.
+    if (isLocalHost()) return Promise.resolve();
+    // GitHub Pages backup (no /gapi proxy): call Google directly and report a
+    // status from a direct health check so the gentle indicator is honest.
+    return Promise.resolve(directHealth()).then(publishStatus);
+  }
+  /* Re-check connectivity on demand (e.g. the browser comes back online). */
+  function reconnect() {
+    if (isProdHost()) { useProxy(); return verifyProxy(3); }
+    return Promise.resolve(directHealth()).then(publishStatus);
+  }
+  try {
+    window.addEventListener('online', function () { reconnect(); });
+  } catch (e) {}
   function gbase(kind) {
     if (GAPI) return GAPI[kind];
     return ({ idt: 'https://identitytoolkit.googleapis.com', sec: 'https://securetoken.googleapis.com',
@@ -303,7 +345,7 @@
   window.SYCloud = { ready: ready, whenReady: whenReady, signUp: signUp, signIn: signIn,
     restore: restore, push: push, schedulePush: schedulePush, upload: upload, token: token,
     resetPassword: resetPassword, sendVerify: sendVerify,
-    reachable: function () { return CLOUD_UP; },
+    reachable: function () { return CLOUD_UP; }, reconnect: reconnect,
     dirPublish: dirPublish, dirResolve: dirResolve, dirConnect: dirConnect,
     dirDisconnect: dirDisconnect, dirLinks: dirLinks };
 

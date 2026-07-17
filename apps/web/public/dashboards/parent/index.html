@@ -337,19 +337,21 @@ function render(){
   }});
 }
 
-el('link-go').onclick=function(){
-  var code=el('link-code').value.trim();
-  if(!/^[A-Za-z0-9-]{4,}$/.test(code)){alert('Enter the link code from your child\'s account.');return}
+function doLink(code,retried){
   var b=el('link-go');b.disabled=true;
-  SY.connectCode(code,'parent').then(function(r){
-    b.disabled=false;
+  return SY.connectCode(code,'parent').then(function(r){
     if(!r||!r.email){
-      SY.cloudAuthed().then(function(ok){
-        alert(ok?'No account found for that code. Ask your child to open StudYear once, then check the code in My Account → Connect a parent.'
-                :'Reconnect needed — please sign out and sign back in, then try the code again.');
+      return SY.cloudAuthed().then(function(ok){
+        if(ok){b.disabled=false;alert('No account found for that code. Ask your child to open StudYear once, then check the code in My Account → Connect a parent.');return;}
+        if(retried){b.disabled=false;alert('Still can\'t reach StudYear to link. Please check your connection and try again in a moment.');return;}
+        /* not signed in to the cloud — reconnect inline, then retry once */
+        return SY.ensureCloud().then(function(done){
+          if(!done){b.disabled=false;alert('Reconnect cancelled. Confirm your password to link across devices.');return;}
+          return doLink(code,true);
+        });
       });
-      return;
     }
+    b.disabled=false;
     var email=r.email,name=r.name||SY.accountName(email);
     var kids=SY.get('children',[]);
     if(kids.some(function(k){return k.email===email})){alert('That child is already linked.');el('link-code').value='';return}
@@ -364,7 +366,12 @@ el('link-go').onclick=function(){
     SY.log('family','Linked child: '+name,'You can now see their shared progress.');
     el('link-code').value='';
     render();
-  });
+  }).catch(function(){b.disabled=false;alert('Couldn\'t link just now — please try again in a moment.');});
+}
+el('link-go').onclick=function(){
+  var code=el('link-code').value.trim();
+  if(!/^[A-Za-z0-9-]{4,}$/.test(code)){alert('Enter the link code from your child\'s account.');return}
+  doLink(code,false);
 };
 render();
 try{SY.myLinks().then(function(g){
