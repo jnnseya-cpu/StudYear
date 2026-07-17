@@ -275,6 +275,9 @@
     <div class="card c6"><h3>📣 Whole-school announcements</h3><div class="sub">Post notices to students, parents or specific classes; track acknowledgements.</div><div id="an-school-mount" style="margin-top:10px"></div></div>
     <div class="card c6"><h3>📎 Documents library</h3><div class="sub">Publish policies, letters and resources to families and students.</div><div id="dc-school-mount" style="margin-top:10px"></div></div>
     <div class="card c12"><h3>🎁 Behaviour &amp; rewards</h3><div class="sub">House points across the school — award, track the leaderboard, and see who needs support.</div><div id="bh-school-mount" style="margin-top:10px"></div></div>
+    <div class="card c12"><h3>👤 Student 360</h3><div class="sub">Every student's connected record — attainment, attendance, behaviour, homework, interventions and an AI briefing.</div><div id="s360-school-mount" style="margin-top:10px"></div></div>
+    <div class="card c6"><h3>✉️ Family messaging</h3><div class="sub">Private message threads with each family.</div><div id="cm-school-mount" style="margin-top:10px"></div></div>
+    <div class="card c6"><h3>🪑 Seating plans</h3><div class="sub">Arrange any class into a seating grid.</div><div id="se-school-mount" style="margin-top:10px"></div></div>
   </div>
 </main>
 </div>
@@ -880,6 +883,9 @@ function loadDemoSchool(){
     if(window.SYAnnounce) SYAnnounce.mountPoster(document.getElementById('an-school-mount'),{code:code,by:email,byName:nm});
     if(window.SYDocs) SYDocs.mountManage(document.getElementById('dc-school-mount'),{code:code,by:email,byName:nm});
     if(window.SYBehaviour) SYBehaviour.mountTeacher(document.getElementById('bh-school-mount'),{code:code,by:email,byName:nm});
+    if(window.SYStudent360) SYStudent360.mount(document.getElementById('s360-school-mount'),{code:code});
+    if(window.SYComms) SYComms.mountStaff(document.getElementById('cm-school-mount'),{code:code,byName:nm});
+    if(window.SYSeating) SYSeating.mountEditor(document.getElementById('se-school-mount'),{code:code});
   }catch(e){}
 })();
 </script>

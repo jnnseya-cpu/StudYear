@@ -298,4 +298,178 @@
     }
   };
   window.SYBehaviour = Behaviour;
+
+  /* ======================================================================
+     ATTENDANCE read helper — sy-school:<code>:attendance keyed by
+     "date|cohort|session" -> {records:{email:status}} (written by the register).
+     ====================================================================== */
+  function attendancePct(code,email){
+    var em=String(email||'').toLowerCase(); var store=sg(code,'attendance',{})||{}; var present=0,total=0;
+    Object.keys(store).forEach(function(k){ var rec=store[k]&&store[k].records; if(!rec||!(em in rec))return; total++; var st=rec[em]; if(st==='present'||st==='late')present++; });
+    return {pct: total?Math.round(100*present/total):null, sessions:total};
+  }
+
+  /* ======================================================================
+     STUDENT 360 — one connected profile aggregating academics, homework,
+     behaviour, attendance, interventions & timetable for staff. Permissioned:
+     the caller passes the school code the student is rostered on.
+     ====================================================================== */
+  function academics(email){
+    var quizzes=SY.readAccount(email,'quizzes',[])||[]; var diag=(SY.readAccount(email,'diagnostics',[])||[])[0]||null;
+    var by={}; quizzes.forEach(function(q){(by[q.subj]=by[q.subj]||[]).push(q.pct);});
+    var mastery={}; Object.keys(by).forEach(function(s){mastery[s]=Math.round(by[s].reduce(function(a,b){return a+b;},0)/by[s].length);});
+    if(diag&&diag.list)diag.list.forEach(function(x){mastery[x.s]=mastery[x.s]!=null?Math.round((mastery[x.s]+x.mastery)/2):x.mastery;});
+    var subs=Object.keys(mastery); var overall=subs.length?Math.round(subs.reduce(function(a,s){return a+mastery[s];},0)/subs.length):null;
+    var weak=subs.length?subs.reduce(function(a,b){return mastery[a]<mastery[b]?a:b;}):null;
+    return {mastery:mastery, overall:overall, weak:weak, diag:diag};
+  }
+  var Student360 = {
+    /** data bundle for one student (staff view) */
+    data:function(code,email){
+      var em=String(email||'').toLowerCase();
+      var prof=SY.readAccount(em,'profile',{})||{};
+      var ac=academics(em);
+      var hw=(window.SYHomework&&window.SYHomework.forStudent)?window.SYHomework.forStudent(em):[];
+      var hwBy={}; hw.forEach(function(x){hwBy[x.status]=(hwBy[x.status]||0)+1;});
+      var bh=BH.forStudent(code,em);
+      var att=attendancePct(code,em);
+      var iv=(sg(code,'interventions',[])||[]).filter(function(i){return String(i.student||'').toLowerCase()===em&&i.status!=='closed';});
+      return {email:em, name:nameFor(em), group:groupOf(code,em), profile:prof, academics:ac,
+        homework:{items:hw, by:hwBy}, behaviour:bh, attendance:att, interventions:iv};
+    },
+    mount:function(el,opts){ opts=opts||{}; if(!el)return; var code=opts.code||SY.get('schoolCode',null)||((SY.get('teacherProfile',{})||{}).schoolCode);
+      if(!code){el.innerHTML='<div class="note">Link your school first.</div>';return;}
+      var rl=roster(code)||[]; var cur=(opts.email||(rl[0]&&rl[0].email)||'').toLowerCase();
+      function render(){
+        var d=Student360.data(code,cur);
+        var att=d.attendance.pct==null?'—':d.attendance.pct+'%';
+        var over=d.academics.overall==null?'—':d.academics.overall+'%';
+        var h='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><label class="f" style="margin:0">Student</label>'+
+          '<select id="s360-pick">'+rl.map(function(r){return '<option value="'+esc(r.email)+'"'+(String(r.email).toLowerCase()===cur?' selected':'')+'>'+esc(r.name||nameFor(r.email))+'</option>';}).join('')+'</select>'+
+          (d.group?'<span class="note" style="margin:0">'+esc(d.group)+'</span>':'')+'</div>';
+        h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px">'+
+          tile(over,'Attainment')+tile(att,'Attendance')+tile(d.behaviour.total,'Behaviour pts')+
+          tile((d.homework.by.marked||0)+'/'+d.homework.items.length,'HW marked')+
+          tile(d.homework.by.overdue||0,'HW overdue',(d.homework.by.overdue?'var(--crit,#E06060)':''))+
+          tile(d.interventions.length,'Interventions')+'</div>';
+        // knowledge mastery
+        var subs=Object.keys(d.academics.mastery);
+        h+='<h3 style="margin-top:14px;font-size:14px">Knowledge mastery</h3>';
+        h+=subs.length?subs.map(function(s){var m=d.academics.mastery[s];return bar(s,m);}).join(''):'<div class="note" style="font-style:normal">No quiz/diagnostic data yet.</div>';
+        // behaviour badges
+        if(d.behaviour.badges.length) h+='<h3 style="margin-top:14px;font-size:14px">Badges</h3>'+badgeRow(d.behaviour.badges);
+        // interventions
+        h+='<h3 style="margin-top:14px;font-size:14px">Active interventions</h3>';
+        h+=d.interventions.length?d.interventions.map(function(i){return '<div class="note" style="font-style:normal">• '+esc(i.reason||'Intervention')+' — '+esc(i.status||'active')+(i.by?' ('+esc(nameFor(i.by))+')':'')+'</div>';}).join(''):'<div class="note" style="font-style:normal">None open.</div>';
+        // AI briefing
+        h+='<div style="margin-top:14px"><button class="btn sm" id="s360-brief">🧠 Generate AI briefing</button><div id="s360-brief-out" class="note" style="margin-top:8px"></div></div>';
+        el.innerHTML=h;
+        document.getElementById('s360-pick').onchange=function(){cur=this.value.toLowerCase();render();};
+        document.getElementById('s360-brief').onclick=function(){ brief(d); };
+      }
+      function tile(v,label,col){ return '<div><div style="font-family:var(--serif,Georgia);font-size:26px;color:'+(col||'var(--gold-300)')+'">'+v+'</div><div class="note" style="margin:0">'+label+'</div></div>'; }
+      function bar(label,m){ m=m||0; var c=m>=70?'var(--good,#5CBB7B)':m>=50?'var(--warn,#E0A93F)':'var(--crit,#E06060)';
+        return '<div style="margin-top:6px"><div style="display:flex;justify-content:space-between;font-size:12.5px"><span>'+esc(label)+'</span><span class="note" style="margin:0">'+m+'%</span></div><div style="height:7px;border-radius:5px;background:rgba(150,170,210,.16);margin-top:3px"><div style="height:100%;width:'+m+'%;background:'+c+';border-radius:5px"></div></div></div>'; }
+      function brief(d){ var box=document.getElementById('s360-brief-out'); if(!box)return;
+        if(!(window.SYAI&&SYAI.ready())){ box.textContent='Connect AI (AI Gateway) to generate a written briefing. Summary above is live from the data.'; return; }
+        box.textContent='Thinking…';
+        var facts='Student: '+d.name+' ('+(d.group||'')+')\nAttainment: '+(d.academics.overall||'n/a')+'%\nWeakest: '+(d.academics.weak||'n/a')+
+          '\nAttendance: '+(d.attendance.pct==null?'n/a':d.attendance.pct+'%')+'\nBehaviour points: '+d.behaviour.total+
+          '\nHomework: '+(d.homework.by.marked||0)+' marked, '+(d.homework.by.submitted||0)+' awaiting, '+(d.homework.by.overdue||0)+' overdue'+
+          '\nOpen interventions: '+d.interventions.length;
+        SYAI.ask('You are a school analyst writing a concise staff briefing on one student. Give: current position (2 lines), main risks (bullets), and 3 recommended actions with who owns each. Be specific and supportive.',facts,{maxTokens:500})
+          .then(function(t){ box.innerHTML=(window.SYAI&&SYAI.render)?SYAI.render(t):esc(t); }).catch(function(){ box.textContent='Could not reach AI just now.'; });
+      }
+      render();
+    }
+  };
+  window.SYStudent360 = Student360;
+
+  /* ======================================================================
+     COMMUNICATION — sy-school:<code>:messages = { studentEmail:[{role,name,
+     text,at}] }. A per-student message board school/teacher ⇄ parent share.
+     ====================================================================== */
+  var MSG = {
+    forStudent:function(code,email){ var all=sg(code,'messages',{})||{}; return all[String(email||'').toLowerCase()]||[]; },
+    post:function(code,email,m){ var all=sg(code,'messages',{})||{}; var em=String(email||'').toLowerCase(); all[em]=all[em]||[]; all[em].push({role:m.role,name:m.name||'',text:String(m.text||'').slice(0,2000),at:now()}); ss(code,'messages',all);
+      try{ SY.log&&SY.log('message','Message about '+nameFor(em),''); }catch(e){} return all[em]; }
+  };
+  function threadHtml(msgs){ return msgs.length?msgs.map(function(m){ var col=m.role==='parent'?'var(--good,#5CBB7B)':'var(--gold-300)';
+    return '<div style="margin:6px 0;font-size:13px"><b style="color:'+col+'">'+esc(m.name||(m.role==='parent'?'Parent':'School'))+'</b> <span class="note" style="margin:0">· '+fmtWhen(m.at)+'</span><div style="color:var(--ink-2);white-space:pre-wrap">'+esc(m.text)+'</div></div>';
+  }).join(''):'<div class="note" style="font-style:normal">No messages yet.</div>'; }
+  var Comms = {
+    forStudent:MSG.forStudent, post:MSG.post,
+    mountStaff:function(el,opts){ opts=opts||{}; if(!el)return; var code=opts.code||SY.get('schoolCode',null)||((SY.get('teacherProfile',{})||{}).schoolCode);
+      var name=opts.byName||(SY.session&&SY.session.name)||'School'; if(!code){el.innerHTML='<div class="note">Link your school to message families.</div>';return;}
+      var rl=roster(code)||[]; var cur=(opts.email||(rl[0]&&rl[0].email)||'').toLowerCase();
+      function render(){ var msgs=MSG.forStudent(code,cur);
+        var h='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><label class="f" style="margin:0">About</label>'+
+          '<select id="cm-pick">'+rl.map(function(r){return '<option value="'+esc(r.email)+'"'+(String(r.email).toLowerCase()===cur?' selected':'')+'>'+esc(r.name||nameFor(r.email))+'</option>';}).join('')+'</select></div>';
+        h+='<div style="border:1px solid var(--line);border-radius:10px;padding:10px;max-height:230px;overflow:auto">'+threadHtml(msgs)+'</div>';
+        h+='<div style="display:flex;gap:8px;margin-top:8px"><input id="cm-in" placeholder="Message '+esc(nameFor(cur))+'\'s parent…" style="flex:1"><button class="btn sm" id="cm-send">Send</button></div>';
+        el.innerHTML=h;
+        document.getElementById('cm-pick').onchange=function(){cur=this.value.toLowerCase();render();};
+        document.getElementById('cm-send').onclick=function(){ var i=document.getElementById('cm-in'); var t=(i.value||'').trim(); if(!t){say('Write a message');return;} MSG.post(code,cur,{role:'staff',name:name,text:t}); render(); };
+      }
+      render();
+    },
+    mountParent:function(el,opts){ opts=opts||{}; if(!el)return; var kids=opts.children||[]; var name=opts.name||(SY.session&&SY.session.name)||'Parent';
+      if(!kids.length){ el.innerHTML='<div class="note" style="font-style:normal">Link a child to message their school.</div>'; return; }
+      function codeForKid(email){ var cs=schoolsForEmail(email); return cs[0]||null; }
+      function render(){
+        el.innerHTML=kids.map(function(k,ki){ var code=codeForKid(k.email); var msgs=code?MSG.forStudent(code,k.email):[];
+          return '<div class="card" style="margin-bottom:10px"><b>'+esc(k.name||nameFor(k.email))+'</b>'+
+            (code?('<div style="border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:6px;max-height:200px;overflow:auto">'+threadHtml(msgs)+'</div>'+
+              '<div style="display:flex;gap:8px;margin-top:8px"><input class="cm-pin" data-k="'+ki+'" placeholder="Message the school…" style="flex:1"><button class="btn sm cm-psend" data-k="'+ki+'" data-code="'+esc(code)+'" data-em="'+esc(k.email)+'">Send</button></div>')
+              :'<div class="note" style="margin-top:6px">This child isn\'t linked to a school yet.</div>')+'</div>';
+        }).join('');
+        el.querySelectorAll('.cm-psend').forEach(function(b){b.onclick=function(){ var box=el.querySelector('.cm-pin[data-k="'+b.dataset.k+'"]'); var t=(box.value||'').trim(); if(!t){say('Write a message');return;} MSG.post(b.dataset.code,b.dataset.em,{role:'parent',name:name,text:t}); render(); };});
+      }
+      render();
+    }
+  };
+  window.SYComms = Comms;
+
+  /* ======================================================================
+     SEATING — sy-school:<code>:seating = { group:{cols,seats:[email|null,…]} }
+     ====================================================================== */
+  var SEAT = {
+    get:function(code,group){ var all=sg(code,'seating',{})||{}; return all[group]||{cols:5,seats:[]}; },
+    save:function(code,group,plan){ var all=sg(code,'seating',{})||{}; all[group]=plan; ss(code,'seating',all); },
+    auto:function(code,group){ var rl=roster(code).filter(function(r){var y=r.year||r.yearGroup||r.cohort||r.group;return !group||y===group||group==='Whole class';}); var p=SEAT.get(code,group); p.seats=rl.map(function(r){return String(r.email).toLowerCase();}); SEAT.save(code,group,p); return p; }
+  };
+  var Seating = {
+    get:SEAT.get, save:SEAT.save, auto:SEAT.auto,
+    mountEditor:function(el,opts){ opts=opts||{}; if(!el)return; var code=opts.code||SY.get('schoolCode',null)||((SY.get('teacherProfile',{})||{}).schoolCode);
+      if(!code){el.innerHTML='<div class="note">Link your school to build a seating plan.</div>';return;}
+      var gs=groups(code); if(!gs.length)gs=['Whole class']; var cur=opts.group||gs[0];
+      function render(){ var plan=SEAT.get(code,cur); var cols=plan.cols||5;
+        var rl=roster(code).filter(function(r){var y=r.year||r.yearGroup||r.cohort||r.group;return cur==='Whole class'||y===cur;});
+        var seated={}; (plan.seats||[]).forEach(function(e){if(e)seated[e]=1;});
+        var unseated=rl.filter(function(r){return !seated[String(r.email).toLowerCase()];});
+        var h='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><label class="f" style="margin:0">Class</label>'+
+          '<select id="se-group">'+gs.map(function(g){return '<option'+(g===cur?' selected':'')+'>'+esc(g)+'</option>';}).join('')+'</select>'+
+          '<label class="f" style="margin:0">Columns</label><input id="se-cols" type="number" min="2" max="8" value="'+cols+'" style="width:64px">'+
+          '<button class="btn ghost sm" id="se-auto">Auto-fill from roster</button>'+
+          '<button class="btn ghost sm" id="se-clear">Clear</button></div>';
+        h+='<div class="note" style="margin-bottom:6px">🧑‍🏫 Front of class · click an empty seat to place the next student, a filled seat to remove.</div>';
+        var seats=plan.seats||[]; var rows=Math.max(1,Math.ceil(Math.max(seats.length,rl.length)/cols));
+        h+='<div style="display:grid;grid-template-columns:repeat('+cols+',1fr);gap:6px">';
+        for(var i=0;i<rows*cols;i++){ var em=seats[i]; h+='<div class="se-seat" data-i="'+i+'" style="border:1px solid var(--line);border-radius:8px;min-height:44px;padding:5px;font-size:11.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center;background:'+(em?'rgba(217,174,85,.1)':'transparent')+'">'+(em?esc(nameFor(em).split(' ')[0]):'<span class="note" style="margin:0;opacity:.5">seat</span>')+'</div>'; }
+        h+='</div>';
+        h+='<div class="note" style="margin-top:8px">Not yet seated: '+(unseated.length?unseated.map(function(r){return esc(nameFor(r.email).split(' ')[0]);}).join(', '):'everyone placed ✓')+'</div>';
+        el.innerHTML=h;
+        document.getElementById('se-group').onchange=function(){cur=this.value;render();};
+        document.getElementById('se-cols').onchange=function(){var p=SEAT.get(code,cur);p.cols=Math.max(2,Math.min(8,+this.value||5));SEAT.save(code,cur,p);render();};
+        document.getElementById('se-auto').onclick=function(){SEAT.auto(code,cur);render();};
+        document.getElementById('se-clear').onclick=function(){var p=SEAT.get(code,cur);p.seats=[];SEAT.save(code,cur,p);render();};
+        el.querySelectorAll('.se-seat').forEach(function(c){c.onclick=function(){ var i=+c.dataset.i; var p=SEAT.get(code,cur); p.seats=p.seats||[];
+          if(p.seats[i]){ p.seats[i]=null; }
+          else { var placed={}; p.seats.forEach(function(e){if(e)placed[e]=1;}); var next=rl.filter(function(r){return !placed[String(r.email).toLowerCase()];})[0]; if(!next){say('Everyone is seated');return;} p.seats[i]=String(next.email).toLowerCase(); }
+          SEAT.save(code,cur,p); render(); };});
+      }
+      render();
+    }
+  };
+  window.SYSeating = Seating;
 })();

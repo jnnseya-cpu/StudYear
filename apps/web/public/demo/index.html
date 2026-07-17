@@ -167,6 +167,12 @@ function seedEngagement(){
     bh('b8','jayden@demo.studyear','Jayden Osei',-1,'Off-task','Focus',-2),
     bh('b9','jayden@demo.studyear','Jayden Osei',1,'Great answer / contribution','Participation',-1),
     bh('b10','liam@demo.studyear','Liam Whitfield',-1,'Missing homework','Homework',-3)]);
+  // family messages (school ⇄ parent about Emily)
+  set(P+'messages',{'student@demo.studyear':[
+    {role:'staff',name:TN,text:'Emily had a great week in Maths — really strong on completing the square. Keep it up!',at:iso(-2)},
+    {role:'parent',name:'Marcus Carter',text:'Thank you, that’s lovely to hear. We’ll keep practising at home.',at:iso(-1)}]});
+  // seating plan for Year 10
+  set(P+'seating',{'Year 10':{cols:5,seats:['student@demo.studyear','jayden@demo.studyear','sofia@demo.studyear']}});
 }
 /* Satchel-One Phase 1: the teacher→student→parent homework loop, pre-populated
    so the demo shows a live mix of marked, submitted, to-do and overdue work.

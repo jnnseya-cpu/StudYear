@@ -212,6 +212,7 @@
   <div class="card c6"><h3>📣 Notices from school</h3><div class="sub">Announcements for families. Acknowledge so school knows you've seen them.</div><div id="an-parent-mount" style="margin-top:10px"></div></div>
   <div class="card c6"><h3>🗓 Your child's timetable</h3><div class="sub">Their weekly lessons as published by school.</div><div id="tt-parent-mount" style="margin-top:10px"></div></div>
   <div class="card c6"><h3>📎 School documents</h3><div class="sub">Letters, policies and resources shared with parents.</div><div id="dc-parent-mount" style="margin-top:10px"></div></div>
+  <div class="card c12"><h3>✉️ Message the school</h3><div class="sub">A private message thread with your child's school.</div><div id="cm-parent-mount" style="margin-top:10px"></div></div>
 </div>
 
 <!-- deep view (per most-recent child) -->
@@ -370,6 +371,7 @@ function render(){
   try{if(window.SYAnnounce)SYAnnounce.mountFeed($('an-parent-mount'),{role:'parents',email:SY.session.email,viewerEmail:(kids[0]&&kids[0].email)});}catch(e){}
   try{if(window.SYTimetable&&kids[0])SYTimetable.mountParentChild($('tt-parent-mount'),kids[0].email);else if($('tt-parent-mount'))$('tt-parent-mount').innerHTML='<div class="note">Link a child to see their timetable.</div>';}catch(e){}
   try{if(window.SYDocs)SYDocs.mountBrowse($('dc-parent-mount'),{role:'parents',viewerEmail:(kids[0]&&kids[0].email)});}catch(e){}
+  try{if(window.SYComms)SYComms.mountParent($('cm-parent-mount'),{children:kids,name:SY.session.name});}catch(e){}
   if(!kids.length){
     $('snapshots').innerHTML='<div class="card c12"><div class="note" style="font-style:normal">No children linked yet. Enter your child\'s Parent Link Code above — you\'ll see live stability, momentum, subject progress and AI guidance.</div></div>';
     $('deep').style.display='none';

@@ -151,9 +151,15 @@ Core promise: **Every student understood. Every risk detected. Every interventio
 
 ## Implementation roadmap
 
-**Phase 1 — Close the classroom gap (makes StudYear a daily school platform):** Assignment Command Centre · teacher assignment builder · student to-do list · submission & marking · teacher–student task comments · parent assignment visibility · timetables · basic notices · documents · homework analytics.
+> **Delivery status (2026-07):** Phase 1 is **shipped**; Phase 2 is **substantially shipped** (see per-item ✅ below). Implementation lives in
+> `apps/web/public/homework.js` (assignments + comments + analytics) and
+> `apps/web/public/schoolsuite.js` (timetable, announcements, documents,
+> behaviour, Student 360, communications, seating), mounted additively on the
+> teacher / school / student (study) / parent consoles and seeded in the demo.
 
-**Phase 2 — School engagement layer:** attendance · behaviour · rewards/badges · interventions · parent notifications · Student 360 · seating plans · parent acknowledgements · communication centre · teacher mobile workflows.
+**Phase 1 — Close the classroom gap (makes StudYear a daily school platform):** ✅ Assignment Command Centre · ✅ teacher assignment builder · ✅ student to-do list · ✅ submission & marking · ✅ teacher–student task comments · ✅ parent assignment visibility · ✅ timetables · ✅ basic notices · ✅ documents · ✅ homework analytics. **— COMPLETE**
+
+**Phase 2 — School engagement layer:** ✅ attendance (register) · ✅ behaviour · ✅ rewards/badges · ✅ interventions (auto-logged from at-risk) · ✅ parent notifications (announcement acks) · ✅ Student 360 · ✅ seating plans · ✅ parent acknowledgements · ✅ communication centre · ☐ teacher mobile workflows (native app — deferred). **— substantially complete**
 
 **Phase 3 — School operating system:** admissions · academic structure · staff directory · cover/absence · assessment · grade schemes · exams · roles/permissions · audit logs · MIS integrations.
 
