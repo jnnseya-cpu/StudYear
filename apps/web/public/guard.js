@@ -406,18 +406,44 @@
         Resolves true once a token is present. */
     ensureCloud: function () {
       if (s.demo) return Promise.resolve(false);
-      var self = this;
       return this.cloudAuthed().then(function (ok) {
         if (ok) return true;
         return cloudReady().then(function (cl) {
           if (!cl || !cl.signIn) return false;
-          var pw = window.prompt('Quick reconnect for ' + (s.email || 'your account') +
-            ':\n\nConfirm your StudYear password so linking and sync work on this network. (Your sign-in stays active.)');
-          if (!pw) return false;
-          return Promise.resolve(cl.signIn(s.email, pw)).then(function (r) {
-            if (r) { try { if (cl.reconnect) cl.reconnect(); } catch (e) {} }
-            return !!r;
-          }).catch(function () { return false; });
+          return new Promise(function (resolve) {
+            var ov = document.createElement('div');
+            ov.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(6,11,24,.72);' +
+              'display:flex;align-items:center;justify-content:center;padding:20px;' +
+              'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif';
+            var card = document.createElement('div');
+            card.style.cssText = 'background:#0F1830;border:1px solid rgba(120,150,200,.3);border-radius:16px;' +
+              'max-width:390px;width:100%;padding:22px;box-shadow:0 24px 60px rgba(0,0,0,.55);color:#EAF1FF';
+            card.innerHTML =
+              '<div style="font-weight:700;font-size:16.5px;margin-bottom:6px">Reconnect to StudYear</div>' +
+              '<div style="font-size:13px;color:#AEBBD6;line-height:1.55;margin-bottom:14px">Confirm your password for <b style="color:#EAF1FF">' + String(s.email || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }) + '</b> so linking and sync work on this network. Your sign-in stays active.</div>' +
+              '<input type="password" id="sy-reauth-pw" autocomplete="current-password" placeholder="Your StudYear password" style="width:100%;padding:12px 13px;border-radius:10px;border:1px solid rgba(150,170,210,.4);background:#0A1224;color:#fff;font-size:14px;outline:none;box-sizing:border-box">' +
+              '<div id="sy-reauth-err" style="color:#FF8A8A;font-size:12.5px;margin-top:9px;display:none"></div>' +
+              '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">' +
+              '<button id="sy-reauth-cancel" type="button" style="padding:10px 15px;border-radius:9px;border:1px solid rgba(150,170,210,.3);background:none;color:#AEBBD6;font-weight:600;cursor:pointer">Cancel</button>' +
+              '<button id="sy-reauth-ok" type="button" style="padding:10px 18px;border-radius:9px;border:none;background:#3D8FD1;color:#fff;font-weight:700;cursor:pointer">Reconnect</button></div>';
+            ov.appendChild(card);
+            (document.body || document.documentElement).appendChild(ov);
+            var pw = card.querySelector('#sy-reauth-pw'), err = card.querySelector('#sy-reauth-err'),
+              okB = card.querySelector('#sy-reauth-ok'), cB = card.querySelector('#sy-reauth-cancel');
+            setTimeout(function () { try { pw.focus(); } catch (e) {} }, 60);
+            function done(v) { try { ov.remove(); } catch (e) {} resolve(v); }
+            function submit() {
+              var p = pw.value;
+              if (!p) { err.textContent = 'Enter your password.'; err.style.display = 'block'; return; }
+              okB.disabled = true; okB.textContent = 'Reconnecting…'; err.style.display = 'none';
+              Promise.resolve(cl.signIn(s.email, p)).then(function (r) {
+                if (r) { try { if (cl.reconnect) cl.reconnect(); } catch (e) {} done(true); }
+                else { okB.disabled = false; okB.textContent = 'Reconnect'; err.textContent = "That password wasn't recognised. Please try again."; err.style.display = 'block'; try { pw.select(); } catch (e) {} }
+              }).catch(function () { okB.disabled = false; okB.textContent = 'Reconnect'; err.textContent = "Couldn't reach StudYear just now — please try again."; err.style.display = 'block'; });
+            }
+            okB.onclick = submit; cB.onclick = function () { done(false); };
+            pw.addEventListener('keydown', function (e) { if (e.key === 'Enter') submit(); });
+          });
         });
       });
     },

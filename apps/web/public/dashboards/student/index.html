@@ -249,6 +249,16 @@ try{
 }catch(e){}
 $('copy-code').onclick=function(){
   (navigator.clipboard?navigator.clipboard.writeText(code):Promise.reject()).then(function(){$('copy-code').textContent='Copied ✓';setTimeout(function(){$('copy-code').textContent='Copy code for parent'},1500)},function(){});
+  /* sharing moment: make sure the code is registered on the backend so a
+     parent on another device can resolve it. If this session lost its cloud
+     token (first sign-in happened while the network blocked the servers),
+     reconnect inline, then publish — so the code always works cross-device. */
+  try{
+    if(SY.cloudAuthed)SY.cloudAuthed().then(function(ok){
+      if(ok){try{SY.publishCode(code,'account')}catch(e){}}
+      else if(SY.ensureCloud)SY.ensureCloud().then(function(done){if(done){try{SY.publishCode(code,'account')}catch(e){}}});
+    });
+  }catch(e){}
 };
 
 /* ---------- tiles ---------- */
