@@ -128,6 +128,45 @@ function seedSchoolStore(){
   });
   set('sy-school:'+SCH+':recordAccess',{'student@demo.studyear':{parent:true,by:'school@demo.studyear',when:iso(-7)}});
   seedHomework();
+  seedEngagement();
+}
+/* Satchel-One school-engagement demo data: timetable, announcements, documents
+   and behaviour points — so the school/teacher/student/parent consoles show the
+   full engagement loop live. Shapes mirror SYTimetable/SYAnnounce/SYDocs/SYBehaviour. */
+function seedEngagement(){
+  var T='teacher@demo.studyear',TN='Daniel Mensah';
+  var P='sy-school:'+SCH+':';
+  // timetable — a Year 10 week
+  var TT=[
+    [0,1,'Mathematics','R12'],[0,2,'Physics','Lab 2'],[0,4,'English Literature','R7'],
+    [1,1,'Chemistry','Lab 1'],[1,3,'Mathematics','R12'],[1,5,'PE','Gym'],
+    [2,2,'English Literature','R7'],[2,3,'Physics','Lab 2'],[2,4,'History','R3'],
+    [3,1,'Mathematics','R12'],[3,2,'Chemistry','Lab 1'],[3,5,'Geography','R9'],
+    [4,1,'Physics','Lab 2'],[4,2,'Mathematics','R12'],[4,3,'English Literature','R7']];
+  set(P+'timetable',TT.map(function(x,i){return {id:'tt'+i,group:'Year 10',day:x[0],slot:x[1],subject:x[2],room:x[3],teacher:(x[2]==='Mathematics'||x[2]==='Physics')?T:'',teacherName:(x[2]==='Mathematics'||x[2]==='Physics')?TN:''};}));
+  // announcements
+  set(P+'announcements',[
+    {id:'an1',title:'Parents’ evening — Thursday 6pm',body:'Year 10 parents’ evening this Thursday from 6pm in the main hall. Book a slot with each teacher via reception.',by:'school@demo.studyear',byName:'Priya Sharma',audience:'parents',group:'',priority:'important',at:iso(-2),reads:{}},
+    {id:'an2',title:'Non-uniform day Friday',body:'Wear your own clothes on Friday for £1 — all proceeds to the school charity partner.',by:'school@demo.studyear',byName:'Priya Sharma',audience:'all',group:'',priority:'info',at:iso(-1),reads:{}},
+    {id:'an3',title:'Year 10 mock exams start Monday',body:'Mocks begin Monday. Bring black pens, a calculator and your revision guide. Timetable is in Documents.',by:T,byName:TN,audience:'students',group:'',priority:'urgent',at:iso(0),reads:{}}]);
+  // documents
+  set(P+'documents',[
+    {id:'dc1',title:'Year 10 mock exam timetable',url:'',note:'Room and time for every paper.',category:'Letters',audience:'all',by:'school@demo.studyear',byName:'Priya Sharma',at:iso(-3)},
+    {id:'dc2',title:'GCSE Maths revision checklist',url:'',note:'Tick off each topic as you revise.',category:'Revision',audience:'students',by:T,byName:TN,at:iso(-2)},
+    {id:'dc3',title:'Uniform & behaviour policy 2026',url:'',note:'Please read with your child.',category:'Policies',audience:'all',by:'school@demo.studyear',byName:'Priya Sharma',at:iso(-10)}]);
+  // behaviour points
+  function bh(id,student,name,points,reason,cat,off){return {id:id,student:student,name:name,points:points,reason:reason,category:cat,by:T,byName:TN,at:iso(off)};}
+  set(P+'behaviour',[
+    bh('b1','student@demo.studyear','Emily Carter',3,'Outstanding progress','Progress',-6),
+    bh('b2','student@demo.studyear','Emily Carter',2,'Helping others','Kindness',-4),
+    bh('b3','student@demo.studyear','Emily Carter',2,'Homework excellence','Homework',-2),
+    bh('b4','student@demo.studyear','Emily Carter',2,'Great answer / contribution','Participation',-1),
+    bh('b5','sofia@demo.studyear','Sofia Almeida',2,'Excellent effort','Effort',-3),
+    bh('b6','aisha@demo.studyear','Aisha Rahman',3,'Outstanding progress','Progress',-2),
+    bh('b7','aisha@demo.studyear','Aisha Rahman',2,'Helping others','Kindness',-1),
+    bh('b8','jayden@demo.studyear','Jayden Osei',-1,'Off-task','Focus',-2),
+    bh('b9','jayden@demo.studyear','Jayden Osei',1,'Great answer / contribution','Participation',-1),
+    bh('b10','liam@demo.studyear','Liam Whitfield',-1,'Missing homework','Homework',-3)]);
 }
 /* Satchel-One Phase 1: the teacher→student→parent homework loop, pre-populated
    so the demo shows a live mix of marked, submitted, to-do and overdue work.

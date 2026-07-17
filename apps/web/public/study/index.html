@@ -249,6 +249,7 @@
 <script src="../export.js"></script>
 <script src="../exam.js"></script>
 <script src="../homework.js"></script>
+<script src="../schoolsuite.js"></script>
 <div class="wrap">
 
 <header class="page">
@@ -289,6 +290,10 @@
 <nav class="tabs" id="tabs">
   <button data-t="search" class="on">🔎 Find resources</button>
   <button data-t="homework">📥 Homework</button>
+  <button data-t="timetable">🗓 Timetable</button>
+  <button data-t="notices">📣 Notices</button>
+  <button data-t="documents">📎 Documents</button>
+  <button data-t="behaviour">🎁 My points</button>
   <button data-t="planner">🗓 Study planner</button>
   <button data-t="papers">📄 Past papers</button>
   <button data-t="create">✍️ Create your own</button>
@@ -803,6 +808,38 @@
   </div>
 </section>
 
+<!-- ============================ TIMETABLE ============================ -->
+<section id="tab-timetable">
+  <div class="grid"><div class="card c12">
+    <h3>🗓 My timetable</h3><div class="sub">Your weekly lessons, published by your school.</div>
+    <div id="tt-mount" style="margin-top:12px"></div>
+  </div></div>
+</section>
+
+<!-- ============================ NOTICES ============================ -->
+<section id="tab-notices">
+  <div class="grid"><div class="card c12">
+    <h3>📣 Notices from school</h3><div class="sub">Announcements from your teachers and school. Acknowledge so they know you've seen them.</div>
+    <div id="an-mount" style="margin-top:12px"></div>
+  </div></div>
+</section>
+
+<!-- ============================ DOCUMENTS ============================ -->
+<section id="tab-documents">
+  <div class="grid"><div class="card c12">
+    <h3>📎 Documents &amp; resources</h3><div class="sub">Checklists, revision materials and letters shared by your school.</div>
+    <div id="dc-mount" style="margin-top:12px"></div>
+  </div></div>
+</section>
+
+<!-- ============================ BEHAVIOUR ============================ -->
+<section id="tab-behaviour">
+  <div class="grid"><div class="card c12">
+    <h3>🎁 My points &amp; badges</h3><div class="sub">Points your teachers award for effort, great answers and helping others.</div>
+    <div id="bh-mount" style="margin-top:12px"></div>
+  </div></div>
+</section>
+
 <!-- ==================== COMPREHENSION & REASONING ==================== -->
 <section id="tab-practice">
   <div class="grid">
@@ -1266,6 +1303,11 @@ function showTab(t){
   document.querySelectorAll("main>section").forEach(s=>s.classList.toggle("on",s.id==="tab-"+t));
   if(t==="progress") renderProgress();
   if(t==="homework"&&window.SYHomework){try{SYHomework.mountStudent(document.getElementById("hw-mount"),{email:(SY&&SY.session&&SY.session.email)||""});}catch(e){}}
+  var _em=(SY&&SY.session&&SY.session.email)||"";
+  if(t==="timetable"&&window.SYTimetable){try{SYTimetable.mountStudent(document.getElementById("tt-mount"),{email:_em});}catch(e){}}
+  if(t==="notices"&&window.SYAnnounce){try{SYAnnounce.mountFeed(document.getElementById("an-mount"),{role:"students",email:_em});}catch(e){}}
+  if(t==="documents"&&window.SYDocs){try{SYDocs.mountBrowse(document.getElementById("dc-mount"),{role:"students",viewerEmail:_em});}catch(e){}}
+  if(t==="behaviour"&&window.SYBehaviour){try{SYBehaviour.mountStudent(document.getElementById("bh-mount"),{email:_em});}catch(e){}}
 }
 document.getElementById("tabs").addEventListener("click",e=>{
   const b=e.target.closest("button"); if(!b) return;

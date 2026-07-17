@@ -78,6 +78,7 @@
 </head>
 <body>
 <script src="../guard.js" data-role="school" data-base="../"></script>
+<script src="../schoolsuite.js"></script>
 <div class="shell">
 <aside>
   <a class="slogo" href="../">⌂ <b class="wm">StudYear</b></a>
@@ -266,6 +267,14 @@
 
     <div class="card c12" id="knowledge"><h3>Knowledge hub</h3><div class="sub">Shared resources set to your cohort</div>
       <div class="note" style="font-style:normal">Post class work and resources to your join code — linked students (and their parents, if allowed) receive it. Manage from People management.</div></div>
+  </div>
+
+  <!-- ==================== SCHOOL ENGAGEMENT SUITE ==================== -->
+  <div class="grid" style="margin-top:16px">
+    <div class="card c12"><h3>🗓 Timetable builder</h3><div class="sub">Set the weekly timetable per class — teachers, students and parents see it live.</div><div id="tt-school-mount" style="margin-top:10px"></div></div>
+    <div class="card c6"><h3>📣 Whole-school announcements</h3><div class="sub">Post notices to students, parents or specific classes; track acknowledgements.</div><div id="an-school-mount" style="margin-top:10px"></div></div>
+    <div class="card c6"><h3>📎 Documents library</h3><div class="sub">Publish policies, letters and resources to families and students.</div><div id="dc-school-mount" style="margin-top:10px"></div></div>
+    <div class="card c12"><h3>🎁 Behaviour &amp; rewards</h3><div class="sub">House points across the school — award, track the leaderboard, and see who needs support.</div><div id="bh-school-mount" style="margin-top:10px"></div></div>
   </div>
 </main>
 </div>
@@ -857,6 +866,21 @@ function loadDemoSchool(){
   SY.log('demo','Demo school loaded','50 students, 14 staff — no AI cost');
   location.reload();
 }
+})();
+</script>
+<script>
+/* School engagement suite — timetable, announcements, documents, behaviour.
+   Mounts on the leadership console so a school authors what teachers/students/
+   parents see. Additive; each guards on its module being present. */
+(function(){
+  try{
+    var code=(window.SY&&SY.get&&SY.get('schoolCode',null)); if(!code)return;
+    var email=(SY.session&&SY.session.email), nm=(SY.session&&SY.session.name)||'School';
+    if(window.SYTimetable) SYTimetable.mountSchool(document.getElementById('tt-school-mount'),{code:code});
+    if(window.SYAnnounce) SYAnnounce.mountPoster(document.getElementById('an-school-mount'),{code:code,by:email,byName:nm});
+    if(window.SYDocs) SYDocs.mountManage(document.getElementById('dc-school-mount'),{code:code,by:email,byName:nm});
+    if(window.SYBehaviour) SYBehaviour.mountTeacher(document.getElementById('bh-school-mount'),{code:code,by:email,byName:nm});
+  }catch(e){}
 })();
 </script>
 </body>

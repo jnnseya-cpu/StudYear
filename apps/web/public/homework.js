@@ -135,6 +135,36 @@
   function badge(status){ return '<span style="font-size:11px;font-weight:700;color:'+STATUS_COLOR[status]+'">'+STATUS_LABEL[status]+'</span>'; }
   function aiReady(){ return !!(window.SYAI && SYAI.ready()); }
 
+  /* --------- shared comment thread (teacher ⇄ student, parent-visible) ------- */
+  var WHO_LABEL={teacher:'Teacher',student:'Student',parent:'Parent'};
+  var WHO_COLOR={teacher:'var(--gold-300)',student:'var(--blue-300,#8FC2EC)',parent:'var(--good,#5CBB7B)'};
+  function fmtWhen(iso){try{var d=new Date(iso);return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
+  /* render the message thread for one submission; `canPost` shows the reply box */
+  function commentThread(a, em, whoAmI, canPost){
+    var sub=(a.submissions&&a.submissions[String(em).toLowerCase()])||{};
+    var msgs=sub.comments||[];
+    var h='<div class="hw-thread" style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px">'+
+      '<div class="note" style="margin-bottom:6px">💬 Messages'+(msgs.length?' ('+msgs.length+')':'')+'</div>';
+    if(!msgs.length) h+='<div class="note" style="font-style:normal;opacity:.8">No messages yet.'+(canPost?' Ask a question or leave a note below.':'')+'</div>';
+    else h+=msgs.map(function(m){
+      return '<div style="margin:6px 0;font-size:13px;line-height:1.5"><b style="color:'+(WHO_COLOR[m.who]||'var(--ink)')+'">'+(WHO_LABEL[m.who]||'—')+'</b> '+
+        '<span class="note" style="margin:0">· '+fmtWhen(m.at)+'</span><div style="color:var(--ink-2);white-space:pre-wrap">'+esc(m.text)+'</div></div>';
+    }).join('');
+    if(canPost) h+='<div style="display:flex;gap:8px;margin-top:8px"><input type="text" class="hw-cmt" data-em="'+esc(String(em).toLowerCase())+'" placeholder="Write a message…" style="flex:1">'+
+      '<button class="btn sm hw-cmt-send" data-em="'+esc(String(em).toLowerCase())+'">Send</button></div>';
+    return h+'</div>';
+  }
+  /* wire every reply box in `root` to API.comment; calls onSent() after posting */
+  function wireComments(root, code, id, whoAmI, onSent){
+    root.querySelectorAll('.hw-cmt-send').forEach(function(b){ b.onclick=function(){
+      var em=b.dataset.em; var box=root.querySelector('.hw-cmt[data-em="'+CSS.escape(em)+'"]'); if(!box)return;
+      var t=(box.value||'').trim(); if(!t){ say('Write a message first'); return; }
+      API.comment(code,id,em,whoAmI,t); box.value='';
+      try{ SY.log&&SY.log('homework','Message on homework',''); }catch(e){}
+      if(typeof onSent==='function') onSent(em);
+    };});
+  }
+
   /* ================= STUDENT ================= */
   API.mountStudent = function(el, opts){
     opts=opts||{}; var email=(opts.email||(SY&&SY.session&&SY.session.email)||'').toLowerCase();
@@ -185,8 +215,10 @@
             '<button class="btn" id="hw-submit">'+(sub.submittedAt?'Update submission':'Submit to teacher')+'</button>'+
           '</div><div id="hw-ai" class="note" style="margin-top:8px"></div></div>';
       }
+      h+=commentThread(a, email, 'student', true);
       h+='<div style="margin-top:12px"><button class="btn ghost sm" id="hw-back">← Back to homework</button></div></div>';
       el.innerHTML=h;
+      wireComments(el, code, id, 'student', function(){ openTask(code,id); });
       document.getElementById('hw-back').onclick=render;
       var sb=document.getElementById('hw-submit');
       if(sb) sb.onclick=function(){ var t=(document.getElementById('hw-ans').value||'').trim(), f=(document.getElementById('hw-file').value||'').trim();
@@ -232,8 +264,9 @@
       var mine=API.teacherAssignments(code,me);
       var h='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+
         '<button class="btn ghost sm hw-v'+(view==='set'?' on':'')+'" data-v="set">➕ Set homework</button>'+
-        '<button class="btn ghost sm hw-v'+(view==='mark'?' on':'')+'" data-v="mark">📥 Mark &amp; track ('+mine.length+')</button></div>';
-      if(view==='set') h+=setForm(); else h+=markList(mine);
+        '<button class="btn ghost sm hw-v'+(view==='mark'?' on':'')+'" data-v="mark">📥 Mark &amp; track ('+mine.length+')</button>'+
+        '<button class="btn ghost sm hw-v'+(view==='analytics'?' on':'')+'" data-v="analytics">📊 Analytics</button></div>';
+      if(view==='set') h+=setForm(); else if(view==='analytics') h+=analytics(mine); else h+=markList(mine);
       el.innerHTML=h; wire();
     }
     function setForm(){
@@ -266,6 +299,54 @@
           '<div style="margin-top:8px"><button class="btn sm" data-mark="'+a.id+'">Open marking →</button></div></div>';
       }).join('');
     }
+    /* completion analytics + at-risk register across this teacher's homework */
+    function analytics(mine){
+      var rl=roster(code)||[];
+      if(!mine.length) return '<div class="note">Set some homework first — completion rates and the at-risk register build automatically.</div>';
+      var totalCells=0, submittedCells=0, markedCells=0;
+      var missByStudent={}; // email -> count of assignments not submitted (past or due soon)
+      mine.forEach(function(a){
+        var subs=a.submissions||{};
+        rl.forEach(function(r){
+          var em=String(r.email||'').toLowerCase(); if(!em) return;
+          totalCells++;
+          var s=subs[em]||{};
+          if(s.submittedAt){ submittedCells++; if(s.grade!=null&&s.grade!=='') markedCells++; }
+          else { missByStudent[em]=(missByStudent[em]||0)+1; }
+        });
+      });
+      var compRate=totalCells?Math.round(100*submittedCells/totalCells):0;
+      var markRate=submittedCells?Math.round(100*markedCells/submittedCells):0;
+      // overdue-not-submitted count (the sharp end of at-risk)
+      var overdueMiss=0; mine.forEach(function(a){ if(a.dueAt&&daysUntil(a.dueAt)<0){ var subs=a.submissions||{}; rl.forEach(function(r){var em=String(r.email||'').toLowerCase(); if(em&&!(subs[em]&&subs[em].submittedAt))overdueMiss++;}); } });
+      var atRisk=Object.keys(missByStudent).map(function(em){return {em:em, miss:missByStudent[em]};})
+        .filter(function(x){return x.miss>0;}).sort(function(a,b){return b.miss-a.miss;});
+      var h='<div class="card"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px">'+
+        '<div><div style="font-family:var(--serif,Georgia);font-size:30px;color:var(--gold-300)">'+compRate+'%</div><div class="note" style="margin:0">Completion rate</div></div>'+
+        '<div><div style="font-family:var(--serif,Georgia);font-size:30px;color:var(--good,#5CBB7B)">'+markRate+'%</div><div class="note" style="margin:0">Submissions marked</div></div>'+
+        '<div><div style="font-family:var(--serif,Georgia);font-size:30px;color:'+(overdueMiss?'var(--crit,#E06060)':'var(--ink)')+'">'+overdueMiss+'</div><div class="note" style="margin:0">Overdue &amp; missing</div></div>'+
+        '<div><div style="font-family:var(--serif,Georgia);font-size:30px;color:var(--ink)">'+mine.length+'</div><div class="note" style="margin:0">Tasks set</div></div>'+
+        '</div>';
+      h+='<h3 style="margin-top:16px;font-size:14px">⚠ At-risk register — students with missing work</h3>';
+      if(!atRisk.length) h+='<div class="note" style="font-style:normal">Everyone is up to date. 🎉</div>';
+      else h+=atRisk.map(function(x){
+        var pct=Math.round(100*x.miss/mine.length);
+        var col=pct>=50?'var(--crit,#E06060)':pct>=25?'var(--warn,#E0A93F)':'var(--ink-3)';
+        return '<div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);padding:8px 0">'+
+          '<b style="flex:1;font-size:13.5px">'+esc(nameFor(x.em))+'</b>'+
+          '<span class="note" style="margin:0;color:'+col+'">'+x.miss+'/'+mine.length+' missing</span>'+
+          '<button class="btn ghost sm hw-a-plan" data-em="'+esc(x.em)+'">Log intervention</button></div>';
+      }).join('');
+      h+='<div class="note" style="margin-top:10px">Per-assignment breakdown</div>';
+      h+=mine.map(function(a){
+        var subs=a.submissions||{}, n=rl.length||Object.keys(subs).length||1;
+        var sub=rl.filter(function(r){var em=String(r.email||'').toLowerCase();return subs[em]&&subs[em].submittedAt;}).length;
+        var pct=Math.round(100*sub/n);
+        return '<div style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:12.5px"><span>'+esc(a.title)+'</span><span class="note" style="margin:0">'+pct+'%</span></div>'+
+          '<div style="height:7px;border-radius:5px;background:rgba(150,170,210,.16);overflow:hidden;margin-top:3px"><div style="height:100%;width:'+pct+'%;background:'+(pct>=70?'var(--good,#5CBB7B)':pct>=40?'var(--warn,#E0A93F)':'var(--crit,#E06060)')+'"></div></div></div>';
+      }).join('');
+      return h+'</div>';
+    }
     function markOne(a){
       var subs=a.submissions||{}, rl=roster(code)||[];
       /* union of rostered students + anyone who submitted */
@@ -283,10 +364,12 @@
           '<div class="two" style="margin-top:8px"><div><label class="f">Grade'+(a.maxScore?' / '+a.maxScore:'')+'</label><input class="hm-grade" data-em="'+esc(em)+'" value="'+esc(s.grade!=null?s.grade:'')+'" placeholder="grade"></div>'+
           '<div><label class="f">Feedback</label><input class="hm-fb" data-em="'+esc(em)+'" value="'+esc(s.feedback||'')+'" placeholder="one line of feedback"></div></div>'+
           '<div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">'+(s.text&&aiReady()?'<button class="btn ghost sm hm-ai" data-em="'+esc(em)+'">🤖 AI-suggest feedback</button>':'')+
-            '<button class="btn sm hm-save" data-em="'+esc(em)+'">Save mark</button></div></div>';
+            '<button class="btn sm hm-save" data-em="'+esc(em)+'">Save mark</button></div>'+
+          commentThread(a, em, 'teacher', true)+'</div>';
       });
       el.innerHTML=h;
       document.getElementById('hm-back').onclick=render;
+      wireComments(el, code, a.id, 'teacher', function(){ markOne(a); });
       el.querySelectorAll('.hm-save').forEach(function(b){b.onclick=function(){var em=b.dataset.em;
         var g=el.querySelector('.hm-grade[data-em="'+CSS.escape(em)+'"]').value.trim();
         var f=el.querySelector('.hm-fb[data-em="'+CSS.escape(em)+'"]').value.trim();
@@ -302,6 +385,11 @@
     }
     function wire(){
       el.querySelectorAll('.hw-v').forEach(function(b){b.onclick=function(){view=b.dataset.v;render();};});
+      el.querySelectorAll('.hw-a-plan').forEach(function(b){b.onclick=function(){ var em=b.dataset.em;
+        try{ var iv=SY.schoolGet(code,'interventions',[])||[];
+          iv.unshift({student:em,name:nameFor(em),status:'active',reason:'Missing homework',by:me,at:now()});
+          SY.schoolSet(code,'interventions',iv); say('Intervention logged for '+nameFor(em)+' — visible to leadership'); }catch(e){}
+      };});
       var go=document.getElementById('hs-go');
       if(go) go.onclick=function(){
         var title=(document.getElementById('hs-title').value||'').trim(); if(!title){say('Give the homework a title');return;}

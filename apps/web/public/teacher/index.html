@@ -11,6 +11,7 @@
 </style></head><body>
 <script src="../guard.js" data-role="teacher" data-base="../"></script>
 <script src="../homework.js"></script>
+<script src="../schoolsuite.js"></script>
 <div class="shell"><main>
   <div class="hd"><span class="live">● Live · synced &lt;1 min ago</span><span class="badge" id="school-badge">—</span></div>
   <div class="k" style="margin-top:10px">Institutional staff · School Teacher Command Centre</div>
@@ -42,6 +43,10 @@
 
   <div class="grid">
     <div class="card c12"><h3>📥 Homework</h3><div class="sub">Set work to your classes, track submissions and mark with AI — your students see it in their To-Do, parents see the status.</div><div id="hw-teach-mount" style="margin-top:10px"></div></div>
+    <div class="card c6"><h3>🎁 Behaviour points</h3><div class="sub">Reward effort and log concerns — students see their points &amp; badges, parents see the log.</div><div id="bh-teach-mount" style="margin-top:10px"></div></div>
+    <div class="card c6"><h3>📣 Announcements</h3><div class="sub">Post notices to your classes or the whole school; families acknowledge them.</div><div id="an-teach-mount" style="margin-top:10px"></div></div>
+    <div class="card c6"><h3>🗓 My teaching timetable</h3><div class="sub">Your weekly lessons, set by leadership in the School console.</div><div id="tt-teach-mount" style="margin-top:10px"></div></div>
+    <div class="card c6"><h3>📎 Documents &amp; resources</h3><div class="sub">Share checklists, letters and revision materials with students and parents.</div><div id="dc-teach-mount" style="margin-top:10px"></div></div>
     <div class="card c8"><h3>Student intervention engine</h3><div class="sub">Live from dashboard states, homework &amp; quiz data</div><div id="interv-engine"></div></div>
     <div class="card c4"><h3>AI alerts</h3><div class="sub">Cohort intelligence</div><div id="alerts"></div></div>
     <div class="card c6"><h3>School assessments</h3><div class="sub">Set by leadership</div><div id="assessments"></div></div>
@@ -136,9 +141,13 @@ $('active-interv').innerHTML=myInterv.filter(function(i){return i.status!=='clos
     var el=document.getElementById('hw-teach-mount'); if(!el||!window.SYHomework||!window.SY)return;
     var TW=window.TW||{}; var tp=(SY.get('teacherProfile',{})||{});
     var code=TW.schoolCode||SY.get('schoolCode',null)||tp.schoolCode||null;
-    SYHomework.mountTeacher(el,{ schoolCode:code, teacher:(SY.session&&SY.session.email),
-      teacherName:(SY.session&&SY.session.name)||tp.name||'Teacher',
+    var email=(SY.session&&SY.session.email), nm=(SY.session&&SY.session.name)||tp.name||'Teacher';
+    SYHomework.mountTeacher(el,{ schoolCode:code, teacher:email, teacherName:nm,
       subjects:tp.subjects||TW.subjects||[], levels:tp.levels||TW.levels||[] });
+    if(window.SYBehaviour) SYBehaviour.mountTeacher(document.getElementById('bh-teach-mount'),{code:code,by:email,byName:nm});
+    if(window.SYAnnounce) SYAnnounce.mountPoster(document.getElementById('an-teach-mount'),{code:code,by:email,byName:nm});
+    if(window.SYTimetable) SYTimetable.mountTeacher(document.getElementById('tt-teach-mount'),{code:code,email:email});
+    if(window.SYDocs) SYDocs.mountManage(document.getElementById('dc-teach-mount'),{code:code,by:email,byName:nm});
   }catch(e){}
 })();
 </script>
