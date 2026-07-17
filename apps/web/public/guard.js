@@ -84,6 +84,14 @@
     (document.head || document.documentElement).appendChild(cj);
   } catch (e) {}
 
+  // password show/hide toggle on every signed-in page with a password field
+  // (change-password panels, re-auth prompts) — same control as the login page.
+  try {
+    var pe = document.createElement('script');
+    pe.src = base + 'pweye.js'; pe.defer = true;
+    (document.head || document.documentElement).appendChild(pe);
+  } catch (e) {}
+
   // end-to-end encryption layer: TweetNaCl (synchronous secretbox) + the
   // SYE2E key manager load parser-blocking so they are ready before any page
   // script touches the store. e2e.js runs the one-time migration sweep.
