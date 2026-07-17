@@ -13,7 +13,10 @@
   function isDemo(){try{var s=JSON.parse(localStorage.getItem('sy-session'));return !!(s&&s.demo)}catch(e){return false}}
   function ready(){if(isDemo())return false;var c=cfg();return !!(c&&c.links&&Object.keys(c.links).length)}
   function linkFor(id){if(isDemo())return null;var c=cfg();return (c&&c.links&&c.links[id])||null}
-  /* checkout(planId, {promo, email, ref, activate}) → 'redirect' | 'preview' */
+  /* checkout(planId, {promo, email, ref, activate}) → 'redirect' | 'preview'
+     client_reference_id carries "<planId>__<ref>" so the Stripe webhook knows
+     BOTH what was bought (planId → ACUs) and who bought it (ref = email or
+     school code), with no server-side price→plan table to keep in sync. */
   function checkout(planId, opts){
     opts=opts||{};var url=linkFor(planId);
     if(url){
@@ -21,7 +24,8 @@
         var u=new URL(url);
         if(opts.promo)u.searchParams.set('prefilled_promo_code',String(opts.promo));
         if(opts.email)u.searchParams.set('prefilled_email',String(opts.email));
-        if(opts.ref)u.searchParams.set('client_reference_id',String(opts.ref));
+        var ref=opts.ref!=null?String(opts.ref):(opts.email?String(opts.email):'');
+        u.searchParams.set('client_reference_id',String(planId)+'__'+ref);
         location.href=u.toString();
       }catch(e){location.href=url}
       return 'redirect';

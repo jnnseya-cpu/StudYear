@@ -12,7 +12,9 @@ import { onRequest } from 'firebase-functions/v2/https';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
-import { ACU_TARIFF, FREE_TIER, MARGIN, type MeteredActivity } from '../../../packages/shared/src';
+import { createHmac, timingSafeEqual } from 'crypto';
+import { ACU_TARIFF, FREE_TIER, MARGIN, ACU_PER_POUND,
+  STUDENT_PLANS, PARENT_PLANS, SCHOOL_PLANS, TOPUPS, type MeteredActivity } from '../../../packages/shared/src';
 
 initializeApp();
 const db = getFirestore();
@@ -107,13 +109,178 @@ export const acuAuthorize = onRequest({ region: 'europe-west2', cors: true }, as
 
 // ------------------------------------------------------------- Stripe hook ----
 /**
- * POST /stripeWebhook — payment.settled → credit ACUs (plans & top-ups),
- * referral qualification (£10+ cleared, 14-day validity), influencer ledger.
- * Signature verification + idempotency keys required before production.
+ * The purchasable catalogue, derived from the shared source of truth: every
+ * plan (subscription) and every top-up (one-off pack), keyed by its id. The
+ * webhook credits `acus` on purchase and, for subscriptions, refills them on
+ * each renewal cycle. Single source → the checkout UI, the plans pages and the
+ * server can never drift on how many ACUs a purchase is worth.
+ */
+type CatalogItem = { acus: number; kind: 'subscription' | 'topup'; audience?: string };
+const STRIPE_CATALOG: Record<string, CatalogItem> = (() => {
+  const m: Record<string, CatalogItem> = {};
+  for (const p of [...STUDENT_PLANS, ...PARENT_PLANS, ...SCHOOL_PLANS])
+    m[p.id] = { acus: p.acus, kind: 'subscription', audience: p.audience };
+  for (const t of TOPUPS) m[t.id] = { acus: t.acus, kind: 'topup' };
+  return m;
+})();
+
+/**
+ * Verify the `Stripe-Signature` header WITHOUT the Stripe SDK: parse the
+ * `t=<ts>,v1=<sig>` scheme, recompute HMAC-SHA256 over `<ts>.<rawBody>` with the
+ * endpoint secret, constant-time compare, and reject anything older than the
+ * tolerance window (replay defence). Returns true only on a genuine match.
+ */
+function verifyStripeSig(raw: Buffer, header: string, secret: string, toleranceSec = 300): boolean {
+  try {
+    const parts = Object.fromEntries(header.split(',').map((kv) => kv.split('=').map((s) => s.trim()) as [string, string]));
+    const ts = parts.t;
+    const v1 = parts.v1;
+    if (!ts || !v1) return false;
+    if (Math.abs(Date.now() / 1000 - Number(ts)) > toleranceSec) return false; // replayed / stale
+    const expected = createHmac('sha256', secret).update(`${ts}.${raw.toString('utf8')}`).digest('hex');
+    const a = Buffer.from(expected, 'utf8');
+    const b = Buffer.from(v1, 'utf8');
+    return a.length === b.length && timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}
+
+/** Pull the (planId, buyerRef) pair out of a Checkout Session. billing.js sends
+    `client_reference_id = "<planId>__<ref>"`; we also accept explicit metadata
+    and a bare client_reference_id (legacy = ref only). */
+function planAndRef(obj: Record<string, unknown>): { planId: string; ref: string } {
+  const meta = (obj.metadata as Record<string, string> | undefined) ?? {};
+  const cref = String(obj.client_reference_id ?? '');
+  let planId = meta.planId ?? '';
+  let ref = meta.ref ?? '';
+  if (cref.includes('__')) {
+    const [a, b] = cref.split('__');
+    if (!planId) planId = a;
+    if (!ref) ref = b;
+  } else if (cref && !ref) {
+    ref = cref;
+  }
+  return { planId: planId.trim(), ref: ref.trim() };
+}
+
+/** Resolve a buyer reference to a ledger owner. An email maps to its Firebase
+    uid (the wallet owner); a school code maps to a `school:<CODE>` owner key so
+    school purchases are ledgered even without a personal account. */
+async function resolveBuyer(ref: string): Promise<{ uid: string | null; ownerKey: string; kind: 'user' | 'school'; email: string | null }> {
+  const r = ref.trim();
+  if (/^\S+@\S+\.\S+$/.test(r)) {
+    const email = r.toLowerCase();
+    try {
+      const u = await getAuth().getUserByEmail(email);
+      return { uid: u.uid, ownerKey: u.uid, kind: 'user', email };
+    } catch {
+      return { uid: null, ownerKey: '', kind: 'user', email }; // paid but no account yet — reconciled from stripePayments
+    }
+  }
+  if (r) return { uid: null, ownerKey: `school:${r.toUpperCase()}`, kind: 'school', email: null };
+  return { uid: null, ownerKey: '', kind: 'user', email: null };
+}
+
+/** Append a positive credit to the append-only ledger (walletBalance sums delta). */
+function creditAcus(ownerKey: string, acus: number, source: string, meta: Record<string, unknown>) {
+  return db.collection('acuTransactions').add({
+    ownerId: ownerKey, delta: Math.max(0, Math.round(acus)), activity: 'purchase',
+    source, ...meta, createdAt: FieldValue.serverTimestamp(),
+  });
+}
+
+/**
+ * POST /stripeWebhook — the real payments endpoint.
+ *   checkout.session.completed / .async_payment_succeeded  → initial credit,
+ *     set the account's plan (subscriptions), remember the customer↔plan link.
+ *   invoice.payment_succeeded (billing_reason=subscription_cycle) → monthly refill.
+ * Hardened: HMAC signature verification (no SDK), a 5-minute replay window, and
+ * atomic idempotency via `stripeEvents/{id}` so a Stripe retry never double-credits.
  */
 export const stripeWebhook = onRequest({ region: 'europe-west2' }, async (req, res) => {
-  // TODO(payments): verify Stripe-Signature against webhook secret; enforce idempotency.
-  res.status(501).json({ ok: false, error: 'not yet wired — see docs/product/commercial-model.md' });
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!secret) { res.status(500).json({ ok: false, error: 'STRIPE_WEBHOOK_SECRET not configured' }); return; }
+  const sig = req.headers['stripe-signature'] as string | undefined;
+  const raw = (req as unknown as { rawBody?: Buffer }).rawBody;
+  if (!raw || !sig || !verifyStripeSig(raw, sig, secret)) { res.status(400).json({ ok: false, error: 'invalid signature' }); return; }
+
+  let event: { id: string; type: string; data: { object: Record<string, unknown> } };
+  try {
+    event = JSON.parse(raw.toString('utf8'));
+  } catch {
+    res.status(400).json({ ok: false, error: 'invalid payload' });
+    return;
+  }
+  if (!event?.id || !event?.type) { res.status(400).json({ ok: false, error: 'malformed event' }); return; }
+
+  // Atomic idempotency: create() rejects if the event was already processed, so
+  // concurrent/retried deliveries collapse to a single credit.
+  const evRef = db.doc(`stripeEvents/${event.id}`);
+  try {
+    await evRef.create({ type: event.type, receivedAt: FieldValue.serverTimestamp() });
+  } catch {
+    res.json({ ok: true, dedup: true });
+    return;
+  }
+
+  try {
+    if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
+      const s = event.data.object;
+      const paid = String(s.payment_status ?? 'paid') === 'paid';
+      const { planId, ref } = planAndRef(s);
+      const item = STRIPE_CATALOG[planId];
+      const buyer = await resolveBuyer(ref);
+      await db.collection('stripePayments').add({
+        eventId: event.id, sessionId: s.id ?? null, planId: planId || null, ref: ref || null,
+        acus: item?.acus ?? 0, kind: item?.kind ?? null, ownerKey: buyer.ownerKey || null,
+        uid: buyer.uid, email: buyer.email, customer: s.customer ?? null,
+        amountTotal: s.amount_total ?? null, currency: s.currency ?? null,
+        applied: !!(paid && item && buyer.ownerKey), createdAt: FieldValue.serverTimestamp(),
+      });
+      if (paid && item && buyer.ownerKey) {
+        await creditAcus(buyer.ownerKey, item.acus, `stripe:${event.type}`, { planId, ref, sessionId: s.id ?? null, eventId: event.id });
+        if (item.kind === 'subscription') {
+          if (buyer.kind === 'user' && buyer.uid)
+            await db.doc(`users/${buyer.uid}`).set({ plan: planId, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+          else if (buyer.kind === 'school')
+            await db.doc(`schools/${buyer.ownerKey.replace('school:', '')}`).set({ plan: planId, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+          if (s.customer)
+            await db.doc(`stripeCustomers/${String(s.customer)}`).set(
+              { ownerKey: buyer.ownerKey, uid: buyer.uid ?? null, kind: buyer.kind, planId, acus: item.acus, ref, updatedAt: FieldValue.serverTimestamp() },
+              { merge: true });
+        }
+        await audit('STRIPE_PURCHASE', buyer.uid ?? buyer.ownerKey, { planId, acus: item.acus, kind: item.kind });
+      }
+    } else if (event.type === 'invoice.payment_succeeded') {
+      const inv = event.data.object;
+      // The first invoice (subscription_create) is already covered by the checkout
+      // session; only credit the recurring cycles here so renewals top the wallet up.
+      if (String(inv.billing_reason ?? '') === 'subscription_cycle' && inv.customer) {
+        const cust = await db.doc(`stripeCustomers/${String(inv.customer)}`).get();
+        if (cust.exists) {
+          const c = cust.data()!;
+          await creditAcus(String(c.ownerKey), Number(c.acus) || 0, 'stripe:renewal', { planId: c.planId ?? null, invoiceId: inv.id ?? null, eventId: event.id });
+          await audit('STRIPE_RENEWAL', (c.uid as string) ?? String(c.ownerKey), { planId: c.planId ?? null, acus: c.acus ?? 0 });
+        }
+      }
+    } else if (event.type === 'customer.subscription.deleted') {
+      // Subscription cancelled/expired — drop the account back to the free plan.
+      const sub = event.data.object;
+      if (sub.customer) {
+        const cust = await db.doc(`stripeCustomers/${String(sub.customer)}`).get();
+        if (cust.exists && cust.data()!.kind === 'user' && cust.data()!.uid)
+          await db.doc(`users/${String(cust.data()!.uid)}`).set({ plan: 'child_free', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      }
+    }
+    res.json({ ok: true, type: event.type });
+  } catch (e) {
+    // Processing failed after the idempotency guard was written — remove it so
+    // Stripe's automatic retry gets a clean second attempt.
+    await evRef.delete().catch(() => null);
+    const err = e as Error;
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 // --------------------------------------------------------- discount codes ----
