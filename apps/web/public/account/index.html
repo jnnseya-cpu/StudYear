@@ -143,6 +143,8 @@
         <div class="row"><button class="btn" id="copy-code">Copy code for parent</button></div>
         <div class="note">Parents: Command Centre → Link a child → enter this code. Free students can link too —
           no Premium required on your account.</div>
+        <div class="note" id="link-status" style="margin-top:8px">Checking your code is ready to share…</div>
+        <div class="row" style="margin-top:6px"><button class="btn ghost" id="link-retry" style="display:none">🔄 Make my code work across devices</button></div>
       </div>
     </div>
   </div>
@@ -291,6 +293,35 @@ var code=SY.get('parentCode',null);
 if(!code){code=String(Math.floor(10000000+Math.random()*90000000));SY.set('parentCode',code)}
 SY.publishCode(code); // let a parent resolve this code to my account (consent-gated reads)
 $('pcode').textContent=code;
+/* Verify the code is actually shared cross-device (not just stored locally):
+   publish, then resolve it back off the backend. Green = a parent on any device
+   can link; amber = only same-device until we reconnect. Turns a silent failure
+   into a one-tap fix on the exact page the student reads their code from. */
+(function(){
+  var st=$('link-status'), rb=$('link-retry'); if(!st) return;
+  function show(msg,cls){ st.innerHTML=msg; st.style.color=(cls==='ok'?'var(--good,#5CBB7B)':cls==='warn'?'var(--warn,#E0A93F)':'var(--ink-3)'); }
+  function offerRetry(on){ if(rb) rb.style.display=on?'':'none'; }
+  function verify(){
+    show('Checking your code is ready to share…');
+    if(SY.session&&SY.session.demo){ show('✓ Demo mode — linking is pre-set for the demo family.','ok'); offerRetry(false); return; }
+    if(!window.SYCloud){ show('Your code works on this device. Open StudYear online once to share it across devices.','warn'); offerRetry(true); return; }
+    SYCloud.whenReady().then(function(){
+      // republish (token may have settled since load), then resolve it back
+      Promise.resolve(SYCloud.dirPublish(String(code),'account',SY.session.email)).then(function(){
+        return SYCloud.dirResolve(String(code),SY.session.email);
+      }).then(function(r){
+        if(r&&r.email){ show('✓ Ready — a parent can link with this code from <b>any device</b>.','ok'); offerRetry(false); }
+        else { show('⚠ Your code isn\'t shared across devices yet — tap below so a parent on another device can link.','warn'); offerRetry(true); }
+      }).catch(function(){ show('⚠ Couldn\'t confirm your code with StudYear — tap below to fix cross-device linking.','warn'); offerRetry(true); });
+    });
+  }
+  if(rb) rb.onclick=function(){
+    show('Reconnecting…'); offerRetry(false);
+    var done=SY.ensureCloud?SY.ensureCloud():Promise.resolve(false);
+    Promise.resolve(done).then(function(ok){ if(!ok){ show('⚠ Reconnect cancelled — confirm your password to share your code across devices.','warn'); offerRetry(true); return; } verify(); });
+  };
+  verify();
+})();
 try{
   var qr=qrcode(0,'M');qr.addData(code);qr.make();
   var n=qr.getModuleCount(),cv=$('qr'),ctx=cv.getContext('2d'),pad=16,cell=(cv.width-2*pad)/n;

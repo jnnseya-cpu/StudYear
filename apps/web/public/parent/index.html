@@ -118,6 +118,7 @@
 <script src="../guard.js" data-role="parent" data-base="../"></script>
 <script src="../ai.js"></script>
 <script src="../record.js"></script>
+<script src="../homework.js"></script>
 <div class="wrap">
 
 <div class="top">
@@ -194,6 +195,14 @@
 <!-- snapshots -->
 <div class="sec-title">Live child snapshots <span class="pill" id="linked-count">0 linked</span></div>
 <div id="snapshots"></div>
+
+<!-- homework from school (teacher → student → parent loop) -->
+<div class="sec-title">📥 Homework &amp; assignments <span class="pill">From school</span></div>
+<div class="grid">
+  <div class="card c12"><h3>What your child's teachers set</h3>
+    <div class="sub">Live from the school: what's been set, whether it's submitted, and the grades &amp; feedback.</div>
+    <div id="hw-parent-mount" style="margin-top:10px"></div></div>
+</div>
 
 <!-- deep view (per most-recent child) -->
 <div id="deep" style="display:none">
@@ -342,6 +351,7 @@ function riskBadge(r){return r==='CRITICAL'||r==='HIGH'?'crit':r==='MEDIUM'?'war
 function render(){
   var kids=SY.get('children',[]);
   $('linked-count').textContent=kids.length+' linked';
+  try{if(window.SYHomework)SYHomework.mountParent($('hw-parent-mount'),{children:kids});}catch(e){}
   if(!kids.length){
     $('snapshots').innerHTML='<div class="card c12"><div class="note" style="font-style:normal">No children linked yet. Enter your child\'s Parent Link Code above — you\'ll see live stability, momentum, subject progress and AI guidance.</div></div>';
     $('deep').style.display='none';

@@ -127,6 +127,43 @@ function seedSchoolStore(){
     set('sy-u:'+u+'@demo.studyear:schoolLink',{code:SCH,name:'Riverside Academy (Demo)',when:iso(-30)});
   });
   set('sy-school:'+SCH+':recordAccess',{'student@demo.studyear':{parent:true,by:'school@demo.studyear',when:iso(-7)}});
+  seedHomework();
+}
+/* Satchel-One Phase 1: the teacher→student→parent homework loop, pre-populated
+   so the demo shows a live mix of marked, submitted, to-do and overdue work.
+   Shape mirrors SYHomework.setAssignment/submit/mark exactly. */
+function seedHomework(){
+  var T='teacher@demo.studyear',TN='Daniel Mensah',E='student@demo.studyear';
+  function sub(name,o){return Object.assign({text:'',files:[],submittedAt:null,grade:'',feedback:'',markedAt:null,comments:[],name:name},o);}
+  set('sy-school:'+SCH+':homework',[
+    {id:'hw-quad3',by:T,byName:TN,title:'Quadratic equations — worksheet 3',subject:'Mathematics',level:'GCSE',topic:'Algebra',
+     body:'Complete Q1–Q10 on completing the square. Show every step and state each turning point. Aim for about 30 minutes.',
+     group:'Year 10',submitMethod:'online',maxScore:20,resources:['Quadratics notes','worksheet-3.pdf'],bloom:'Apply',estMins:30,
+     issuedAt:iso(-5),dueAt:iso(2),parentVisible:true,createdAt:iso(-5),submissions:{
+       'student@demo.studyear':sub('Emily Carter',{text:'Completed all 10. Found turning points by completing the square — e.g. Q4: (x−3)²−4, min at (3,−4).',files:['emily-ws3.pdf'],submittedAt:iso(-2),grade:'18',feedback:'Excellent — accurate completing-the-square throughout. Watch the sign on the constant in Q7.',markedAt:iso(-1)}),
+       'sofia@demo.studyear':sub('Sofia Almeida',{text:'Did Q1–Q8, got stuck on Q9 and Q10.',submittedAt:iso(-1)}),
+       'jayden@demo.studyear':sub('Jayden Osei',{text:'Attempted all ten, unsure on the harder ones.',submittedAt:iso(-2),grade:'12',feedback:'Good effort — revise factorising first, then retry Q3 and Q6.',markedAt:iso(-1)})}},
+    {id:'hw-forces',by:T,byName:TN,title:'Forces & F=ma — exam questions',subject:'Physics',level:'GCSE',topic:'Forces',
+     body:'Answer the six exam-style questions on resultant force and acceleration. Always show the formula, working and units.',
+     group:'Year 10',submitMethod:'online',maxScore:15,resources:['Forces notes'],bloom:'Apply',estMins:40,
+     issuedAt:iso(-8),dueAt:iso(-1),parentVisible:true,createdAt:iso(-8),submissions:{
+       'student@demo.studyear':sub('Emily Carter',{text:'All six done. Q4 resultant = 12 N, a = F/m = 12/3 = 4 m/s².',submittedAt:iso(-3),grade:'13',feedback:'Strong — clear F=ma working. Remember units on every line (Q4 missed m/s²).',markedAt:iso(-2)}),
+       'aisha@demo.studyear':sub('Aisha Rahman',{text:'Completed Q1–Q6.',submittedAt:iso(-2),grade:'14',feedback:'Excellent, precise working throughout.',markedAt:iso(-1)})}},
+    {id:'hw-simul',by:T,byName:TN,title:'Simultaneous equations — mixed practice',subject:'Mathematics',level:'GCSE',topic:'Algebra',
+     body:'Ten mixed problems — use elimination and substitution. Check each answer back in both equations.',
+     group:'Year 10',submitMethod:'online',maxScore:20,resources:[],bloom:'Apply',estMins:30,
+     issuedAt:iso(-1),dueAt:iso(3),parentVisible:true,createdAt:iso(-1),submissions:{
+       'student@demo.studyear':sub('Emily Carter',{text:'Finished all ten and checked them back — waiting for marking.',submittedAt:iso(0)})}},
+    {id:'hw-energy',by:T,byName:TN,title:'Energy stores & transfers — 6-marker',subject:'Physics',level:'GCSE',topic:'Energy',
+     body:'Plan and write a full 6-mark answer describing energy stores and transfers for a bouncing ball. Use the mark-scheme structure.',
+     group:'Year 10',submitMethod:'online',maxScore:6,resources:['Energy stores checklist'],bloom:'Analyse',estMins:25,
+     issuedAt:iso(0),dueAt:iso(5),parentVisible:true,createdAt:iso(0),submissions:{}},
+    {id:'hw-trig',by:T,byName:TN,title:'Trigonometry — SOH CAH TOA drill',subject:'Mathematics',level:'GCSE',topic:'Trigonometry',
+     body:'Twenty right-angled triangle questions: find missing sides and angles. Show which ratio you used each time.',
+     group:'Year 10',submitMethod:'online',maxScore:20,resources:[],bloom:'Apply',estMins:35,
+     issuedAt:iso(-4),dueAt:iso(-2),parentVisible:true,createdAt:iso(-4),submissions:{
+       'aisha@demo.studyear':sub('Aisha Rahman',{text:'All twenty complete.',submittedAt:iso(-3),grade:'19',feedback:'Superb — confident ratio selection.',markedAt:iso(-2)})}}
+  ]);
 }
 var ROLES=[
  {role:'student',ic:'🎓',t:'Student',who:'Emily Carter · Year 10 · GCSE (AQA)',dest:'../study/',
