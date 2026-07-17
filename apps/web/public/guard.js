@@ -241,6 +241,14 @@
       }
       attempt();
     },
+    /** a demo/presentation account address (seeded by /demo). Real accounts must
+        never resolve to, link to, or display these — and vice versa — or a real
+        parent ends up viewing seeded demo data. */
+    isDemoAccount: function (email) { return /@demo\.studyear$/i.test(String(email || '')); },
+    /** true when linking `email` from THIS session would cross the real↔demo
+        boundary (a real account pulling in a demo child, or a demo account
+        pulling in a real one). */
+    crossesDemoBoundary: function (email) { return this.isDemoAccount(email) !== !!s.demo; },
     /** resolve a share code to an account email (or null) — same-device only */
     resolveCode: function (code) { try { return localStorage.getItem('sy-code:' + String(code).trim()); } catch (e) { return null; } },
     /** resolve a share code across accounts/devices: tries the backend
@@ -248,12 +256,15 @@
         Resolves to { email, name, uid, kind } or null. */
     resolveCodeAsync: function (code) {
       var c = String(code).trim(), local = this.resolveCode(c), self = this;
+      // never let a real session resolve a code to a demo account (or a demo
+      // session resolve a real one) — that is how demo data leaks into a real view
+      if (local && self.crossesDemoBoundary(local)) local = null;
       var loc = local ? { email: local, name: self.accountName(local), uid: null, kind: 'account', local: true } : null;
       if (s.demo) return Promise.resolve(loc);
       return cloudReady().then(function (cl) {
         if (!cl) return loc;
         return cl.dirResolve(c, s.email).then(function (r) {
-          if (r && r.email) return { email: r.email, name: r.name || self.accountName(r.email), uid: r.uid || null, kind: r.kind || 'account' };
+          if (r && r.email && !self.crossesDemoBoundary(r.email)) return { email: r.email, name: r.name || self.accountName(r.email), uid: r.uid || null, kind: r.kind || 'account' };
           return loc;
         }).catch(function () { return loc; });
       });
@@ -266,7 +277,7 @@
       return cloudReady().then(function (cl) {
         if (!cl) return self.resolveCodeAsync(c);
         return cl.dirConnect(c, relation || 'parent', s.email).then(function (r) {
-          if (r && r.email) return { email: r.email, name: r.name || self.accountName(r.email), uid: r.uid || null, kind: r.kind || 'account' };
+          if (r && r.email && !self.crossesDemoBoundary(r.email)) return { email: r.email, name: r.name || self.accountName(r.email), uid: r.uid || null, kind: r.kind || 'account' };
           return self.resolveCodeAsync(c);
         }).catch(function () { return self.resolveCodeAsync(c); });
       });

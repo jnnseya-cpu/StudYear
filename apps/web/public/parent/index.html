@@ -277,6 +277,10 @@ function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;
 var toastTimer;function toast(t){var el=$('toast');el.textContent=t;el.style.opacity=1;clearTimeout(toastTimer);toastTimer=setTimeout(function(){el.style.opacity=0},3000)}
 function gradeFor(m){return Math.max(1,Math.min(9,Math.round(1+8*m/100)))}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+/* One-time cleanup: strip any demo child (*@demo.studyear) that leaked into a
+   REAL parent account from demo testing on this browser, so Analytics and the
+   command centre never show seeded demo data for a real parent. */
+(function(){try{if(SY.session&&!SY.session.demo&&SY.isDemoAccount){var ch=SY.get('children',[])||[];var cl=ch.filter(function(k){return !SY.isDemoAccount(k.email)});if(cl.length!==ch.length)SY.set('children',cl);}}catch(e){}})();
 
 /* ---- subscription (parent plan) ---- */
 var PARENT_PLANS={parent_view:{label:'Parent View',acus:300,feats:['Weekly digest & progress reports','Risk alerts','300 ACUs per month']},
@@ -856,6 +860,7 @@ function mergeCloudChildren(){
       var kids=SY.get('children',[]),added=false;
       g.outbound.forEach(function(l){
         if(!l.email)return;
+        if(SY.crossesDemoBoundary&&SY.crossesDemoBoundary(l.email))return; // never merge a demo child into a real account
         if(kids.some(function(k){return k.email===l.email}))return;
         kids.push({email:l.email,name:l.name||SY.accountName(l.email),uid:l.uid||null,when:new Date().toISOString()});added=true;
       });

@@ -265,6 +265,9 @@ var SY=window.SY; if(!SY) return;
 function el(id){return document.getElementById(id)}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function gradeFor(m){return Math.max(1,Math.min(9,Math.round(1+8*m/100)))}
+/* One-time cleanup: strip any demo child (*@demo.studyear) leaked into a REAL
+   parent account, so this analytics view never renders seeded demo data. */
+(function(){try{if(SY.session&&!SY.session.demo&&SY.isDemoAccount){var ch=SY.get('children',[])||[];var cl=ch.filter(function(k){return !SY.isDemoAccount(k.email)});if(cl.length!==ch.length)SY.set('children',cl);}}catch(e){}})();
 
 function childData(email){
   var profile=SY.readAccount(email,'profile',{});
@@ -398,7 +401,7 @@ el('link-go').onclick=function(){
 render();
 try{SY.myLinks().then(function(g){
   if(!g||!g.outbound)return;var kids=SY.get('children',[]),added=false;
-  g.outbound.forEach(function(l){if(l.email&&!kids.some(function(k){return k.email===l.email})){kids.push({email:l.email,name:l.name||SY.accountName(l.email),uid:l.uid||null,when:new Date().toISOString()});added=true;}});
+  g.outbound.forEach(function(l){if(l.email&&!(SY.crossesDemoBoundary&&SY.crossesDemoBoundary(l.email))&&!kids.some(function(k){return k.email===l.email})){kids.push({email:l.email,name:l.name||SY.accountName(l.email),uid:l.uid||null,when:new Date().toISOString()});added=true;}});
   if(added){SY.set('children',kids);render();}
 }).catch(function(){});}catch(e){}
 })();
