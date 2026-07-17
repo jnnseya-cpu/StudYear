@@ -265,7 +265,19 @@ $('f').addEventListener('submit',async function(e){
        own 6s internal timeout) so the Firebase token is saved to this device.
        Without it, cross-account features (parent/school linking, sync) silently
        fail on the next page because there is no token yet. */
-    try{if(window.SYCloud){await SYCloud.whenReady();if(SYCloud.ready())await SYCloud.signIn(email,pw);}}catch(err){}
+    try{if(window.SYCloud){await SYCloud.whenReady();if(SYCloud.ready()){
+      /* Accounts created locally while the cloud was blocked were never mirrored
+         into Firebase Auth, so signIn fails and no token is ever obtained —
+         which silently breaks linking/sync. Provision the cloud account now
+         (same email + password) so this device gets a real token. Time-boxed so
+         login never hangs when the cloud is genuinely unreachable (no token to
+         get anyway); on a working network both calls resolve well within it. */
+      await Promise.race([
+        (async function(){ var _ok=await SYCloud.signIn(email,pw);
+          if(!_ok&&SYCloud.signUp)await SYCloud.signUp(email,pw,authed.name,authed.role); })(),
+        new Promise(function(r){setTimeout(r,4500);})
+      ]);
+    }}}catch(err){}
     if(wantRole&&authed.role!==wantRole){
       save('sy-session',{name:authed.name,email:authed.email,role:authed.role,ts:new Date().toISOString()});
       say('Signed in — but this account is a <b>'+(LABELS[authed.role]||authed.role)+'</b> account, and this area needs a <b>'+

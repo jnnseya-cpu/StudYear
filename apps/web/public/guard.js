@@ -436,7 +436,15 @@
               var p = pw.value;
               if (!p) { err.textContent = 'Enter your password.'; err.style.display = 'block'; return; }
               okB.disabled = true; okB.textContent = 'Reconnecting…'; err.style.display = 'none';
+              /* provision-or-sign-in: if this account was never mirrored into
+                 the cloud (created while the network blocked the servers),
+                 signIn fails — so fall back to signUp with the same password to
+                 create the cloud account and obtain a token. */
               Promise.resolve(cl.signIn(s.email, p)).then(function (r) {
+                if (r) return true;
+                if (cl.signUp) return Promise.resolve(cl.signUp(s.email, p, s.name, s.role)).catch(function () { return false; });
+                return false;
+              }).then(function (r) {
                 if (r) { try { if (cl.reconnect) cl.reconnect(); } catch (e) {} done(true); }
                 else { okB.disabled = false; okB.textContent = 'Reconnect'; err.textContent = "That password wasn't recognised. Please try again."; err.style.display = 'block'; try { pw.select(); } catch (e) {} }
               }).catch(function () { okB.disabled = false; okB.textContent = 'Reconnect'; err.textContent = "Couldn't reach StudYear just now — please try again."; err.style.display = 'block'; });
