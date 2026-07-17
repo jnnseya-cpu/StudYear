@@ -765,6 +765,18 @@ $('link-go').onclick=function(){
   if(!/^[A-Za-z0-9-]{4,}$/.test(code)){toast('Enter the link code from your child\'s account.');return}
   doLink(code,false);
 };
+/* Scanned from a child's QR: /parent/?link=CODE — prefill and link automatically
+   so scanning with a phone camera "just works". */
+(function(){try{
+  var m=/[?&]link=([A-Za-z0-9-]{4,24})/.exec(location.search||'');
+  if(!m)return;var code=m[1];var f=$('link-code');if(!f)return;
+  f.value=code;
+  try{f.scrollIntoView({behavior:'smooth',block:'center'})}catch(e){}
+  toast('Code '+code+' scanned from your child — linking…');
+  setTimeout(function(){doLink(code,false)},400);
+  /* tidy the URL so a refresh doesn't re-trigger */
+  try{history.replaceState(null,'',location.pathname)}catch(e){}
+}catch(e){}})();
 
 /* ---- tabs ---- */
 $('tabs').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;

@@ -373,6 +373,14 @@ el('link-go').onclick=function(){
   if(!/^[A-Za-z0-9-]{4,}$/.test(code)){alert('Enter the link code from your child\'s account.');return}
   doLink(code,false);
 };
+/* scanned from a child's QR: ?link=CODE — prefill and link automatically */
+(function(){try{
+  var m=/[?&]link=([A-Za-z0-9-]{4,24})/.exec(location.search||'');
+  if(!m)return;var code=m[1];var f=el('link-code');if(!f)return;
+  f.value=code;try{f.scrollIntoView({behavior:'smooth',block:'center'})}catch(e){}
+  setTimeout(function(){doLink(code,false)},400);
+  try{history.replaceState(null,'',location.pathname)}catch(e){}
+}catch(e){}})();
 render();
 try{SY.myLinks().then(function(g){
   if(!g||!g.outbound)return;var kids=SY.get('children',[]),added=false;

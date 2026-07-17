@@ -137,7 +137,7 @@
         <div class="pk">Your Parent Link Code</div>
         <div class="pcode" id="pcode">········</div>
         <div style="margin-top:8px"><button class="btn" id="copy-code">Copy code for parent</button></div>
-        <div class="sub" style="margin-top:8px">Parents: Command Centre → Link a child → enter this code. Free students can link too.</div>
+        <div class="sub" style="margin-top:8px"><b>Parent:</b> scan this QR with your phone camera — it opens StudYear with the code ready. Or type the code in Command Centre → Link a child. Free students can link too.</div>
       </div>
     </div>
   </div>
@@ -241,8 +241,12 @@ if(!code){code=String(Math.floor(10000000+Math.random()*90000000));SY.set('paren
    resolve this code (this is the page students actually read the code from) */
 try{SY.publishCode(code,'account')}catch(e){}
 $('pcode').textContent=code;
+/* Encode a LINK (not the bare number) so a parent scanning with their phone
+   camera lands on the parent page with the code pre-filled and ready — the
+   canonical production site, so it always opens the working app. */
+var qrUrl='https://www.studyear.com/parent/?link='+encodeURIComponent(code);
 try{
-  var qr=qrcode(0,'M');qr.addData(code);qr.make();
+  var qr=qrcode(0,'M');qr.addData(qrUrl);qr.make();
   var n=qr.getModuleCount(),cv=$('qr'),ctx=cv.getContext('2d'),pad=12,cell=(cv.width-2*pad)/n;
   ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);ctx.fillStyle='#0B1220';
   for(var r=0;r<n;r++)for(var c=0;c<n;c++)if(qr.isDark(r,c))ctx.fillRect(pad+c*cell,pad+r*cell,Math.ceil(cell),Math.ceil(cell));
