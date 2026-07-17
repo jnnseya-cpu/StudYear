@@ -81,24 +81,38 @@
     var h = location.hostname || '';
     return h === 'localhost' || h === '127.0.0.1' || h === '' || h === '0.0.0.0' || /\.local$/.test(h);
   }
+  /* VALIDATE the same-origin /gapi proxy actually reaches Google before we
+     commit auth/linking/sync to it. If the Vercel rewrite is live we get a
+     Google JSON error body back; if it isn't (Vercel's own 404 — HTML/non-JSON)
+     we fall back to calling Google DIRECTLY (gbase() with GAPI=null), which
+     works whenever the network allows googleapis.com. This makes auth work
+     regardless of whether the proxy rewrite is deployed, and never forces
+     traffic down a broken proxy path. */
+  function validateProxy() {
+    var key = (CFG && CFG.apiKey) || 'x';
+    return fetch('/gapi/idt/v1/accounts:signUp?key=' + encodeURIComponent(key),
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}', cache: 'no-store' })
+      .then(function (r) { return r.text(); })
+      .then(function (t) {
+        var reaches = false;
+        try { var j = JSON.parse(t); reaches = !!(j && j.error && j.error.message); } catch (e) {}
+        if (reaches) { useProxy(); CLOUD_UP = true; }   // proxy routes to Google → use it
+        else { GAPI = null; CLOUD_UP = null; }           // rewrite missing → call Google directly
+        publishStatus();
+      })
+      .catch(function () { GAPI = null; CLOUD_UP = null; publishStatus(); }); // → direct
+  }
   function probeProxy() {
-    if (isProdHost()) {
-      // Optimistic on production: use the same-origin proxy immediately so the
-      // user never depends on their network reaching Google directly. Confirm
-      // in the background; do NOT block startup or flag "unreachable" up front.
-      useProxy(); CLOUD_UP = true; publishStatus();
-      verifyProxy(4);
-      return Promise.resolve();
-    }
     // Localhost / dev / file: stay silent (status unknown) — no probes, no pill.
     if (isLocalHost()) return Promise.resolve();
-    // GitHub Pages backup (no /gapi proxy): call Google directly and report a
-    // status from a direct health check so the gentle indicator is honest.
+    // Production / Vercel previews carry the /gapi rewrites — validate then use
+    // proxy-or-direct. Other hosts (GitHub Pages backup): call Google directly.
+    if (isProdHost()) return validateProxy();
     return Promise.resolve(directHealth()).then(publishStatus);
   }
   /* Re-check connectivity on demand (e.g. the browser comes back online). */
   function reconnect() {
-    if (isProdHost()) { useProxy(); return verifyProxy(3); }
+    if (isProdHost()) return validateProxy();
     return Promise.resolve(directHealth()).then(publishStatus);
   }
   try {
