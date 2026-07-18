@@ -243,9 +243,14 @@ var LV_BOOST=
 var LEVEL_SKILLS={0:['addition','subtraction','tables','division','bonds','word','spelling'],1:['tables','division','mental','inverse','fractions','decimals','percent','word','grammar','science'],2:['mental','inverse','fractions','percent','algebra','squares','formulas','vocab','science','geography','history']};
 var recommended=LEVEL_SKILLS[LV_BOOST]||LEVEL_SKILLS[2];
 document.querySelector('.lede').innerHTML+=' <span style="color:var(--gold-400)">Pitched at '+esc(LEVEL)+'.</span>';
+/* a primary child (EYFS/KS1/KS2/11+) must not even SEE exam-grade skills
+   (algebra, squares & roots, GCSE formula recall) — hide them for that tier. */
+var IS_PRIMARY=/eyfs|reception|nursery|early years|key stage [12]|\bks[12]\b|infant|junior|primary|11 ?\+|eleven plus|year ?[1-6]\b|years? ?[1-6]/.test(_LVL);
+var HIDE_PRIMARY={algebra:1,squares:1,formulas:1};
+var VISIBLE_SKILLS=SKILLS.filter(function(s){return !(IS_PRIMARY&&HIDE_PRIMARY[s[0]]);});
 
 var curSkill=recommended[0]||'tables';
-$('skills').innerHTML=SKILLS.map(function(s){var rec=recommended.indexOf(s[0])>=0;return '<button class="sk'+(s[0]===curSkill?' on':'')+'" data-sk="'+s[0]+'" title="'+(rec?'Recommended for '+esc(LEVEL):'')+'">'+(rec?'★ ':'')+esc(s[1])+'</button>'}).join('');
+$('skills').innerHTML=VISIBLE_SKILLS.map(function(s){var rec=recommended.indexOf(s[0])>=0;return '<button class="sk'+(s[0]===curSkill?' on':'')+'" data-sk="'+s[0]+'" title="'+(rec?'Recommended for '+esc(LEVEL):'')+'">'+(rec?'★ ':'')+esc(s[1])+'</button>'}).join('');
 $('skills').querySelectorAll('.sk').forEach(function(b){b.onclick=function(){curSkill=b.dataset.sk;$('skills').querySelectorAll('.sk').forEach(function(x){x.classList.toggle('on',x===b)})}});
 
 /* ---- accessibility ---- */

@@ -152,7 +152,7 @@
   <h3>Academic Details</h3>
   <div class="two">
     <div><label class="f">Study Level / Year Group</label><select id="p-level"></select></div>
-    <div><label class="f">Primary Exam Board</label><select id="p-board"></select></div>
+    <div id="p-board-wrap"><label class="f">Exam Board</label><select id="p-board"></select></div>
   </div>
 
   <label class="f">What subjects are you studying, and what are you working at and aiming for?</label>
@@ -346,7 +346,16 @@ $('subj-add').onchange=function(){
   subjects.push({s:s,current:opts[Math.min(opts.length-1,Math.ceil(opts.length/2))],target:opts[0]});drawSubjects();
 };
 /* changing the study level re-scales every subject's grade options */
-$('p-level').addEventListener('change',function(){drawSubjects();});
+/* Primary (EYFS/KS1/KS2/11+) SATs have no exam board — hide the board field
+   for those levels so a Year 4 profile never shows a GCSE board like AQA. */
+function toggleBoardForLevel(){
+  var L=String($('p-level').value||'').toLowerCase();
+  var isPrimary=/eyfs|reception|nursery|early years|key stage [12]|\bks[12]\b|infant|junior|primary|11 ?\+|eleven plus|year ?[1-6]\b|years? ?[1-6]/.test(L);
+  var wrap=$('p-board-wrap'); if(wrap)wrap.style.display=isPrimary?'none':'';
+  if(isPrimary){try{$('p-board').value='';}catch(e){}}
+}
+toggleBoardForLevel();
+$('p-level').addEventListener('change',function(){toggleBoardForLevel();drawSubjects();});
 drawSubjects();
 
 /* ---------- learning profile ---------- */
