@@ -65,14 +65,25 @@
       var email=null;try{email=(JSON.parse(localStorage.getItem('sy-session'))||{}).email}catch(e){}
       if(!window.SYCloud)throw new Error('Cloud bridge unavailable');
       var tk=await SYCloud.token(email);
-      if(!tk)throw new Error('Sign in again to use the server gateway');
-      /* same-origin proxy when available (studyear.com/gapi/*) so the gateway
-         works even where cloudfunctions.net is blocked; else call it directly */
-      var gp=(window.__SYGAPI&&window.__SYGAPI.fn)?window.__SYGAPI.fn:cc.apiBase.replace(/\/$/,'');
-      var rp=await fetch(gp+'/aiProxy',{method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+tk},
-        body:JSON.stringify({system:system,user:user,maxTokens:maxTokens,
-          temperature:opts.temperature!=null?opts.temperature:0.6,image:opts.image||undefined})});
+      if(!tk){
+        /* No cloud token on this device/network — the model can't be reached
+           without one. Reconnect inline (same flow as linking/sync), then retry
+           the token, so the tutor recovers instead of dead-ending. */
+        try{ if(window.SY&&SY.ensureCloud){ var done=await SY.ensureCloud(); if(done) tk=await SYCloud.token(email); } }catch(e){}
+        if(!tk)throw new Error('Reconnect to StudYear to use the AI tutor.');
+      }
+      var body=JSON.stringify({system:system,user:user,maxTokens:maxTokens,
+        temperature:opts.temperature!=null?opts.temperature:0.6,image:opts.image||undefined});
+      var hdr={'Content-Type':'application/json','Authorization':'Bearer '+tk};
+      /* Same-origin proxy when available (studyear.com/gapi/*) so the gateway
+         works even where cloudfunctions.net is blocked; if that proxy THROWS at
+         request time (dead rewrite), fall back to calling the function directly —
+         which works on any network that allows the functions host. */
+      var direct=cc.apiBase.replace(/\/$/,'');
+      var gp=(window.__SYGAPI&&window.__SYGAPI.fn)?window.__SYGAPI.fn:direct;
+      var rp;
+      try{ rp=await fetch(gp+'/aiProxy',{method:'POST',headers:hdr,body:body}); }
+      catch(e){ if(gp===direct)throw e; rp=await fetch(direct+'/aiProxy',{method:'POST',headers:hdr,body:body}); }
       var jp=await rp.json().catch(function(){return{}});
       if(!rp.ok||!jp.ok)throw new Error('Gateway '+rp.status+': '+(jp.error||''));
       return jp.text||'';
