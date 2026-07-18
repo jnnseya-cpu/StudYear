@@ -316,10 +316,10 @@
 <section id="tab-search" class="on">
   <div class="filters">
     <div><label class="f">Keyword</label><input type="text" id="q" placeholder="e.g. photosynthesis, quadratics, Macbeth…"></div>
-    <div><label class="f">Subject</label><select id="f-subj"><option value="">All subjects</option></select></div>
-    <div><label class="f">Study level</label><select id="f-level"><option value="">All levels</option></select></div>
-    <div><label class="f">Resource type</label><select id="f-type"><option value="">All types</option></select></div>
-    <div><label class="f">Topic</label><select id="f-topic"><option value="">All topics</option></select></div>
+    <div><label class="f">Subject</label><select id="f-subj" aria-label="Filter by subject"><option value="">All subjects</option></select></div>
+    <div><label class="f">Study level</label><select id="f-level" aria-label="Filter by study level"><option value="">All levels</option></select></div>
+    <div><label class="f">Resource type</label><select id="f-type" aria-label="Filter by resource type"><option value="">All types</option></select></div>
+    <div><label class="f">Topic</label><select id="f-topic" aria-label="Filter by topic"><option value="">All topics</option></select></div>
     <div><label class="f">Saved resources</label>
       <label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink-2);padding:10px 0">
         <input type="checkbox" id="f-mine" style="width:auto;accent-color:var(--gold-500)">My resources only</label></div>
@@ -381,10 +381,10 @@
 <!-- ============================ PAST PAPERS ============================ -->
 <section id="tab-papers">
   <div class="filters">
-    <div><label class="f">Subject</label><select id="pp-subj"></select></div>
-    <div><label class="f">Level</label><select id="pp-level"><option>GCSE</option><option>IGCSE</option><option>National 5</option><option>AS</option><option>A2/A-level</option><option>Scottish Highers</option><option>Scottish Advanced Highers</option><option>BTEC National</option></select></div>
-    <div><label class="f">Exam board</label><select id="pp-board"><option value="">All boards</option><option>AQA</option><option>CCEA</option><option>CIE</option><option>Edexcel</option><option>ICAAE</option><option>OCR</option><option>SQA</option><option>WJEC</option><option>Other</option></select></div>
-    <div><label class="f">Year</label><select id="pp-year"><option value="">All years</option></select></div>
+    <div><label class="f">Subject</label><select id="pp-subj" aria-label="Past papers: subject"></select></div>
+    <div><label class="f">Level</label><select id="pp-level" aria-label="Past papers: level"><option>GCSE</option><option>IGCSE</option><option>National 5</option><option>AS</option><option>A2/A-level</option><option>Scottish Highers</option><option>Scottish Advanced Highers</option><option>BTEC National</option></select></div>
+    <div><label class="f">Exam board</label><select id="pp-board" aria-label="Past papers: exam board"><option value="">All boards</option><option>AQA</option><option>CCEA</option><option>CIE</option><option>Edexcel</option><option>ICAAE</option><option>OCR</option><option>SQA</option><option>WJEC</option><option>Other</option></select></div>
+    <div><label class="f">Year</label><select id="pp-year" aria-label="Past papers: year"><option value="">All years</option></select></div>
   </div>
   <div id="pp-list"></div>
 </section>
@@ -1424,7 +1424,7 @@ function renderResults(){
     (mineOnly||!s||r.subj===s)&&(mineOnly||!l||r.level===l)&&(!t||r.type===t)&&(mineOnly||!tp||r.topic===tp));
   const el=document.getElementById("results");
   el.innerHTML=hits.map(r=>`
-    <div class="res" onclick="openRes('${r.id}')">
+    <div class="res" role="button" tabindex="0" aria-label="Open ${esc(r.title||'resource')}" onclick="openRes('${r.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openRes('${r.id}')}">
       <div class="type">${TYPE_ICON[r.type]||"📚"} ${r.type}${r.mine?' <span class="badge mine">mine</span>':""}</div>
       <h4>${esc(r.title)}</h4>
       <div class="meta">${r.subj} · ${r.level}${r.board&&r.board!=="—"?" · "+r.board:""}</div>

@@ -69,19 +69,19 @@
   </div>
   <form id="f" novalidate>
     <div id="row-name" style="display:none">
-      <label>Full name</label>
+      <label for="name">Full name</label>
       <input id="name" type="text" autocomplete="name" placeholder="e.g. Amara Okafor">
     </div>
-    <label>Email</label>
+    <label for="email">Email</label>
     <input id="email" type="email" autocomplete="email" placeholder="you@example.com">
-    <label>Password</label>
+    <label for="pw">Password</label>
     <input id="pw" type="password" autocomplete="current-password" placeholder="min 8 characters">
     <div id="row-role" style="display:none">
       <label>Account type</label>
       <div class="roles" id="roles"></div>
     </div>
     <div id="row-invite" style="display:none">
-      <label>Admin invite code</label>
+      <label for="invite">Admin invite code</label>
       <input id="invite" type="password" autocomplete="off" placeholder="provided by platform ops">
     </div>
     <!-- honeypot: real people never see or fill this; automated bots do -->
@@ -93,7 +93,7 @@
       <label style="display:flex;gap:9px;align-items:center;cursor:pointer;font-weight:400">
         <input type="checkbox" id="human-ck" style="width:auto;accent-color:#4FA6E0"> I'm a human, not a bot</label>
       <div id="human-challenge" style="display:none;margin-top:8px">
-        <label>Quick human check: <b id="chal-q"></b></label>
+        <label for="chal-a">Quick human check: <b id="chal-q"></b></label>
         <input id="chal-a" type="text" inputmode="numeric" autocomplete="off" placeholder="type the answer">
       </div>
     </div>
