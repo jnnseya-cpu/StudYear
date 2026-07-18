@@ -2316,7 +2316,7 @@ document.getElementById("gen-plan").onclick=()=>{
   const topicCursor={};
   function sessionTopic(subj,focus){
     if(focus)return focus;                                   // weak area named by the student
-    const topics=(typeof DIAG_TOPICS!=="undefined"&&DIAG_TOPICS[subj])||["Core concepts","Key skills","Exam technique","Past-paper practice"];
+    const topics=diagTopics(subj);
     const i=(topicCursor[subj]=(topicCursor[subj]||0)+1)-1;
     return topics[i%topics.length];
   }
@@ -2767,7 +2767,7 @@ function renderProgressDeep(qz,dg,plan){
       const strongest=rows[rows.length-1],weakest=rows[0];
       const mostImproved=imp.filter(r=>r.delta!=null).sort((a,b)=>b.delta-a.delta)[0];
       const diag=store.get("diagnostics",[])[0]||null;
-      const weakTopics=diag?(diag.list.find(x=>x.s===weakest[0])?(DIAG_TOPICS[weakest[0]]||DIAG_FALLBACK).slice(0,3):[]):[];
+      const weakTopics=diag?(diag.list.find(x=>x.s===weakest[0])?diagTopics(weakest[0]).slice(0,3):[]):[];
       $("prog-focus").innerHTML=`
         <div class="tiles" style="grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px">
           <div class="tile"><div class="v" style="color:var(--good)">${esc(strongest[0])}</div><div class="k">Strongest · ${strongest[1]}%</div></div>
@@ -2824,7 +2824,7 @@ document.getElementById("imp-go").onclick=()=>{
     </div>
     ${(weak.length?weak:rows.slice(0,3)).map(([s,m])=>{
       const stretch=m<40?"Pass":m<55?"Merit":"Distinction";
-      const topics=(DIAG_TOPICS[s]||DIAG_FALLBACK).slice(0,5);
+      const topics=diagTopics(s).slice(0,5);
       return `<div class="card" style="margin-top:10px">
         <h3 style="font-family:var(--serif);font-weight:500;font-size:18px;color:var(--gold-300)">${esc(s)} Improvement Plan</h3>
         <div class="tiles" style="grid-template-columns:repeat(3,1fr);margin:10px 0">
@@ -3215,7 +3215,7 @@ function makeRecovery(rep){
      pre-focused on that subject's actual spec topics. */
   const steps=weak.map(w=>{
     const m=w.mastery;
-    const topics=(typeof DIAG_TOPICS!=="undefined"&&DIAG_TOPICS[w.s])?DIAG_TOPICS[w.s]:[];
+    const topics=diagTopics(w.s);
     const ph=m<30?{name:"Rebuild the foundations",daily:"25 min every day",rate:13}
             :m<45?{name:"Close the core gaps",daily:"20 min every day",rate:11}
             :{name:"Consolidate to secure",daily:"15 min every day",rate:9};
@@ -3255,7 +3255,7 @@ function makeRecovery(rep){
   const RC_TIMES=["09:00","14:00","19:00"];
   const cur=new Date();cur.setHours(0,0,0,0);
   function nextWeekday(){do{cur.setDate(cur.getDate()+1)}while(cur.getDay()===0||cur.getDay()===6);return isoOf(cur)}
-  const days=weak.concat(weak).slice(0,spellLow?4:5).map((w,i)=>{const slot=i%3;return {date:nextWeekday(),slot:slot,time:RC_TIMES[slot],subj:w.s,topic:(typeof DIAG_TOPICS!=="undefined"&&DIAG_TOPICS[w.s]&&DIAG_TOPICS[w.s][0])||(w.s+" foundations"),mins:40,priority:"HIGH",mode:"RECOVERY · "+w.s+" foundations"}});
+  const days=weak.concat(weak).slice(0,spellLow?4:5).map((w,i)=>{const slot=i%3;return {date:nextWeekday(),slot:slot,time:RC_TIMES[slot],subj:w.s,topic:(diagTopics(w.s)[0])||(w.s+" foundations"),mins:40,priority:"HIGH",mode:"RECOVERY · "+w.s+" foundations"}});
   if(spellLow){const slot=days.length%3;days.push({date:nextWeekday(),slot:slot,time:RC_TIMES[slot],subj:"Spelling",topic:"Spelling & writing practice",mins:15,priority:"HIGH",mode:"SPELLING · daily practice"});}
   const week={n:(saved.plan&&saved.plan.length?saved.plan[saved.plan.length-1].n+1:1),days:days};
   saved.plan=(saved.plan||[]).concat([week]); store.set("plan",saved); renderPlan(); addPoints(10);
@@ -3352,6 +3352,30 @@ const DIAG_TOPICS = {
  "Computer Science":["Algorithms","Programming","Data representation","Networks","Security","Theory exam technique"],
  "Economics":["Markets & elasticities","Market failure","Macro objectives","Fiscal & monetary policy","Trade","Data-response technique"]};
 const DIAG_FALLBACK = ["Core concepts","Applying knowledge","Analysis & evaluation","Recall speed","Past-paper fluency","Exam technique"];
+/* Primary (EYFS/KS1/KS2/11+) topic map — a Year 4 child must NEVER see GCSE
+   topics (quadratics, photosynthesis, Macbeth) in their diagnostic report,
+   mastery map, recovery plan or lesson links. Chosen via the profile tier. */
+const DIAG_TOPICS_PRIMARY = {
+ "Mathematics":["Number & place value","Addition & subtraction","Multiplication & division (times tables)","Fractions & decimals","Measurement — money, time, length","Shape, position & direction"],
+ "English":["Reading & comprehension","Spelling","Grammar & punctuation","Writing sentences & stories","Vocabulary"],
+ "English Language":["Reading & comprehension","Spelling","Grammar & punctuation","Writing sentences & stories","Vocabulary"],
+ "English Literature":["Reading & comprehension","Understanding characters","Poems & stories","Vocabulary & meaning"],
+ "Science":["Living things & habitats","Plants","Animals including humans","Everyday materials","Forces & magnets","States of matter"],
+ "Biology":["Living things & habitats","Plants","Animals including humans","Food chains"],
+ "Chemistry":["Everyday materials","Solids, liquids & gases","Mixing & changing materials"],
+ "Physics":["Forces & magnets","Light & shadows","Sound","Electricity basics"],
+ "History":["Events & people from the past","Timelines & chronology","Everyday life long ago","Significant individuals"],
+ "Geography":["Maps, atlases & compass directions","The UK & the wider world","Weather & climate","Rivers, mountains & coasts","Our local area"],
+ "French":["Greetings & numbers","Colours & animals","Family & classroom words","Simple everyday phrases"],
+ "Computing":["Algorithms & clear instructions","Programming with Scratch","Using technology safely","Collecting & showing data"],
+ "Computer Science":["Algorithms & clear instructions","Programming with Scratch","Using technology safely","Collecting & showing data"]
+};
+const DIAG_FALLBACK_PRIMARY = ["Reading & understanding","Number & counting","Writing & spelling","Topic knowledge","Practice & fluency"];
+/* tier-aware topic lookup — primary children get primary topics, everyone else the GCSE+ map */
+function diagTopics(subj){
+  if(typeof dgTier==='function'&&dgTier()==='primary')return DIAG_TOPICS_PRIMARY[subj]||DIAG_FALLBACK_PRIMARY;
+  return (typeof DIAG_TOPICS!=="undefined"&&DIAG_TOPICS[subj])||DIAG_FALLBACK;
+}
 const DG_LABELS = ["No idea","Shaky","OK","Strong"];
 
 fillSelect(document.getElementById("dd-subj"), SUBJECTS);
@@ -3360,7 +3384,7 @@ document.getElementById("dd-subj").value = (PROFILE.subjects&&PROFILE.subjects[0
 document.getElementById("dd-level").value = (PROFILE.level&&LEVELS.includes(PROFILE.level))?PROFILE.level:"GCSE";
 if(PROFILE.board)document.getElementById("dd-board").value=PROFILE.board;
 
-function ddTopics(){ return DIAG_TOPICS[document.getElementById("dd-subj").value] || DIAG_FALLBACK }
+function ddTopics(){ return diagTopics(document.getElementById("dd-subj").value) }
 function drawDdTopics(){
   const el = document.getElementById("dd-topics");
   el.innerHTML = ddTopics().map((t,i)=>`
@@ -3780,6 +3804,13 @@ function buildLesson(topic,level,subj){
     steps.push({type:"practice",h:"3 · Your turn",pq:G.practice()});
     steps.push({type:"practice",h:"4 · One more — no hints unless you need them",pq:G.practice()});
     steps.push({type:"recall",h:"5 · Close the book",prompt:G.recallPrompt,model:G.recallModel});
+  }else if(/(reception|eyfs|ks1|ks2|key stage [12]|year\s?[1-6]|primary|junior|11\s?\+)/i.test(String(level))){
+    /* primary (KS1/KS2/11+): a warm, no-exam version of the conceptual lesson */
+    steps.push({type:"teach",h:"1 · What it is",html:"Let's learn about <b>"+esc(cap)+"</b>. First, what does it mean in simple words? Learn the key words that go with it — knowing the right words makes everything easier.",alt:"Say it in your own words, then give one everyday example. If you can explain it to a friend, you've got it!"});
+    steps.push({type:"predict",h:"2 · Have a go first",prompt:"Before we read on — in one line, what do you think "+esc(cap)+" means? Write your idea, then reveal.",reveal:"A good answer says what it is and gives one example. Did yours? If not, add an example now."});
+    steps.push({type:"example",h:"3 · Worked example",ex:{q:"Let's use "+esc(cap)+" in an example.",steps:["Read it carefully and find the key word.","Say what the key word means.","Show it with a simple example.","Write one clear sentence to explain it."],answer:null}});
+    steps.push({type:"recall",h:"4 · Close the book",prompt:"From memory: write one clear sentence that explains "+esc(cap)+".",model:"A strong sentence names the key word AND gives a simple example — that shows you really understand it."});
+    steps.push({type:"teach",h:"5 · How to remember it",html:"To remember <b>"+esc(cap)+"</b>: say it out loud, draw a quick picture, and teach it to someone at home. A little practice often beats one long session."});
   }else{
     steps.push({type:"teach",h:"1 · What it is",html:"Start with a precise definition of <b>"+esc(cap)+"</b> and the key terms around it. At "+esc(level)+" level, examiners reward exact vocabulary — nail the terms first, then the ideas that connect them.",alt:"Think of it like teaching it to a 10-year-old: one plain sentence for what it is, one everyday example, then the proper term. If you can say it simply, you understand it."});
     steps.push({type:"predict",h:"2 · Predict first",prompt:"Before you read on — in one line, what do you already think "+esc(cap)+" means? Write it, then reveal.",reveal:"Compare yours to: a clear definition names <i>what it is</i>, <i>what it does</i>, and <i>one example</i>. If your line missed one of those, add it."});
@@ -3937,7 +3968,12 @@ document.getElementById("il-go").onclick=()=>{
     const board=PROFILE.board&&PROFILE.board!=="—"?PROFILE.board:"";
     const curric=/ib|baccal/i.test(level)?"the IB curriculum":/national 5|highers/i.test(level)?"the Scottish (SQA) curriculum":/igcse|cie/i.test(level+board)?"the international (CIE/IGCSE) curriculum":"the UK national curriculum";
     document.getElementById("il-sub").textContent=_L.topic+" · "+level+" · writing your curriculum-aligned lesson with "+SYAI.provider()+"…";
-    SYAI.ask("You are StudYear's curriculum lesson author. Write an EXTREMELY detailed, curriculum-accurate lesson on the topic for a "+level+(subj?" "+subj:"")+" student, aligned to "+curric+(board?" and the "+board+" specification":"")+". Return EXACTLY six sections separated by lines containing only '---':\n1) 4–6 learning objectives, one per line, each tied to the curriculum/specification point it serves (name the spec area, e.g. 'AQA 4.4.1' style where known, otherwise the curriculum strand);\n2) Key vocabulary: 6–8 terms, each as '**term** — precise definition';\n3) The core teaching: a genuinely educational, detailed explanation with sub-points, **bold key terms** and at least two concrete examples — real subject content, not study advice;\n4) Going deeper: the mechanisms (how and why), links to related spec topics, one more worked micro-example, and the single most common misunderstanding corrected;\n5) A worked exam-style question: the question on the first line (with mark allocation), then the full model answer as numbered mark-scheme-style steps showing where each mark is earned;\n6) Exam technique for this level"+(board?" and "+board:"")+": the command words that appear on this topic and what each demands, typical mark allocations, and the 3 most common traps with fixes.\nUse markdown throughout. Depth and accuracy over brevity."+
+    const isPrimaryLesson=(typeof dgTier==='function'&&dgTier()==='primary')||/reception|eyfs|key stage 1|\bks1\b|key stage 2|\bks2\b|\byear\s?[1-6]\b|11\s?\+|primary|junior/i.test(level);
+    const lessonSys=(isPrimaryLesson
+      ? "You are StudYear's primary-school lesson author. Write a clear, warm, curriculum-accurate lesson on the topic for a "+level+(subj?" "+subj:"")+" child (UK national curriculum). Use simple, encouraging language a 7–11 year old understands — NO exams, mark schemes, spec codes or command words. Return EXACTLY six sections separated by lines containing only '---':\n1) 3–4 simple 'I can…' goals, one per line;\n2) Key words: 5–6 words, each as '**word** — a simple, child-friendly meaning';\n3) Let's learn it: a clear step-by-step explanation with **bold key words** and two everyday examples a child relates to;\n4) A bit more: one more example done slowly, and the mistake children often make and how to avoid it;\n5) Your turn: one practice question on the first line, then the answer explained in simple numbered steps;\n6) How to remember it: 2–3 memory tips or a little rhyme, and one fun way to practise at home.\nUse markdown. Short, kind sentences."
+      : "You are StudYear's curriculum lesson author. Write an EXTREMELY detailed, curriculum-accurate lesson on the topic for a "+level+(subj?" "+subj:"")+" student, aligned to "+curric+(board?" and the "+board+" specification":"")+". Return EXACTLY six sections separated by lines containing only '---':\n1) 4–6 learning objectives, one per line, each tied to the curriculum/specification point it serves (name the spec area, e.g. 'AQA 4.4.1' style where known, otherwise the curriculum strand);\n2) Key vocabulary: 6–8 terms, each as '**term** — precise definition';\n3) The core teaching: a genuinely educational, detailed explanation with sub-points, **bold key terms** and at least two concrete examples — real subject content, not study advice;\n4) Going deeper: the mechanisms (how and why), links to related spec topics, one more worked micro-example, and the single most common misunderstanding corrected;\n5) A worked exam-style question: the question on the first line (with mark allocation), then the full model answer as numbered mark-scheme-style steps showing where each mark is earned;\n6) Exam technique for this level"+(board?" and "+board:"")+": the command words that appear on this topic and what each demands, typical mark allocations, and the 3 most common traps with fixes.\nUse markdown throughout. Depth and accuracy over brevity.")
+      +((window.SY&&SY.stageStyle)?SY.stageStyle(level):"");
+    SYAI.ask(lessonSys+
       (LEARN.style?" The student's learning style is "+LEARN.style+" — shape explanations accordingly (diagrams described in words for visual learners, spoken-rhythm mnemonics for auditory, do-it steps for kinaesthetic).":"")+
       (LEARN.pace==="gentle"?" The student prefers a gentle pace: smaller steps, more recaps.":LEARN.pace==="fast"?" The student moves fast: denser content, fewer recaps.":""),
       "Topic: "+topic,{maxTokens:2800}).then(t=>{
@@ -3946,19 +3982,19 @@ document.getElementById("il-go").onclick=()=>{
       const steps=[];
       const objLines=(parts[0]||"").split("\n").map(x=>x.replace(/^[-*\d.)\s#]+/,"").trim()).filter(Boolean);
       steps.push({type:"intro",objectives:objLines.length?objLines.slice(0,8):_L.steps[0].objectives});
-      if(parts[1])steps.push({type:"teach",h:"1 · Key vocabulary",html:SYAI.render(parts[1]),live:true});
-      if(parts[2])steps.push({type:"teach",h:"2 · The core teaching",html:SYAI.render(parts[2]),live:true});
-      if(parts[3])steps.push({type:"teach",h:"3 · Going deeper",html:SYAI.render(parts[3]),live:true});
+      if(parts[1])steps.push({type:"teach",h:isPrimaryLesson?"1 · Key words":"1 · Key vocabulary",html:SYAI.render(parts[1]),live:true});
+      if(parts[2])steps.push({type:"teach",h:isPrimaryLesson?"2 · Let's learn it":"2 · The core teaching",html:SYAI.render(parts[2]),live:true});
+      if(parts[3])steps.push({type:"teach",h:isPrimaryLesson?"3 · A bit more":"3 · Going deeper",html:SYAI.render(parts[3]),live:true});
       if(_L.type){
         /* keep the computed worked example + marked practice + retrieval */
         _L.steps.filter(s=>s.type==="example"||s.type==="practice"||s.type==="recall").forEach(s=>steps.push(s));
-        if(parts[4])steps.push({type:"teach",h:"Exam-style worked example",html:SYAI.render(parts[4]),live:true});
+        if(parts[4])steps.push({type:"teach",h:isPrimaryLesson?"Another worked example":"Exam-style worked example",html:SYAI.render(parts[4]),live:true});
       }else{
         if(parts[4]){const lines=parts[4].split("\n").map(x=>x.trim()).filter(Boolean);
-          steps.push({type:"example",h:"4 · Worked exam-style example",ex:{q:lines[0].replace(/^\*+|\*+$/g,""),steps:lines.slice(1).map(l=>SYAI.render(l)),answer:null}});}
+          steps.push({type:"example",h:isPrimaryLesson?"4 · Your turn":"4 · Worked exam-style example",ex:{q:lines[0].replace(/^\*+|\*+$/g,""),steps:lines.slice(1).map(l=>SYAI.render(l)),answer:null}});}
         const recall=_L.steps.find(s=>s.type==="recall");if(recall)steps.push(recall);
       }
-      if(parts[5])steps.push({type:"teach",h:"Exam technique & common traps",html:SYAI.render(parts[5]),live:true});
+      if(parts[5])steps.push({type:"teach",h:isPrimaryLesson?"How to remember it":"Exam technique & common traps",html:SYAI.render(parts[5]),live:true});
       if(quiz)steps.push(quiz);
       steps.push({type:"summary"});
       _L.steps=steps;_ls={i:0,correct:0,practiceTotal:0,quizScore:0,confidence:null};
@@ -4001,7 +4037,7 @@ document.getElementById("cg-go").onclick=()=>{
     document.getElementById("cg-sub").textContent=head+" · generating with live AI…";
     document.getElementById("cg-out").innerHTML='<div class="note">Writing your course with '+SYAI.provider()+'…</div>';
     const grounding=(function(){const f=curricFor(subject,level);return f?"\nGround the course on this REAL "+f.tier+" specification structure — keep to it and refine/expand the bullets with concrete, exam-relevant detail:\n"+f.modules.map((m,i)=>"Module "+(i+1)+": "+m.t+" — "+m.topics.join("; ")).join("\n"):""})();
-    const sys="You are StudYear's course designer. Write a structured "+level+" "+subject+" course"+(board?" aligned to the "+board+" exam board":"")+(focus?" focused on: "+focus+" (go deep on this topic; only include other modules where they directly support it)":"")+". Produce 4–6 modules. For each module use a '## Module N — <title>' heading, then 3–5 specific subtopics as bullets, then a line '▸ ends with a check quiz'. Be concrete and exam-relevant — real specification content, never generic filler. End with a short 'How to study this course' note."+grounding;
+    const sys="You are StudYear's course designer. Write a structured "+level+" "+subject+" course"+(board?" aligned to the "+board+" exam board":"")+(focus?" focused on: "+focus+" (go deep on this topic; only include other modules where they directly support it)":"")+". Produce 4–6 modules. For each module use a '## Module N — <title>' heading, then 3–5 specific subtopics as bullets, then a line '▸ ends with a check quiz'. Be concrete and appropriate to the level — real curriculum content, never generic filler."+((window.SY&&SY.stageStyle)?SY.stageStyle(level):"")+" End with a short 'How to study this course' note."+grounding;
     SYAI.ask(sys,"Subject: "+subject+(focus?"\nFocus topic: "+focus:"")+"\nLevel: "+level+(board?"\nExam board: "+board:""),{maxTokens:1500}).then(txt=>{
       addPoints(10);touchStreak();logEvent("course","AI course: "+cap,head+" — live AI course generated.");
       document.getElementById("cg-sub").textContent=head+" · live AI course — every module opens into a real lesson, tutor session and quiz";
