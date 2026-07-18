@@ -67,9 +67,11 @@
       var tk=await SYCloud.token(email);
       if(!tk){
         /* No cloud token on this device/network — the model can't be reached
-           without one. Reconnect inline (same flow as linking/sync), then retry
-           the token, so the tutor recovers instead of dead-ending. */
-        try{ if(window.SY&&SY.ensureCloud){ var done=await SY.ensureCloud(); if(done) tk=await SYCloud.token(email); } }catch(e){}
+           without one. For interactive tutors we reconnect inline (same flow as
+           linking/sync) then retry the token, so they recover instead of
+           dead-ending. Batch generators (exam builder etc.) pass noRecover so
+           they fall back to templates INSTANTLY rather than popping a modal. */
+        if(!opts.noRecover){ try{ if(window.SY&&SY.ensureCloud){ var done=await SY.ensureCloud(); if(done) tk=await SYCloud.token(email); } }catch(e){} }
         if(!tk)throw new Error('Reconnect to StudYear to use the AI tutor.');
       }
       var body=JSON.stringify({system:system,user:user,maxTokens:maxTokens,
@@ -125,8 +127,15 @@
     }
     throw new Error('Unknown provider '+c.provider);
     };
+    /* hard ceiling so a stalled gateway / dead network can NEVER hang a feature
+       forever — callers (tutor, exam builder, lessons) catch and fall back. */
+    var TMO=opts.timeoutMs||90000;
+    function withTimeout(pr){ return new Promise(function(res,rej){ var done=false;
+      var id=setTimeout(function(){ if(!done){done=true;rej(new Error('AI request timed out'));} },TMO);
+      pr.then(function(v){ if(!done){done=true;clearTimeout(id);res(v);} },
+              function(e){ if(!done){done=true;clearTimeout(id);rej(e);} }); }); }
     try{
-      var out=await rawAsk();
+      var out=await withTimeout(rawAsk());
       logUsage(c,model,t0,true,inChars,String(out||'').length);
       return out;
     }catch(e){

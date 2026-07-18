@@ -155,7 +155,7 @@
       var user='Write questions '+(start+1)+' to '+(start+count)+' of a '+n+'-question '+subject+' exam paper for '+level+
         (topics.length?' covering these topics: '+topics.join('; ')+'.':'.')+
         ' Continue numbering from Q'+(start+1)+'.';
-      var text=await window.SYAI.ask(sys,user,{maxTokens:2400,temperature:0.7});
+      var text=await window.SYAI.ask(sys,user,{maxTokens:2400,temperature:0.7,noRecover:true,timeoutMs:30000});
       var re=/Q(\d+)\s*\[(\d+)\s*marks?\]\s*([^\n]+)\n+A\1:\s*([\s\S]*?)(?=\nQ\d+\s*\[|\s*$)/g,m;
       while((m=re.exec(text)))out.push({q:m[3].trim(),marks:parseInt(m[2],10)||2,a:m[4].trim()});
     }

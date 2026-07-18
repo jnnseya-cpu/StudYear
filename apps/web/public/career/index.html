@@ -83,6 +83,21 @@ function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
 
 var profile=SY.get('profile',{});
 var saved=SY.get('career',{});
+/* stage detection — a primary child (EYFS/KS1/KS2) must NOT be shown UCAS,
+   university salary bands, degree apprenticeships or automation-risk analysis.
+   They get an age-appropriate "explorer" instead (preserve & enhance: the
+   secondary engine below is untouched; primary simply routes to its own view). */
+var _ATT=(SY.attainment&&profile.level)?SY.attainment(profile.level,60):null;
+var isPrimary=!!(_ATT&&/eyfs|ks1|ks2/.test(_ATT.system));
+if(isPrimary){
+  document.querySelector('.k').textContent='Explorer Passport™ · Dream Big';
+  document.querySelector('h1').textContent='Your Explorer Passport';
+  document.querySelector('p.lede').textContent='There are thousands of amazing jobs in the world — and you don\'t have to choose now! Pick what you love and discover the kinds of work that might be perfect for you one day.';
+  var _sub=document.querySelector('#paths-card .sub');if(_sub)_sub.textContent='Jobs you might love — there\'s no wrong answer, and you can change your mind as much as you like.';
+  var _rows=document.querySelectorAll('.card .two');if(_rows[1])_rows[1].style.display='none';   // hide personality + income-priority
+  var _formSub=document.querySelector('.card .sub');if(_formSub)_formSub.textContent='Pick the things you love — that\'s all you need!';
+  var _genBtn=document.getElementById('c-gen');if(_genBtn)_genBtn.textContent='Show me!';
+}
 var INTERESTS=[['tech','Technology & coding'],['engineering','Engineering'],['health','Health & care'],['business','Business & finance'],['creative','Art & design'],['media','Media & film'],['science','Science'],['construction','Construction & trades'],['law','Law & politics'],['sport','Sport'],['education','Teaching'],['environment','Environment & energy'],['hospitality','Hospitality & tourism'],['marine','Marine & maritime'],['agriculture','Agriculture']];
 var chosen=saved.interests||[];
 INTERESTS.forEach(function(it){var l=el('label','tog');var cb=el('input');cb.type='checkbox';cb.value=it[0];cb.checked=chosen.indexOf(it[0])>=0;l.appendChild(cb);l.appendChild(document.createTextNode(' '+it[1]));$('c-interests').appendChild(l)});
@@ -198,7 +213,63 @@ var INTL_BY_SECTOR={
 };
 function localEmployers(loc){loc=(loc||'').toLowerCase();for(var k in LOCAL_EMP){if(k!=='coastal'&&k!=='rural'&&loc.indexOf(k)>=0)return LOCAL_EMP[k]}if(/coast|sea|beach|port|marine|island/.test(loc))return LOCAL_EMP.coastal;if(/village|rural|farm|countryside|shire\b/.test(loc))return LOCAL_EMP.rural;return null}
 
+/* ---- primary (EYFS/KS1/KS2) explorer -------------------------------------
+   No salaries, no UCAS, no university %, no automation-risk. Interests map to
+   friendly, encouraging job families a child can picture themselves in. */
+var PRIMARY_JOBS={
+  tech:{ic:'💻',t:'Making with computers',eg:['Game maker','App inventor','Robot builder','Website designer'],why:'You could build games, apps and clever robots!'},
+  engineering:{ic:'🛠️',t:'Building & inventing',eg:['Engineer','Inventor','Bridge builder','Rocket designer'],why:'You could design and build amazing things that really work.'},
+  health:{ic:'🩺',t:'Helping people feel better',eg:['Doctor','Nurse','Vet','Paramedic'],why:'You could look after people and animals and help them get well.'},
+  business:{ic:'💡',t:'Big ideas & running things',eg:['Shop owner','Inventor of a new toy','Team leader','Money whizz'],why:'You could start your own business one day!'},
+  creative:{ic:'🎨',t:'Making art & designing',eg:['Artist','Illustrator','Fashion designer','Animator'],why:'You could draw, design and create beautiful things.'},
+  media:{ic:'🎬',t:'Films, stories & shows',eg:['Film maker','YouTuber','Author','Presenter'],why:'You could tell brilliant stories on screen and in books.'},
+  science:{ic:'🔬',t:'Discovering how things work',eg:['Scientist','Space explorer','Nature expert','Inventor'],why:'You could discover new things about the world and space!'},
+  construction:{ic:'🏗️',t:'Building homes & cities',eg:['Builder','Architect','Digger driver','Carpenter'],why:'You could build houses, schools and whole cities.'},
+  law:{ic:'⚖️',t:'Fairness & leading',eg:['Judge','Police officer','Leader','Debater'],why:'You could help make things fair for everyone.'},
+  sport:{ic:'⚽',t:'Sport & keeping fit',eg:['Athlete','Coach','PE teacher','Physio'],why:'You could play, coach and help people stay healthy.'},
+  education:{ic:'📚',t:'Teaching & helping others learn',eg:['Teacher','Librarian','Tutor','Museum guide'],why:'You could help other children learn new things.'},
+  environment:{ic:'🌍',t:'Looking after our planet',eg:['Conservationist','Wind-farm engineer','Ranger','Climate scientist'],why:'You could help protect animals, oceans and nature.'},
+  hospitality:{ic:'🍽️',t:'Food, travel & welcoming people',eg:['Chef','Baker','Adventure guide','Hotel host'],why:'You could cook amazing food and welcome people from everywhere.'},
+  marine:{ic:'⛵',t:'The sea & ships',eg:['Marine biologist','Ship captain','Diver','Boat builder'],why:'You could explore the oceans and everything that lives there.'},
+  agriculture:{ic:'🚜',t:'Farms, food & animals',eg:['Farmer','Vet','Tractor engineer','Food scientist'],why:'You could grow food and look after animals.'}
+};
+function generatePrimary(){
+  var intr=readInterests();var p=$('c-style').value;
+  var strengths=(profile.subjects||[]).slice(0,3).map(function(x){return x.s}).filter(Boolean);
+  var powers=[];
+  if(hasAny(intr,['tech','engineering','construction']))powers.push('Building & making');
+  if(hasAny(intr,['creative','media']))powers.push('Being creative');
+  if(hasAny(intr,['health','education','law']))powers.push('Helping others');
+  if(hasAny(intr,['science','environment','marine']))powers.push('Curious explorer');
+  if(hasAny(intr,['sport']))powers.push('Active & sporty');
+  if(p==='practical')powers.push('Hands-on');
+  if(p==='academic')powers.push('Loves reading & ideas');
+  if(!powers.length)powers.push('Trying lots of things');
+  /* passport */
+  $('passports').innerHTML=
+    '<div class="passrow"><span style="flex:1"><b>Explorer Passport</b> — you\'re just getting started 🌟</span><span class="badge">active</span></div>'+
+    '<div class="passrow"><span style="flex:1">Things you\'re good at</span><span>'+(strengths.length?strengths.map(function(s){return '<span class="pill">'+esc(s)+'</span>'}).join(''):'<span class="pill">Everything you practise!</span>')+'</span></div>'+
+    '<div class="passrow"><span style="flex:1">Your superpowers</span><span>'+powers.map(function(s){return '<span class="pill">'+esc(s)+'</span>'}).join('')+'</span></div>'+
+    '<div class="passrow" style="border:0"><span style="flex:1">Things you love</span><span>'+(intr.length?intr.map(function(x){var f=INTERESTS.find(function(i){return i[0]===x});return '<span class="pill">'+esc(f?f[1]:x)+'</span>'}).join(''):'Pick some above ⤴')+'</span></div>';
+  $('passport-card').style.display='block';
+  /* dream jobs from interests */
+  var picks=intr.map(function(x){return PRIMARY_JOBS[x]}).filter(Boolean);
+  if(!picks.length)picks=[PRIMARY_JOBS.science,PRIMARY_JOBS.creative,PRIMARY_JOBS.tech,PRIMARY_JOBS.health];
+  $('paths').innerHTML=picks.map(function(j){
+    return '<div class="path"><div class="ph"><span class="ic">'+j.ic+'</span><b>'+esc(j.t)+'</b></div>'+
+      '<div class="why">'+esc(j.why)+'</div>'+
+      '<div style="margin-top:8px">'+j.eg.map(function(e){return '<span class="pill">'+esc(e)+'</span>'}).join('')+'</div></div>';
+  }).join('');
+  $('paths-card').style.display='block';
+  /* gentle coach; hide the secondary-only cards */
+  $('ai-impact-card').style.display='none';
+  $('emp-card').style.display='block';$('employers').innerHTML='';
+  $('coach').innerHTML='🌟 <b>Keep exploring!</b> The best thing you can do right now is try lots of things, read about jobs that sound fun, and keep practising at school. Every subject you learn opens more doors later. There\'s no rush — you have loads of time to decide, and you can dream as big as you like!';
+  document.querySelector('#emp-card h3').textContent='🌟 Your explorer tip';
+  var _es=document.querySelector('#emp-card .sub');if(_es)_es.style.display='none';
+}
 function generate(){
+  if(isPrimary)return generatePrimary();
   var a=academicScore();var p=$('c-style').value;var intr=readInterests();var pers=$('c-personality').value;var income=$('c-income').value;var loc=$('c-locality').value.trim();
   /* NEET / return-to-learning (16–26): the passport becomes a re-entry engine —
      funded routes first (Skills Bootcamps, apprenticeships, adult education),

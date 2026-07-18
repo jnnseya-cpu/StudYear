@@ -50,6 +50,17 @@
     return out;
   }
   function nameFor(email){ try{return (SY.accountName&&SY.accountName(email))||String(email||'').split('@')[0];}catch(e){return email;} }
+  /* the class group a student is in on a school roster (Year 10, 10A, …) */
+  function groupOf(code,email){ var em=String(email||'').toLowerCase();
+    var r=roster(code).filter(function(x){return String(x.email||'').toLowerCase()===em;})[0];
+    return r?(r.year||r.yearGroup||r.cohort||r.group||null):null; }
+  /* is this assignment addressed to this student? "Whole class"/blank = all;
+     otherwise the assignment group must match the student's roster group —
+     so a Year 7 never sees Year 11 homework. */
+  function addressedTo(a,code,email){ var g=a.group;
+    if(!g||/whole class/i.test(g))return true;
+    var sg=groupOf(code,email); if(!sg)return true; /* ungrouped roster → show all */
+    return String(sg).toLowerCase()===String(g).toLowerCase(); }
 
   /* status for one student on one assignment */
   function statusOf(a, email){
@@ -87,7 +98,7 @@
     forStudent: function(email){
       var em=String(email||'').toLowerCase(), out=[];
       schoolsForEmail(em).forEach(function(code){
-        hw(code).forEach(function(a){ out.push({code:code, a:a, status:statusOf(a,em)}); });
+        hw(code).forEach(function(a){ if(addressedTo(a,code,em)) out.push({code:code, a:a, status:statusOf(a,em)}); });
       });
       out.sort(function(x,y){ return new Date(y.a.issuedAt)-new Date(x.a.issuedAt); });
       return out;

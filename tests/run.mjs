@@ -42,17 +42,17 @@ const server = createServer((req, res) => {
 await new Promise((r) => server.listen(PORT, r));
 console.log('Serving ' + OUT + ' at http://localhost:' + PORT + '/StudYear');
 
-const SUITES = ['auth-test', 'e2ee-test', 'cloud-test', 'prem-test', 'exam-test', 'demo-test', 'admin-test', 'record-test', 'data-test', 'lapse-test', 'crawl'];
+const SUITES = ['auth-test', 'e2ee-test', 'cloud-test', 'prem-test', 'exam-test', 'demo-test', 'admin-test', 'record-test', 'data-test', 'lapse-test', 'level-test', 'crawl'];
 let failed = 0;
 for (const s of SUITES) {
   const file = join(ROOT, 'tests/e2e', s + '.mjs');
   process.stdout.write('\n=== ' + s + ' ===\n');
-  const out = await new Promise((resolve) => {
+  const { out, code } = await new Promise((resolve) => {
     const ch = spawn(process.execPath, [file], { env: process.env, cwd: ROOT });
     let buf = '';
     ch.stdout.on('data', (d) => { buf += d; });
     ch.stderr.on('data', (d) => { buf += d; });
-    ch.on('close', () => resolve(buf));
+    ch.on('close', (code) => resolve({ out: buf, code }));
   });
   process.stdout.write(out);
   const bad = out.split('\n').filter((l) => /^(FAIL|JSERR)/.test(l));
@@ -61,8 +61,12 @@ for (const s of SUITES) {
   const real = s === 'crawl'
     ? out.split('\n').filter((l) => /^\[(jserror|console|404|reqfail|nav)\]/.test(l))
     : bad;
-  if (real.length || /Error:|Traceback/.test(out) === true && !/^=== /.test(out)) failed += real.length;
-  if (real.length) console.error('✗ ' + s + ': ' + real.length + ' failure(s)');
+  // a suite that exits non-zero, or dumps an uncaught SyntaxError/stack trace
+  // (i.e. crashed before it could assert), must NEVER pass silently
+  const crashed = code !== 0 || /SyntaxError|ReferenceError|TypeError:|Traceback|\bat new Function\b/.test(out);
+  const suiteFails = real.length + (crashed && !real.length ? 1 : 0);
+  failed += suiteFails;
+  if (suiteFails) console.error('✗ ' + s + ': ' + suiteFails + ' failure(s)' + (crashed && !real.length ? ' (suite crashed — exit ' + code + ')' : ''));
   else console.log('✓ ' + s + ' clean');
 }
 server.close();

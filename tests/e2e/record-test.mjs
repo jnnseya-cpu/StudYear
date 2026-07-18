@@ -68,11 +68,14 @@ ok('Record: plan pushes into the child planner', !!(kidPlan&&kidPlan.plan&&kidPl
 const ivs=await p.evaluate(()=>JSON.parse(localStorage.getItem('sy-school:RECSCH:interventions')||'[]'));
 ok('Record: pushing the plan auto-logs a war-room intervention (no double entry)',
   ivs.length===1&&ivs[0].source==='learning-model'&&ivs[0].email==='kid@rec.test');
-await p.evaluate(()=>{const b=[...document.querySelectorAll('button[data-iv]')][0];if(b)b.click()});
+// the flagship "Close the Maths gap" one-tap targets the same subject the plan
+// push already logged — so it must DE-DUPE (no double entry), and say so.
+const ivBtn=await p.evaluate(()=>{const b=[...document.querySelectorAll('button[data-iv]')][0];if(b){b.click();return b.dataset.iv}return null});
 await p.waitForTimeout(150);
 const ivs2=await p.evaluate(()=>JSON.parse(localStorage.getItem('sy-school:RECSCH:interventions')||'[]'));
-ok('Record: strategy one-tap logs an intervention with de-dupe',
-  ivs2.length===2&&ivs2.filter(x=>x.email==='kid@rec.test').length===2);
+const ivBtnTxt=await p.evaluate(()=>{const b=[...document.querySelectorAll('button[data-iv]')][0];return b?b.textContent:''});
+ok('Record: strategy one-tap de-dupes against the plan-logged intervention (no double entry)',
+  ivBtn==='Mathematics'&&ivs2.filter(x=>x.email==='kid@rec.test'&&x.subject==='Mathematics'&&x.status!=='complete').length===1&&/Already an active intervention/.test(ivBtnTxt));
 await grabState(p);await ctx.close();
 
 /* ---- 2. cohort teacher allowed; outside-cohort teacher denied ---- */
@@ -85,13 +88,17 @@ const tt=await p.evaluate(()=>document.body.innerText);
 ok('Teacher (cohort): record opens as cohort teacher', /cohort teacher/.test(tt));
 ok('Teacher: sees interventions in flight auto-fed from the war room', /Interventions in flight/.test(tt)&&/learning model/i.test(tt));
 ok('Teacher: build-practice-paper action available', /Build practice paper/.test(tt));
+// capture state HERE — the teacher's record-open is now logged; the one-tap
+// paper click below navigates in-context, which re-fires withState's init
+// script and would otherwise wipe this page's recordLog before we grab it.
+await grabState(p);
 /* one-tap paper: stages prefill and lands on the exam builder pre-filled */
 await p.evaluate(()=>{const b=[...document.querySelectorAll('button[data-paper]')][0];if(b)b.click()});
 await p.waitForURL(u=>/\/teacher\/assistant\//.test(u.pathname),{timeout:8000});
 await p.waitForLoadState('networkidle');
 ok('Exam builder arrives pre-filled from the record',
   await p.evaluate(()=>document.getElementById('sx-subj')&&document.getElementById('sx-subj').value==='Mathematics'&&/Recovery paper/.test(document.getElementById('sx-title').value)));
-await grabState(p);await ctx.close();
+await ctx.close();
 
 ({ctx,p}=await fresh(null));await withState(p);
 await p.addInitScript(()=>{

@@ -175,17 +175,21 @@
       bestTime: m.rhythm.replace(' learner', '') };
   }
   function strategy(rec, m) {
+    /* each subject-bearing item carries `subj` explicitly so the one-tap actions
+       (Log as intervention / Build practice paper) never depend on parsing the
+       heading text — the flagship "Close the X gap" item was silently losing its
+       actions when the subject sat before the word "gap". */
     var out = [];
-    if (m.weakest) out.push({ h: 'Close the ' + m.weakest.s + ' gap (' + m.weakest.avg + '%)',
+    if (m.weakest) out.push({ subj: m.weakest.s, h: 'Close the ' + m.weakest.s + ' gap (' + m.weakest.avg + '%)',
       p: 'Short daily retrieval on the weakest topics, one worked example per session, re-diagnose in 2 weeks. Target: +10% by the next checkpoint.' });
-    m.declining.forEach(function (d) { out.push({ h: 'Reverse the decline in ' + d.s,
+    m.declining.forEach(function (d) { out.push({ subj: d.s, h: 'Reverse the decline in ' + d.s,
       p: d.s + ' has slipped ' + Math.abs(d.slope) + ' points per quiz. Re-teach the last two topics before any new content; pair with a confidence-mode fluency session.' }); });
     out.push({ h: 'Work with their rhythm', p: 'Schedule the hardest work as a ' + m.rhythm + ' (' + (m.peakHour || 16) + ':00 peak). ' +
       (m.consistency === 'irregular' ? 'Rebuild the habit with short ' + '20-minute sessions and streak rescue.' : 'Protect the existing streak — it is their engine.') });
     out.push({ h: 'Teach to their model', p: 'They are ' + m.styleLabel + '. Lead with ' +
       (/kinaesthetic/.test(m.styleLabel) ? 'do-first tasks and resource-making' : /practice/.test(m.styleLabel) ? 'quizzes and marked practice' : 'worked examples and visual walkthroughs') +
       ', then consolidate the other modes.' });
-    if (m.strongest && m.strongest.avg >= 70) out.push({ h: 'Stretch ' + m.strongest.s,
+    if (m.strongest && m.strongest.avg >= 70) out.push({ subj: m.strongest.s, h: 'Stretch ' + m.strongest.s,
       p: 'Secure at ' + m.strongest.avg + '% — move to exam-technique and grade-9-style questions to bank marks early.' });
     return out;
   }
@@ -278,7 +282,7 @@
     // teacher never re-enters what the record already knows
     html += '<div class="card" style="margin-bottom:12px"><h3>🚀 Learning & improvement strategy</h3>' +
       strat.map(function (x, si) {
-        var subj = (x.h.match(/(?:gap|decline in|Stretch) (?:the )?([A-Za-z &]+?)(?: gap)?(?: \(|$)/) || [])[1] || '';
+        var subj = x.subj || (x.h.match(/(?:gap|decline in|Stretch) (?:the )?([A-Za-z &]+?)(?: gap)?(?: \(|$)/) || [])[1] || '';
         var acts2 = '';
         if (canAct && subj) {
           acts2 = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px">' +

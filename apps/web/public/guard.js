@@ -404,6 +404,13 @@
         degree: ' Pitch at undergraduate/postgraduate level: critical, applied and theory-referenced.'
       })[k] || '';
     },
+    /** award reward points to the current account (homework/behaviour/skillrush
+        all call SY.addPoints). Accumulates on the account's `points` total that
+        the dashboards read. Safe no-op for demo sessions' persistence. */
+    addPoints: function (n) {
+      try { var p = Number(this.get('points', 0)) || 0; this.set('points', p + (Number(n) || 0)); } catch (e) {}
+      return true;
+    },
     /** resolves true when this account has a live cloud session (Firebase token)
         — cross-account linking/sync needs it; used to give a clear message. */
     cloudAuthed: function () {

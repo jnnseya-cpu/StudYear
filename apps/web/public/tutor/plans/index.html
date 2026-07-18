@@ -29,20 +29,23 @@
 'use strict';var SY=window.SY;if(!SY)return;
 function $(id){return document.getElementById(id)}
 var tt;function toast(t){var e=$('toast');if(!e)return;e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2200)}
-var PACKS=[{n:'Mini Boost',a:250,p:3},{n:'Core Boost',a:450,p:5,best:1},{n:'Growth Boost',a:900,p:10},{n:'Exam Boost',a:1800,p:20},{n:'Power Boost',a:2600,p:30}];
+/* ids MUST match the shared TOPUPS catalogue (packages/shared) so the Stripe
+   webhook recognises the purchase and credits the ACUs — a bare index like
+   "tutor_pack_0" is not in the catalogue and would be paid-but-not-credited. */
+var PACKS=[{id:'mini_boost',n:'Mini Boost',a:250,p:3},{id:'core_boost',n:'Core Boost',a:450,p:5,best:1},{id:'growth_boost',n:'Growth Boost',a:900,p:10},{id:'exam_boost',n:'Exam Boost',a:1800,p:20},{id:'power_boost',n:'Power Boost',a:2600,p:30}];
 var promo=0;
 function bal(){return SY.get('acus',0)}
 function draw(){$('bal').textContent=bal().toLocaleString();
   $('packs').innerHTML=PACKS.map(function(p,i){var price=(p.p*(1-promo)).toFixed(2);return '<div class="pack'+(p.best?' best':'')+'">'+(p.best?'<div class="save" style="margin-bottom:4px">Most popular</div>':'<div style="height:17px"></div>')+'<div style="font-size:12px;color:var(--ink-2);margin-bottom:6px">'+p.n+'</div><div class="a">'+p.a.toLocaleString()+'</div><div class="k">ACUs</div><div class="p">£'+price+'</div><div class="save">'+(promo?'code applied':'one-time')+'</div><button class="btn solid" data-buy="'+i+'" style="margin-top:12px;width:100%">Purchase</button></div>'}).join('');
   $('packs').querySelectorAll('[data-buy]').forEach(function(b){b.onclick=function(){var p=PACKS[+b.dataset.buy];
     var act=function(){SY.set('acus',bal()+p.a);SY.log('acu','ACU top-up',p.n+' · +'+p.a+' ACUs · £'+(p.p*(1-promo)).toFixed(2));toast('Added '+p.a.toLocaleString()+' ACUs');draw()};
-    if(window.SYBill){SYBill.checkout('tutor_pack_'+(+b.dataset.buy),{promo:($('promo').value||'').trim(),email:(SY.session&&SY.session.email),activate:act})}else act();}});
+    if(window.SYBill){SYBill.checkout(p.id,{promo:($('promo').value||'').trim(),email:(SY.session&&SY.session.email),ref:(SY.session&&SY.session.email),activate:act})}else act();}});
 }
 $('applycode').onclick=function(){var c=($('promo').value||'').trim().toUpperCase();if(!c){return}
-  var codes={STUDYEAR10:0.10,WELCOME15:0.15,LAUNCH20:0.20};
-  if(codes[c]){promo=codes[c];$('promo-note').textContent='✓ '+Math.round(promo*100)+'% discount applied — shown on Stripe before you pay.';$('promo-note').style.color='#89d3a2';toast('Discount applied')}
-  else{promo=0;$('promo-note').textContent='Code not recognised — it will still be validated by Stripe at checkout.';$('promo-note').style.color='';}
-  draw();
+  /* the real discount is applied and validated by Stripe at checkout (the code is
+     prefilled there) — we don't fabricate a percentage client-side. */
+  $('promo-note').textContent='Code “'+c+'” will be checked and applied on the Stripe payment page.';
+  $('promo-note').style.color='';
 };
 draw();
 })();

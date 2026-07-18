@@ -147,7 +147,7 @@
       }
       function list(){ var box=document.getElementById('an-list'); var l=AN.all(code);
         box.innerHTML='<div class="note" style="margin-bottom:6px">Posted notices</div>'+(l.length?l.map(function(a){ var reads=Object.keys(a.reads||{}).length;
-          return '<div class="card" style="margin-bottom:8px"><div style="display:flex;align-items:baseline;gap:8px"><b style="flex:1">'+esc(a.title)+'</b><span style="font-size:11px;font-weight:700;color:'+PRI[a.priority].c+'">'+PRI[a.priority].l+'</span></div>'+
+          return '<div class="card" style="margin-bottom:8px"><div style="display:flex;align-items:baseline;gap:8px"><b style="flex:1">'+esc(a.title)+'</b><span style="font-size:11px;font-weight:700;color:'+(PRI[a.priority]||PRI.info).c+'">'+(PRI[a.priority]||PRI.info).l+'</span></div>'+
             '<div class="note" style="margin-top:2px">'+esc(a.audience==='all'?'Everyone':a.audience)+' · '+fmtWhen(a.at)+' · '+reads+' read</div>'+
             (a.body?'<div style="font-size:13px;color:var(--ink-2);margin-top:6px;white-space:pre-wrap">'+esc(a.body)+'</div>':'')+
             '<div style="margin-top:6px"><button class="btn ghost sm an-del" data-id="'+a.id+'">Delete</button></div></div>';
@@ -165,8 +165,8 @@
         items.sort(function(x,y){return new Date(y.a.at)-new Date(x.a.at);});
         if(!items.length){ el.innerHTML='<div class="note" style="font-style:normal">No notices from school right now.</div>'; return; }
         el.innerHTML=items.slice(0,20).map(function(x){ var a=x.a, read=a.reads&&a.reads[email];
-          return '<div class="card" style="margin-bottom:8px;border-left:3px solid '+PRI[a.priority].c+'"><div style="display:flex;align-items:baseline;gap:8px"><b style="flex:1">'+esc(a.title)+'</b>'+
-            '<span style="font-size:11px;font-weight:700;color:'+PRI[a.priority].c+'">'+PRI[a.priority].l+'</span></div>'+
+          return '<div class="card" style="margin-bottom:8px;border-left:3px solid '+(PRI[a.priority]||PRI.info).c+'"><div style="display:flex;align-items:baseline;gap:8px"><b style="flex:1">'+esc(a.title)+'</b>'+
+            '<span style="font-size:11px;font-weight:700;color:'+(PRI[a.priority]||PRI.info).c+'">'+(PRI[a.priority]||PRI.info).l+'</span></div>'+
             '<div class="note" style="margin-top:2px">'+esc(a.byName)+' · '+fmtWhen(a.at)+'</div>'+
             (a.body?'<div style="font-size:13px;color:var(--ink-2);margin-top:6px;white-space:pre-wrap">'+esc(a.body)+'</div>':'')+
             '<div style="margin-top:8px">'+(read?'<span class="note" style="margin:0;color:var(--good,#5CBB7B)">✓ Acknowledged '+fmtDate(read)+'</span>':'<button class="btn sm an-ack" data-code="'+x.code+'" data-id="'+a.id+'">Acknowledge</button>')+'</div></div>';

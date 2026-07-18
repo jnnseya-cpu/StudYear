@@ -691,7 +691,7 @@
     <div class="card c5">
       <h3>Academic diagnostic — your baseline</h3>
       <div class="sub"><b style="color:var(--gold-300)">Start here.</b> This is your baseline — the point you build up
-        from. Every StudYear tool then personalises your path toward the top mark (100% · Grade 9). Every profile
+        from. Every StudYear tool then personalises your path toward the top mark for your level (100%). Every profile
         subject is loaded and assessed together: rate your confidence, add any others, then answer a short mixed quiz.</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div><label class="f">Add from catalog</label><select id="dg-add"><option value="">Choose a subject to add…</option></select></div>
@@ -720,7 +720,7 @@
       <div id="rp-history"></div>
     </div>
 
-    <div class="card c12">
+    <div class="card c12" id="dd-card">
       <h3>Topic deep-dive (single subject)</h3><div class="sub">go one level deeper: rate every spec topic in one subject for a topic-by-topic mastery map and recovery week</div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
         <div><label class="f">Subject</label><select id="dd-subj"></select></div>
@@ -2610,11 +2610,20 @@ const SOC_MODES={
   start:"HELP ME START mode: do not solve anything — help them plan the first step and get moving.",
   reason:"CHECK MY REASONING mode: the student explains their thinking — probe each step, confirm what is sound, and question what is not. Record their reasoning process in your reply.",
   real:"REAL-WORLD mode: explain through concrete, real-life examples and analogies before any formal definition."};
+/* primary (EYFS/KS1/KS2/11+) variants — a young child must never be framed
+   around examiners, mark schemes or grade bands. */
+const SOC_MODES_PRIMARY={
+  examine:"QUIZ TIME mode: ask friendly questions one at a time, tell them warmly if they got it right, and gently show the answer if not — no exams, no marks, just practice and praise.",
+  revise:"PRACTISE WITH ME mode: a quick, cheerful recap of the key ideas, then a few easy questions to help it stick — celebrate what they remember.",
+  mistake:"LET'S FIX IT TOGETHER mode: the child will show their work — find the one thing to fix, say what went well first, then show the right way kindly, step by step.",
+  challenge:"SUPER CHALLENGE mode: set one slightly-harder question as a fun stretch; give lots of encouragement and a hint the moment they seem stuck."};
 function tutorSystemPrompt(){
   const lvl=(typeof STUDENT_LEVEL!=="undefined"&&STUDENT_LEVEL)||PROFILE.level||"GCSE";
   const subs=(PROFILE.subjects||[]).map(x=>x.s).filter(Boolean).join(", ");
   const modeSel=document.getElementById("soc-mode");
-  const soc=SOC_MODES[(modeSel&&modeSel.value)||"guide"]||SOC_MODES.guide;
+  const mode=(modeSel&&modeSel.value)||"guide";
+  const isPrimary=(window.SY&&SY.attainment)?/eyfs|ks1|ks2/.test((SY.attainment(lvl,60)||{}).system||''):false;
+  const soc=(isPrimary&&SOC_MODES_PRIMARY[mode])||SOC_MODES[mode]||SOC_MODES.guide;
   return "You are StudYear's AI Tutor for a "+lvl+" student"+(subs?" studying "+subs:"")+". "+soc+" "+
     "Teach the method, never just the final answer. Be clear, encouraging and concise. Use short paragraphs, bold key terms and numbered steps or bullet lists. "+
     "End with one quick check-question. Keep it pitched at "+lvl+" level."+
@@ -3112,12 +3121,14 @@ function dgGenerate(written){
     bySubj[q.subj].n++; if(dgAnswers[i]===q.a)bySubj[q.subj].ok++;
   });
   /* every student is personalised toward the top mark — target defaults to Grade 9 (100%) */
-  const TOP="9";
+  /* the top attainment LABEL for this student's level — GCSE "Grade 9", KS2
+     "Greater Depth", EYFS "Expected", degree "1st" — never a hardcoded GCSE 9 */
+  const TOP=((window.SY&&SY.attainment)?SY.attainment(PROFILE.level,100).short:"Grade 9");
   const targets={};(PROFILE.subjects||[]).forEach(x=>targets[x.s]=x.target||TOP);
   const list=dgSubs.map(r=>{
     const qs=bySubj[r.s];
     const m=qs?Math.round(r.conf*0.6+100*qs.ok/qs.n*0.4):r.conf;
-    return {s:r.s,conf:r.conf,mastery:m,pred:gradeFor(m),target:targets[r.s]||TOP,asked:qs?qs.n:0,ok:qs?qs.ok:0};
+    return {s:r.s,conf:r.conf,mastery:m,pred:((window.SY&&SY.attainment)?SY.attainment(PROFILE.level,m).short:("Grade "+gradeFor(m))),target:targets[r.s]||TOP,asked:qs?qs.n:0,ok:qs?qs.ok:0};
   }).sort((a,b)=>a.mastery-b.mastery);
   const avg=Math.round(list.reduce((a,b)=>a+b.mastery,0)/list.length);
   const risk=riskFor(avg);
@@ -3148,7 +3159,7 @@ function dgGenerate(written){
     store.set("baseline",baseline);
     report.isBaseline=true;
   }
-  store.set("diagnostic",{avg,pred:gradeFor(avg),weak:report.weak,weakest:list[0]?list[0].s:null,when:todayKey(),baselineAvg:baseline.avg});
+  store.set("diagnostic",{avg,pred:((window.SY&&SY.attainment)?SY.attainment(PROFILE.level,avg).short:("Grade "+gradeFor(avg))),weak:report.weak,weakest:list[0]?list[0].s:null,when:todayKey(),baselineAvg:baseline.avg});
   addPoints(25); touchStreak();
   logEvent("diagnostic",report.isBaseline?"Baseline diagnostic set":"Academic Diagnostic Completed",
     report.isBaseline?"Your baseline is set — every tool now personalises your path to 100%.":"Your academic baseline report is ready.");
@@ -3167,7 +3178,7 @@ function renderDgReport(rep){
   const baseSubj={};if(baseline)baseline.list.forEach(x=>baseSubj[x.s]=x.mastery);
   document.getElementById("dg-out").innerHTML=`
     ${isBase?`<div style="border:1px solid rgba(95,168,224,.4);background:rgba(77,157,224,.08);border-radius:10px;padding:11px 14px;font-size:13px;color:var(--gold-300);margin-bottom:12px">
-      ✦ This is your <b>baseline</b>. From here, every StudYear tool personalises your path up to <b>100% (Grade 9)</b>. Come back any time to see how far you've climbed.</div>`
+      ✦ This is your <b>baseline</b>. From here, every StudYear tool personalises your path up to <b>the top (${TOP})</b>. Come back any time to see how far you've climbed.</div>`
       :growth?`<div style="border:1px solid rgba(92,187,123,.4);background:rgba(92,187,123,.08);border-radius:10px;padding:11px 14px;font-size:13px;color:#a9dfbc;margin-bottom:12px">
       ▲ You've grown <b>${growth>=0?"+":""}${growth}%</b> since your baseline (${baseline.avg}% → ${rep.avg}%). Keep building toward 100%.</div>`:""}
     <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
@@ -3179,11 +3190,11 @@ function renderDgReport(rep){
     <div class="bar" style="height:12px;position:relative">
       ${baseline?`<span style="position:absolute;left:${baseline.avg}%;top:-3px;bottom:-3px;width:2px;background:var(--ink-3)" title="baseline"></span>`:""}
       <i style="width:${rep.avg}%;background:linear-gradient(90deg,var(--gold-500),var(--good))"></i></div>
-    <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink-3);margin-bottom:14px"><span>0%</span>${baseline?`<span>baseline ${baseline.avg}%</span>`:""}<span>100% · Grade 9</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink-3);margin-bottom:14px"><span>0%</span>${baseline?`<span>baseline ${baseline.avg}%</span>`:""}<span>100% · ${TOP}</span></div>
     ${rep.list.map(x=>{const b=baseSubj[x.s];const g=(b!=null&&!isBase)?x.mastery-b:null;
       return `<div class="mrow"><span>${esc(x.s)}</span>
       <div class="bar"><i style="width:${x.mastery}%;background:${x.mastery<60?"var(--crit)":x.mastery<80?"var(--warn)":"var(--good)"}"></i></div>
-      <span class="pc">${x.mastery}%${g!=null?` <span style="color:${g>=0?"var(--good)":"var(--crit)"}">${g>=0?"▲+":"▼"}${Math.abs(g)}</span>`:""} · target ${esc(String(x.target||"9"))}</span></div>`}).join("")}
+      <span class="pc">${x.mastery}%${g!=null?` <span style="color:${g>=0?"var(--good)":"var(--crit)"}">${g>=0?"▲+":"▼"}${Math.abs(g)}</span>`:""} · target ${esc(String(x.target||TOP))}</span></div>`}).join("")}
     ${rep.spelling?(()=>{const s=rep.spelling.score,low=s<70;const w=rep.written||{};
       const chip=(lbl,val)=>val==null?"":`<div class="tile" style="padding:8px 10px"><div class="v" style="font-size:20px;color:${val<70?'var(--crit)':val<85?'var(--warn)':'var(--good)'}">${val}%</div><div class="k">${lbl}</div></div>`;
       const fb=w.feedback?(w.live&&window.SYAI&&SYAI.render?SYAI.render(w.feedback):'<div style="white-space:pre-wrap">'+esc(w.feedback)+'</div>'):"";
@@ -3225,7 +3236,7 @@ function makeRecovery(rep){
         {t:"Interactive rescue lesson — start on “"+(topics[0]||w.s+" foundations")+"”",href:"#lesson",cta:"Start the lesson",topic:topics[0]||""},
         {t:"AI Tutor: work "+(topics[1]?"“"+topics[1]+"”":"your hardest questions")+" step by step until it clicks",href:"#tutor",cta:"Open AI Tutor",topic:topics[1]||""},
         {t:"Create flashcards + a timed quiz on "+(topics[2]||w.s)+" — review every wrong answer",href:"#create",cta:"Build & drill",topic:topics[2]||""},
-        {t:"Past-paper questions on "+w.s+" under exam timing",href:"#papers",cta:"Find past papers",topic:""},
+        {t:(typeof dgTier==="function"&&dgTier()==="primary")?"Practice questions on "+w.s+" — little and often":"Past-paper questions on "+w.s+" under exam timing",href:"#papers",cta:(typeof dgTier==="function"&&dgTier()==="primary")?"Practise":"Find past papers",topic:""},
         {t:"Retake the diagnostic after week "+Math.min(2,weeks)+" — measure the climb, re-aim the plan",href:"#diag",cta:"Re-test",topic:""}]};
   });
   /* spelling is part of the improvement plan: when the diagnostic's written
@@ -3382,6 +3393,9 @@ fillSelect(document.getElementById("dd-subj"), SUBJECTS);
 fillSelect(document.getElementById("dd-level"), LEVELS);
 document.getElementById("dd-subj").value = (PROFILE.subjects&&PROFILE.subjects[0]&&SUBJECTS.includes(PROFILE.subjects[0].s))?PROFILE.subjects[0].s:"Mathematics";
 document.getElementById("dd-level").value = (PROFILE.level&&LEVELS.includes(PROFILE.level))?PROFILE.level:"GCSE";
+/* the topic deep-dive is a GCSE/A-level spec-topic tool (numeric target grades,
+   exam boards) — hide it for primary children, for whom it's meaningless. */
+(function(){try{if(typeof dgTier==="function"&&dgTier()==="primary"){var c=document.getElementById("dd-card");if(c)c.style.display="none";}}catch(e){}})();
 if(PROFILE.board)document.getElementById("dd-board").value=PROFILE.board;
 
 function ddTopics(){ return diagTopics(document.getElementById("dd-subj").value) }
@@ -3667,7 +3681,7 @@ document.getElementById("pg-go").onclick=()=>{
   if(window.SYAI&&SYAI.ready()){
     const box=document.getElementById("pg-ai");
     box.innerHTML='<div class="note">Writing your examiner analysis with '+SYAI.provider()+'…</div>';
-    SYAI.ask("You are a "+(PROFILE.level||"GCSE")+" "+subj+" examiner. Given a student's data, write a specific 4–6 sentence prediction analysis: what the trajectory means, the 2–3 topics most likely capping the grade, and exactly what to do in the next 2 weeks to move up one grade. No generic advice; be concrete for this subject. Use markdown.",
+    SYAI.ask("You are a "+(PROFILE.level||"GCSE")+" "+subj+" teacher writing a supportive progress analysis (4–6 sentences): what the trajectory means, the 2–3 topics most likely holding progress back, and exactly what to do in the next 2 weeks to move up. Be concrete for this subject, not generic. Use markdown."+((window.SY&&SY.stageStyle)?SY.stageStyle(PROFILE.level):""),
       "Data: quiz scores in order: "+qz.map(q=>q.pct+"%").join(", ")+". Blended mastery "+mastery+"%. Predicted Grade "+grade+". Trend "+trend+"."+(tgt?" Target grade "+tgt+".":""),{maxTokens:600})
     .then(t=>{box.innerHTML='<div class="card" style="margin-top:10px"><div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:4px">Live AI examiner analysis</div>'+SYAI.render(t)+'</div>'})
     .catch(()=>{box.innerHTML=''});
@@ -3696,7 +3710,7 @@ document.getElementById("cg-price").textContent=CG_PRICE;
   avg.slice(0,2).forEach(([s,a])=>picks.push({t:"Rescue "+s+" ("+a+"%)",subj:s,topic:s+" — my weakest areas"}));
   const lastLesson=(store.get("activity",[])||[]).find(a=>a.k==="lesson");
   if(lastLesson)picks.push({t:"Continue: "+lastLesson.t.replace(/^Interactive lesson: /,""),topic:lastLesson.t.replace(/^Interactive lesson: /,"")});
-  (PROFILE.subjects||[]).slice(0,3).forEach(x=>{if(!picks.some(p=>p.subj===x.s))picks.push({t:"Push "+x.s+" to grade "+(x.target||"9"),subj:x.s,topic:x.s+" — next topic toward my target"})});
+  (PROFILE.subjects||[]).slice(0,3).forEach(x=>{if(!picks.some(p=>p.subj===x.s))picks.push({t:"Push "+x.s+" to "+(x.target||((window.SY&&SY.attainment)?SY.attainment(PROFILE.level,100).short:"grade 9")),subj:x.s,topic:x.s+" — next topic toward my target"})});
   box.innerHTML=picks.slice(0,4).map((p,i)=>'<button class="btn ghost sm" data-i="'+i+'" style="font-size:11.5px">✨ '+esc(p.t)+'</button>').join("")||
     '<span class="note" style="margin:0">Complete your profile & diagnostic and StudYear personalises these picks to you.</span>';
   box.querySelectorAll("button").forEach(b=>{b.onclick=()=>{const p=picks[+b.dataset.i];
@@ -3786,8 +3800,16 @@ const QGEN={
 function buildQuiz(topic,subj,type){
   if(type&&QGEN[type]){const seen={},out=[];let guard=0;while(out.length<4&&guard++<40){const q=QGEN[type].mcq();if(!seen[q.q]){seen[q.q]=1;out.push(q)}}return out}
   const lib=tutorQuizBank(topic);if(lib.length)return lib.slice(0,Math.min(5,lib.length));
-  /* conceptual fallback: metacognitive checks that still test good exam technique */
   const T=_cap(topic);
+  /* primary (KS1/KS2/11+): warm, no-exam learning-habit checks — a Year 4 must
+     never be quizzed on "exam answers" or "command words". */
+  if(typeof dgTier==='function'&&dgTier()==='primary'){
+    return [
+      {q:"When you learn about "+T+", what helps most?",o:["Learn the key words and say what they mean","Just read it once quickly","Write as much as you can","Skip the tricky words"],a:0,exp:"Knowing the key words makes everything about "+T+" easier!"},
+      {q:"What is the best way to remember "+T+"?",o:["Try it from memory, then check","Read your notes over and over","Only watch a video","Copy it out once"],a:0,exp:"Testing yourself from memory helps it stick — even when it feels tricky at first."},
+      {q:"To get really good at "+T+", you should:",o:["Practise a little bit on lots of days","Do it all once then stop","Only do it if it's easy","Wait until the day before"],a:0,exp:"A little practice often beats one big go — that's how you get great at anything!"}];
+  }
+  /* conceptual fallback: metacognitive checks that still test good exam technique */
   return [
     {q:"For a ‘"+T+"’ exam answer, the command word tells you to EXPLAIN. What earns the marks?",o:["Give reasons — how/why, with a cause→effect chain","List facts with no links","Write as much as possible","Only define the key term"],a:0,exp:"Explain = reasoned how/why. Each linked reason is a mark."},
     {q:"Best first move when revising "+T+"?",o:["Retrieve from memory, then check notes","Re-read notes passively","Highlight the textbook","Copy the definition out"],a:0,exp:"Active retrieval beats passive re-reading for long-term memory."},
@@ -4263,6 +4285,12 @@ function curricFor(topic,level){
   const hit=CURRIC_ALIAS.find(a=>t.includes(a[0]));
   if(!hit)return null;
   const subj=CURRICULUM[hit[1]];if(!subj)return null;
+  /* CURRICULUM only holds GCSE/A-level spec structures. A primary child must
+     NOT be grounded on the GCSE spec (quadratics, moles, Cells & organs) — return
+     null so the course is built from the level+stageStyle prompt alone / the
+     honest "no verified outline" card, never a GCSE module list. */
+  const isPrimary=/eyfs|reception|nursery|key stage [12]|\bks[12]\b|infant|junior|primary|11 ?\+|year ?[1-6]\b|years? ?[1-6]/i.test(String(level));
+  if(isPrimary)return null;
   const wantA=/a2|a-level|alevel|as\b|higher|baccalaureate|university/i.test(level);
   const mods=wantA?(subj.alevel||subj.gcse):(subj.gcse||subj.alevel);
   return mods?{key:hit[1],modules:mods,tier:wantA&&subj.alevel?"A-level":"GCSE"}:null;

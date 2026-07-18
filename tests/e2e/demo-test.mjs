@@ -26,7 +26,10 @@ ok('Landing: "Book a school demo" links to the school demo',
 
 /* ---- 1. demo page + school highlight ---- */
 await p.goto(B+'/demo/?role=school',{waitUntil:'networkidle'});
-ok('Demo page shows all 7 role cards', await p.locator('#grid .card').count()===7);
+// 6 public role cards; the Platform Admin demo is intentionally NOT public
+// (operator view is internal — admins sign in at /auth/?role=admin with the invite code)
+ok('Demo page shows the 6 public role cards', await p.locator('#grid .card').count()===6);
+ok('Admin demo card is intentionally NOT public', await p.locator('#card-admin').count()===0);
 ok('Demo page states no live AI / no spend', /never call live AI/.test(await p.locator('.safe').innerText()));
 ok('?role=school highlights the school card', await p.evaluate(()=>document.getElementById('card-school').classList.contains('hot')));
 await ctx.close();
@@ -78,7 +81,7 @@ ok('Teacher exam builder runs on the demo school pool', /Riverside Academy \(Dem
 await ctx.close();
 
 /* ---- 6. school / authority / tutor / admin all open ---- */
-for(const [role,path] of [['school','/school/'],['authority','/authority/'],['tutor','/tutor/'],['admin','/admin/']]){
+for(const [role,path] of [['school','/school/'],['authority','/authority/'],['tutor','/tutor/']]){
   ({ctx,p}=await fresh());
   await launchDemo(p,role,'loaded');
   ok(role+' loaded lands on '+path, p.url().includes(path));

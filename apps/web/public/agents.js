@@ -21,11 +21,18 @@
   function ss(code,k,v){ SY.schoolSet(code,k,v); }
   function roster(code){ return (sg(code,'roster',[])||[]); }
   function nameFor(email){ try{return (SY.accountName&&SY.accountName(email))||String(email||'').split('@')[0];}catch(e){return email;} }
+  /* legacy/demo dashboards store per-student metrics on the roster row as `.m`
+     ({overall,hw,attendance,behaviour,mastery,risk}); fall back to it when the
+     canonical stores are empty so the agent cards aren't blank on a demo school. */
+  function rMetric(code,email){ var em=String(email).toLowerCase();
+    var r=roster(code).filter(function(x){return String(x.email||'').toLowerCase()===em;})[0];
+    return (r&&r.m)?r.m:null; }
 
   /* ---- data helpers ---------------------------------------------------- */
   function attendancePct(code,email){
     var store=sg(code,'attendance',{})||{}; var em=String(email).toLowerCase(); var counted=0,present=0;
     Object.keys(store).forEach(function(k){ var rec=store[k]&&store[k].records; if(rec&&rec[em]!=null){ counted++; var st=String(rec[em]).toLowerCase(); if(st==='present'||st==='late'||st==='p'||st==='l')present++; } });
+    if(!counted){ var rm=rMetric(code,email); if(rm&&typeof rm.attendance==='number')return rm.attendance; }
     return counted?Math.round(100*present/counted):null;
   }
   function hwState(code,email){
@@ -62,7 +69,7 @@
     var beh=[]; rl.forEach(function(r){ var b=behaviourNet(code,r.email); if(b.net<0||b.recentNeg>=2){ beh.push({student:r.email,name:r.name||nameFor(r.email),severity:b.net<=-3?'high':'med',text:(b.net>=0?'+':'')+b.net+' net · '+b.recentNeg+' concerns in 14 days',action:'intervention',reason:'Behaviour trend'}); } });
     out.push({key:'behaviour',name:'Behaviour & Engagement Agent',icon:'🎯',summary:beh.length?beh.length+' student(s) showing a negative pattern':'Behaviour positive across the cohort',findings:beh});
     // 4. Examination Readiness
-    var exr=[]; rl.forEach(function(r){ var m=mastery(r.email); var target=null; try{ var pf=SY.readAccount(r.email,'profile',{}); if(pf.subjects&&pf.subjects[0]&&pf.subjects[0].target)target=pf.subjects[0].target; }catch(e){}
+    var exr=[]; rl.forEach(function(r){ var m=mastery(r.email); if(m==null){var _rm=r.m||rMetric(code,r.email); if(_rm)m=(typeof _rm.mastery==='number'?_rm.mastery:(typeof _rm.overall==='number'?_rm.overall:null));} var target=null; try{ var pf=SY.readAccount(r.email,'profile',{}); if(pf.subjects&&pf.subjects[0]&&pf.subjects[0].target)target=pf.subjects[0].target; }catch(e){}
       if(m!=null&&m<55){ exr.push({student:r.email,name:r.name||nameFor(r.email),severity:m<45?'high':'med',text:m+'% mastery'+(target?' (target grade '+target+')':''),action:'intervention',reason:'Below exam-ready mastery'}); } });
     out.push({key:'exam',name:'Examination Readiness Agent',icon:'🎓',summary:exr.length?exr.length+' student(s) below exam-ready mastery':'Cohort tracking toward targets',findings:exr});
     // 5. SEND Adjustment

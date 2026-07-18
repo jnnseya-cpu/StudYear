@@ -149,7 +149,7 @@
           '<div style="margin-top:10px"><button class="btn solid" id="ex-add">Create session →</button></div></div>';
         h+='<div style="margin-top:12px">'+(e.sessions.length?e.sessions.map(function(x){ var entered=Object.keys(e.entries[x.id]||{}).length;
           return '<div class="card" style="margin-bottom:8px"><div style="display:flex;align-items:baseline;gap:8px"><b style="flex:1">'+esc(x.name)+'</b><span class="note" style="margin:0">'+entered+' entered</span></div>'+
-            '<div class="note" style="margin-top:2px">'+esc(x.subject)+' · '+esc(x.group)+' · '+SCHEMES[x.scheme].label+(x.date?' · '+fmtDate(x.date):'')+'</div>'+
+            '<div class="note" style="margin-top:2px">'+esc(x.subject)+' · '+esc(x.group)+' · '+(SCHEMES[x.scheme]||SCHEMES.gcse91).label+(x.date?' · '+fmtDate(x.date):'')+'</div>'+
             '<div style="margin-top:8px"><button class="btn sm ex-open" data-id="'+x.id+'">Enter results →</button> <button class="btn ghost sm ex-del" data-id="'+x.id+'">✕</button></div></div>';
         }).join(''):'<div class="note" style="font-style:normal">No exam sessions yet.</div>')+'</div>';
         el.innerHTML=h;
@@ -159,7 +159,7 @@
         el.querySelectorAll('.ex-del').forEach(function(b){b.onclick=function(){ Exams.removeSession(code,b.dataset.id); render(); };});
       }
       function enter(id){ var e=exams(code); var s=e.sessions.filter(function(x){return x.id===id;})[0]; if(!s)return;
-        var scheme=SCHEMES[s.scheme]; var rl=roster(code).filter(function(r){ return !s.group||String(r.year||r.cohort||'')===s.group; }); if(!rl.length)rl=roster(code);
+        var scheme=SCHEMES[s.scheme]||SCHEMES.gcse91; var rl=roster(code).filter(function(r){ return !s.group||String(r.year||r.cohort||'')===s.group; }); if(!rl.length)rl=roster(code);
         var ent=e.entries[id]||{};
         var h='<div class="card"><div style="display:flex;align-items:baseline;gap:8px"><b style="flex:1;font-size:15px">'+esc(s.name)+'</b><button class="btn ghost sm" id="ex-back">← Back</button></div>'+
           '<div class="note" style="margin-top:2px">'+esc(s.subject)+' · '+scheme.label+'</div>';

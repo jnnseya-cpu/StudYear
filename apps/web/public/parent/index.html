@@ -358,10 +358,16 @@ function metrics(email){
   var vScore=loggedH?clamp(Math.round(verifiedH/loggedH*100),0,100):0;
   var weakest=withData.length?withData.reduce(function(a,b){return a.mastery<b.mastery?a:b}).s:null;
   var strongest=withData.length?withData.reduce(function(a,b){return a.mastery>b.mastery?a:b}).s:null;
+  /* predicted = the level-correct attainment LABEL (e.g. "Grade 5", "Expected
+     Standard", "scaled 108", "2:1"), not a hardcoded GCSE 1–9 grade — a KS2
+     child's parent must never be told a "Grade 7". */
+  var _att=(window.SY&&SY.attainment)?SY.attainment(profile.level,overall):null;
   return {email:email,profile:profile,subjects:subjects,overall:overall,streak:streak,lessons:lessons,
     weekly:weekly,risk:risk,engagement:engagement,focus:focus,diag:diag,plan:plan,activity:activity,mine:mine,
     loggedH:loggedH,verifiedH:verifiedH,vScore:vScore,weakest:weakest,strongest:strongest,consent:consent,
-    predicted:gradeFor(overall)};
+    predicted:_att?_att.short:('Grade '+gradeFor(overall)),
+    attSystem:_att?_att.system:'generic',
+    isPrimary:!!(_att&&/ks1|ks2|eyfs/.test(_att.system))};
 }
 
 /* ---- render everything ---- */
@@ -496,7 +502,7 @@ function renderDeep(m){
     '<div class="hm-grid" style="grid-template-columns:minmax(84px,1.4fr) repeat('+WEEKS+',1fr) 34px">'+colHead+rowsHtml+'</div>'+
     '<div class="hm-scale"><span>0%</span><i></i><span>100%</span><span style="margin-left:auto;color:var(--ink-3)">column = week · gold ring = now · hover any cell</span></div>';
 
-  $('forecast').textContent='Grade '+m.predicted;
+  $('forecast').textContent=m.predicted;
 
   /* briefing */
   var brief=SY.readAccount(m.email,'brief',null);
@@ -510,7 +516,7 @@ function renderDeep(m){
   /* live-AI weekly briefing on top of the data summary */
   if(window.SYAI&&SYAI.ready()){
     SYAI.ask("You are StudYear's family-briefing writer. From the data, write a warm, specific weekly parent briefing: 3–4 sentences on how the week really went, one 'Wins' bullet list (2–3 real wins from the data), one 'This week, try' action. Ground every claim in the data; never invent. Markdown.",
-      "Child "+nm+": overall "+m.overall+"%, predicted Grade "+m.predicted+", weekly growth "+m.weekly+"%, risk "+m.risk+". Subjects: "+(m.subjects||[]).map(function(x){return x.s+" "+x.mastery+"% (momentum "+x.momentum+"%)"}).join("; ")+".",{maxTokens:600})
+      "Child "+nm+": overall "+m.overall+"%, predicted "+m.predicted+", weekly growth "+m.weekly+"%, risk "+m.risk+". Subjects: "+(m.subjects||[]).map(function(x){return x.s+" "+x.mastery+"% (momentum "+x.momentum+"%)"}).join("; ")+".",{maxTokens:600})
     .then(function(t){$('brief').innerHTML='<div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:4px">Live AI briefing</div>'+SYAI.render(t)}).catch(function(){});
   }
 
@@ -608,6 +614,22 @@ function renderPathway(m,nm){
   var level=(m.profile.level||'').toLowerCase();
   var isPost16=/a2|a-level|advanced higher|ib|international bacc|university/.test(level);
   var trajLabel=isPost16?'A-level trajectory':/gcse|igcse|national 5/.test(level)?'GCSE trajectory':'Trajectory';
+  /* PRIMARY (EYFS/KS1/KS2): never show a GCSE forecast, degree routes, UCAS or
+     A-level pathways to a young child's parent — show strengths & gentle next
+     steps instead. Formal options come later. */
+  if(m.isPrimary){
+    var strongP=m.subjects.slice().filter(function(x){return x.mastery}).sort(function(a,b){return b.mastery-a.mastery});
+    var topP=strongP.slice(0,3), growP=strongP.slice(-3).reverse();
+    var lbl=function(v){return (window.SY&&SY.attainment)?esc(SY.attainment(m.profile.level,v).short):(v+'%');};
+    $('pathway-sub').textContent='Strengths and next steps for '+esc(nm)+' — pitched to primary school, not exams';
+    var ph='<div class="card" style="background:none;border:none;padding:0;margin-bottom:12px"><div class="note" style="font-style:normal">At primary level we build confidence and the basics — formal grades, options and university come later. Here is where '+esc(nm)+' is shining and where a little practice helps.</div></div>';
+    ph+='<div style="font-size:13px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase;margin:6px 0 8px">Where they shine</div>';
+    ph+=topP.length?('<div class="grid">'+topP.map(function(x){return '<div class="card c4"><h3 style="font-size:15px">'+esc(x.s)+'</h3><div class="feat" style="color:var(--ink-2)">'+lbl(x.mastery)+' — a real strength.</div></div>';}).join('')+'</div>'):'<div class="feat">Play a few quizzes to reveal strengths.</div>';
+    ph+='<div style="font-size:13px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase;margin:16px 0 6px">A little practice helps</div>';
+    ph+=growP.length?growP.map(function(x){return '<div class="risk-card" style="margin-top:8px"><h4>'+esc(x.s)+'</h4><div class="feat" style="color:var(--ink-2)">'+lbl(x.mastery)+' — short, regular practice will build it up.</div></div>';}).join(''):'<div class="feat">Everything is on track.</div>';
+    ph+='<div class="note" style="margin-top:14px">Fun ways to help at home: read together every day, play times-tables games, and praise effort over marks.</div>';
+    $('pathway').innerHTML=ph; return;
+  }
   $('pathway-sub').textContent='University readiness & career direction — from '+esc(nm)+"'s live subject strength";
 
   /* forecast header */
@@ -616,7 +638,7 @@ function renderPathway(m,nm){
     '<div style="font-size:12px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase">University &amp; future pathway engine</div>'+
     '<div class="note" style="font-style:normal;margin-top:2px">'+trajLabel+' · predictive certainty</div>'+
     '<div style="display:flex;gap:20px;align-items:baseline;margin-top:8px;flex-wrap:wrap">'+
-      '<div><span style="font-family:var(--serif);font-size:30px;color:var(--gold-300)">Grade '+m.predicted+'</span> <span class="note" style="margin:0">latest AI forecast</span></div>'+
+      '<div><span style="font-family:var(--serif);font-size:30px;color:var(--gold-300)">'+esc(m.predicted)+'</span> <span class="note" style="margin:0">latest AI forecast</span></div>'+
       '<div><span style="font-family:var(--serif);font-size:22px;color:var(--ink)">'+likelihood+'%</span> <span class="note" style="margin:0">on-target likelihood at current pace</span></div>'+
     '</div></div>';
 
@@ -630,7 +652,7 @@ function renderPathway(m,nm){
     '<div class="grid" style="margin-top:10px">'+ranked.map(function(d){
       var c=contrib[d], fit=clamp(Math.round(55+(c.m)*0.4),50,98);
       return '<div class="card c6"><div style="display:flex;justify-content:space-between;align-items:baseline"><h3 style="font-size:16px">'+esc(d)+'</h3><span class="badge good">'+fit+'% fit</span></div>'+
-        '<div class="feat" style="color:var(--ink-2)">'+esc(nm)+"'s strength in "+esc(c.s)+' ('+c.m+'% mastery) aligns with '+esc(d)+'. '+trajLabel.replace(' trajectory','')+' grade '+m.predicted+'.</div>'+
+        '<div class="feat" style="color:var(--ink-2)">'+esc(nm)+"'s strength in "+esc(c.s)+' ('+c.m+'% mastery) aligns with '+esc(d)+'. '+' — projected: '+esc(m.predicted)+'.</div>'+
         '<div style="font-size:11px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase;margin:8px 0 3px">Entry requirements</div>'+
         '<div class="feat" style="color:var(--ink-3)">• Strong performance in '+esc(c.s)+' and related subjects<br>• Grades meeting typical university offers<br>• Relevant A-level / BTEC pathway in Year 12–13</div>'+
         '<div style="font-size:11px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase;margin:8px 0 3px">Next steps</div>'+
@@ -746,13 +768,13 @@ function advisorAnswer(q){
     return 'On current strengths ('+m.subjects.filter(function(x){return x.mastery>=60}).slice(0,2).map(function(x){return x.s}).join(', ')||'developing across the board'+
       '), the Future pathway tab suggests directions. Keep every subject above target to widen options.';
   }
-  return 'Here\'s what the live data shows for '+nm+': overall progress '+m.overall+'%, predicted around Grade '+m.predicted+', exam risk '+m.risk.toLowerCase()+
+  return 'Here\'s what the live data shows for '+nm+': overall progress '+m.overall+'%, predicted around '+m.predicted+', exam risk '+m.risk.toLowerCase()+
     '. Weakest: '+(m.weakest||'—')+'; strongest: '+(m.strongest||'—')+'. Ask about a subject, burnout, revision intensity, or university options.';
 }
 var CHIPS=['Why is my child struggling?','What subject needs urgent attention?','Is burnout likely?','Should revision intensity increase?'];
 $('advisor-chips').innerHTML=CHIPS.map(function(c){return '<button class="qchip">'+esc(c)+'</button>'}).join('');
 $('advisor-chips').querySelectorAll('.qchip').forEach(function(b){b.onclick=function(){$('advisor-in').value=b.textContent;askAdvisor()}});
-function childContext(){try{return 'Child: '+nm+'. Overall progress '+m.overall+'%, predicted Grade '+m.predicted+', exam risk '+m.risk+'. Weakest subject '+(m.weakest||'—')+', strongest '+(m.strongest||'—')+'. Per-subject mastery: '+(m.subjects||[]).map(function(x){return x.s+' '+x.mastery+'%'}).join(', ')+'.'}catch(e){return 'No child linked yet.'}}
+function childContext(){try{return 'Child: '+nm+'. Overall progress '+m.overall+'%, predicted '+m.predicted+', exam risk '+m.risk+'. Weakest subject '+(m.weakest||'—')+', strongest '+(m.strongest||'—')+'. Per-subject mastery: '+(m.subjects||[]).map(function(x){return x.s+' '+x.mastery+'%'}).join(', ')+'.'}catch(e){return 'No child linked yet.'}}
 function askAdvisor(){
   var q=$('advisor-in').value.trim();if(!q)return;
   if(window.SYAI&&SYAI.ready()){
