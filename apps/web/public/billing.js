@@ -7,7 +7,23 @@
    Config is a device-global `sy-billing-live` = { links: { <planId>: <url> } }. */
 (function(){
   'use strict';
-  function cfg(){try{return JSON.parse(localStorage.getItem('sy-billing-live'))||null}catch(e){return null}}
+  /* Payment links must reach EVERY customer's device, not just the admin's
+     browser. We fetch a committed, PUBLIC billing-config.json from the site root
+     (Stripe Payment Link URLs are public checkout URLs — safe to commit, exactly
+     like firebase-config.json). Precedence: an explicit admin-gateway override in
+     localStorage wins; otherwise the shipped config file. With an empty links map
+     (the default) behaviour is unchanged — checkout runs the page's preview
+     activation until the owner populates the file. */
+  var BASE=(function(){try{var s=(document.currentScript&&document.currentScript.src)||'';return s?s.replace(/billing\.js.*$/,''):'';}catch(e){return '';}})();
+  var FILE_CFG=null;
+  try{ fetch(BASE+'billing-config.json',{cache:'no-cache'})
+    .then(function(r){return r.ok?r.json():null;})
+    .then(function(j){ if(j&&j.links&&Object.keys(j.links).length)FILE_CFG={links:j.links}; })
+    .catch(function(){}); }catch(e){}
+  function cfg(){
+    try{var ls=JSON.parse(localStorage.getItem('sy-billing-live'));if(ls&&ls.links&&Object.keys(ls.links).length)return ls;}catch(e){}
+    return FILE_CFG;
+  }
   /* demo sessions never reach Stripe — checkout always runs the preview
      activation so presentations spend nothing */
   function isDemo(){try{var s=JSON.parse(localStorage.getItem('sy-session'));return !!(s&&s.demo)}catch(e){return false}}
