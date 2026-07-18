@@ -311,8 +311,9 @@
       var iv = $j('sy-school:' + code + ':interventions', []);
       /* de-dupe: one active learning-model intervention per subject per child */
       if (iv.some(function (x) { return x.email === child && x.subject === subject && x.status !== 'complete'; })) return false;
-      iv.unshift({ email: child, name: name, subject: subject, notes: notes, status: 'active',
-        when: new Date().toISOString(), by: viewer.email, source: 'learning-model' });
+      var ivNow = new Date().toISOString();
+      iv.unshift({ email: child, student: child, name: name, subject: subject, notes: notes, status: 'active',
+        when: ivNow, at: ivNow, by: viewer.email, source: 'learning-model' });
       $s('sy-school:' + code + ':interventions', iv.slice(0, 100));
       return true;
     }

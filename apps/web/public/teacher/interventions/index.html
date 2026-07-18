@@ -36,7 +36,7 @@ $('gen').onclick=function(){
     '<b>Recovery plan · '+esc(SY.accountName(email))+'</b><div class="note" style="font-style:normal">Current '+m.overall+'% · homework '+m.hw+'% · focus '+esc(focus)+'</div>'+
     '<ul style="margin:8px 0 0 18px;font-size:13px;color:var(--ink-2)"><li>Week 1: diagnostic re-test on '+esc(focus)+' + 3 targeted lessons.</li><li>Week 2: daily 15-min practice; parent update.</li><li>Week 3: assessment; escalate if &lt;60%.</li></ul>'+
     '<button class="btn solid sm" id="save" style="margin-top:10px">Save &amp; assign</button></div>';
-  $('save').onclick=function(){var all=TW.schoolCode?SY.schoolGet(TW.schoolCode,'interventions',[]):[];all.push({student:email,name:SY.accountName(email),status:'active',reason:'Attainment '+m.overall+'%',focus:focus,by:SY.session.email});if(TW.schoolCode)SY.schoolSet(TW.schoolCode,'interventions',all);SY.log('intervention','Recovery plan created',SY.accountName(email)+' · '+focus);toast('Plan assigned');$('draft').innerHTML='';draw()};
+  $('save').onclick=function(){var all=TW.schoolCode?SY.schoolGet(TW.schoolCode,'interventions',[]):[];var _ivnow=new Date().toISOString();all.push({student:email,email:email,name:SY.accountName(email),status:'active',reason:'Attainment '+m.overall+'%',focus:focus,subject:focus,notes:'Recovery focus: '+focus,when:_ivnow,at:_ivnow,by:SY.session.email});if(TW.schoolCode)SY.schoolSet(TW.schoolCode,'interventions',all);SY.log('intervention','Recovery plan created',SY.accountName(email)+' · '+focus);toast('Plan assigned');$('draft').innerHTML='';draw()};
 };
 draw();
 })();

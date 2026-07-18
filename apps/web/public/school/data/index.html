@@ -168,7 +168,8 @@ function drawBeh(){
 }
 $('bh-add').onclick=function(){
   if(!$('bh-student').value)return;
-  var l=g('behaviour',[]);l.unshift({email:$('bh-student').value,kind:$('bh-kind').value,note:$('bh-note').value.trim(),when:new Date().toISOString(),by:SY.session.email});
+  var _bk=$('bh-kind').value;var _bp=(_bk==='positive'?2:_bk==='serious'?-5:-2);var _bem=String($('bh-student').value||'').toLowerCase();var _bn=new Date().toISOString();
+  var l=g('behaviour',[]);l.unshift({email:$('bh-student').value,student:_bem,kind:_bk,points:_bp,note:$('bh-note').value.trim(),reason:$('bh-note').value.trim(),category:'General',when:_bn,at:_bn,by:SY.session.email});
   s('behaviour',l.slice(0,300));$('bh-note').value='';toast('Logged — behaviour index updated');drawBeh();
 };
 

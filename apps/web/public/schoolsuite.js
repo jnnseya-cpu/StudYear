@@ -233,7 +233,7 @@
   var BADGES=[{n:'Rising Star',min:10,ic:'⭐'},{n:'High Achiever',min:25,ic:'🌟'},{n:'Role Model',min:50,ic:'🏅'},{n:'Legend',min:100,ic:'🏆'}];
   var BH = {
     all:function(code){ return (sg(code,'behaviour',[])||[]); },
-    award:function(code,o){ var l=sg(code,'behaviour',[])||[]; var b={id:uid('bh'),student:String(o.student||'').toLowerCase(),name:o.name||nameFor(o.student),points:o.points||0,reason:o.reason||'',category:o.category||'General',by:o.by,byName:o.byName||nameFor(o.by),at:now()}; l.unshift(b); ss(code,'behaviour',l);
+    award:function(code,o){ var l=sg(code,'behaviour',[])||[]; var _em=String(o.student||'').toLowerCase(); var _n=now(); var _p=o.points||0; var b={id:uid('bh'),student:_em,email:_em,name:o.name||nameFor(o.student),points:_p,kind:(_p>=0?'positive':(_p<=-3?'serious':'negative')),reason:o.reason||'',note:o.reason||'',category:o.category||'General',by:o.by,byName:o.byName||nameFor(o.by),at:_n,when:_n}; l.unshift(b); ss(code,'behaviour',l);
       try{ SY.log&&SY.log('behaviour',(b.points>=0?'+':'')+b.points+' — '+b.reason,''); if(b.points>0&&SY.addPoints)SY.addPoints(b.points); }catch(e){} return b; },
     forStudent:function(code,email){ var em=String(email||'').toLowerCase(); var log=BH.all(code).filter(function(b){return b.student===em;});
       var total=log.reduce(function(a,b){return a+(b.points||0);},0);
@@ -305,7 +305,7 @@
      ====================================================================== */
   function attendancePct(code,email){
     var em=String(email||'').toLowerCase(); var store=sg(code,'attendance',{})||{}; var present=0,total=0;
-    Object.keys(store).forEach(function(k){ var rec=store[k]&&store[k].records; if(!rec||!(em in rec))return; total++; var st=rec[em]; if(st==='present'||st==='late')present++; });
+    Object.keys(store).forEach(function(k){ var rec=store[k]&&store[k].records; if(!rec||!(em in rec))return; total++; var st=rec[em]; if(st==='present'||st==='late'||st==='authorised')present++; });
     return {pct: total?Math.round(100*present/total):null, sessions:total};
   }
 

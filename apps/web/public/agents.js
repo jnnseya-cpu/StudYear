@@ -31,7 +31,7 @@
   /* ---- data helpers ---------------------------------------------------- */
   function attendancePct(code,email){
     var store=sg(code,'attendance',{})||{}; var em=String(email).toLowerCase(); var counted=0,present=0;
-    Object.keys(store).forEach(function(k){ var rec=store[k]&&store[k].records; if(rec&&rec[em]!=null){ counted++; var st=String(rec[em]).toLowerCase(); if(st==='present'||st==='late'||st==='p'||st==='l')present++; } });
+    Object.keys(store).forEach(function(k){ var rec=store[k]&&store[k].records; if(rec&&rec[em]!=null){ counted++; var st=String(rec[em]).toLowerCase(); if(st==='present'||st==='late'||st==='authorised'||st==='p'||st==='l')present++; } });
     if(!counted){ var rm=rMetric(code,email); if(rm&&typeof rm.attendance==='number')return rm.attendance; }
     return counted?Math.round(100*present/counted):null;
   }
@@ -87,7 +87,7 @@
     return out;
   }
 
-  function logIntervention(code,f){ try{ var iv=sg(code,'interventions',[])||[]; iv.unshift({student:f.student,name:f.name,status:'active',reason:f.reason||'AI-flagged',by:'ai-agent',at:now()}); ss(code,'interventions',iv); }catch(e){} }
+  function logIntervention(code,f){ try{ var iv=sg(code,'interventions',[])||[]; var _n=now(); iv.unshift({student:f.student,email:f.student,name:f.name,status:'active',reason:f.reason||'AI-flagged',subject:f.reason||'AI-flagged',notes:f.reason||'AI-flagged intervention',by:'ai-agent',at:_n,when:_n}); ss(code,'interventions',iv); }catch(e){} }
 
   var SEV={high:{l:'High',c:'var(--crit,#E06060)'},med:{l:'Watch',c:'var(--warn,#E0A93F)'},info:{l:'Info',c:'var(--blue-300,#8FC2EC)'}};
   function mountConsole(el,opts){ opts=opts||{}; if(!el)return; var code=opts.code||(SY.get&&SY.get('schoolCode',null))||((SY.get&&SY.get('teacherProfile',{})||{}).schoolCode);

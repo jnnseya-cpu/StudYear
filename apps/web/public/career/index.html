@@ -88,7 +88,7 @@ var saved=SY.get('career',{});
    They get an age-appropriate "explorer" instead (preserve & enhance: the
    secondary engine below is untouched; primary simply routes to its own view). */
 var _ATT=(SY.attainment&&profile.level)?SY.attainment(profile.level,60):null;
-var isPrimary=!!(_ATT&&/eyfs|ks1|ks2/.test(_ATT.system));
+var isPrimary=!!(_ATT&&/eyfs|ks1|ks2|elevenplus/.test(_ATT.system));
 if(isPrimary){
   document.querySelector('.k').textContent='Explorer Passport™ · Dream Big';
   document.querySelector('h1').textContent='Your Explorer Passport';

@@ -367,7 +367,7 @@ function metrics(email){
     loggedH:loggedH,verifiedH:verifiedH,vScore:vScore,weakest:weakest,strongest:strongest,consent:consent,
     predicted:_att?_att.short:('Grade '+gradeFor(overall)),
     attSystem:_att?_att.system:'generic',
-    isPrimary:!!(_att&&/ks1|ks2|eyfs/.test(_att.system))};
+    isPrimary:!!(_att&&/ks1|ks2|eyfs|elevenplus/.test(_att.system))};
 }
 
 /* ---- render everything ---- */

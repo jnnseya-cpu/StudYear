@@ -132,7 +132,7 @@ $('iv-log').onclick=function(){
   var email=ssel.value;if(!email){toast('Select a student');return}
   var subject=$('iv-subject').value, notes=$('iv-notes').value.trim(), status=$('iv-status').value;
   var name=SY.accountName(email)||email;
-  var iv=list();iv.unshift({email:email,name:name,subject:subject,notes:notes,status:status,when:new Date().toISOString(),by:S.email});
+  var _now=new Date().toISOString();var iv=list();iv.unshift({email:email,student:email,name:name,subject:subject,notes:notes,status:status,when:_now,at:_now,by:S.email});
   SY.schoolSet(code,'interventions',iv.slice(0,100));
   /* personalise the student: push a recovery week to their planner + notify them */
   if($('iv-push').checked&&subject){

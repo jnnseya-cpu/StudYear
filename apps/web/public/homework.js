@@ -398,7 +398,7 @@
       el.querySelectorAll('.hw-v').forEach(function(b){b.onclick=function(){view=b.dataset.v;render();};});
       el.querySelectorAll('.hw-a-plan').forEach(function(b){b.onclick=function(){ var em=b.dataset.em;
         try{ var iv=SY.schoolGet(code,'interventions',[])||[];
-          iv.unshift({student:em,name:nameFor(em),status:'active',reason:'Missing homework',by:me,at:now()});
+          iv.unshift({student:em,email:em,name:nameFor(em),status:'active',reason:'Missing homework',subject:'Homework',notes:'Missing homework — follow up',by:me,at:now(),when:now()});
           SY.schoolSet(code,'interventions',iv); say('Intervention logged for '+nameFor(em)+' — visible to leadership'); }catch(e){}
       };});
       var go=document.getElementById('hs-go');

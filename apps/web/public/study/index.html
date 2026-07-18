@@ -2651,7 +2651,7 @@ function tutorSystemPrompt(){
   const subs=(PROFILE.subjects||[]).map(x=>x.s).filter(Boolean).join(", ");
   const modeSel=document.getElementById("soc-mode");
   const mode=(modeSel&&modeSel.value)||"guide";
-  const isPrimary=(window.SY&&SY.attainment)?/eyfs|ks1|ks2/.test((SY.attainment(lvl,60)||{}).system||''):false;
+  const isPrimary=(window.SY&&SY.attainment)?/eyfs|ks1|ks2|elevenplus/.test((SY.attainment(lvl,60)||{}).system||''):false;
   const soc=(isPrimary&&SOC_MODES_PRIMARY[mode])||SOC_MODES[mode]||SOC_MODES.guide;
   return "You are StudYear's AI Tutor for a "+lvl+" student"+(subs?" studying "+subs:"")+". "+soc+" "+
     "Teach the method, never just the final answer. Be clear, encouraging and concise. Use short paragraphs, bold key terms and numbered steps or bullet lists. "+
@@ -2717,7 +2717,7 @@ function streakLen(){
 function addPoints(n){store.set("points",store.get("points",0)+n)}
 function recordQuiz(r,pct){
   const h=store.get("quizzes",[]);
-  h.push({t:todayKey(),subj:r.subj,title:r.title,pct});store.set("quizzes",h);
+  h.push({t:todayKey(),when:new Date().toISOString(),subj:r.subj,title:r.title,pct});store.set("quizzes",h);
 }
 function renderProgress(){
   document.getElementById("pt-streak").innerHTML=streakLen()+" <small>days</small>";
@@ -2927,7 +2927,10 @@ const DG_QBANK_ALEVEL={
  "English":[{q:"The 'volta' in a sonnet is…",o:["the turn in thought or argument","the final couplet","the rhyme scheme","the iambic rhythm"],a:0}]};
 function dgTier(){
   var lv=String((store.get("profile",{})||{}).level||'').toLowerCase();
-  if(/primary|eyfs|reception|\bks[12]\b|key stage [12]|\byear [1-6]\b|11\+/.test(lv))return 'primary';
+  /* tertiary FIRST — "University · Undergraduate Year 2" contains "year 2" and
+     would otherwise be misread as primary and collapsed to a 7-year-old view. */
+  if(/universit|undergrad|\bdegree\b|postgrad|master|\bphd\b|doctora/.test(lv))return 'alevel';
+  if(/primary|eyfs|reception|nursery|early years|\bks[12]\b|key stage [12]|\byear [1-6]\b|11\+|eleven ?plus/.test(lv))return 'primary';
   if(/a2|a-level|\bas\b|higher|baccalaureate|university/.test(lv))return 'alevel';
   return 'gcse';
 }
@@ -3601,7 +3604,7 @@ document.getElementById("ar-go").onclick=()=>{
      grade-free teacher feedback — never an "examiner" or a predicted grade. */
   if(window.SYAI&&SYAI.ready()){
     const board=PROFILE.board&&PROFILE.board!=="—"?PROFILE.board:"";
-    const arPrimary=(window.SY&&SY.attainment)?/eyfs|ks1|ks2/.test((SY.attainment(level,60)||{}).system||''):false;
+    const arPrimary=(window.SY&&SY.attainment)?/eyfs|ks1|ks2|elevenplus/.test((SY.attainment(level,60)||{}).system||''):false;
     const stage=(window.SY&&SY.stageStyle)?SY.stageStyle(level):"";
     const persona=arPrimary?"teacher":"examiner";
     document.getElementById("ar-sub").textContent=(title||"Your assignment")+(arPrimary?" · reading your work with ":" · marking with ")+SYAI.provider()+"…";
@@ -3705,7 +3708,7 @@ document.getElementById("pg-go").onclick=()=>{
     </div>
     <p style="font-size:13.5px;color:var(--ink-2);margin-top:12px">Your ${esc(subj)} scores are <b style="color:${trend==="improving"?"var(--good)":trend==="slipping"?"var(--crit)":"var(--gold-300)"}">${trend}</b>.
       With current momentum, the realistic band is <b>${att.system==="gcse"?("Grade "+Math.min(grade,band)+"–"+band):(esc(att.band)+(att.scaled?(" · scaled ~"+att.scaled):""))}</b>.
-      ${(/eyfs|ks1|ks2/.test(att.system||""))?(mastery<60?"Let's practise the tricky bits a little every day — you'll get there!":mastery<80?"Great progress — keep practising little and often to get even better.":"Fantastic work — keep it up and keep challenging yourself!"):(mastery<60?"Focus on the weakest topics — a diagnostic will pinpoint them.":mastery<80?"Push exam technique and past papers to reach the top band.":"You're in strong shape — keep the streak going and stay sharp with timed papers.")}</p>
+      ${(/eyfs|ks1|ks2|elevenplus/.test(att.system||""))?(mastery<60?"Let's practise the tricky bits a little every day — you'll get there!":mastery<80?"Great progress — keep practising little and often to get even better.":"Fantastic work — keep it up and keep challenging yourself!"):(mastery<60?"Focus on the weakest topics — a diagnostic will pinpoint them.":mastery<80?"Push exam technique and past papers to reach the top band.":"You're in strong shape — keep the streak going and stay sharp with timed papers.")}</p>
     ${qz.length>=2?`<div style="margin-top:12px">${(function(){
       const W=560,H=150,P=28,n=qz.length;
       const x=i=>P+(n===1?(W-2*P)/2:i*(W-2*P)/(n-1)), y=v=>H-P-(v/100)*(H-2*P);
@@ -3718,10 +3721,10 @@ document.getElementById("pg-go").onclick=()=>{
   /* live-AI examiner analysis on top of the data-driven prediction */
   if(window.SYAI&&SYAI.ready()){
     const box=document.getElementById("pg-ai");
-    box.innerHTML='<div class="note">Writing your '+((/eyfs|ks1|ks2/.test(att.system||""))?'progress note':'examiner analysis')+' with '+SYAI.provider()+'…</div>';
+    box.innerHTML='<div class="note">Writing your '+((/eyfs|ks1|ks2|elevenplus/.test(att.system||""))?'progress note':'examiner analysis')+' with '+SYAI.provider()+'…</div>';
     SYAI.ask("You are a "+(PROFILE.level||"GCSE")+" "+subj+" teacher writing a supportive progress analysis (4–6 sentences): what the trajectory means, the 2–3 topics most likely holding progress back, and exactly what to do in the next 2 weeks to move up. Be concrete for this subject, not generic. Use markdown."+((window.SY&&SY.stageStyle)?SY.stageStyle(PROFILE.level):""),
       "Data: quiz scores in order: "+qz.map(q=>q.pct+"%").join(", ")+". Blended mastery "+mastery+"%. Predicted Grade "+grade+". Trend "+trend+"."+(tgt?" Target grade "+tgt+".":""),{maxTokens:600})
-    .then(t=>{box.innerHTML='<div class="card" style="margin-top:10px"><div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:4px">'+((/eyfs|ks1|ks2/.test(att.system||""))?'Live AI progress note':'Live AI examiner analysis')+'</div>'+SYAI.render(t)+'</div>'})
+    .then(t=>{box.innerHTML='<div class="card" style="margin-top:10px"><div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:4px">'+((/eyfs|ks1|ks2|elevenplus/.test(att.system||""))?'Live AI progress note':'Live AI examiner analysis')+'</div>'+SYAI.render(t)+'</div>'})
     .catch(()=>{box.innerHTML=''});
   }
 };
@@ -3864,7 +3867,7 @@ function buildLesson(topic,level,subj){
     steps.push({type:"practice",h:"3 · Your turn",pq:G.practice()});
     steps.push({type:"practice",h:"4 · One more — no hints unless you need them",pq:G.practice()});
     steps.push({type:"recall",h:"5 · Close the book",prompt:G.recallPrompt,model:G.recallModel});
-  }else if(/(reception|eyfs|ks1|ks2|key stage [12]|year\s?[1-6]|primary|junior|11\s?\+)/i.test(String(level))){
+  }else if(!/universit|undergrad|degree|postgrad|master/i.test(String(level))&&/(reception|eyfs|ks1|ks2|key stage [12]|year\s?[1-6]|primary|junior|11\s?\+)/i.test(String(level))){
     /* primary (KS1/KS2/11+): a warm, no-exam version of the conceptual lesson */
     steps.push({type:"teach",h:"1 · What it is",html:"Let's learn about <b>"+esc(cap)+"</b>. First, what does it mean in simple words? Learn the key words that go with it — knowing the right words makes everything easier.",alt:"Say it in your own words, then give one everyday example. If you can explain it to a friend, you've got it!"});
     steps.push({type:"predict",h:"2 · Have a go first",prompt:"Before we read on — in one line, what do you think "+esc(cap)+" means? Write your idea, then reveal.",reveal:"A good answer says what it is and gives one example. Did yours? If not, add an example now."});
@@ -3994,7 +3997,7 @@ function runLessonQuiz(qs,box){
       <p class="note" style="margin-top:6px">${score===qs.length?"Perfect — this has stuck.":score>=qs.length/2?"Good — review the ones you missed.":"Worth another pass: redo the lesson and the practice."}</p></div>`;
       _ls.quizScore=score;addPoints(4+3*score);
       logEvent("quiz","Lesson quiz: "+_L.topic,"Scored "+score+"/"+qs.length);
-      try{const prog=store.get("quizzes",[]);prog.unshift({subj:_L.subj||"Other",topic:_L.topic,pct:Math.round(100*score/qs.length),when:new Date().toISOString()});store.set("quizzes",prog.slice(0,100))}catch(e){}
+      try{const prog=store.get("quizzes",[]);prog.unshift({subj:_L.subj||"Other",topic:_L.topic,pct:Math.round(100*score/qs.length),t:todayKey(),when:new Date().toISOString()});store.set("quizzes",prog.slice(0,100))}catch(e){}
       return;}
     const q=qs[i];
     box.innerHTML=`<div class="note" style="margin:0 0 6px">Question ${i+1} of ${qs.length}</div>
@@ -4028,7 +4031,7 @@ document.getElementById("il-go").onclick=()=>{
     const board=PROFILE.board&&PROFILE.board!=="—"?PROFILE.board:"";
     const curric=/ib|baccal/i.test(level)?"the IB curriculum":/national 5|highers/i.test(level)?"the Scottish (SQA) curriculum":/igcse|cie/i.test(level+board)?"the international (CIE/IGCSE) curriculum":"the UK national curriculum";
     document.getElementById("il-sub").textContent=_L.topic+" · "+level+" · writing your curriculum-aligned lesson with "+SYAI.provider()+"…";
-    const isPrimaryLesson=(typeof dgTier==='function'&&dgTier()==='primary')||/reception|eyfs|key stage 1|\bks1\b|key stage 2|\bks2\b|\byear\s?[1-6]\b|11\s?\+|primary|junior/i.test(level);
+    const isPrimaryLesson=(typeof dgTier==='function'&&dgTier()==='primary')||(!/universit|undergrad|degree|postgrad|master/i.test(String(level))&&/reception|eyfs|key stage 1|\bks1\b|key stage 2|\bks2\b|\byear\s?[1-6]\b|11\s?\+|primary|junior/i.test(level));
     const lessonSys=(isPrimaryLesson
       ? "You are StudYear's primary-school lesson author. Write a clear, warm, curriculum-accurate lesson on the topic for a "+level+(subj?" "+subj:"")+" child (UK national curriculum). Use simple, encouraging language a 7–11 year old understands — NO exams, mark schemes, spec codes or command words. Return EXACTLY six sections separated by lines containing only '---':\n1) 3–4 simple 'I can…' goals, one per line;\n2) Key words: 5–6 words, each as '**word** — a simple, child-friendly meaning';\n3) Let's learn it: a clear step-by-step explanation with **bold key words** and two everyday examples a child relates to;\n4) A bit more: one more example done slowly, and the mistake children often make and how to avoid it;\n5) Your turn: one practice question on the first line, then the answer explained in simple numbered steps;\n6) How to remember it: 2–3 memory tips or a little rhyme, and one fun way to practise at home.\nUse markdown. Short, kind sentences."
       : "You are StudYear's curriculum lesson author. Write an EXTREMELY detailed, curriculum-accurate lesson on the topic for a "+level+(subj?" "+subj:"")+" student, aligned to "+curric+(board?" and the "+board+" specification":"")+". Return EXACTLY six sections separated by lines containing only '---':\n1) 4–6 learning objectives, one per line, each tied to the curriculum/specification point it serves (name the spec area, e.g. 'AQA 4.4.1' style where known, otherwise the curriculum strand);\n2) Key vocabulary: 6–8 terms, each as '**term** — precise definition';\n3) The core teaching: a genuinely educational, detailed explanation with sub-points, **bold key terms** and at least two concrete examples — real subject content, not study advice;\n4) Going deeper: the mechanisms (how and why), links to related spec topics, one more worked micro-example, and the single most common misunderstanding corrected;\n5) A worked exam-style question: the question on the first line (with mark allocation), then the full model answer as numbered mark-scheme-style steps showing where each mark is earned;\n6) Exam technique for this level"+(board?" and "+board:"")+": the command words that appear on this topic and what each demands, typical mark allocations, and the 3 most common traps with fixes.\nUse markdown throughout. Depth and accuracy over brevity.")

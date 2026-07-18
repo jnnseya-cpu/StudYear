@@ -237,6 +237,7 @@ var LEVEL=PROFILE.level||'GCSE';
      2 exam-grade — GCSE · IGCSE · AS/A-level · IB · BTEC · university */
 var _LVL=String(LEVEL).toLowerCase();
 var LV_BOOST=
+  /universit|undergrad|degree|postgrad|master|\bphd\b|doctora/.test(_LVL)?2:  /* tertiary before year-N so "University Year 2" isn't read as Reception */
   /eyfs|reception|nursery|early years|key stage 1|\bks1\b|infant|year ?1\b|year ?2\b/.test(_LVL)?0:
   /key stage 2|\bks2\b|junior|11 ?\+|eleven plus|year ?[3-6]\b|years? ?[3-6]|key stage 3|\bks3\b|year ?[789]\b|years? ?[789]|national 5|\bfun\b|all.?level|neet|lifelong/.test(_LVL)?1:
   2;
@@ -245,7 +246,7 @@ var recommended=LEVEL_SKILLS[LV_BOOST]||LEVEL_SKILLS[2];
 document.querySelector('.lede').innerHTML+=' <span style="color:var(--gold-400)">Pitched at '+esc(LEVEL)+'.</span>';
 /* a primary child (EYFS/KS1/KS2/11+) must not even SEE exam-grade skills
    (algebra, squares & roots, GCSE formula recall) — hide them for that tier. */
-var IS_PRIMARY=/eyfs|reception|nursery|early years|key stage [12]|\bks[12]\b|infant|junior|primary|11 ?\+|eleven plus|year ?[1-6]\b|years? ?[1-6]/.test(_LVL);
+var IS_PRIMARY=!/universit|undergrad|degree|postgrad|master|\bphd\b|doctora/.test(_LVL)&&/eyfs|reception|nursery|early years|key stage [12]|\bks[12]\b|infant|junior|primary|11 ?\+|eleven plus|year ?[1-6]\b|years? ?[1-6]/.test(_LVL);
 var HIDE_PRIMARY={algebra:1,squares:1,formulas:1};
 var VISIBLE_SKILLS=SKILLS.filter(function(s){return !(IS_PRIMARY&&HIDE_PRIMARY[s[0]]);});
 

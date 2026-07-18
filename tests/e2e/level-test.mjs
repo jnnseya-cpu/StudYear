@@ -112,6 +112,28 @@ const studentInit = (email, level) => `
   await p.context().close();
 }
 
+/* ---- 5a2. 11+ is primary-age; University is NOT primary (regression guard) ---- */
+{
+  const p = await page(studentInit('elevenplus@t.test', '11+ Exam'));
+  await p.goto(B + '/study/', { waitUntil: 'networkidle' });
+  await p.waitForTimeout(300);
+  const r = await p.evaluate(() => ({
+    tier: (typeof dgTier === 'function' ? dgTier() : '?'),
+    sys: (window.SY && SY.attainment) ? (SY.attainment('11+ Exam', 60) || {}).system : '?',
+  }));
+  ok('11+ resolves to the primary tier (age 10–11)', r.tier === 'primary');
+  ok('11+ attainment system is elevenplus (covered by primary gates)', r.sys === 'elevenplus');
+  await p.context().close();
+}
+{
+  const p = await page(studentInit('undergrad@t.test', 'University · Undergraduate Year 2'));
+  await p.goto(B + '/study/', { waitUntil: 'networkidle' });
+  await p.waitForTimeout(300);
+  const tier = await p.evaluate(() => (typeof dgTier === 'function' ? dgTier() : '?'));
+  ok('University Year 2 is NOT collapsed to primary (dgTier=alevel)', tier === 'alevel');
+  await p.context().close();
+}
+
 /* ---- 5b. Career Passport shows a child explorer, NOT UCAS/university ---- */
 {
   const p = await page(studentInit('y4e@t.test', KS2));
