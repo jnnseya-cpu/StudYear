@@ -228,9 +228,18 @@ var SKILLS=[
 /* ---- education-level pitch: difficulty and skill emphasis follow the profile ---- */
 var PROFILE=SY.get('profile',{})||{};
 var LEVEL=PROFILE.level||'GCSE';
-/* StudYear spans Year 1 (age 4) to university: 0 gentle (Y1–Y6 / 11+ / Fun) ·
-   1 core (KS3 / National 5) · 2 exam-grade (GCSE → A-level → IB → university) */
-var LV_BOOST=/primary|11\+|year ?[1-6]\b|fun/i.test(LEVEL)?0:/ks3|7-9|national 5/i.test(LEVEL)?1:2;
+/* StudYear spans Reception (age 4) to university. Map the profile's education
+   level to a difficulty band EXPLICITLY, so an EYFS/KS1/KS2 child is never given
+   exam-grade questions (the old regex missed "Key Stage 2…", "Reception", "EYFS"
+   and silently fell through to band 2 — the reported bug):
+     0 gentle     — EYFS · Reception · KS1 · Years 1–2
+     1 core       — KS2 · Years 3–6 · 11+ · KS3 · Years 7–9 · National 5 · Fun/NEET
+     2 exam-grade — GCSE · IGCSE · AS/A-level · IB · BTEC · university */
+var _LVL=String(LEVEL).toLowerCase();
+var LV_BOOST=
+  /eyfs|reception|nursery|early years|key stage 1|\bks1\b|infant|year ?1\b|year ?2\b/.test(_LVL)?0:
+  /key stage 2|\bks2\b|junior|11 ?\+|eleven plus|year ?[3-6]\b|years? ?[3-6]|key stage 3|\bks3\b|year ?[789]\b|years? ?[789]|national 5|\bfun\b|all.?level|neet|lifelong/.test(_LVL)?1:
+  2;
 var LEVEL_SKILLS={0:['addition','subtraction','tables','division','bonds','word','spelling'],1:['tables','division','mental','inverse','fractions','decimals','percent','word','grammar','science'],2:['mental','inverse','fractions','percent','algebra','squares','formulas','vocab','science','geography','history']};
 var recommended=LEVEL_SKILLS[LV_BOOST]||LEVEL_SKILLS[2];
 document.querySelector('.lede').innerHTML+=' <span style="color:var(--gold-400)">Pitched at '+esc(LEVEL)+'.</span>';

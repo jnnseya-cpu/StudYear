@@ -1943,7 +1943,7 @@ document.getElementById("c-sm-save").onclick=()=>{
   if(text.length<120){toast("Paste at least a paragraph to summarise");return}
   if(window.SYAI&&SYAI.ready()){
     toast("Summarising with "+SYAI.provider()+"…");
-    SYAI.ask("You are a study assistant. Summarise the text for a "+($v("c-sm-level")||"GCSE")+" student on '"+topic+"'. Return a 3–4 sentence summary, then 4–6 key bullet points, then a short 'Key terms' line. Use markdown.","TEXT:\n"+text,{maxTokens:800}).then(txt=>{
+    SYAI.ask("You are a study assistant. Summarise the text for a "+($v("c-sm-level")||"GCSE")+" student on '"+topic+"'."+((window.SY&&SY.stageStyle)?SY.stageStyle($v("c-sm-level")):"")+" Return a 3–4 sentence summary, then 4–6 key bullet points, then a short 'Key terms' line. Use markdown.","TEXT:\n"+text,{maxTokens:800}).then(txt=>{
       saveMine({type:"Revision Notes",title:topic+" — AI summary",subj:$v("c-sm-subj"),level:$v("c-sm-level"),body:SYAI.render(txt)},"sm","AI summary saved",["c-sm-topic","c-sm-text"]);
     }).catch(e=>{toast("Live AI error — using on-device summary");smStatic(topic,text)});
     return;
@@ -2070,7 +2070,7 @@ document.getElementById("c-e-save").onclick=()=>{
   const clearUpload=()=>{essayDoc="";essayPdf=null;essayDocName="";document.getElementById("c-e-filename").textContent="";};
   if(window.SYAI&&SYAI.ready()){
     toast("Planning with "+SYAI.provider()+"…");
-    SYAI.ask("You are an "+(level||"GCSE")+(subj?" "+subj:"")+" essay coach. Produce a specific essay plan: a clear thesis, an introduction, 3 body paragraphs (each Point/Evidence/Explain with a CONCRETE example relevant to this exact question), a counter-argument paragraph, and a conclusion. Use markdown headings and bullets. Be specific to the question, not generic."+(essayDoc?" Base the plan on the student's uploaded document (the brief, sources or draft) included in the message — use its actual content and quote it where useful.":"")+(essayPdf?" The brief/source document is attached — read it first and base the plan on its actual content.":""),
+    SYAI.ask("You are an "+(level||"GCSE")+(subj?" "+subj:"")+" essay coach."+((window.SY&&SY.stageStyle)?SY.stageStyle(level):"")+" Produce a specific essay plan: a clear thesis, an introduction, 3 body paragraphs (each Point/Evidence/Explain with a CONCRETE example relevant to this exact question), a counter-argument paragraph, and a conclusion. Use markdown headings and bullets. Be specific to the question, not generic."+(essayDoc?" Base the plan on the student's uploaded document (the brief, sources or draft) included in the message — use its actual content and quote it where useful.":"")+(essayPdf?" The brief/source document is attached — read it first and base the plan on its actual content.":""),
       "Essay question: "+(q||"(take the question from the uploaded document)")+(essayDoc?"\n\nUploaded document ("+essayDocName+"):\n"+essayDoc.slice(0,8000):""),
       {maxTokens:1100,image:essayPdf||undefined}).then(txt=>{
       saveMine({type:"Revision Notes",title:planTitle,subj,level,body:SYAI.render(txt)},"e","AI essay plan saved",["c-e-q"]);
@@ -2145,7 +2145,7 @@ document.getElementById("c-v-save").onclick=()=>{
     const doSave=(body)=>saveMine({type:"Labelled Diagram",title,subj:$v("c-v-subj"),level:lvl,body},"v","Labelled diagram saved",["c-v-title","c-v-prompt","c-v-note"]);
     if(window.SYAI&&SYAI.ready()){
       toast("Writing your labelled diagram…");
-      SYAI.ask("You are a "+lvl+" teacher. Produce a LABELLED DIAGRAM as structured text a student can revise from. Give: a one-line overview; then a numbered list of every labelled part with its position and its function; then 2–3 exam tips. Clear headings, no images needed.","Labelled diagram of: "+prompt,{maxTokens:900})
+      SYAI.ask("You are a "+lvl+" teacher. Produce a LABELLED DIAGRAM as structured text a student can revise from."+((window.SY&&SY.stageStyle)?SY.stageStyle(lvl):"")+" Give: a one-line overview; then a numbered list of every labelled part with its position and its function; then 2–3 exam tips. Clear headings, no images needed.","Labelled diagram of: "+prompt,{maxTokens:900})
         .then(txt=>doSave(SYAI.render(txt)))
         .catch(()=>doSave('<h4>'+esc(title)+'</h4><p class="note">Live AI unreachable — labelled breakdown will generate when it reconnects. Your prompt: '+esc(prompt)+'</p>'));
       return;
@@ -4557,8 +4557,41 @@ function cgStatic(subject,level,board,cap,focus){
     senior:["accommodate","conscientious","phenomenon","liaison","bureaucracy","entrepreneur","hierarchy","questionnaire","millennium","occurrence","perseverance","pronunciation","reminiscence","sovereignty","unforeseen","acquiesce","idiosyncrasy","juxtaposition","malfeasance","conscious"]
   };
   var state=null;
-  function speak(w){if(!canSpeak)return;try{speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(w);u.rate=.82;u.lang="en-GB";speechSynthesis.speak(u);}catch(e){}}
-  function speakSentence(s){if(!canSpeak)return;try{speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(s);u.rate=.9;u.lang="en-GB";speechSynthesis.speak(u);}catch(e){}}
+  /* Robust dictation voice: pick a clear English voice, force full volume, and
+     work around the Chrome bugs that made it quiet / cut out — speak() dropped
+     when it follows cancel() too fast (defer a tick) and speech that auto-pauses
+     (resume()). Volume is pinned to 1 so it's as loud as the device allows. */
+  var _voices=[];
+  function loadVoices(){try{_voices=(window.speechSynthesis&&speechSynthesis.getVoices())||[];}catch(e){_voices=[];}}
+  if(canSpeak){loadVoices();try{speechSynthesis.onvoiceschanged=loadVoices;}catch(e){}}
+  function pickVoice(){if(!_voices.length)loadVoices();
+    return _voices.filter(function(v){return /en[-_]GB/i.test(v.lang);})[0]
+        || _voices.filter(function(v){return /^en/i.test(v.lang);})[0]
+        || _voices.filter(function(v){return /female|samantha|karen|serena|google uk/i.test((v.name||''));})[0] || null;}
+  function say(text,rate){
+    if(!canSpeak||!text)return;
+    try{
+      speechSynthesis.cancel();
+      setTimeout(function(){try{
+        var u=new SpeechSynthesisUtterance(String(text));
+        u.rate=rate;u.pitch=1;u.volume=1;u.lang="en-GB";
+        var v=pickVoice();if(v)u.voice=v;
+        speechSynthesis.resume();      /* clear any auto-pause (Chrome) */
+        speechSynthesis.speak(u);
+      }catch(e){}},130);
+    }catch(e){}
+  }
+  function speak(w){say(w,0.78);}          /* slow & clear for single words */
+  function speakSentence(s){say(s,0.92);}
+  /* an offline sentence so "use it in a sentence" always works, even with no AI */
+  function offlineSentence(w){
+    var frames=["Please spell the word “"+w+"”.",
+      "Can you use “"+w+"” in your own sentence?",
+      "The teacher read out the word “"+w+"”.",
+      "I saw the word “"+w+"” in my book today.",
+      "Listen carefully and write “"+w+"”."];
+    return frames[Math.abs(String(w).length)%frames.length];
+  }
   function startWith(words){
     words=(words||[]).filter(Boolean);if(!words.length){toast("No words to test");return;}
     state={words:words.map(function(w){return typeof w==="string"?{w:w,sentence:""}:w}),i:0,answers:[]};
@@ -4578,8 +4611,8 @@ function cgStatic(subject,level,board,cap,focus){
     if(!state)return;var cur=state.words[state.i],el=document.getElementById("sp-sentence");
     if(cur.sentence){el.textContent='“'+cur.sentence+'”';speakSentence(cur.sentence);return;}
     if(window.SYAI&&SYAI.ready()){el.textContent="…";
-      SYAI.ask("Use the given word in ONE short, natural sentence a "+lvlSel.value+" student understands. Do NOT spell the word letter by letter. Return only the sentence.","Word: "+cur.w,{maxTokens:60}).then(function(t){cur.sentence=String(t).trim().replace(/^["']|["']$/g,"");el.textContent='“'+cur.sentence+'”';speakSentence(cur.sentence);}).catch(function(){el.textContent="(no sentence right now)";});}
-    else el.textContent="(a sentence needs a connection)";
+      SYAI.ask("Use the given word in ONE short, natural sentence a "+lvlSel.value+" student understands."+((window.SY&&SY.stageStyle)?SY.stageStyle(lvlSel.value):"")+" Do NOT spell the word letter by letter. Return only the sentence.","Word: "+cur.w,{maxTokens:60}).then(function(t){var s=String(t).trim().replace(/^["']|["']$/g,"");if(!s)s=offlineSentence(cur.w);cur.sentence=s;el.textContent='“'+cur.sentence+'”';speakSentence(cur.sentence);}).catch(function(){cur.sentence=offlineSentence(cur.w);el.textContent='“'+cur.sentence+'”';speakSentence(cur.sentence);});}
+    else {cur.sentence=offlineSentence(cur.w);el.textContent='“'+cur.sentence+'”';speakSentence(cur.sentence);}
   };
   function submit(){
     if(!state)return;var inp=document.getElementById("sp-input"),given=inp.value.trim();
