@@ -422,7 +422,11 @@
     resetPassword: resetPassword, sendVerify: sendVerify,
     reachable: function () { return CLOUD_UP; }, reconnect: reconnect,
     dirPublish: dirPublish, dirResolve: dirResolve, dirConnect: dirConnect,
-    dirDisconnect: dirDisconnect, dirLinks: dirLinks };
+    dirDisconnect: dirDisconnect, dirLinks: dirLinks,
+    /* redeem a StudYear bonus/promo code server-side (validated window/limits/
+       audience, ledgered once per user, ACUs credited on the server). Resolves
+       to { ok, bonusAcus, discountPct, label } or throws with the reason. */
+    redeemCode: function (code, email) { return api('/redeemCode', 'POST', { code: String(code || '').trim() }, email); } };
 
   /* ------------------------------------------- auto-sync hook ------------ */
   /* On consoles (guard.js present, real signed-in session): every store

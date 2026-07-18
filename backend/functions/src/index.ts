@@ -294,10 +294,43 @@ export const redeemCode = onRequest({ region: 'europe-west2', cors: true }, asyn
     const user = await requireUser(req.headers.authorization);
     const code = String(req.body?.code ?? '').trim().toUpperCase();
     if (!code) throw httpError(400, 'code required');
-    const doc = await db.doc(`discountCodes/${code}`).get();
-    if (!doc.exists || doc.data()!.status !== 'active') throw httpError(404, 'invalid or inactive code');
-    // TODO(growth): window/limits/audience checks + ledgered redemption + benefit grant.
-    res.status(501).json({ ok: false, error: 'validation pipeline lands with billing wiring', user: user.uid });
+    const toMs = (v: unknown): number | null => {
+      if (v == null) return null;
+      if (typeof v === 'number') return v;
+      if (typeof v === 'string') { const t = Date.parse(v); return isNaN(t) ? null : t; }
+      const anyv = v as { toMillis?: () => number };
+      return typeof anyv.toMillis === 'function' ? anyv.toMillis() : null;
+    };
+    const codeRef = db.doc(`discountCodes/${code}`);
+    const redemptionRef = db.doc(`codeRedemptions/${code}__${user.uid}`);
+    // atomic: validate window/limits/audience, ledger the redemption once per user
+    const grant = await db.runTransaction(async (tx) => {
+      const doc = await tx.get(codeRef);
+      if (!doc.exists) throw httpError(404, 'invalid or inactive code');
+      const c = doc.data()!;
+      if (c.status !== 'active') throw httpError(410, 'code inactive');
+      const now = Date.now();
+      const startsAt = toMs(c.startsAt); if (startsAt != null && now < startsAt) throw httpError(403, 'code not active yet');
+      const endsAt = toMs(c.endsAt); if (endsAt != null && now > endsAt) throw httpError(410, 'code expired');
+      if (typeof c.maxRedemptions === 'number' && (Number(c.redeemedCount) || 0) >= c.maxRedemptions) throw httpError(410, 'code fully redeemed');
+      const perUserLimit = typeof c.perUserLimit === 'number' ? c.perUserLimit : 1;
+      const mine = await tx.get(redemptionRef);
+      const myCount = mine.exists ? (Number(mine.data()!.count) || 0) : 0;
+      if (myCount >= perUserLimit) throw httpError(409, 'you have already redeemed this code');
+      if (Array.isArray(c.audienceRoles) && c.audienceRoles.length) {
+        const uDoc = await tx.get(db.doc(`users/${user.uid}`));
+        const role = uDoc.exists ? String(uDoc.data()!.role ?? '') : '';
+        if (!c.audienceRoles.includes(role)) throw httpError(403, 'this code is not valid for your account type');
+      }
+      const bonusAcus = Math.max(0, Math.round(Number(c.bonusAcus) || 0));
+      const discountPct = Math.max(0, Math.min(100, Number(c.discountPct) || 0));
+      tx.set(codeRef, { redeemedCount: (Number(c.redeemedCount) || 0) + 1, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      tx.set(redemptionRef, { code, uid: user.uid, count: myCount + 1, bonusAcus, at: FieldValue.serverTimestamp() }, { merge: true });
+      return { bonusAcus, discountPct, label: String(c.label ?? code) };
+    });
+    // grant the benefit once the redemption is committed (append-only ACU ledger)
+    if (grant.bonusAcus > 0) await creditAcus(user.uid, grant.bonusAcus, `redeemCode:${code}`, { code, kind: 'code-redemption' });
+    res.json({ ok: true, code, bonusAcus: grant.bonusAcus, discountPct: grant.discountPct, label: grant.label });
   } catch (e) {
     const err = e as Error & { status?: number };
     res.status(err.status ?? 500).json({ ok: false, error: err.message });

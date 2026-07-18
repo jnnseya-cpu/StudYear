@@ -11,7 +11,7 @@
   :root{
     --navy-950:#060B18; --navy-900:#0B1220; --navy-800:#101B33;
     --gold-300:#A9CFF2; --gold-400:#5FA8E0; --gold-500:#3D8FD1;
-    --ink:#EDF1F8; --ink-2:#AAB6CC; --ink-3:#6B7A96;
+    --ink:#EDF1F8; --ink-2:#AAB6CC; --ink-3:#8795AE;
     --good:#5CBB7B; --warn:#c98500; --crit:#e66767;
     --line:rgba(77,157,224,.14);
     --serif:Georgia,"Times New Roman",serif;
@@ -107,7 +107,7 @@
   .risk-card h4{font-size:15px;color:#f0a0a0}
   .risk-card .prob{font-family:var(--serif);font-size:26px;color:#f0a0a0}
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
-  .qchip{border:1px solid rgba(170,182,204,.3);border-radius:20px;background:none;color:var(--ink-2);font-size:12px;padding:6px 12px;cursor:pointer}
+  .qchip{border:1px solid rgba(170,182,204,.3);border-radius:20px;background:none;color:var(--ink-2);font-size:12px;padding:9px 13px;min-height:40px;cursor:pointer}
   .qchip:hover{border-color:var(--gold-500);color:var(--gold-300)}
   #advisor-out{border:1px solid var(--line);border-radius:10px;background:rgba(6,11,24,.5);padding:12px 14px;font-size:13.5px;color:var(--ink-2);min-height:40px;margin-top:10px;white-space:pre-wrap}
   .note{font-size:11.5px;color:var(--ink-3);font-style:italic;margin-top:10px}
@@ -121,7 +121,7 @@
 <script src="../homework.js"></script>
 <script src="../schoolsuite.js"></script>
 <script src="../reach.js"></script>
-<div class="wrap">
+<div class="wrap" role="main">
 
 <div class="top">
   <a class="logo" href="../">⌂ <b class="wm">StudYear</b></a>
@@ -801,8 +801,15 @@ function doLink(code,retried){
       return SY.cloudAuthed().then(function(ok){
         if(ok){btn.disabled=false;toast('No account found for that code. Ask your child to open StudYear once, then check the code in My Account → Connect a parent.');return;}
         if(retried){btn.disabled=false;toast('Still can\'t reach StudYear to link — check your connection and try again shortly.');return;}
+        /* un-tokenised on this device: the code could be same-device (checked and
+           not found) OR added on another device (needs a quick reconnect to look
+           up). Name BOTH so the reconnect prompt isn't a surprise, and never
+           imply the code is invalid when we simply couldn't check. */
+        btn.disabled=false;
+        toast('We couldn\'t find that code on this device. If your child added it on another device, confirm your password once to look it up.');
         return SY.ensureCloud().then(function(done){
-          if(!done){btn.disabled=false;toast('Reconnect cancelled — confirm your password to link across devices.');return;}
+          if(!done){toast('No problem — you can reconnect any time from My Account, then paste the code again. If it still isn\'t found, ask your child to open StudYear once.');return;}
+          $('link-go').disabled=true;
           return doLink(code,true);
         });
       });
