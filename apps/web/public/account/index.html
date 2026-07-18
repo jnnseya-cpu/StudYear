@@ -349,10 +349,13 @@ function saveConsent(){consent.parent=$('cs-parent').checked;consent.schoolToPar
 $('cs-parent').onchange=function(){saveConsent();toast(consent.parent?'Linked parents can see your progress':'Parent access turned off')};
 $('cs-school').onchange=function(){saveConsent();toast(consent.schoolToParent?'Parents can also see your school data':'School data hidden from parents')};
 
+/* escape any cross-account display value (a parent's or school's own name comes
+   from the OTHER side of the trust boundary — never inject it raw into HTML). */
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function drawLinkedParents(links){
   links=links||SY.get('parentLinks',[]);
   $('linked-parents').innerHTML=links.length
-    ? 'Linked parent'+(links.length>1?'s':'')+': '+links.map(function(p){return '<b style="color:var(--gold-300)">'+ (p.name||p.email) +'</b>'}).join(', ')
+    ? 'Linked parent'+(links.length>1?'s':'')+': '+links.map(function(p){return '<b style="color:var(--gold-300)">'+ esc(p.name||p.email) +'</b>'}).join(', ')
     : 'No parent linked yet — share your code above.';
 }
 drawLinkedParents();
@@ -368,7 +371,7 @@ try{SY.myLinks().then(function(g){
 
 var school=SY.get('schoolLink',null);
 function drawSchool(){
-  if(school){$('school-state').innerHTML='Linked to <b style="color:var(--gold-300)">'+ (school.name||school.code) +'</b> · code '+school.code+
+  if(school){$('school-state').innerHTML='Linked to <b style="color:var(--gold-300)">'+ esc(school.name||school.code) +'</b> · code '+esc(school.code)+
     ' <a href="#" id="school-unlink" style="color:#f0b3b3;margin-left:8px">unlink</a>';
     var u=document.getElementById('school-unlink'); if(u)u.onclick=function(e){e.preventDefault();SY.remove('schoolLink');school=null;drawSchool();toast('Unlinked from school')};
     document.getElementById('school-code').value='';

@@ -715,7 +715,7 @@ function generateIntervention(m,target){
   /* live model writes subject-specific recovery topics when configured */
   if(window.SYAI&&SYAI.ready()&&!arguments[2]){
     toast('Designing the intervention with '+SYAI.provider()+'…');
-    SYAI.ask("List exactly 5 specific recovery-session topics for a "+(m.profile.level||'GCSE')+" student weak in "+target.s+" (mastery "+(target.mastery||0)+"%). One per line, no numbering — each a concrete, teachable session (topic + activity), ordered easiest first.","Subject: "+target.s,{maxTokens:300})
+    SYAI.ask("List exactly 5 specific recovery-session topics for a "+(m.profile.level||'GCSE')+" student weak in "+target.s+" (mastery "+(target.mastery||0)+"%). One per line, no numbering — each a concrete, teachable session (topic + activity), ordered easiest first. The topics MUST be at the right level for this stage — never harder-stage content."+((window.SY&&SY.stageStyle)?SY.stageStyle(m.profile.level):""),"Subject: "+target.s,{maxTokens:300})
       .then(function(t){var tp=String(t).split("\n").map(function(x){return x.trim().replace(/^[-*\d.]+\s*/,'')}).filter(Boolean).slice(0,5);
         generateIntervention(m,target,tp.length>=3?tp:null)})
       .catch(function(){generateIntervention(m,target,true)});
@@ -761,13 +761,18 @@ function advisorAnswer(q){
       'Keep sessions to 20–40 minutes, protect one rest day, and celebrate small wins to sustain motivation.';
   }
   if(/intensity|more|increase|harder|revision/.test(t)){
+    if(m.isPrimary)return (m.overall<60?'Yes — a little more gentle practice on '+(m.weakest||'the tricky areas')+' would help, but keep it short and playful.':'The balance looks about right. Keep practice little and often, and keep it fun — reading together and quick games do a lot at this age.')+
+      ' The planner already weights the trickier subjects heaviest.';
     return (m.overall<60?'Yes — increase intensity gently on '+(m.weakest||'the weak areas')+', but keep sessions short and specific.':'Intensity looks about right. Hold the routine and shift toward past papers as the exam nears.')+
       ' The planner already weights weak subjects heaviest.';
   }
   if(/universit|degree|career|pathway|future/.test(t)){
-    return 'On current strengths ('+m.subjects.filter(function(x){return x.mastery>=60}).slice(0,2).map(function(x){return x.s}).join(', ')||'developing across the board'+
+    if(m.isPrimary)return 'At primary age it\'s far too early — and unnecessary — to think about university. The best thing now is a broad, happy foundation: strong reading, number confidence and curiosity. On current strengths ('+(m.subjects.filter(function(x){return x.mastery>=60}).slice(0,2).map(function(x){return x.s}).join(', ')||'a broad base')+'), just keep encouraging what they enjoy.';
+    return 'On current strengths ('+(m.subjects.filter(function(x){return x.mastery>=60}).slice(0,2).map(function(x){return x.s}).join(', ')||'developing across the board')+
       '), the Future pathway tab suggests directions. Keep every subject above target to widen options.';
   }
+  if(m.isPrimary)return 'Here\'s what the live data shows for '+nm+': overall progress '+m.overall+'%, working at '+m.predicted+'. '+
+    'Trickiest: '+(m.weakest||'—')+'; strongest: '+(m.strongest||'—')+'. Ask about a subject, wellbeing, or how to help at home.';
   return 'Here\'s what the live data shows for '+nm+': overall progress '+m.overall+'%, predicted around '+m.predicted+', exam risk '+m.risk.toLowerCase()+
     '. Weakest: '+(m.weakest||'—')+'; strongest: '+(m.strongest||'—')+'. Ask about a subject, burnout, revision intensity, or university options.';
 }

@@ -88,7 +88,10 @@ var PLANS=[
   {id:'school_small',label:'Small School',pounds:99,acus:10000,feats:['Up to 150 students','10,000 shared ACUs per month','Command Centre, risk intelligence & intervention pipeline','Staff deployment hub (up to 15 teachers)','Parent visibility layer']},
   {id:'school_medium',label:'Medium School',pounds:199,acus:22000,rec:true,flag:'Recommended',feats:['Up to 600 students','22,000 shared ACUs per month','Everything in Small School','Unlimited staff deployment','Executive reporting suite & department analytics','MIS sync (CSV import)']},
   {id:'school_large',label:'Large School',pounds:399,acus:48000,feats:['Unlimited students & staff','48,000 shared ACUs per month','Everything in Medium School','Dedicated onboarding & SLA support','Custom AI policy & safeguarding controls','Multi-site / academy trust management']}];
-var PACKS=[{id:'mini',acus:250,pounds:3,label:'Mini Boost pack'},{id:'core',acus:450,pounds:5,pop:true,label:'Core Boost pack'},{id:'growth',acus:900,pounds:10,label:'Growth Boost pack'},{id:'exam',acus:1800,pounds:20,label:'Exam Boost pack'},{id:'power',acus:2600,pounds:30,label:'Power Boost pack'}];
+/* ids MUST match the Stripe catalog (mini_boost…power_boost) so a paid top-up
+   is credited by the webhook — a bare id like 'mini' resolves to nothing and
+   the school is charged but credited 0 ACUs. */
+var PACKS=[{id:'mini_boost',acus:250,pounds:3,label:'Mini Boost pack'},{id:'core_boost',acus:450,pounds:5,pop:true,label:'Core Boost pack'},{id:'growth_boost',acus:900,pounds:10,label:'Growth Boost pack'},{id:'exam_boost',acus:1800,pounds:20,label:'Exam Boost pack'},{id:'power_boost',acus:2600,pounds:30,label:'Power Boost pack'}];
 var LABELS={child_free:'No active plan'};PLANS.forEach(function(p){LABELS[p.id]=p.label});
 
 function draw(){
@@ -125,10 +128,14 @@ document.body.addEventListener('click',function(e){var b=e.target.closest('butto
     if(sub.topupMonth!==mk){sub.topupMonth=mk;sub.topupSpent=0}
     var remS=Math.max(0,plNow.pounds-(sub.topupSpent||0));
     if(pk.pounds>remS){toast('Your £'+plNow.pounds+'/month plan allows up to £'+plNow.pounds+' of top-ups each month — £'+remS+' left.');return}
-    sub.topupSpent=(sub.topupSpent||0)+pk.pounds;SY.set('schoolSub',sub);
-    pool.balance=(pool.balance||0)+pk.acus;SY.schoolSet(code,'acu',pool);draw();
-    SY.log('billing',pk.label+' purchased',fmt(pk.acus)+' ACUs added to the school pool · £'+sub.topupSpent+' of £'+plNow.pounds+' monthly top-up allowance used.');
-    toast('Preview purchase — '+fmt(pk.acus)+' ACUs added to your shared pool.');}
+    /* pay via Stripe (ref = school code → webhook credits the school pool);
+       activate() only runs in preview when no live payment link is configured. */
+    var activate=function(){
+      sub.topupSpent=(sub.topupSpent||0)+pk.pounds;SY.set('schoolSub',sub);
+      pool.balance=(pool.balance||0)+pk.acus;SY.schoolSet(code,'acu',pool);draw();
+      SY.log('billing',pk.label+' purchased',fmt(pk.acus)+' ACUs added to the school pool · £'+sub.topupSpent+' of £'+plNow.pounds+' monthly top-up allowance used.');
+      toast((window.SYBill&&SYBill.ready&&SYBill.ready()?'':'Preview purchase — ')+fmt(pk.acus)+' ACUs added to your shared pool.');};
+    if(window.SYBill){SYBill.checkout(pk.id,{promo:promo,email:(SY.session&&SY.session.email),ref:code,activate:activate})}else activate();}
 });
 draw();
 })();

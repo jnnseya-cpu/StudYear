@@ -91,6 +91,27 @@ const studentInit = (email, level) => `
   await p.context().close();
 }
 
+/* ---- 5a. Past Papers tab shows a practice sheet, NOT GCSE board archives ---- */
+{
+  const p = await page(studentInit('y4pp@t.test', KS2));
+  await p.goto(B + '/study/', { waitUntil: 'networkidle' });
+  await p.waitForTimeout(300);
+  const r = await p.evaluate(() => {
+    // reveal the Past Papers tab and render it
+    const btn = Array.from(document.querySelectorAll('[data-t]')).find((b) => b.getAttribute('data-t') === 'papers');
+    if (btn) btn.click();
+    if (typeof renderPapers === 'function') { try { renderPapers(); } catch (e) {} }
+    const list = (document.getElementById('pp-list') || {}).innerText || '';
+    const lvlWrap = document.getElementById('pp-level');
+    return { list, boardHidden: !lvlWrap || getComputedStyle(lvlWrap.parentElement).display === 'none' };
+  });
+  ok('Past Papers (KS2) shows NO exam boards / mark schemes / examiner reports',
+    !/exam board|mark scheme|examiner|AQA|Edexcel|OCR|GCSE|A-level/i.test(r.list));
+  ok('Past Papers (KS2) offers a friendly practice sheet instead', /practice sheet/i.test(r.list));
+  ok('Past Papers (KS2) hides the GCSE level selector', r.boardHidden);
+  await p.context().close();
+}
+
 /* ---- 5b. Career Passport shows a child explorer, NOT UCAS/university ---- */
 {
   const p = await page(studentInit('y4e@t.test', KS2));

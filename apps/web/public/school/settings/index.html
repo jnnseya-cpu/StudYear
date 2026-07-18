@@ -95,6 +95,7 @@
 (function(){
 'use strict';var SY=window.SY;if(!SY)return;var S=SY.session;
 function $(id){return document.getElementById(id)}function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 var tt;function toast(t){var el=$('toast');el.textContent=t;el.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){el.style.opacity=0},2600)}
 
 /* ---------- join code ---------- */
@@ -329,12 +330,12 @@ SECTIONS.forEach(function(sec){
       d.appendChild(el('div','ds','PDF or image · max 6 MB · encrypted at rest'));
       var btn=el('button','btn sm ghost','Upload');
       var st=el('div','state none','No file');
-      var cur=data[dc.k];if(cur&&cur.name){st.className='state';st.innerHTML='🔒 '+cur.name+(cur.e2e?' <span class="chip">encrypted</span>':'')}
+      var cur=data[dc.k];if(cur&&cur.name){st.className='state';st.innerHTML='🔒 '+esc(cur.name)+(cur.e2e?' <span class="chip">encrypted</span>':'')}
       btn.onclick=function(){pickDoc(function(res){
         st.className='state';st.textContent='Encrypting…';
         SY.encrypt(res.data).then(function(p){
           data[dc.k]={name:res.name,type:res.type,enc:p,e2e:!!(p&&p.e2e)};
-          st.innerHTML='🔒 '+res.name+(data[dc.k].e2e?' <span class="chip">encrypted</span>':'');refresh();
+          st.innerHTML='🔒 '+esc(res.name)+(data[dc.k].e2e?' <span class="chip">encrypted</span>':'');refresh();
         });
       })};
       var rm=el('button','btn sm ghost','Remove');rm.style.marginLeft='7px';

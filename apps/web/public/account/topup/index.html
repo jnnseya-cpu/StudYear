@@ -382,7 +382,11 @@ $('gift-go').onclick=function(){
     $('gift-wa').href='https://wa.me/?text='+encodeURIComponent('I’ve funded your StudYear learning 🌍 — redeem this gift code in Plans & top-up: '+code+' ('+fmt(pk.acus)+' ACUs) → https://www.studyear.com/account/topup/');
     SY.log('billing','Gift code created',pk.label+' ('+fmt(pk.acus)+' ACUs)'+(forEmail?(' for '+forEmail):'')+' — '+code);
     toast('Gift ready — send the code to the student.'+(window.SYBill?'':' (Preview: Stripe checkout takes over at billing go-live.)'));};
-  if(window.SYBill){SYBill.checkout(pk.id,{promo:promo,email:(SY.session&&SY.session.email),gift:true,activate:doGift})}else doGift();
+  /* Gift codes settle client-side today (see note above). We do NOT route this
+     through SYBill.checkout: a live redirect would credit the BUYER's own wallet
+     (default ref) and never return to mint the code. Server-side gift settlement
+     is the documented billing-go-live item. */
+  doGift();
 };
 $('gift-copy').onclick=function(){try{navigator.clipboard.writeText($('gift-code').textContent);toast('Code copied')}catch(e){}};
 $('gift-redeem').onclick=function(){
