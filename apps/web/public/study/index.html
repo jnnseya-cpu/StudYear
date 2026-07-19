@@ -1806,6 +1806,37 @@ function saveMine(obj,sfx,msg,clearIds){
   window.scrollTo({top:0,behavior:"smooth"});
   toast(msg+" — here it is in your Saved Resources (+15 pts)");
 }
+/* AUTOSAVE: every generated work (lessons, courses) is kept in the student's
+   library automatically so nothing is ever lost — no "Save" click required.
+   Deduped by a stable key (type+subject+level+title) so re-generating the same
+   topic refreshes the entry instead of piling up copies. Silent: it never yanks
+   the student out of what they're doing (unlike the manual saveMine). */
+function autoSaveMine(obj){
+  try{
+    if(!obj)return null;
+    if(!obj.title||!String(obj.title).trim())obj.title=(obj.subj?obj.subj+" — ":"")+(obj.type||"Resource");
+    var key=[obj.type||"",obj.subj||"",obj.level||"",String(obj.title).toLowerCase().trim()].join("|");
+    var mine=store.get("mine",[]);
+    for(var i=0;i<mine.length;i++){ if(mine[i].autokey===key){ if(obj.body)mine[i].body=obj.body; mine[i].savedAt=new Date().toISOString(); store.set("mine",mine); return mine[i]; } }
+    obj.id="u"+Date.now().toString(36)+Math.round(performance.now()).toString(36); obj.mine=true; obj.auto=true; obj.autokey=key; obj.savedAt=new Date().toISOString();
+    mine.push(obj); store.set("mine",mine);
+    try{logEvent("resource",(obj.subj?obj.subj+" — ":"")+obj.title,"Saved to your library automatically.");}catch(e){}
+    return obj;
+  }catch(e){return null;}
+}
+/* serialise a built lesson to readable notes HTML — used by the manual save AND
+   the autosave, so a saved lesson is fully reviewable later */
+function lessonNotesFor(L){
+  if(!L)return "";
+  var h='<h5>'+esc(L.topic)+' — '+esc(L.level||"")+' interactive lesson</h5>';
+  (L.steps||[]).forEach(function(s){
+    if(s.type==="intro")h+='<h5>Learning objectives</h5><ul>'+(s.objectives||[]).map(function(o){return '<li>'+esc(o)+'</li>'}).join('')+'</ul>';
+    else if(s.type==="teach")h+='<h5>'+esc(s.h||"")+'</h5><div>'+(s.html||"")+'</div>';
+    else if(s.type==="example")h+='<h5>'+esc(s.h||"")+'</h5><p><b>Q.</b> '+esc(s.ex&&s.ex.q||"")+'</p>'+((s.ex&&s.ex.steps)||[]).map(function(x){return '<p>· '+x+'</p>'}).join('');
+    else if(s.type==="recall"&&s.model)h+='<h5>'+esc(s.h||"Retrieval")+'</h5><p>'+esc(s.model)+'</p>';
+  });
+  return h;
+}
 document.getElementById("c-f-save").onclick=()=>{
   const title=$v("c-f-title").trim(), lines=parseLines("c-f-cards",2).map(p=>p.slice(0,2));
   if(!lines.length){toast("Add a title and at least one card (front :: back)");return}
@@ -3997,16 +4028,10 @@ function wireStep(st){
     if($("il-again"))$("il-again").onclick=()=>{const L=buildLesson(_L.topic,_L.level,_L.subj);_L=L;_ls={i:_L.type?2:2,correct:0,practiceTotal:0,quizScore:0,confidence:null};/* jump to first practice/example */_ls.i=_L.steps.findIndex(s=>s.type==="practice"||s.type==="example");if(_ls.i<0)_ls.i=1;renderLesson()};
     if($("il-restart"))$("il-restart").onclick=()=>{_ls={i:0,correct:0,practiceTotal:0,quizScore:0,confidence:null};renderLesson()};
     /* the lesson is a real study asset: save it to My resources / export it */
-    const lessonNotesHtml=()=>{
-      let h='<h5>'+esc(_L.topic)+' — '+esc(_L.level)+' interactive lesson</h5>';
-      _L.steps.forEach(s=>{
-        if(s.type==="intro")h+='<h5>Learning objectives</h5><ul>'+s.objectives.map(o=>'<li>'+esc(o)+'</li>').join('')+'</ul>';
-        else if(s.type==="teach")h+='<h5>'+esc(s.h)+'</h5><div>'+s.html+'</div>';
-        else if(s.type==="example")h+='<h5>'+esc(s.h)+'</h5><p><b>Q.</b> '+esc(s.ex.q)+'</p>'+s.ex.steps.map(x=>'<p>· '+x+'</p>').join('');
-        else if(s.type==="recall"&&s.model)h+='<h5>'+esc(s.h||"Retrieval")+'</h5><p>'+esc(s.model)+'</p>';
-      });
-      return h;
-    };
+    const lessonNotesHtml=()=>lessonNotesFor(_L);
+    /* the student has now reached the end with the full AI content in _L —
+       refresh the auto-saved library copy so it holds the complete lesson */
+    try{autoSaveMine({type:"Interactive Lesson",title:_L.topic+(_L.subj?" — "+_L.subj:""),subj:_L.subj||"",level:_L.level,body:lessonNotesHtml()});}catch(e){}
     if($("il-save-notes"))$("il-save-notes").onclick=()=>{
       saveMine({type:"Revision Notes",title:_L.topic+" — lesson notes",subj:_L.subj||"",level:_L.level,body:lessonNotesHtml()},"il","Lesson notes saved",[]);
     };
@@ -4049,6 +4074,9 @@ document.getElementById("il-go").onclick=()=>{
   const level=document.getElementById("il-level").value,subj=document.getElementById("il-subj").value;
   _L=buildLesson(topic,level,subj);_ls={i:0,correct:0,practiceTotal:0,quizScore:0,confidence:null};
   addPoints(10);touchStreak();
+  /* keep every lesson in the library automatically — refreshed once the live AI
+     fills in the full teaching content (see the summary step) */
+  autoSaveMine({type:"Interactive Lesson",title:_L.topic+(subj?" — "+subj:""),subj:subj||"",level:level,body:lessonNotesFor(_L)});
   logEvent("lesson","Interactive lesson: "+_L.topic,level+" level — interactive lesson started.");
   document.getElementById("il-sub").textContent=_L.topic+" · "+level+(_L.type?" · interactive walkthrough with marked practice":" · guided walkthrough")+" — step through, then take the quiz.";
   renderLesson();
@@ -4155,6 +4183,9 @@ document.getElementById("cg-go").onclick=()=>{
           '<div style="margin-top:8px"><button class="btn sm" id="cg-savecourse">Save course to library</button></div>';
         wireCourse(subject,cap);
       }
+      /* keep the generated course in the library automatically (store rendered
+         HTML so it displays properly when reopened from Saved Resources) */
+      try{autoSaveMine({type:"AI Course",title:cap+(focus?" — "+focus:"")+" — AI course",subj:subject||"",level:level,body:(window.SYAI&&SYAI.render?SYAI.render(txt):txt)});}catch(e){}
       const sv=document.getElementById("cg-savecourse");if(sv)sv.onclick=()=>{saveMine({type:"Revision Notes",title:cap+(focus?" — "+focus:"")+" — AI course",subj:"",level:level,body:txt},"co","Course saved",[])};
     }).catch(e=>{toast("Live AI error — using the verified outline");cgStatic(subject,level,board,cap,focus)});
     return;
