@@ -134,6 +134,27 @@ const studentInit = (email, level) => `
   await p.context().close();
 }
 
+/* ---- 5a3. School-provisioned child: only a YEAR GROUP set, `level` empty ----
+   This is the exact production failure — a primary child whose profile carried
+   yearGroup/keyStage but no free-text `level` used to fall through dgTier() to
+   the GCSE default and receive a GCSE recovery plan, curriculum and tutor. */
+{
+  const yearOnly = (email) => `
+    localStorage.setItem('sy-session',JSON.stringify({role:'student',name:'Y4',email:'${email}'}));
+    localStorage.setItem('sy-u:${email}:profile',JSON.stringify({name:'Y4',level:'',yearGroup:'Year 4',keyStage:'KS2',board:'',subjects:[{s:'Mathematics',current:'Working Towards',target:'Greater Depth'}]}));
+    localStorage.setItem('sy-u:${email}:wallet',JSON.stringify({acus:100,plan:'child_free',month:new Date().toISOString().slice(0,7)}));`;
+  const p = await page(yearOnly('yearonly@t.test'));
+  await p.goto(B + '/study/', { waitUntil: 'networkidle' });
+  await p.waitForTimeout(400);
+  const r = await p.evaluate(() => ({
+    tier: (typeof dgTier === 'function' ? dgTier() : '?'),
+    lvl: (typeof dgLevelStr === 'function' ? dgLevelStr() : '?'),
+  }));
+  ok('Year-group-only child (empty level) resolves to PRIMARY, not GCSE', r.tier === 'primary');
+  ok('Effective level string for that child is Primary, never GCSE', r.lvl === 'Primary');
+  await p.context().close();
+}
+
 /* ---- 5b. Career Passport shows a child explorer, NOT UCAS/university ---- */
 {
   const p = await page(studentInit('y4e@t.test', KS2));

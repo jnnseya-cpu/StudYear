@@ -1826,7 +1826,7 @@ document.getElementById("c-q-save").onclick=()=>{
 /* one-tap AI fill: a topic (or just subject+level) is enough — the AI writes
    the structured content so no student wrestles with :: syntax */
 document.getElementById("c-f-ai").onclick=async()=>{
-  const topic=$v("c-f-title").trim()||$v("c-f-subj"),lvl=$v("c-f-level")||"GCSE";
+  const topic=$v("c-f-title").trim()||$v("c-f-subj"),lvl=$v("c-f-level")||dgLevelStr();
   if(!(window.SYAI&&SYAI.ready())){toast("Live AI is warming up — try the AI Flashcard Generator above, it works without it");return}
   toast("Writing your cards…");
   try{
@@ -1837,7 +1837,7 @@ document.getElementById("c-f-ai").onclick=async()=>{
   }catch(e){toast("Live AI unreachable — use the AI Flashcard Generator above")}
 };
 document.getElementById("c-q-ai").onclick=async()=>{
-  const topic=$v("c-q-title").trim()||$v("c-q-subj"),lvl=$v("c-q-level")||"GCSE";
+  const topic=$v("c-q-title").trim()||$v("c-q-subj"),lvl=$v("c-q-level")||dgLevelStr();
   if(!(window.SYAI&&SYAI.ready())){toast("Live AI is warming up — try the AI Quiz Generator above, it works without it");return}
   toast("Writing your questions…");
   try{
@@ -1943,7 +1943,7 @@ document.getElementById("c-sm-save").onclick=()=>{
   if(text.length<120){toast("Paste at least a paragraph to summarise");return}
   if(window.SYAI&&SYAI.ready()){
     toast("Summarising with "+SYAI.provider()+"…");
-    SYAI.ask("You are a study assistant. Summarise the text for a "+($v("c-sm-level")||"GCSE")+" student on '"+topic+"'."+((window.SY&&SY.stageStyle)?SY.stageStyle($v("c-sm-level")):"")+" Return a 3–4 sentence summary, then 4–6 key bullet points, then a short 'Key terms' line. Use markdown.","TEXT:\n"+text,{maxTokens:800}).then(txt=>{
+    SYAI.ask("You are a study assistant. Summarise the text for a "+($v("c-sm-level")||dgLevelStr())+" student on '"+topic+"'."+((window.SY&&SY.stageStyle)?SY.stageStyle($v("c-sm-level")):"")+" Return a 3–4 sentence summary, then 4–6 key bullet points, then a short 'Key terms' line. Use markdown.","TEXT:\n"+text,{maxTokens:800}).then(txt=>{
       saveMine({type:"Revision Notes",title:topic+" — AI summary",subj:$v("c-sm-subj"),level:$v("c-sm-level"),body:SYAI.render(txt)},"sm","AI summary saved",["c-sm-topic","c-sm-text"]);
     }).catch(e=>{toast("Live AI error — using on-device summary");smStatic(topic,text)});
     return;
@@ -1974,7 +1974,7 @@ document.getElementById("g-fc-go").onclick=()=>{
   if(topic.length<3){toast("Enter a topic for your flashcards");return}
   if(window.SYAI&&SYAI.ready()){
     toast("Writing flashcards with "+SYAI.provider()+"…");
-    SYAI.ask("Create exactly 10 study flashcards for a "+($v("g-fc-level")||"GCSE")+" student on the topic."+((window.SY&&SY.stageStyle)?SY.stageStyle($v("g-fc-level")):"")+" Return ONLY lines in the format 'front :: back' — no headings, no numbering. Fronts are precise questions/terms; backs are accurate, concise answers.","Topic: "+topic,{maxTokens:900}).then(t=>{
+    SYAI.ask("Create exactly 10 study flashcards for a "+($v("g-fc-level")||dgLevelStr())+" student on the topic."+((window.SY&&SY.stageStyle)?SY.stageStyle($v("g-fc-level")):"")+" Return ONLY lines in the format 'front :: back' — no headings, no numbering. Fronts are precise questions/terms; backs are accurate, concise answers.","Topic: "+topic,{maxTokens:900}).then(t=>{
       const cards=String(t).split("\n").map(l=>{const p=l.split("::").map(s=>s.trim());if(p[0])p[0]=p[0].replace(/^[-*)\s]*\d*[.)]?\s*/,"").trim()||p[0];return p}).filter(p=>p.length>=2&&p[0]&&p[1]).map(p=>p.slice(0,2));
       if(cards.length<3){toast("Model returned too few cards — using the library");fcStatic(topic);return}
       saveMine({type:"Flashcards",title:topic+" — AI deck",subj:$v("g-fc-subj"),level:$v("g-fc-level"),cards:cards.slice(0,12)},"gf","AI flashcards generated",["g-fc-topic"]);
@@ -2003,7 +2003,7 @@ document.getElementById("g-qz-go").onclick=()=>{
   const n=Math.max(3,Math.min(10,+$v("g-qz-n")||5));
   if(window.SYAI&&SYAI.ready()){
     toast("Writing your quiz with "+SYAI.provider()+"…");
-    SYAI.ask("Write exactly "+n+" multiple-choice questions for a "+($v("g-qz-level")||"GCSE")+" student on the topic."+((window.SY&&SY.stageStyle)?SY.stageStyle($v("g-qz-level")):"")+" Return ONLY lines in the format 'question :: correct answer :: wrong :: wrong :: wrong' (4 options total, correct FIRST). After each question line, you may add a line 'exp:: one-sentence explanation'. No numbering or headings. Questions must be factually accurate and specific to the topic.","Topic: "+topic,{maxTokens:1200}).then(t=>{
+    SYAI.ask("Write exactly "+n+" multiple-choice questions for a "+($v("g-qz-level")||dgLevelStr())+" student on the topic."+((window.SY&&SY.stageStyle)?SY.stageStyle($v("g-qz-level")):"")+" Return ONLY lines in the format 'question :: correct answer :: wrong :: wrong :: wrong' (4 options total, correct FIRST). After each question line, you may add a line 'exp:: one-sentence explanation'. No numbering or headings. Questions must be factually accurate and specific to the topic.","Topic: "+topic,{maxTokens:1200}).then(t=>{
       const qs=[];let last=null;
       String(t).split("\n").forEach(l=>{l=l.trim();if(!l)return;
         if(/^exp\s*::/i.test(l)){if(last)last.exp=l.replace(/^exp\s*::\s*/i,"");return}
@@ -2070,7 +2070,7 @@ document.getElementById("c-e-save").onclick=()=>{
   const clearUpload=()=>{essayDoc="";essayPdf=null;essayDocName="";document.getElementById("c-e-filename").textContent="";};
   if(window.SYAI&&SYAI.ready()){
     toast("Planning with "+SYAI.provider()+"…");
-    SYAI.ask("You are an "+(level||"GCSE")+(subj?" "+subj:"")+" essay coach."+((window.SY&&SY.stageStyle)?SY.stageStyle(level):"")+" Produce a specific essay plan: a clear thesis, an introduction, 3 body paragraphs (each Point/Evidence/Explain with a CONCRETE example relevant to this exact question), a counter-argument paragraph, and a conclusion. Use markdown headings and bullets. Be specific to the question, not generic."+(essayDoc?" Base the plan on the student's uploaded document (the brief, sources or draft) included in the message — use its actual content and quote it where useful.":"")+(essayPdf?" The brief/source document is attached — read it first and base the plan on its actual content.":""),
+    SYAI.ask("You are an "+(level||dgLevelStr())+(subj?" "+subj:"")+" essay coach."+((window.SY&&SY.stageStyle)?SY.stageStyle(level):"")+" Produce a specific essay plan: a clear thesis, an introduction, 3 body paragraphs (each Point/Evidence/Explain with a CONCRETE example relevant to this exact question), a counter-argument paragraph, and a conclusion. Use markdown headings and bullets. Be specific to the question, not generic."+(essayDoc?" Base the plan on the student's uploaded document (the brief, sources or draft) included in the message — use its actual content and quote it where useful.":"")+(essayPdf?" The brief/source document is attached — read it first and base the plan on its actual content.":""),
       "Essay question: "+(q||"(take the question from the uploaded document)")+(essayDoc?"\n\nUploaded document ("+essayDocName+"):\n"+essayDoc.slice(0,8000):""),
       {maxTokens:1100,image:essayPdf||undefined}).then(txt=>{
       saveMine({type:"Revision Notes",title:planTitle,subj,level,body:SYAI.render(txt)},"e","AI essay plan saved",["c-e-q"]);
@@ -2141,7 +2141,7 @@ document.getElementById("c-v-save").onclick=()=>{
     /* produce a REAL labelled breakdown — AI when available, structured
        fallback otherwise — and save it as readable revision notes, not a
        fake photoreal placeholder */
-    const lvl=$v("c-v-level")||PROFILE.level||"GCSE";
+    const lvl=$v("c-v-level")||dgLevelStr();
     const doSave=(body)=>saveMine({type:"Labelled Diagram",title,subj:$v("c-v-subj"),level:lvl,body},"v","Labelled diagram saved",["c-v-title","c-v-prompt","c-v-note"]);
     if(window.SYAI&&SYAI.ready()){
       toast("Writing your labelled diagram…");
@@ -2647,7 +2647,7 @@ const SOC_MODES_PRIMARY={
   mistake:"LET'S FIX IT TOGETHER mode: the child will show their work — find the one thing to fix, say what went well first, then show the right way kindly, step by step.",
   challenge:"SUPER CHALLENGE mode: set one slightly-harder question as a fun stretch; give lots of encouragement and a hint the moment they seem stuck."};
 function tutorSystemPrompt(){
-  const lvl=(typeof STUDENT_LEVEL!=="undefined"&&STUDENT_LEVEL)||PROFILE.level||"GCSE";
+  const lvl=(typeof STUDENT_LEVEL!=="undefined"&&STUDENT_LEVEL)||dgLevelStr();
   const subs=(PROFILE.subjects||[]).map(x=>x.s).filter(Boolean).join(", ");
   const modeSel=document.getElementById("soc-mode");
   const mode=(modeSel&&modeSel.value)||"guide";
@@ -2926,13 +2926,32 @@ const DG_QBANK_ALEVEL={
    {q:"A gene mutation that does not change the amino acid sequence is called…",o:["silent","nonsense","missense","frameshift"],a:0}],
  "English":[{q:"The 'volta' in a sonnet is…",o:["the turn in thought or argument","the final couplet","the rhyme scheme","the iambic rhythm"],a:0}]};
 function dgTier(){
-  var lv=String((store.get("profile",{})||{}).level||'').toLowerCase();
+  var pf=(store.get("profile",{})||{});
+  var lv=String(pf.level||'').toLowerCase();
   /* tertiary FIRST — "University · Undergraduate Year 2" contains "year 2" and
      would otherwise be misread as primary and collapsed to a 7-year-old view. */
   if(/universit|undergrad|\bdegree\b|postgrad|master|\bphd\b|doctora/.test(lv))return 'alevel';
-  if(/primary|eyfs|reception|nursery|early years|\bks[12]\b|key stage [12]|\byear [1-6]\b|11\+|eleven ?plus/.test(lv))return 'primary';
+  /* PRIMARY detection must not rely on the free-text `level` alone: a
+     school-provisioned child often has only yearGroup/keyStage set, leaving
+     `level` empty — which used to fall straight through to the GCSE default and
+     hand a 9-year-old a GCSE recovery plan, curriculum and exam tutor. Check the
+     broad profile fields AND guard.js's cached primary decision (sy-kids flag,
+     which also factors in the school-managed level) before defaulting. */
+  var broad=[pf.level,pf.yearGroup,pf.year,pf.keyStage,pf.stage,pf.phase]
+    .map(function(x){return String(x||'')}).join(' ').toLowerCase();
+  var kidFlag=''; try{kidFlag=localStorage.getItem('sy-kids:'+String((window.SY&&SY.session&&SY.session.email)||'').toLowerCase())||''}catch(e){}
+  if(kidFlag==='1'||/primary|eyfs|reception|nursery|early years|infant|junior|\bks\s*[12]\b|key stage [12]|\byear\s*[1-6]\b|11\s*\+|eleven ?plus/.test(broad))return 'primary';
   if(/a2|a-level|\bas\b|higher|baccalaureate|university/.test(lv))return 'alevel';
   return 'gcse';
+}
+/* Effective level STRING for AI prompts: when the profile has no explicit level,
+   never fall back to "GCSE" for a child — derive it from the resolved tier so a
+   primary learner's prompts say "Primary", not "GCSE". */
+function dgLevelStr(){
+  var pf=(store.get("profile",{})||{});
+  if(pf.level)return pf.level;
+  var t=dgTier();
+  return t==='primary'?'Primary':t==='alevel'?'A-level':'GCSE';
 }
 function dgBankFor(s){
   const tier=dgTier();
@@ -3105,7 +3124,7 @@ function offlineSpell(text){
   return {score,words:wrong.slice(0,20),total};
 }
 function evaluateWritten(text){
-  const lvl=PROFILE.level||"GCSE";
+  const lvl=dgLevelStr();
   const subj=(PROFILE.subjects&&PROFILE.subjects[0]&&PROFILE.subjects[0].s)||"the subject";
   if(window.SYAI&&SYAI.ready()){
     /* DEEP marking: an examiner-grade assessment across every dimension —
@@ -3722,7 +3741,7 @@ document.getElementById("pg-go").onclick=()=>{
   if(window.SYAI&&SYAI.ready()){
     const box=document.getElementById("pg-ai");
     box.innerHTML='<div class="note">Writing your '+((/eyfs|ks1|ks2|elevenplus/.test(att.system||""))?'progress note':'examiner analysis')+' with '+SYAI.provider()+'…</div>';
-    SYAI.ask("You are a "+(PROFILE.level||"GCSE")+" "+subj+" teacher writing a supportive progress analysis (4–6 sentences): what the trajectory means, the 2–3 topics most likely holding progress back, and exactly what to do in the next 2 weeks to move up. Be concrete for this subject, not generic. Use markdown."+((window.SY&&SY.stageStyle)?SY.stageStyle(PROFILE.level):""),
+    SYAI.ask("You are a "+dgLevelStr()+" "+subj+" teacher writing a supportive progress analysis (4–6 sentences): what the trajectory means, the 2–3 topics most likely holding progress back, and exactly what to do in the next 2 weeks to move up. Be concrete for this subject, not generic. Use markdown."+((window.SY&&SY.stageStyle)?SY.stageStyle(PROFILE.level):""),
       "Data: quiz scores in order: "+qz.map(q=>q.pct+"%").join(", ")+". Blended mastery "+mastery+"%. Predicted Grade "+grade+". Trend "+trend+"."+(tgt?" Target grade "+tgt+".":""),{maxTokens:600})
     .then(t=>{box.innerHTML='<div class="card" style="margin-top:10px"><div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:4px">'+((/eyfs|ks1|ks2|elevenplus/.test(att.system||""))?'Live AI progress note':'Live AI examiner analysis')+'</div>'+SYAI.render(t)+'</div>'})
     .catch(()=>{box.innerHTML=''});
@@ -4579,13 +4598,13 @@ function cgStatic(subject,level,board,cap,focus){
         return {on:true,label:'Lesson: '+_L.topic+(_L.subj?' · '+_L.subj:'')+' · '+_L.level,
           sys:'The student is working through an interactive lesson on "'+_L.topic+'"'+(_L.subj?' in '+_L.subj:'')+' at '+_L.level+' level. Answer questions in the context of THIS lesson and help them grasp this exact topic.'};
       }
-      var it=(document.getElementById("il-topic")||{}).value||"", il=(document.getElementById("il-level")||{}).value||PROFILE.level||"";
+      var it=(document.getElementById("il-topic")||{}).value||"", il=(document.getElementById("il-level")||{}).value||dgLevelStr();
       return {on:true,label:'Interactive Lesson'+(it?': '+it:''),
         sys:'The student is about to start an interactive lesson'+(it?' on "'+it+'"':'')+(il?' at '+il+' level':'')+'. Help them understand the topic and get the most from the lesson.'};
     }
     if(t==="course"){
       var subj=(document.getElementById("cg-subject")||{}).value||"";
-      var lvl=(document.getElementById("cg-level")||{}).value||PROFILE.level||"";
+      var lvl=(document.getElementById("cg-level")||{}).value||dgLevelStr();
       var top=(document.getElementById("cg-topic")||{}).value||"";
       return {on:true,label:'Course'+(subj?': '+subj:'')+(lvl?' · '+lvl:'')+(top?' · '+top:''),
         sys:'The student is building or studying an AI course'+(subj?' in '+subj:'')+(lvl?' at '+lvl+' level':'')+(top?', focused on '+top:'')+'. Help them understand the material and how to make the most of the course.'};
