@@ -40,6 +40,12 @@ const nextConfig = {
                 { key: 'X-Frame-Options', value: 'DENY' },
                 { key: 'X-Content-Type-Options', value: 'nosniff' },
                 { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+                // force HTTPS for two years incl. subdomains (safe: prod is HTTPS-only)
+                { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+                // deny sensors by default; camera/mic stay available for QR scan + live classroom
+                { key: 'Permissions-Policy', value: 'geolocation=(), payment=(), usb=(), camera=(self), microphone=(self)' },
+                { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
+                { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
               ],
             },
           ];

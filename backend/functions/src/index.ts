@@ -115,12 +115,12 @@ export const acuAuthorize = onRequest({ region: 'europe-west2', cors: true }, as
  * each renewal cycle. Single source → the checkout UI, the plans pages and the
  * server can never drift on how many ACUs a purchase is worth.
  */
-type CatalogItem = { acus: number; kind: 'subscription' | 'topup'; audience?: string };
+type CatalogItem = { acus: number; kind: 'subscription' | 'topup'; audience?: string; pence: number };
 const STRIPE_CATALOG: Record<string, CatalogItem> = (() => {
   const m: Record<string, CatalogItem> = {};
   for (const p of [...STUDENT_PLANS, ...PARENT_PLANS, ...SCHOOL_PLANS])
-    m[p.id] = { acus: p.acus, kind: 'subscription', audience: p.audience };
-  for (const t of TOPUPS) m[t.id] = { acus: t.acus, kind: 'topup' };
+    m[p.id] = { acus: p.acus, kind: 'subscription', audience: p.audience, pence: p.monthlyPence };
+  for (const t of TOPUPS) m[t.id] = { acus: t.acus, kind: 'topup', pence: t.pence };
   return m;
 })();
 
@@ -182,12 +182,29 @@ async function resolveBuyer(ref: string): Promise<{ uid: string | null; ownerKey
   return { uid: null, ownerKey: '', kind: 'user', email: null };
 }
 
-/** Append a positive credit to the append-only ledger (walletBalance sums delta). */
-function creditAcus(ownerKey: string, acus: number, source: string, meta: Record<string, unknown>) {
-  return db.collection('acuTransactions').add({
+/** Append a positive credit to the append-only ledger (walletBalance sums delta).
+    When `dedupeId` is given the row is written at a deterministic doc id, so a
+    replayed webhook (e.g. the idempotency guard was torn down by a post-credit
+    error and Stripe retried) can never append a second credit. */
+async function creditAcus(ownerKey: string, acus: number, source: string, meta: Record<string, unknown>, dedupeId?: string) {
+  const data = {
     ownerId: ownerKey, delta: Math.max(0, Math.round(acus)), activity: 'purchase',
     source, ...meta, createdAt: FieldValue.serverTimestamp(),
-  });
+  };
+  if (dedupeId) {
+    try { await db.collection('acuTransactions').doc(dedupeId).create(data); }
+    catch (e) { const c = (e as { code?: number | string }).code; if (c === 6 || c === 'already-exists') return; throw e; } // already credited
+    return;
+  }
+  await db.collection('acuTransactions').add(data);
+}
+
+/** Append a signed adjustment (e.g. a refund/chargeback clawback = negative
+    delta). Deterministic doc id keeps it idempotent against webhook retries. */
+async function adjustAcus(ownerKey: string, delta: number, activity: string, source: string, meta: Record<string, unknown>, dedupeId: string) {
+  const data = { ownerId: ownerKey, delta: Math.round(delta), activity, source, ...meta, createdAt: FieldValue.serverTimestamp() };
+  try { await db.collection('acuTransactions').doc(dedupeId).create(data); }
+  catch (e) { const c = (e as { code?: number | string }).code; if (c === 6 || c === 'already-exists') return; throw e; }
 }
 
 /**
@@ -227,19 +244,28 @@ export const stripeWebhook = onRequest({ region: 'europe-west2' }, async (req, r
   try {
     if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
       const s = event.data.object;
-      const paid = String(s.payment_status ?? 'paid') === 'paid';
+      const paid = String(s.payment_status ?? 'unpaid') === 'paid'; // fail closed on a missing field
       const { planId, ref } = planAndRef(s);
       const item = STRIPE_CATALOG[planId];
       const buyer = await resolveBuyer(ref);
+      const amt = typeof s.amount_total === 'number' ? s.amount_total : null;
+      // Bind the ACU grant to the money actually collected: the planId is
+      // client-influenced (client_reference_id), so a buyer must not be able to
+      // pay the cheapest Payment Link and claim the most expensive plan. When the
+      // amount is known it must cover the catalogue price for the claimed plan.
+      const priceOk = amt == null || !item ? true : amt >= item.pence;
+      const applied = !!(paid && item && buyer.ownerKey && priceOk);
       await db.collection('stripePayments').add({
-        eventId: event.id, sessionId: s.id ?? null, planId: planId || null, ref: ref || null,
+        eventId: event.id, sessionId: s.id ?? null, paymentIntent: s.payment_intent ?? null, planId: planId || null, ref: ref || null,
         acus: item?.acus ?? 0, kind: item?.kind ?? null, ownerKey: buyer.ownerKey || null,
         uid: buyer.uid, email: buyer.email, customer: s.customer ?? null,
-        amountTotal: s.amount_total ?? null, currency: s.currency ?? null,
-        applied: !!(paid && item && buyer.ownerKey), createdAt: FieldValue.serverTimestamp(),
+        amountTotal: amt, currency: s.currency ?? null, expectedPence: item?.pence ?? null, priceOk,
+        applied, createdAt: FieldValue.serverTimestamp(),
       });
-      if (paid && item && buyer.ownerKey) {
-        await creditAcus(buyer.ownerKey, item.acus, `stripe:${event.type}`, { planId, ref, sessionId: s.id ?? null, eventId: event.id });
+      if (paid && item && !priceOk) // paid, but underpaid for the claimed plan — hold for review, do not credit
+        await audit('STRIPE_AMOUNT_MISMATCH', buyer.uid ?? buyer.ownerKey, { planId, amountTotal: amt, expectedPence: item.pence });
+      if (applied) {
+        await creditAcus(buyer.ownerKey, item.acus, `stripe:${event.type}`, { planId, ref, sessionId: s.id ?? null, eventId: event.id }, `credit_${event.id}`);
         if (item.kind === 'subscription') {
           if (buyer.kind === 'user' && buyer.uid)
             await db.doc(`users/${buyer.uid}`).set({ plan: planId, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
@@ -260,10 +286,39 @@ export const stripeWebhook = onRequest({ region: 'europe-west2' }, async (req, r
         const cust = await db.doc(`stripeCustomers/${String(inv.customer)}`).get();
         if (cust.exists) {
           const c = cust.data()!;
-          await creditAcus(String(c.ownerKey), Number(c.acus) || 0, 'stripe:renewal', { planId: c.planId ?? null, invoiceId: inv.id ?? null, eventId: event.id });
+          await creditAcus(String(c.ownerKey), Number(c.acus) || 0, 'stripe:renewal', { planId: c.planId ?? null, invoiceId: inv.id ?? null, eventId: event.id }, `renewal_${event.id}`);
           await audit('STRIPE_RENEWAL', (c.uid as string) ?? String(c.ownerKey), { planId: c.planId ?? null, acus: c.acus ?? 0 });
         }
       }
+    } else if (event.type === 'charge.refunded' || event.type === 'charge.dispute.created') {
+      // Money pulled back (refund or chargeback) → claw back the ACUs that this
+      // payment granted, so refund/chargeback fraud can't keep the credits. The
+      // original checkout stored the paymentIntent on stripePayments; find that
+      // record and write a compensating negative delta (idempotent by event id).
+      const ch = event.data.object;
+      const pi = (event.type === 'charge.dispute.created' ? ch.payment_intent : ch.payment_intent) ?? null;
+      let claimed = false;
+      if (pi) {
+        const q = await db.collection('stripePayments').where('paymentIntent', '==', String(pi)).limit(5).get();
+        for (const doc of q.docs) {
+          const p = doc.data();
+          if (p.applied && p.ownerKey && Number(p.acus) > 0) {
+            await adjustAcus(String(p.ownerKey), -Math.abs(Number(p.acus) || 0), 'refund',
+              `stripe:${event.type}`, { planId: p.planId ?? null, paymentIntent: String(pi), eventId: event.id, originalEvent: p.eventId ?? null },
+              `clawback_${event.id}_${doc.id}`);
+            claimed = true;
+            // a chargeback/refund of a subscription also drops the plan back to free
+            if (p.kind === 'subscription' && p.uid)
+              await db.doc(`users/${String(p.uid)}`).set({ plan: 'child_free', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+            await audit('STRIPE_CLAWBACK', (p.uid as string) ?? String(p.ownerKey), { planId: p.planId ?? null, acus: p.acus ?? 0, reason: event.type });
+          }
+        }
+      }
+      // Always record the reversal for reconciliation, even if no grant was found
+      await db.collection('refunds').add({
+        eventId: event.id, type: event.type, paymentIntent: pi, charge: ch.id ?? null,
+        amount: ch.amount_refunded ?? ch.amount ?? null, clawedBack: claimed, createdAt: FieldValue.serverTimestamp(),
+      });
     } else if (event.type === 'customer.subscription.deleted') {
       // Subscription cancelled/expired — drop the account back to the free plan.
       const sub = event.data.object;
@@ -370,8 +425,10 @@ function aiProviderChain(): { provider: AiProvider; key: string }[] {
 async function aiCall(provider: AiProvider, key: string, body: AiBody): Promise<{ text: string; model: string }> {
   const model = (process.env.AI_MODEL && (process.env.AI_PROVIDER ?? 'openai') === provider)
     ? process.env.AI_MODEL : AI_DEFAULT_MODEL[provider];
-  const maxTokens = body.maxTokens ?? 1024;
-  const temperature = body.temperature ?? 0.6;
+  // Clamp output length server-side so a client can't request a huge (costly)
+  // completion. Even authenticated callers must stay inside this ceiling.
+  const maxTokens = Math.max(1, Math.min(Number(body.maxTokens) || 1024, 2048));
+  const temperature = Math.max(0, Math.min(Number(body.temperature ?? 0.6), 1));
   const img = body.image ? String(body.image).match(/^data:([^;]+);base64,(.*)$/) : null;
   if (provider === 'gemini') {
     const parts: unknown[] = [{ text: String(body.user ?? '') }];
@@ -426,9 +483,19 @@ async function aiCall(provider: AiProvider, key: string, body: AiBody): Promise<
   const j = (await r.json()) as { choices?: { message?: { content?: string } }[] };
   return { text: j.choices?.[0]?.message?.content ?? '', model };
 }
-export const aiProxy = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+export const aiProxy = onRequest({ region: 'europe-west2', cors: true, maxInstances: 20 }, async (req, res) => {
   try {
     const user = await requireUser(req.headers.authorization);
+    // Denial-of-wallet backstop: cap calls per account per day. This is an abuse
+    // ceiling (well above any legitimate use), NOT the ACU meter — real per-call
+    // ACU debiting is the architectural fix tracked separately. Bounds a single
+    // account or stolen token to a finite provider spend instead of unlimited.
+    const dayKey = new Date().toISOString().slice(0, 10);
+    const rateRef = db.doc(`aiRateLimits/${user.uid}_${dayKey}`);
+    const AI_DAILY_CAP = Number(process.env.AI_DAILY_CALL_CAP) || 500;
+    const used = (await rateRef.get().then((d) => (d.exists ? Number(d.data()!.count) || 0 : 0)));
+    if (used >= AI_DAILY_CAP) throw httpError(429, 'daily AI limit reached — please try again tomorrow');
+    await rateRef.set({ count: FieldValue.increment(1), day: dayKey, uid: user.uid, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
     const chain = aiProviderChain();
     if (!chain.length) throw httpError(503, 'AI provider key not configured on the server');
     const t0 = Date.now();
@@ -582,7 +649,10 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? 'jnnseya@gmail.com,jnbankwa@gm
   .toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
 async function requireAdmin(authHeader: string | undefined) {
   const u = await requireUser(authHeader);
-  if (!u.email || !ADMIN_EMAILS.includes(u.email.toLowerCase())) throw httpError(403, 'admin only');
+  // Require a VERIFIED email: Firebase lets anyone register an arbitrary
+  // unverified address, so an allow-list match alone would let someone claim an
+  // admin address that isn't yet a real account and pass this gate.
+  if (!u.email || !u.email_verified || !ADMIN_EMAILS.includes(u.email.toLowerCase())) throw httpError(403, 'admin only');
   return u;
 }
 

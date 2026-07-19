@@ -27,8 +27,11 @@ service cloud.firestore {
     // ---------------- users & tenancy ----------------
     match /users/{userId} {
       allow read: if signedIn() && (uid() == userId || isPlatformAdmin() || isGuardianOf(userId));
-      allow create: if signedIn() && uid() == userId;
-      // role & tenant are server-assigned; clients may not self-elevate
+      // role, tenant & plan are server-assigned; a client may not seed them on
+      // create either (else a fresh account self-assigns role:'platform_admin')
+      allow create: if signedIn() && uid() == userId
+        && !request.resource.data.keys().hasAny(['role', 'tenantId', 'plan']);
+      // …nor self-elevate on update
       allow update: if signedIn() && uid() == userId
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'tenantId', 'plan']);
       allow delete: if false; // GDPR deletion runs server-side with retention checks
