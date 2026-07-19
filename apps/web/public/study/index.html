@@ -3090,7 +3090,14 @@ document.getElementById("dg-quiz").onclick=()=>{
     const txt=(document.getElementById("dg-written").value||"").trim();
     if(txt.length<100){toast("Write at least 100 characters in the written answer ("+txt.length+"/100)");document.getElementById("dg-written").focus();return}
     const btn=document.getElementById("dg-report");btn.disabled=true;btn.textContent="Deep-marking your writing, spelling & grammar…";
-    evaluateWritten(txt).then(w=>dgGenerate(w)).catch(()=>dgGenerate(null));
+    /* The report must ALWAYS generate — the AI deep-mark is an enhancement, not a
+       gate. Guard so it runs exactly once, and add an absolute safety net so a
+       slow/stalled AI call (or missing cloud token) can never leave this button
+       stuck: after 25s we proceed with the on-device spelling analysis. */
+    var dgDone=false;
+    var dgGo=function(w){ if(dgDone)return; dgDone=true; dgGenerate(w); };
+    evaluateWritten(txt).then(dgGo).catch(function(){dgGo(null);});
+    setTimeout(function(){ if(!dgDone){ var o=offlineSpell(txt); dgGo({text:txt,spelling:{score:o.score,words:o.words},grammar:null,quality:null,feedback:"",live:false}); } },25000);
   };
 };
 /* ---- written-answer prompt + spelling assessment ---- */
@@ -3146,7 +3153,7 @@ function evaluateWritten(text){
       "## Structure & clarity\n<full sentences? logical order? clear explanation?>\n"+
       "## Spelling, grammar & punctuation\n<specific errors with the correct version; if clean, say so>\n"+
       "## Your next step\n<one concrete, actionable improvement>";
-    return SYAI.ask(sys,"STUDENT ANSWER:\n"+text,{maxTokens:1200}).then(function(out){
+    return SYAI.ask(sys,"STUDENT ANSWER:\n"+text,{maxTokens:1200,noRecover:true,timeoutMs:22000}).then(function(out){
       try{
         const S=/SPELLING:\s*(\d{1,3})/i.exec(out),G=/GRAMMAR:\s*(\d{1,3})/i.exec(out),Q=/QUALITY:\s*(\d{1,3})/i.exec(out),
           M=/MISSPELLED:\s*([\s\S]*?)\n(?:GRAMMAR|QUALITY|FEEDBACK)/i.exec(out),F=/FEEDBACK:\s*([\s\S]*)$/i.exec(out);
