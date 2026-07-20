@@ -426,7 +426,17 @@
     /* redeem a StudYear bonus/promo code server-side (validated window/limits/
        audience, ledgered once per user, ACUs credited on the server). Resolves
        to { ok, bonusAcus, discountPct, label } or throws with the reason. */
-    redeemCode: function (code, email) { return api('/redeemCode', 'POST', { code: String(code || '').trim() }, email); } };
+    redeemCode: function (code, email) { return api('/redeemCode', 'POST', { code: String(code || '').trim() }, email); },
+    /* create a Stripe Checkout Session on the server (price + plan set server-
+       side, never trusted from the client) and resolve to { url } to redirect to.
+       Throws if not signed in to cloud or payments aren't configured. */
+    checkoutSession: function (planId, ref, opts, email) {
+      opts = opts || {};
+      return api('/createCheckout', 'POST', {
+        planId: String(planId || ''), ref: ref != null ? String(ref) : undefined,
+        successUrl: opts.successUrl, cancelUrl: opts.cancelUrl, promo: opts.promo,
+      }, email);
+    } };
 
   /* ------------------------------------------- auto-sync hook ------------ */
   /* On consoles (guard.js present, real signed-in session): every store

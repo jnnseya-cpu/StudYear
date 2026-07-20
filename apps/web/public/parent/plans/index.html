@@ -139,6 +139,15 @@ $('plans').addEventListener('click',function(e){
   else activate();
 });
 drawWallet();
+/* returned from a real Stripe payment: reflect the plan in the wallet */
+(function(){ if(!(window.SYBill&&SYBill.consumeReturn))return; var id=SYBill.consumeReturn(); if(!id)return;
+  var pl=PLANS.find(function(x){return x.id===id}); if(!pl||pl.pounds<=0)return;
+  wallet.plan=pl.id; wallet.acus=(wallet.acus||0)+pl.acus; wallet.month=monthKey();
+  wallet.planStart=new Date().toISOString(); wallet.planExpires=new Date(Date.now()+30*DAY).toISOString();
+  SY.set('wallet',wallet); drawWallet();
+  SY.log('billing','Started '+pl.label,fmt(pl.acus)+' ACUs added · 30-day term, ends '+fmtDay(wallet.planExpires)+'.');
+  toast('Payment received — '+pl.label+' active, '+fmt(pl.acus)+' ACUs added.');
+})();
 })();
 </script>
 </body>

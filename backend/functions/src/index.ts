@@ -117,12 +117,12 @@ export const acuAuthorize = onRequest({ region: 'europe-west2', cors: true }, as
  * each renewal cycle. Single source → the checkout UI, the plans pages and the
  * server can never drift on how many ACUs a purchase is worth.
  */
-type CatalogItem = { acus: number; kind: 'subscription' | 'topup'; audience?: string; pence: number };
+type CatalogItem = { acus: number; kind: 'subscription' | 'topup'; audience?: string; pence: number; label: string };
 const STRIPE_CATALOG: Record<string, CatalogItem> = (() => {
   const m: Record<string, CatalogItem> = {};
   for (const p of [...STUDENT_PLANS, ...PARENT_PLANS, ...SCHOOL_PLANS])
-    m[p.id] = { acus: p.acus, kind: 'subscription', audience: p.audience, pence: p.monthlyPence };
-  for (const t of TOPUPS) m[t.id] = { acus: t.acus, kind: 'topup', pence: t.pence };
+    m[p.id] = { acus: p.acus, kind: 'subscription', audience: p.audience, pence: p.monthlyPence, label: p.label };
+  for (const t of TOPUPS) m[t.id] = { acus: t.acus, kind: 'topup', pence: t.pence, label: `${t.acus.toLocaleString('en-GB')} ACU top-up` };
   return m;
 })();
 
@@ -485,6 +485,66 @@ async function aiCall(provider: AiProvider, key: string, body: AiBody): Promise<
   const j = (await r.json()) as { choices?: { message?: { content?: string } }[] };
   return { text: j.choices?.[0]?.message?.content ?? '', model };
 }
+// --------------------------------------------------------- checkout ----
+/**
+ * POST /createCheckout { planId, ref?, successUrl?, cancelUrl?, promo? }
+ * Creates a Stripe Checkout Session ON DEMAND so there are no Payment Links to
+ * author or maintain. The PRICE is set here from the server catalogue (never the
+ * client) and the plan is stamped into metadata.planId, so the amount and what's
+ * granted are fully server-authoritative. Returns { url } for the browser to
+ * redirect to; the existing stripeWebhook credits ACUs after payment.
+ */
+const CHECKOUT_ALLOWED_ORIGINS = /^(https:\/\/(www\.)?studyear\.com|https:\/\/jnnseya-cpu\.github\.io|http:\/\/localhost(:\d+)?)$/;
+function safeReturnUrl(u: unknown, fallback: string): string {
+  try { const url = new URL(String(u)); if (CHECKOUT_ALLOWED_ORIGINS.test(url.origin)) return url.toString(); } catch { /* bad url */ }
+  return fallback;
+}
+export const createCheckout = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const user = await requireUser(req.headers.authorization);
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) throw httpError(503, 'payments not configured');
+    const planId = String(req.body?.planId ?? '').trim();
+    const item = STRIPE_CATALOG[planId];
+    if (!item || item.pence <= 0) throw httpError(400, 'unknown or non-purchasable plan');
+    // buyer reference: schools pass their code; everyone else is keyed by email
+    const ref = String(req.body?.ref ?? user.email ?? user.uid).trim();
+    const dflt = 'https://www.studyear.com/account/topup/';
+    const withParam = (u: unknown, param: string, fb: string): string => {
+      if (typeof u !== 'string' || !u) return fb;
+      return safeReturnUrl(u + (u.includes('?') ? '&' : '?') + param, fb);
+    };
+    const success = withParam(req.body?.successUrl, 'paid=1', dflt + '?paid=1');
+    const cancel = withParam(req.body?.cancelUrl, 'checkout=cancel', dflt + '?checkout=cancel');
+    const mode = item.kind === 'subscription' ? 'subscription' : 'payment';
+    const p = new URLSearchParams();
+    p.set('mode', mode);
+    p.set('success_url', success);
+    p.set('cancel_url', cancel);
+    p.set('client_reference_id', `${planId}__${ref}`); // buyer identity (webhook fallback)
+    p.set('metadata[planId]', planId);                  // server-authoritative plan (webhook prefers this)
+    p.set('metadata[ref]', ref);
+    if (user.email) p.set('customer_email', user.email);
+    if (typeof req.body?.promo === 'string' && req.body.promo) p.set('allow_promotion_codes', 'true');
+    p.set('line_items[0][quantity]', '1');
+    p.set('line_items[0][price_data][currency]', 'gbp');
+    p.set('line_items[0][price_data][unit_amount]', String(item.pence));
+    p.set('line_items[0][price_data][product_data][name]', `StudYear — ${item.label}`);
+    if (mode === 'subscription') p.set('line_items[0][price_data][recurring][interval]', 'month');
+    const r = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: p.toString(),
+    });
+    const j = (await r.json()) as { url?: string; id?: string; error?: { message?: string } };
+    if (!r.ok || !j.url) throw httpError(502, j.error?.message || `stripe ${r.status}`);
+    res.json({ ok: true, url: j.url, id: j.id ?? null });
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
 export const aiProxy = onRequest({ region: 'europe-west2', cors: true, maxInstances: 20 }, async (req, res) => {
   try {
     const user = await requireUser(req.headers.authorization);

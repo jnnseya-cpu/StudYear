@@ -138,6 +138,16 @@ document.body.addEventListener('click',function(e){var b=e.target.closest('butto
     if(window.SYBill){SYBill.checkout(pk.id,{promo:promo,email:(SY.session&&SY.session.email),ref:code,activate:activate})}else activate();}
 });
 draw();
+/* returned from a real Stripe payment: credit the school's shared pool */
+(function(){ if(!(window.SYBill&&SYBill.consumeReturn))return; var id=SYBill.consumeReturn(); if(!id)return;
+  var pl=PLANS.find(function(x){return x.id===id}), pk=PACKS.find(function(x){return x.id===id});
+  if(pl&&pl.pounds>0){ sub={plan:pl.id,start:new Date().toISOString(),expires:new Date(Date.now()+30*DAY).toISOString()}; SY.set('schoolSub',sub);
+    pool.balance=(pool.balance||0)+pl.acus; SY.schoolSet(code,'acu',pool); draw();
+    SY.log('billing','Started '+pl.label,fmt(pl.acus)+' shared ACUs added · 30-day term.'); toast('Payment received — '+pl.label+' active, '+fmt(pl.acus)+' ACUs added to the pool.'); }
+  else if(pk){ pool.balance=(pool.balance||0)+pk.acus; SY.schoolSet(code,'acu',pool);
+    var mk=new Date().toISOString().slice(0,7); if(sub.topupMonth!==mk){sub.topupMonth=mk;sub.topupSpent=0} sub.topupSpent=(sub.topupSpent||0)+pk.pounds; SY.set('schoolSub',sub); draw();
+    SY.log('billing',pk.label+' purchased',fmt(pk.acus)+' ACUs added to the school pool.'); toast('Payment received — '+fmt(pk.acus)+' ACUs added to your shared pool.'); }
+})();
 })();
 </script>
 </body>

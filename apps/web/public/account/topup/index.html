@@ -358,6 +358,16 @@ document.body.addEventListener('click',function(e){
   }
 });
 drawWallet();
+/* Returned from a real Stripe payment (?paid=1&sybuy=<id>): credit the purchase
+   to the wallet so it shows immediately (the webhook also records it server-side).
+   consumeReturn() strips the params so a refresh can't re-credit. */
+(function(){ if(!(window.SYBill&&SYBill.consumeReturn))return; var id=SYBill.consumeReturn(); if(!id)return;
+  var pk=PACKS.find(function(x){return x.id===id}), pl=PLANS.find(function(x){return x.id===id});
+  if(pk){ wallet.acus+=pk.acus; wallet.topupSpent=(wallet.topupSpent||0)+pk.pounds; SY.set('wallet',wallet); drawWallet(); drawPacks();
+    try{recordReferral(pk.pounds)}catch(e){} SY.log('billing',pk.label+' purchased',fmt(pk.acus)+' ACUs added to your wallet.'); toast('Payment received — '+fmt(pk.acus)+' ACUs added to your wallet.'); }
+  else if(pl&&pl.pounds>0){ wallet.plan=pl.id; wallet.month=monthKey(); wallet.acus+=pl.acus; wallet.planStart=new Date().toISOString(); wallet.planExpires=new Date(Date.now()+30*DAY).toISOString(); SY.set('wallet',wallet); drawWallet(); drawPacks();
+    try{recordReferral(pl.pounds)}catch(e){} SY.log('billing','Started '+pl.label,fmt(pl.acus)+' ACUs added · 30-day term.'); toast('Payment received — '+pl.label+' active, '+fmt(pl.acus)+' ACUs added.'); }
+})();
 
 /* ---- Fund a student from anywhere: gift codes (sy-gifts, shared store) ----
    Preview build: codes settle instantly on this device; at billing go-live
