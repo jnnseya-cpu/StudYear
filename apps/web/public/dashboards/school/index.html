@@ -73,6 +73,15 @@
 </head>
 <body>
 <script src="../../guard.js" data-role="school" data-base="../../"></script>
+<script>
+/* This page is a legacy analytics MOCK-UP: every tile/chart below is a hardcoded
+   illustration, identical for everyone. The REAL school console (../../school/)
+   computes live figures from your actual cohort, at-risk model and shared pool
+   and has honest empty states. Send real signed-in leaders there so nobody
+   mistakes the illustration for their own data. Demo tours keep the showcase. */
+(function(){try{var s=JSON.parse(localStorage.getItem('sy-session'));
+if(s&&s.role==='school'&&!s.demo){location.replace('../../school/');}}catch(e){}})();
+</script>
 <div id="tip"></div>
 <div class="wrap">
 
