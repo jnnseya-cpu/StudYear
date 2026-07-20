@@ -9,7 +9,7 @@
  *  - Every AI call goes out through the AI Gateway in deep-thinking mode (architecture/14 §0.0).
  */
 // build marker: bump to force firebase-tools to redeploy (env-only .env changes
-// like a rotated STRIPE_WEBHOOK_SECRET don't re-trigger it on their own) — sw-secret-sync-1
+// like a rotated STRIPE_WEBHOOK_SECRET don't re-trigger it on their own) — sw-secret-sync-2
 import { onRequest } from 'firebase-functions/v2/https';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
