@@ -266,7 +266,22 @@ export const stripeWebhook = onRequest({ region: 'europe-west2' }, async (req, r
       });
       if (paid && item && !priceOk) // paid, but underpaid for the claimed plan — hold for review, do not credit
         await audit('STRIPE_AMOUNT_MISMATCH', buyer.uid ?? buyer.ownerKey, { planId, amountTotal: amt, expectedPence: item.pence });
-      if (applied) {
+      const meta = (s.metadata as Record<string, string> | undefined) ?? {};
+      const isGift = meta.gift === '1';
+      if (isGift && paid && item && priceOk) {
+        // Funding a student from anywhere: the buyer paid, so mint the server-
+        // backed gift code (redeemable on any device by the recipient). The buyer
+        // is NOT credited. Idempotent: keyed doc, merged on retry.
+        const code = String(meta.giftCode ?? '').toUpperCase();
+        if (/^SY-GIFT-[A-Z0-9-]{6,20}$/.test(code)) {
+          await db.doc(`giftCodes/${code}`).set({
+            code, acus: item.acus, from: meta.giftFrom || 'A supporter', forEmail: meta.giftForEmail || null,
+            buyerUid: buyer.uid ?? null, buyerEmail: buyer.email ?? null, paid: true,
+            sessionId: s.id ?? null, eventId: event.id, redeemed: null, createdAt: FieldValue.serverTimestamp(),
+          }, { merge: true });
+          await audit('STRIPE_GIFT_FUNDED', buyer.uid ?? buyer.ownerKey, { code, acus: item.acus });
+        }
+      } else if (applied) {
         await creditAcus(buyer.ownerKey, item.acus, `stripe:${event.type}`, { planId, ref, sessionId: s.id ?? null, eventId: event.id }, `credit_${event.id}`);
         if (item.kind === 'subscription') {
           if (buyer.kind === 'user' && buyer.uid)
@@ -388,6 +403,47 @@ export const redeemCode = onRequest({ region: 'europe-west2', cors: true }, asyn
     // grant the benefit once the redemption is committed (append-only ACU ledger)
     if (grant.bonusAcus > 0) await creditAcus(user.uid, grant.bonusAcus, `redeemCode:${code}`, { code, kind: 'code-redemption' });
     res.json({ ok: true, code, bonusAcus: grant.bonusAcus, discountPct: grant.discountPct, label: grant.label });
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
+/**
+ * POST /redeemGift { code } — the recipient side of "Fund a student from
+ * anywhere". A supporter buys a top-up pack as a gift (createCheckout with
+ * gift:1); on payment the webhook mints giftCodes/{code} { acus, paid:true,
+ * redeemed:null }. Here the student/parent redeems it: we atomically claim the
+ * code (exactly once) and credit their wallet. If the gift named a recipient
+ * email, only that account may redeem it.
+ */
+export const redeemGift = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const user = await requireUser(req.headers.authorization);
+    const code = String(req.body?.code ?? '').trim().toUpperCase();
+    if (!/^SY-GIFT-[A-Z0-9-]{6,20}$/.test(code)) throw httpError(400, 'invalid gift code');
+    const giftRef = db.doc(`giftCodes/${code}`);
+    // atomic: a gift is claimable exactly once. The transaction flips redeemed
+    // from null → {uid} so two devices racing the same code can't double-credit.
+    const grant = await db.runTransaction(async (tx) => {
+      const doc = await tx.get(giftRef);
+      if (!doc.exists) throw httpError(404, 'gift code not found');
+      const g = doc.data()!;
+      if (!g.paid) throw httpError(409, 'this gift has not been paid for yet');
+      if (g.redeemed) throw httpError(410, 'this gift has already been redeemed');
+      const forEmail = String(g.forEmail ?? '').toLowerCase();
+      if (forEmail && forEmail !== String(user.email ?? '').toLowerCase())
+        throw httpError(403, 'this gift was sent to a different email address');
+      const acus = Math.max(0, Math.round(Number(g.acus) || 0));
+      tx.set(giftRef, {
+        redeemed: { uid: user.uid, email: user.email ?? null, at: FieldValue.serverTimestamp() },
+      }, { merge: true });
+      return { acus, from: String(g.from ?? 'A supporter') };
+    });
+    // credit once the claim is committed; deterministic id blocks a retry double-credit
+    if (grant.acus > 0) await creditAcus(user.uid, grant.acus, `redeemGift:${code}`, { code, kind: 'gift-redemption', from: grant.from }, `gift_${code}`);
+    await audit('GIFT_REDEEMED', user.uid, { code, acus: grant.acus });
+    res.json({ ok: true, code, acus: grant.acus, from: grant.from });
   } catch (e) {
     const err = e as Error & { status?: number };
     res.status(err.status ?? 500).json({ ok: false, error: err.message });
@@ -524,6 +580,20 @@ export const createCheckout = onRequest({ region: 'europe-west2', cors: true }, 
     p.set('client_reference_id', `${planId}__${ref}`); // buyer identity (webhook fallback)
     p.set('metadata[planId]', planId);                  // server-authoritative plan (webhook prefers this)
     p.set('metadata[ref]', ref);
+    // GIFT: funding a student from anywhere. The buyer pays; instead of crediting
+    // their own wallet, the webhook mints a server-backed gift code (redeemable on
+    // any device by the recipient). Only for one-off packs.
+    const gift = !!req.body?.gift;
+    if (gift) {
+      if (item.kind !== 'topup') throw httpError(400, 'gifts must be a top-up pack');
+      const giftCode = String(req.body?.giftCode ?? '').trim().toUpperCase();
+      if (!/^SY-GIFT-[A-Z0-9-]{6,20}$/.test(giftCode)) throw httpError(400, 'invalid gift code');
+      p.set('metadata[gift]', '1');
+      p.set('metadata[giftCode]', giftCode);
+      p.set('metadata[giftFrom]', String(req.body?.from ?? user.email ?? 'A supporter').slice(0, 80));
+      const forEmail = String(req.body?.forEmail ?? '').trim().toLowerCase();
+      if (forEmail) p.set('metadata[giftForEmail]', forEmail);
+    }
     if (user.email) p.set('customer_email', user.email);
     if (typeof req.body?.promo === 'string' && req.body.promo) p.set('allow_promotion_codes', 'true');
     p.set('line_items[0][quantity]', '1');

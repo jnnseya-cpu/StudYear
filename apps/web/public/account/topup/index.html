@@ -369,50 +369,109 @@ drawWallet();
     try{recordReferral(pl.pounds)}catch(e){} SY.log('billing','Started '+pl.label,fmt(pl.acus)+' ACUs added · 30-day term.'); toast('Payment received — '+pl.label+' active, '+fmt(pl.acus)+' ACUs added.'); }
 })();
 
-/* ---- Fund a student from anywhere: gift codes (sy-gifts, shared store) ----
-   Preview build: codes settle instantly on this device; at billing go-live
-   the funder pays by Stripe/BitriPay first and codes validate server-side
-   (backend /redeemCode). */
+/* ---- Fund a student from anywhere: gift codes ----
+   Live (signed into cloud): the supporter pays via Stripe first; the webhook
+   mints giftCodes/{code} server-side and the recipient claims it on any device
+   through /redeemGift. Preview/demo (no cloud): codes settle in the local
+   sy-gifts store so the flow stays exercisable without money changing hands. */
 function gifts(){try{return JSON.parse(localStorage.getItem('sy-gifts'))||[]}catch(e){return []}}
 function saveGifts(g){localStorage.setItem('sy-gifts',JSON.stringify(g))}
 $('gift-pack').innerHTML=PACKS.map(function(p){return '<option value="'+p.id+'">'+p.label+' — '+fmt(p.acus)+' ACUs (£'+p.pounds+')</option>'}).join('');
+function mkGift(){var s='';var A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  for(var i=0;i<8;i++){s+=A[Math.floor(Math.random()*A.length)];if(i===3)s+='-'}return 'SY-GIFT-'+s;}
+function showGiftCode(code,pk,forEmail){
+  $('gift-out').style.display='block';
+  $('gift-code').textContent=code;
+  $('gift-wa').href='https://wa.me/?text='+encodeURIComponent('I’ve funded your StudYear learning 🌍 — redeem this gift code in Plans & top-up: '+code+' ('+fmt(pk.acus)+' ACUs) → https://www.studyear.com/account/topup/');}
+/* A real (cloud) supporter pays first: the gift is minted server-side on payment
+   so it redeems on ANY device. Preview/demo (no cloud) settles on this device. */
+function cloudLive(){try{return !(SY.session&&SY.session.demo)&&window.SYCloud&&typeof SYCloud.checkoutSession==='function';}catch(e){return false;}}
 $('gift-go').onclick=function(){
   var pk=PACKS.find(function(x){return x.id===$('gift-pack').value});
   var forEmail=$('gift-for').value.trim().toLowerCase();
   if(forEmail&&!/^\S+@\S+\.\S+$/.test(forEmail)){toast('That student email does not look valid.');return}
-  var mk=function(){var s='';var A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-    for(var i=0;i<8;i++){s+=A[Math.floor(Math.random()*A.length)];if(i===3)s+='-'}return s};
-  var doGift=function(){
-    var code='SY-GIFT-'+mk();
-    var g=gifts();g.unshift({code:code,acus:pk.acus,pack:pk.id,from:(SY.session&&SY.session.name)||'A supporter',
-      forEmail:forEmail||null,when:new Date().toISOString(),redeemed:null});
-    saveGifts(g);
-    $('gift-out').style.display='block';
-    $('gift-code').textContent=code;
-    $('gift-wa').href='https://wa.me/?text='+encodeURIComponent('I’ve funded your StudYear learning 🌍 — redeem this gift code in Plans & top-up: '+code+' ('+fmt(pk.acus)+' ACUs) → https://www.studyear.com/account/topup/');
-    SY.log('billing','Gift code created',pk.label+' ('+fmt(pk.acus)+' ACUs)'+(forEmail?(' for '+forEmail):'')+' — '+code);
-    toast('Gift ready — send the code to the student.'+(window.SYBill?'':' (Preview: Stripe checkout takes over at billing go-live.)'));};
-  /* Gift codes settle client-side today (see note above). We do NOT route this
-     through SYBill.checkout: a live redirect would credit the BUYER's own wallet
-     (default ref) and never return to mint the code. Server-side gift settlement
-     is the documented billing-go-live item. */
-  doGift();
+  var code=mkGift();
+  if(cloudLive()){
+    /* Route through Stripe. We pass the code we generated; the webhook mints
+       giftCodes/{code} (paid, unredeemed) only after the money clears, then we
+       return here with ?paid=1&sygift=<code> to reveal it. The buyer is NOT
+       credited — the recipient claims it with /redeemGift. */
+    var back=location.origin+location.pathname;
+    var succ=back+(back.indexOf('?')>=0?'&':'?')+'sygift='+encodeURIComponent(code);
+    try{localStorage.setItem('sy-gift-pending',JSON.stringify({code:code,pack:pk.id,acus:pk.acus,forEmail:forEmail||null}));}catch(e){}
+    toast('Opening secure checkout…');
+    SYCloud.checkoutSession(pk.id,(SY.session&&SY.session.email)||'',{
+      gift:true,giftCode:code,from:(SY.session&&SY.session.name)||(SY.session&&SY.session.email)||'A supporter',
+      forEmail:forEmail||undefined,successUrl:succ,cancelUrl:back
+    },(SY.session&&SY.session.email))
+      .then(function(r){if(r&&r.url){location.href=r.url;}else{toast('Checkout is temporarily unavailable — please try again.');}})
+      .catch(function(e){toast((e&&e.message)||'Checkout failed — please try again.');});
+    return;
+  }
+  /* Preview/demo: settle on this device so the flow is exercisable without money. */
+  var g=gifts();g.unshift({code:code,acus:pk.acus,pack:pk.id,from:(SY.session&&SY.session.name)||'A supporter',
+    forEmail:forEmail||null,when:new Date().toISOString(),redeemed:null});
+  saveGifts(g);
+  showGiftCode(code,pk,forEmail);
+  SY.log('billing','Gift code created (preview)',pk.label+' ('+fmt(pk.acus)+' ACUs)'+(forEmail?(' for '+forEmail):'')+' — '+code);
+  toast('Gift ready (preview) — send the code to the student.');
 };
 $('gift-copy').onclick=function(){try{navigator.clipboard.writeText($('gift-code').textContent);toast('Code copied')}catch(e){}};
 $('gift-redeem').onclick=function(){
   var code=$('gift-in').value.trim().toUpperCase();
   if(!code){toast('Paste a gift code first.');return}
-  var g=gifts();var gift=g.find(function(x){return x.code===code});
-  if(!gift){toast('That code was not found. Codes from another device settle when the payment goes through at billing go-live.');return}
-  if(gift.redeemed){toast('This code has already been redeemed.');return}
-  var me=(SY.session&&SY.session.email)||'';
-  if(gift.forEmail&&gift.forEmail!==me.toLowerCase()){toast('This gift is locked to a different student account.');return}
-  gift.redeemed={by:me,when:new Date().toISOString()};saveGifts(g);
-  wallet.acus+=gift.acus;SY.set('wallet',wallet);drawWallet();
-  SY.log('billing','Gift redeemed',fmt(gift.acus)+' ACUs from '+gift.from+' — code '+code);
-  $('gift-in').value='';drawSupporters();
-  toast(fmt(gift.acus)+' ACUs from '+gift.from+' added to your wallet 🎉');
+  var btn=$('gift-redeem');
+  /* Server-first: a real gift lives in giftCodes/{code} and redeems on any
+     device. Fall back to the local store for preview/demo-only codes. */
+  var localRedeem=function(){
+    var g=gifts();var gift=g.find(function(x){return x.code===code});
+    if(!gift){toast('That code was not found or has not been paid for yet.');return false;}
+    if(gift.redeemed){toast('This code has already been redeemed.');return false;}
+    var me=(SY.session&&SY.session.email)||'';
+    if(gift.forEmail&&gift.forEmail!==me.toLowerCase()){toast('This gift is locked to a different student account.');return false;}
+    gift.redeemed={by:me,when:new Date().toISOString()};saveGifts(g);
+    creditGift(gift.acus,gift.from,code);return true;
+  };
+  if(cloudLive()&&typeof SYCloud.redeemGift==='function'){
+    btn.disabled=true;btn.textContent='Redeeming…';
+    SYCloud.redeemGift(code,(SY.session&&SY.session.email)).then(function(r){
+      btn.disabled=false;btn.textContent='Redeem into my wallet';
+      if(r&&r.ok){creditGift(r.acus,r.from||'A supporter',code);}
+      else{toast((r&&r.error)||'That gift could not be redeemed.');}
+    }).catch(function(e){
+      btn.disabled=false;btn.textContent='Redeem into my wallet';
+      /* server said no (not found / unpaid / used / wrong email) — surface it,
+         then try a local preview code as a courtesy. */
+      var msg=(e&&e.message)||'';
+      if(/not found/i.test(msg)){if(localRedeem())return;}
+      toast(msg||'That gift could not be redeemed.');
+    });
+    return;
+  }
+  localRedeem();
 };
+/* credit the wallet + reflect it once, from either path */
+function creditGift(acus,from,code){
+  acus=Math.max(0,Math.round(Number(acus)||0));
+  wallet.acus+=acus;SY.set('wallet',wallet);drawWallet();
+  SY.log('billing','Gift redeemed',fmt(acus)+' ACUs from '+from+' — code '+code);
+  $('gift-in').value='';drawSupporters();
+  toast(fmt(acus)+' ACUs from '+from+' added to your wallet 🎉');
+}
+/* Returning from a successful gift checkout: ?paid=1&sygift=<code>. Reveal the
+   code so the buyer can send it; the webhook has already minted it server-side. */
+(function(){try{
+  var q=new URLSearchParams(location.search);
+  if(q.get('paid')==='1'&&q.get('sygift')){
+    var code=q.get('sygift');var pend={};try{pend=JSON.parse(localStorage.getItem('sy-gift-pending'))||{};}catch(e){}
+    var pk=PACKS.find(function(x){return x.id===pend.pack})||{acus:pend.acus||0,label:'gift'};
+    showGiftCode(code,pk,pend.forEmail);
+    try{localStorage.removeItem('sy-gift-pending');}catch(e){}
+    SY.log('billing','Gift funded',fmt(pk.acus)+' ACUs — '+code);
+    toast('Payment complete 🎉 Send this gift code to the student.');
+    try{history.replaceState(null,'',location.pathname+location.hash);}catch(e){}
+  }
+}catch(e){}})();
 function drawSupporters(){
   var me=((SY.session&&SY.session.email)||'').toLowerCase();
   var mine=gifts().filter(function(x){return x.redeemed&&String(x.redeemed.by).toLowerCase()===me});

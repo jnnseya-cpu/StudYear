@@ -427,14 +427,22 @@
        audience, ledgered once per user, ACUs credited on the server). Resolves
        to { ok, bonusAcus, discountPct, label } or throws with the reason. */
     redeemCode: function (code, email) { return api('/redeemCode', 'POST', { code: String(code || '').trim() }, email); },
+    /* redeem a gift code ("Fund a student from anywhere"): the server claims it
+       exactly once and credits this account's wallet. Resolves to { ok, acus,
+       from } or throws (not found / unpaid / already redeemed / wrong email). */
+    redeemGift: function (code, email) { return api('/redeemGift', 'POST', { code: String(code || '').trim().toUpperCase() }, email); },
     /* create a Stripe Checkout Session on the server (price + plan set server-
        side, never trusted from the client) and resolve to { url } to redirect to.
-       Throws if not signed in to cloud or payments aren't configured. */
+       Throws if not signed in to cloud or payments aren't configured.
+       opts.gift routes the purchase to fund someone else: pass { gift:true,
+       giftCode, from, forEmail } and the webhook mints the code instead of
+       crediting the buyer. */
     checkoutSession: function (planId, ref, opts, email) {
       opts = opts || {};
       return api('/createCheckout', 'POST', {
         planId: String(planId || ''), ref: ref != null ? String(ref) : undefined,
         successUrl: opts.successUrl, cancelUrl: opts.cancelUrl, promo: opts.promo,
+        gift: opts.gift ? true : undefined, giftCode: opts.giftCode, from: opts.from, forEmail: opts.forEmail,
       }, email);
     } };
 
