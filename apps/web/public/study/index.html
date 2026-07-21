@@ -83,7 +83,8 @@
     width:100%;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;
     color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}
   input:focus,select:focus,textarea:focus{border-color:var(--gold-500)}
-  select option{background:#101B33}
+  select option{background:#101B33;color:#EDF1F8}
+  select optgroup{background:#101B33;color:#8795AE}
   label.f{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px}
   label.tf{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);padding:3px 0;cursor:pointer}
   label.tf input{width:auto;accent-color:var(--gold-500)}
@@ -1796,15 +1797,20 @@ function saveMine(obj,sfx,msg,clearIds){
   mine.push(obj); store.set("mine",mine); addPoints(15); touchStreak();
   logEvent("resource",(obj.subj?obj.subj+" — ":"")+obj.title,(obj.level?"Level: "+obj.level+". ":"")+"Saved to your library.");
   clearIds.forEach(id=>document.getElementById(id).value="");
-  /* SHOW the creation, don't just say it saved: jump to Saved Resources with
-     filters cleared so the new item is on screen immediately */
+  /* USE the creation, don't just say it saved: open it in its interactive
+     player right away — take the quiz, flip the cards, read the notes/table.
+     It's kept in the library underneath (filters cleared) so it's easy to find
+     again. Burying a fresh creation in a search list is what made these tools
+     feel useless; create → play is the whole point. */
   try{
     myOnly=true;const mc=document.getElementById("f-mine");if(mc)mc.checked=true;
     ["f-subj","f-level","f-type","f-topic","q"].forEach(id=>{const el=document.getElementById(id);if(el)el.value=""});
   }catch(e){}
-  renderResults(); showTab("search");
-  window.scrollTo({top:0,behavior:"smooth"});
-  toast(msg+" — here it is in your Saved Resources (+15 pts)");
+  renderResults();
+  var opened=false;
+  try{ if(typeof openRes==="function"){ openRes(obj.id); opened=true; } }catch(e){}
+  if(!opened){ showTab("search"); window.scrollTo({top:0,behavior:"smooth"}); }
+  toast(msg+(opened?" — opening it now to use (+15 pts · saved to your library)":" — here it is in your Saved Resources (+15 pts)"));
 }
 /* AUTOSAVE: every generated work (lessons, courses) is kept in the student's
    library automatically so nothing is ever lost — no "Save" click required.
@@ -1859,22 +1865,22 @@ document.getElementById("c-q-save").onclick=()=>{
 /* one-tap AI fill: a topic (or just subject+level) is enough — the AI writes
    the structured content so no student wrestles with :: syntax */
 document.getElementById("c-f-ai").onclick=async()=>{
-  const topic=$v("c-f-title").trim()||$v("c-f-subj"),lvl=$v("c-f-level")||dgLevelStr();
+  const subj=$v("c-f-subj")||"General",topic=$v("c-f-title").trim()||subj,lvl=$v("c-f-level")||dgLevelStr();
   if(!(window.SYAI&&SYAI.ready())){toast("Live AI is warming up — try the AI Flashcard Generator above, it works without it");return}
   toast("Writing your cards…");
   try{
-    const txt=await SYAI.ask("Write exactly 8 flashcards for a "+lvl+" student on the topic."+((window.SY&&SY.stageStyle)?SY.stageStyle(lvl):"")+" Output ONLY lines in the form: front :: back — no numbering, no extra text.","Topic: "+topic,{maxTokens:600});
+    const txt=await SYAI.ask("Write exactly 8 flashcards in the school subject "+subj+" for a "+lvl+" student on the topic \""+topic+"\"."+((window.SY&&SY.stageStyle)?SY.stageStyle(lvl):"")+" EVERY card must be specifically about \""+topic+"\" as taught in "+subj+" — do NOT drift into unrelated material. Output ONLY lines in the form: front :: back — no numbering, no extra text.","Subject: "+subj+". Topic: "+topic,{maxTokens:600});
     const lines=txt.split("\n").filter(l=>l.includes("::"));
     if(lines.length){document.getElementById("c-f-cards").value=lines.join("\n");toast(lines.length+" cards written — press Save deck")}
     else toast("The AI answer had no cards — try a more specific topic");
   }catch(e){toast("Live AI unreachable — use the AI Flashcard Generator above")}
 };
 document.getElementById("c-q-ai").onclick=async()=>{
-  const topic=$v("c-q-title").trim()||$v("c-q-subj"),lvl=$v("c-q-level")||dgLevelStr();
+  const subj=$v("c-q-subj")||"General",topic=$v("c-q-title").trim()||subj,lvl=$v("c-q-level")||dgLevelStr();
   if(!(window.SYAI&&SYAI.ready())){toast("Live AI is warming up — try the AI Quiz Generator above, it works without it");return}
   toast("Writing your questions…");
   try{
-    const txt=await SYAI.ask("Write exactly 6 multiple-choice quiz questions for a "+lvl+" student on the topic."+((window.SY&&SY.stageStyle)?SY.stageStyle(lvl):"")+" Output ONLY lines in the form: question :: correct answer :: wrong answer :: wrong answer — the CORRECT answer always first, no numbering, no extra text.","Topic: "+topic,{maxTokens:800});
+    const txt=await SYAI.ask("Write exactly 6 multiple-choice quiz questions in the school subject "+subj+" for a "+lvl+" student on the topic \""+topic+"\"."+((window.SY&&SY.stageStyle)?SY.stageStyle(lvl):"")+" EVERY question must be specifically about \""+topic+"\" as taught in "+subj+" — do NOT drift into unrelated arithmetic or vocabulary unless the subject is Maths or English. Output ONLY lines in the form: question :: correct answer :: wrong answer :: wrong answer — the CORRECT answer always first, no numbering, no extra text.","Subject: "+subj+". Topic: "+topic,{maxTokens:800});
     const lines=txt.split("\n").filter(l=>(l.match(/::/g)||[]).length>=2);
     if(lines.length){document.getElementById("c-q-qs").value=lines.join("\n");toast(lines.length+" questions written — press Save quiz")}
     else toast("The AI answer had no questions — try a more specific topic");
@@ -2007,7 +2013,7 @@ document.getElementById("g-fc-go").onclick=()=>{
   if(topic.length<3){toast("Enter a topic for your flashcards");return}
   if(window.SYAI&&SYAI.ready()){
     toast("Writing flashcards with "+SYAI.provider()+"…");
-    SYAI.ask("Create exactly 10 study flashcards for a "+($v("g-fc-level")||dgLevelStr())+" student on the topic."+((window.SY&&SY.stageStyle)?SY.stageStyle($v("g-fc-level")):"")+" Return ONLY lines in the format 'front :: back' — no headings, no numbering. Fronts are precise questions/terms; backs are accurate, concise answers.","Topic: "+topic,{maxTokens:900}).then(t=>{
+    SYAI.ask("Create exactly 10 study flashcards in the school subject "+($v("g-fc-subj")||"General")+" for a "+($v("g-fc-level")||dgLevelStr())+" student on the topic \""+topic+"\"."+((window.SY&&SY.stageStyle)?SY.stageStyle($v("g-fc-level")):"")+" EVERY card must be specifically about \""+topic+"\" as taught in "+($v("g-fc-subj")||"that subject")+" — do NOT drift into unrelated material. Return ONLY lines in the format 'front :: back' — no headings, no numbering. Fronts are precise questions/terms; backs are accurate, concise answers.","Subject: "+($v("g-fc-subj")||"General")+". Topic: "+topic,{maxTokens:900}).then(t=>{
       const cards=String(t).split("\n").map(l=>{const p=l.split("::").map(s=>s.trim());if(p[0])p[0]=p[0].replace(/^[-*)\s]*\d*[.)]?\s*/,"").trim()||p[0];return p}).filter(p=>p.length>=2&&p[0]&&p[1]).map(p=>p.slice(0,2));
       if(cards.length<3){toast("Model returned too few cards — using the library");fcStatic(topic);return}
       saveMine({type:"Flashcards",title:topic+" — AI deck",subj:$v("g-fc-subj"),level:$v("g-fc-level"),cards:cards.slice(0,12)},"gf","AI flashcards generated",["g-fc-topic"]);
@@ -2036,7 +2042,7 @@ document.getElementById("g-qz-go").onclick=()=>{
   const n=Math.max(3,Math.min(10,+$v("g-qz-n")||5));
   if(window.SYAI&&SYAI.ready()){
     toast("Writing your quiz with "+SYAI.provider()+"…");
-    SYAI.ask("Write exactly "+n+" multiple-choice questions for a "+($v("g-qz-level")||dgLevelStr())+" student on the topic."+((window.SY&&SY.stageStyle)?SY.stageStyle($v("g-qz-level")):"")+" Return ONLY lines in the format 'question :: correct answer :: wrong :: wrong :: wrong' (4 options total, correct FIRST). After each question line, you may add a line 'exp:: one-sentence explanation'. No numbering or headings. Questions must be factually accurate and specific to the topic.","Topic: "+topic,{maxTokens:1200}).then(t=>{
+    SYAI.ask("Write exactly "+n+" multiple-choice questions in the school subject "+($v("g-qz-subj")||"General")+" for a "+($v("g-qz-level")||dgLevelStr())+" student on the topic \""+topic+"\"."+((window.SY&&SY.stageStyle)?SY.stageStyle($v("g-qz-level")):"")+" EVERY question must be specifically about \""+topic+"\" as taught in "+($v("g-qz-subj")||"that subject")+" — do NOT drift into unrelated arithmetic, spelling or vocabulary unless the subject itself is Maths or English. Return ONLY lines in the format 'question :: correct answer :: wrong :: wrong :: wrong' (4 options total, correct FIRST). After each question line, you may add a line 'exp:: one-sentence explanation'. No numbering or headings. Questions must be factually accurate and specific to the topic.","Subject: "+($v("g-qz-subj")||"General")+". Topic: "+topic,{maxTokens:1200}).then(t=>{
       const qs=[];let last=null;
       String(t).split("\n").forEach(l=>{l=l.trim();if(!l)return;
         if(/^exp\s*::/i.test(l)){if(last)last.exp=l.replace(/^exp\s*::\s*/i,"");return}

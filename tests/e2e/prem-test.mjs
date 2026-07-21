@@ -85,6 +85,11 @@ await p.evaluate(()=>{window.SYAI=null}); // static path
 await p.click('#g-fc-go'); await p.waitForTimeout(400);
 const mine=await p.evaluate(()=>JSON.parse(localStorage.getItem('sy-u:t@t.test:mine')||'[]'));
 ok('Premium flashcard generator saves a deck', mine.some(r=>r.type==='Flashcards'));
+/* create now OPENS the new resource in its player (create → use); the deck
+   modal is showing, so verify it opened, then dismiss it before continuing. */
+ok('Created deck opens in its player', await p.evaluate(()=>document.getElementById('modal')?.classList.contains('on')===true));
+await p.evaluate(()=>{try{if(window.closeModal)closeModal();}catch(e){}var m=document.getElementById('modal');if(m)m.classList.remove('on');});
+await p.waitForTimeout(120);
 
 /* ---- 5. Interactive Lesson: curriculum-grade live lesson ---- */
 await mockAI(p,[
