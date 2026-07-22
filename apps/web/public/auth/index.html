@@ -246,9 +246,35 @@ $('f').addEventListener('submit',async function(e){
       try{await SYCloud.whenReady()}catch(err){}
       if(SYCloud.ready()){
         say('Checking your cloud account…','info');
-        try{await SYCloud.restore(email,pw)}catch(err){}
+        var cloudUser=null;
+        try{cloudUser=await SYCloud.restore(email,pw)}catch(err){}
         users=store('sy-users',[]);
         matches=users.filter(function(u){return u.email===email});
+        /* Cross-device sign-in: the account can be valid in the cloud (Firebase
+           Auth) even when restore couldn't rebuild the local record — a missing
+           profile blob, or an account created before cloud mirroring. Instead of
+           the misleading "no account found", authenticate against the cloud
+           directly; on success provision the local sign-in record so THIS device
+           works, and surface the REAL reason (wrong password / offline) if not. */
+        if(!matches.length&&SYCloud.reauth){
+          var rr=null;try{rr=await SYCloud.reauth(email,pw)}catch(err){}
+          if(rr&&rr.ok){
+            var rl=(cloudUser&&(cloudUser.role||(cloudUser.roles&&cloudUser.roles[0])))||wantRole||'student';
+            var nm=(cloudUser&&cloudUser.name)||email.split('@')[0];
+            var salt=Array.from(crypto.getRandomValues(new Uint8Array(12))).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
+            users.push({name:nm,email:email,role:rl,salt:salt,hash:await hash(salt,pw)});
+            save('sy-users',users);
+            matches=users.filter(function(u){return u.email===email});
+          }else if(rr&&rr.reason==='wrong_password'){
+            say('Wrong password for that account.','err');_fail();_resetHuman();return;
+          }else if(rr&&(rr.reason==='network'||rr.reason==='offline')){
+            say('Couldn’t reach cloud sign-in right now — check your connection and try again.','err');return;
+          }
+        }
+      }else{
+        /* no local account and the cloud is unreachable — say so honestly rather
+           than claiming the account doesn't exist */
+        say('Couldn’t reach cloud sign-in right now — check your connection and try again.','err');return;
       }
     }
     if(!matches.length){say('No account found for that email. Create one with the tab above.','err');return}
