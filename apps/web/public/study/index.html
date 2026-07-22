@@ -4749,7 +4749,37 @@ function cgStatic(subject,level,board,cap,focus){
     return _voices.filter(function(v){return /en[-_]GB/i.test(v.lang);})[0]
         || _voices.filter(function(v){return /^en/i.test(v.lang);})[0]
         || _voices.filter(function(v){return /female|samantha|karen|serena|google uk/i.test((v.name||''));})[0] || null;}
+  /* LOUD path: real audio synthesised on the server, replayed through a Web
+     Audio gain node (>1) so it's clearly audible even where the device's own
+     TTS is too quiet (the reported problem). Falls back to the built-in browser
+     voice when the cloud isn't available (offline / demo / not signed in). */
+  var _ac=null;
+  function audioCtx(){try{if(!_ac)_ac=new (window.AudioContext||window.webkitAudioContext)();if(_ac.state==="suspended")_ac.resume();return _ac;}catch(e){return null;}}
+  function playBoosted(buf,gain){
+    return new Promise(function(res,rej){
+      var ac=audioCtx();if(!ac){rej(new Error("no audio"));return;}
+      try{ac.decodeAudioData(buf.slice(0),function(audio){
+        var src=ac.createBufferSource();src.buffer=audio;
+        var g=ac.createGain();g.gain.value=gain||2.6;   /* louder than device-normal */
+        src.connect(g);g.connect(ac.destination);
+        src.onended=function(){res();};src.start(0);
+      },function(e){rej(e||new Error("decode"));});}catch(e){rej(e);}
+    });
+  }
+  function cloudCanSpeak(){try{return !!(window.SYCloud&&SYCloud.speak&&window.SY&&SY.session&&!SY.session.demo);}catch(e){return false;}}
   function say(text,rate){
+    if(!text)return;
+    if(cloudCanSpeak()){
+      try{
+        SYCloud.speak(text,{voice:"nova",speed:Math.max(0.6,Math.min(1.2,rate*1.05))})
+          .then(function(buf){return playBoosted(buf,2.6);})
+          .catch(function(){sayLocal(text,rate);});
+        return;
+      }catch(e){/* fall through to the built-in voice */}
+    }
+    sayLocal(text,rate);
+  }
+  function sayLocal(text,rate){
     if(!canSpeak||!text)return;
     try{
       speechSynthesis.cancel();
@@ -4795,12 +4825,60 @@ function cgStatic(subject,level,board,cap,focus){
       SYAI.ask("Use the given word in ONE short, natural sentence a "+lvlSel.value+" student understands."+((window.SY&&SY.stageStyle)?SY.stageStyle(lvlSel.value):"")+" Do NOT spell the word letter by letter. Return only the sentence.","Word: "+cur.w,{maxTokens:60}).then(function(t){var s=String(t).trim().replace(/^["']|["']$/g,"");if(!s)s=offlineSentence(cur.w);cur.sentence=s;el.textContent='“'+cur.sentence+'”';speakSentence(cur.sentence);}).catch(function(){cur.sentence=offlineSentence(cur.w);el.textContent='“'+cur.sentence+'”';speakSentence(cur.sentence);});}
     else {cur.sentence=offlineSentence(cur.w);el.textContent='“'+cur.sentence+'”';speakSentence(cur.sentence);}
   };
+  /* Show the correct word with the letters the student got wrong underlined —
+     so they SEE exactly where it went wrong, not just that it was wrong. */
+  function spellDiff(correct,given){
+    var c=String(correct),g=String(given||"").toLowerCase(),out="";
+    for(var i=0;i<c.length;i++){var ch=c[i],hit=(g[i]!=null&&g[i]===ch.toLowerCase());
+      out+=hit?'<span>'+esc(ch)+'</span>':'<span style="color:var(--gold-300);border-bottom:3px solid var(--gold-500);font-weight:700">'+esc(ch)+'</span>';}
+    return out;
+  }
+  /* rough phonics split so the student can sound the word out in chunks */
+  function sylSplit(w){var m=String(w).toLowerCase().match(/[^aeiouy]*[aeiouy]+(?:[^aeiouy]*$|[^aeiouy](?=[^aeiouy]))?/gi);return (m&&m.length)?m:[String(w)];}
+  var SPELL_TIPS={separate:"there's 'a rat' in sep-A-R-A-te",because:"Big Elephants Can Always Understand Small Elephants",necessary:"one collar, two sleeves: 1 c, 2 s",believe:"never beLIEve a lie",friend:"a friend is there to the end",beautiful:"Big Elephants Are Ugly",definitely:"it is definite-ly, no 'a'",weird:"we are weird — 'e' before 'i' here",rhythm:"Rhythm Helps Your Two Hips Move"};
+  function offlineTip(w){var k=String(w).toLowerCase();return SPELL_TIPS[k]||("break it into parts — "+sylSplit(w).join("-")+" — and picture each part.");}
+  function advance(){var box=document.getElementById("sp-out");if(box)box.innerHTML="";
+    if(state.i<state.words.length-1){state.i++;showWord();}else finish();}
+  /* A wrong answer is a teaching moment: reveal the word with the error marked,
+     sound it out, give a tip, and make the student re-type it correctly before
+     moving on. This is the bit that actually improves spelling. */
+  function teachWord(cur,given){
+    var w=cur.w,box=document.getElementById("sp-out");
+    document.getElementById("sp-current").textContent="✏️ Let's learn this one";
+    box.innerHTML='<div class="card">'+
+      '<div class="note" style="margin:0 0 6px">You wrote <b class="sp-no">'+esc(given)+'</b>. Here it is spelled correctly — the marked letters are the ones to watch:</div>'+
+      '<div style="font-size:30px;font-family:var(--serif);letter-spacing:1px;margin:2px 0 10px">'+spellDiff(w,given)+'</div>'+
+      '<div class="note" style="margin:0 0 4px">🔊 Sound it out: <b>'+esc(sylSplit(w).join(" · "))+'</b></div>'+
+      '<div id="sp-tip" class="note" style="margin:0 0 12px">💡 '+esc(offlineTip(w))+'</div>'+
+      '<label class="f">Now type it correctly to lock it in</label>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px"><input id="sp-fix" autocomplete="off" placeholder="Type it" style="max-width:220px"><button class="btn sm" id="sp-fix-go">Check</button><button class="btn ghost sm" id="sp-hear2">🔊 Hear it</button><button class="btn ghost sm" id="sp-skip">Skip for now</button></div>'+
+      '<div id="sp-fix-fb" class="note" style="margin-top:8px"></div></div>';
+    var fix=document.getElementById("sp-fix");try{fix.focus();}catch(e){}
+    ["paste","drop","contextmenu"].forEach(function(ev){fix.addEventListener(ev,function(e){e.preventDefault();});});
+    document.getElementById("sp-hear2").onclick=function(){speak(w);};
+    document.getElementById("sp-skip").onclick=advance;
+    speak(w);
+    var check=function(){
+      if(fix.value.trim().toLowerCase()===w.toLowerCase()){
+        document.getElementById("sp-fix-fb").innerHTML='<span class="sp-ok">✓ '+esc(w)+' — you’ve got it! Next word…</span>';
+        setTimeout(advance,750);
+      }else{document.getElementById("sp-fix-fb").innerHTML='<span class="sp-no">Not quite — look at the underlined letters and try once more.</span>';try{fix.select();}catch(e){}}
+    };
+    document.getElementById("sp-fix-go").onclick=check;
+    fix.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();check();}});
+    /* upgrade the offline tip with a live AI mnemonic when available */
+    if(window.SYAI&&SYAI.ready()){
+      SYAI.ask("Give ONE very short memory tip (a mnemonic, or name the tricky part) to help a "+lvlSel.value+" student spell this word. One short sentence only.","Word: "+w,{maxTokens:50})
+        .then(function(t){var s=String(t).trim().replace(/^["']|["']$/g,"");var el=document.getElementById("sp-tip");if(s&&el)el.innerHTML="💡 "+esc(s);}).catch(function(){});
+    }
+  }
   function submit(){
     if(!state)return;var inp=document.getElementById("sp-input"),given=inp.value.trim();
     if(!given){toast("Type the word you heard");return;}
-    var cur=state.words[state.i];
-    state.answers.push({w:cur.w,given:given,ok:given.toLowerCase()===cur.w.toLowerCase()});
-    if(state.i<state.words.length-1){state.i++;showWord();}else finish();
+    var cur=state.words[state.i],ok=given.toLowerCase()===cur.w.toLowerCase();
+    state.answers.push({w:cur.w,given:given,ok:ok});
+    if(ok){document.getElementById("sp-current").textContent="✅ Correct!";addPoints(2);advance();}
+    else teachWord(cur,given);   /* stop and teach before moving on */
   }
   document.getElementById("sp-next").onclick=submit;
   var spIn=document.getElementById("sp-input");

@@ -444,6 +444,27 @@
         successUrl: opts.successUrl, cancelUrl: opts.cancelUrl, promo: opts.promo,
         gift: opts.gift ? true : undefined, giftCode: opts.giftCode, from: opts.from, forEmail: opts.forEmail,
       }, email);
+    },
+    /* Synthesise real spoken audio server-side and resolve to an ArrayBuffer of
+       MP3. Used for spelling dictation: the browser's speechSynthesis caps at
+       device volume and is often too quiet, so the caller replays this through a
+       Web Audio gain node to make it genuinely louder. Rejects if not signed in
+       to cloud or speech isn't configured — the caller falls back to the
+       built-in voice. */
+    speak: async function (text, opts, email) {
+      opts = opts || {};
+      var tk = await token(email);
+      if (!tk) throw new Error('not signed in to cloud');
+      var direct = CFG && CFG.apiBase ? CFG.apiBase.replace(/\/$/, '') : '';
+      var body = JSON.stringify({ text: String(text || ''), voice: opts.voice, speed: opts.speed });
+      var hit = function (base) {
+        return fetch(base + '/tts', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tk }, body: body });
+      };
+      var r;
+      try { r = await hit(gbase('fn')); }
+      catch (e) { if (!GAPI || !direct) throw e; r = await hit(direct); }
+      if (!r.ok) { var j = await r.json().catch(function () { return {}; }); throw new Error(j.error || ('tts ' + r.status)); }
+      return await r.arrayBuffer();
     } };
 
   /* ------------------------------------------- auto-sync hook ------------ */

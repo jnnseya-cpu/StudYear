@@ -660,6 +660,46 @@ export const aiProxy = onRequest({ region: 'europe-west2', cors: true, maxInstan
   }
 });
 
+// ------------------------------------------------------------- text to speech ----
+/**
+ * POST /tts { text, voice? } -> audio/mpeg. Real spoken audio for spelling
+ * dictation: the browser's built-in speechSynthesis caps at device volume and
+ * is often too quiet, so we synthesise real audio here and the client replays
+ * it through a Web Audio gain node (louder than the device default). Auth-gated
+ * and daily-capped like aiProxy so a stolen token can't run up provider spend.
+ */
+export const tts = onRequest({ region: 'europe-west2', cors: true, maxInstances: 10 }, async (req, res) => {
+  try {
+    const user = await requireUser(req.headers.authorization);
+    const text = String(req.body?.text ?? '').trim().slice(0, 300);
+    if (!text) throw httpError(400, 'text required');
+    const key = process.env.OPENAI_API_KEY;
+    if (!key) throw httpError(503, 'speech not configured');
+    const dayKey = new Date().toISOString().slice(0, 10);
+    const rateRef = db.doc(`ttsRateLimits/${user.uid}_${dayKey}`);
+    const CAP = Number(process.env.TTS_DAILY_CAP) || 1000; // dictation repeats words — generous
+    const used = await rateRef.get().then((d) => (d.exists ? Number(d.data()!.count) || 0 : 0));
+    if (used >= CAP) throw httpError(429, 'daily speech limit reached — please try again tomorrow');
+    await rateRef.set({ count: FieldValue.increment(1), day: dayKey, uid: user.uid, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    const allowed = ['nova', 'shimmer', 'alloy', 'echo', 'fable', 'onyx'];
+    const voice = allowed.includes(String(req.body?.voice)) ? String(req.body?.voice) : 'nova';
+    const speed = Math.max(0.5, Math.min(1.5, Number(req.body?.speed) || 1)); // slower for single-word dictation
+    const r = await fetch('https://api.openai.com/v1/audio/speech', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ model: 'tts-1', voice, input: text, response_format: 'mp3', speed }),
+    });
+    if (!r.ok) throw httpError(502, `tts ${r.status}`);
+    const buf = Buffer.from(await r.arrayBuffer());
+    res.set('Content-Type', 'audio/mpeg');
+    res.set('Cache-Control', 'private, max-age=86400');
+    res.send(buf);
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
 // ----------------------------------------------------------- contact inbox ----
 /**
  * POST /contact { from, email, type, body } — the public contact form.
