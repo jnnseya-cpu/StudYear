@@ -1442,6 +1442,17 @@ function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;","
 const modal=document.getElementById("modal"), mbody=document.getElementById("modal-body");
 function closeModal(){modal.classList.remove("on")}
 modal.addEventListener("click",e=>{if(e.target===modal)closeModal()});
+/* Render a saved notes body. AI lessons/notes carry real HTML markup (headings,
+   lists, <b>) and must render as-is; plain notes the student typed are escaped
+   so their text shows literally and can't inject markup. Either way, stray
+   **bold** markdown left by the model is converted so no asterisks leak on
+   screen (the exact bug where a saved lesson showed raw <h5>/<p>/**habitats**). */
+function mdInline(s){return String(s==null?"":s).replace(/\*\*([^*\n]+)\*\*/g,"<b>$1</b>");}
+function notesBody(r){
+  var b=String(r.body==null?"":r.body);
+  var isHtml=!r.mine||r.bodyHtml||/<(h[1-6]|p|ul|ol|li|div|b|strong|em|br|table|blockquote)\b/i.test(b);
+  return isHtml?mdInline(b):mdInline(esc(b)).replace(/\n/g,"<br>");
+}
 function openRes(id){
   const r=allResources().find(x=>x.id===id); if(!r) return;
   touchStreak(); addPoints(2);
@@ -1449,7 +1460,7 @@ function openRes(id){
   const head=`<h2>${esc(r.title)}</h2><div class="mmeta">${r.type} · ${r.subj} · ${r.level}</div>`;
   if(r.type==="Flashcards") viewFlash(r,head);
   else if(r.type==="Quiz") viewQuiz(r,head);
-  else if(r.type==="Revision Notes") mbody.innerHTML=head+`<div class="notes-body">${r.mine?esc(r.body).replace(/\n/g,"<br>"):r.body}</div>`;
+  else if(r.type==="Revision Notes") mbody.innerHTML=head+`<div class="notes-body">${notesBody(r)}</div>`;
   else if(r.type==="Mindmap") viewMap(r,head);
   else if(r.type==="Revision Cards") mbody.innerHTML=head+r.cards.map(c=>`
       <div class="card" style="margin-bottom:10px"><h3 style="color:var(--gold-300);font-family:var(--serif);font-size:17px;font-weight:500">${esc(c[0])}</h3>
@@ -1465,7 +1476,7 @@ function openRes(id){
   else if(r.chart) viewChart(r,head);        /* Bar/Pie/Line/Scatter/Coordinate/Function/Geometry */
   else if(r.cols&&r.rows) viewTable(r,head); /* comparison tables + Grid + Spreadsheet */
   else if(r.src) viewMedia(r,head);          /* Audio / Video / Image / Web Page / Document / … */
-  else if(r.body) mbody.innerHTML=head+`<div class="notes-body">${r.mine?r.body:esc(r.body).replace(/\n/g,"<br>")}</div>`; /* Labelled Diagram + any body-carrying resource */
+  else if(r.body) mbody.innerHTML=head+`<div class="notes-body">${notesBody(r)}</div>`; /* Interactive Lesson / Labelled Diagram / any body-carrying resource */
   else mbody.innerHTML=head+`<div class="empty">Open this from the maker in ✍️ to view it.</div>`;
 }
 
@@ -3969,7 +3980,7 @@ function renderLesson(){
       <p class="note" style="margin-top:10px">Work through each step — teach, example, your turn — then take the quiz. ${_ls.i}</p>`;
   }else if(st.type==="teach"){
     body=`<h3 style="font-family:var(--serif);font-size:17px;color:var(--gold-300)">${esc(st.h)}</h3>
-      <p style="font-size:14px;color:var(--ink-2);margin-top:8px;line-height:1.7">${st.html}</p>
+      <p style="font-size:14px;color:var(--ink-2);margin-top:8px;line-height:1.7">${mdInline(st.html||"")}</p>
       ${st.alt?`<button class="btn ghost sm" id="il-alt" style="margin-top:10px">Explain it differently ↺</button><p id="il-alt-out" style="display:none;font-size:13.5px;color:var(--gold-300);margin-top:8px;line-height:1.7"></p>`:""}`;
   }else if(st.type==="example"){
     body=`<h3 style="font-family:var(--serif);font-size:17px;color:var(--gold-300)">${esc(st.h)}</h3>
