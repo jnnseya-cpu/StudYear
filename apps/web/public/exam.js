@@ -35,6 +35,10 @@
     if(k==='eleven')return ELEVEN_SUBJECTS.slice();
     if(isUni(lv))return UNI_SUBJECTS.slice();
     return SUBJECTS.slice();}
+  /* exam boards (AQA/Edexcel/OCR/…) only exist for GCSE and A-level style
+     qualifications. Primary (KS1/KS2), 11+, KS3 and university have no exam
+     board, so the field is hidden and no board is recorded for those levels. */
+  function boardApplies(lv){var k=stageKind(lv);return k==='gcse'||k==='alevel';}
   function examStyle(kind,subject){
     /* reasoning subjects define the paper type regardless of level — a
        "Non-Verbal Reasoning" paper must never be maths/algebra or verbal. */
@@ -234,7 +238,7 @@
           return '<option value="">Select a subject</option>'+list.map(function(s){return '<option'+(s===d.subject?' selected':'')+'>'+esc(s)+'</option>'}).join('');
         })()+'</select></div>'+
       '<div><label class="f">Level</label><select id="sx-level" data-uni-src="1">'+levels.map(function(l){return '<option'+(l===d.level?' selected':'')+'>'+esc(l)+'</option>'}).join('')+'</select></div>'+
-      '<div><label class="f">Exam board</label><select id="sx-board">'+boards.map(function(b){return '<option'+(b===(d.board||'')?' selected':'')+'>'+esc(b)+'</option>'}).join('')+'</select></div></div>'+
+      '<div id="sx-board-wrap"><label class="f">Exam board</label><select id="sx-board">'+boards.map(function(b){return '<option'+(b===(d.board||'')?' selected':'')+'>'+esc(b)+'</option>'}).join('')+'</select></div></div>'+
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">'+
       '<div><label class="f">Questions (1–50)</label><input type="number" id="sx-n" value="10" min="1" max="50"></div>'+
       '<div><label class="f">Difficulty</label><select id="sx-diff"><option>Foundation</option><option selected>Standard</option><option>Higher / stretch</option></select></div></div>'+
@@ -276,8 +280,15 @@
       /* refill on load when the initial level isn't the default GCSE subject set */
       var _k0=stageKind(lvEl.value);if(isUni(lvEl.value)||_k0==='ks1'||_k0==='ks2'||_k0==='eleven')refill();
     })();
+    /* hide the Exam board field for levels that don't have one (primary, 11+,
+       KS3, university) — only GCSE / A-level style papers carry a board. */
+    (function(){
+      var lvEl=$('sx-level'),bw=$('sx-board-wrap');if(!lvEl||!bw)return;
+      function toggle(){bw.style.display=boardApplies(lvEl.value)?'':'none';}
+      lvEl.addEventListener('input',toggle);toggle();
+    })();
     $(goId).onclick=async function(){
-      var subject=$('sx-subj').value.trim(),level=$('sx-level').value,board=$('sx-board').value;
+      var subject=$('sx-subj').value.trim(),level=$('sx-level').value,board=boardApplies(level)?$('sx-board').value:'';
       var n=Math.max(1,Math.min(50,parseInt($('sx-n').value,10)||10));
       var title=$('sx-title').value.trim()||(subject+' — '+level+' exam paper');
       var topics=$('sx-topics').value.split(',').map(function(t){return t.trim()}).filter(Boolean);
