@@ -2053,11 +2053,14 @@ document.getElementById("g-qz-go").onclick=()=>{
   const n=Math.max(3,Math.min(10,+$v("g-qz-n")||5));
   if(window.SYAI&&SYAI.ready()){
     toast("Writing your quiz with "+SYAI.provider()+"…");
-    SYAI.ask("Write exactly "+n+" multiple-choice questions in the school subject "+($v("g-qz-subj")||"General")+" for a "+($v("g-qz-level")||dgLevelStr())+" student on the topic \""+topic+"\"."+((window.SY&&SY.stageStyle)?SY.stageStyle($v("g-qz-level")):"")+" EVERY question must be specifically about \""+topic+"\" as taught in "+($v("g-qz-subj")||"that subject")+" — do NOT drift into unrelated arithmetic, spelling or vocabulary unless the subject itself is Maths or English. Return ONLY lines in the format 'question :: correct answer :: wrong :: wrong :: wrong' (4 options total, correct FIRST). After each question line, you may add a line 'exp:: one-sentence explanation'. No numbering or headings. Questions must be factually accurate and specific to the topic.","Subject: "+($v("g-qz-subj")||"General")+". Topic: "+topic,{maxTokens:1200}).then(t=>{
+    SYAI.ask("Write exactly "+n+" multiple-choice questions in the school subject "+($v("g-qz-subj")||"General")+" for a "+($v("g-qz-level")||dgLevelStr())+" student on the topic \""+topic+"\"."+((window.SY&&SY.stageStyle)?SY.stageStyle($v("g-qz-level")):"")+" EVERY question must be specifically about \""+topic+"\" as taught in "+($v("g-qz-subj")||"that subject")+" — do NOT drift into unrelated arithmetic, spelling or vocabulary unless the subject itself is Maths or English. Return ONLY lines, one per question, in this exact shape: the-actual-question-text :: correct answer :: wrong :: wrong :: wrong (4 options total, correct answer FIRST). Write the REAL question as the first field — NEVER the literal word \"question\", a label or a number. After each question line you may add a line 'exp:: one-sentence explanation'. No numbering or headings. Questions must be factually accurate and specific to the topic.","Subject: "+($v("g-qz-subj")||"General")+". Topic: "+topic,{maxTokens:1200}).then(t=>{
       const qs=[];let last=null;
       String(t).split("\n").forEach(l=>{l=l.trim();if(!l)return;
         if(/^exp\s*::/i.test(l)){if(last)last.exp=l.replace(/^exp\s*::\s*/i,"");return}
-        const p=l.split("::").map(s=>s.trim());
+        let p=l.split("::").map(s=>s.trim());
+        /* some models prefix a literal label ("question", "Q1", "1.") instead of
+           the question text — drop it so the real question isn't lost as an option */
+        if(p.length>=4&&/^(q|qu|ques|question|prompt|item|no)\s*[\d.:)]*$/i.test(p[0]))p=p.slice(1);
         if(p.length>=3){const q=p[0].replace(/^[-*)\s]*\d*[.)]?\s*/,"").trim()||p[0];const opts=p.slice(1,5).filter(Boolean);
           if(q&&opts.length>=2){last={q:q,o:opts,a:0};qs.push(last)}}});
       if(qs.length<3){toast("Model returned too few questions — using the bank");qzStatic(topic,n);return}
