@@ -875,6 +875,21 @@
         '.grid>*,.two>*,.three>*{min-width:0}';
       head.appendChild(rs);
     }
+    // Keep a signed-in student's parent-link code registered in the backend on
+    // EVERY page they load — not just /account/. Students now live in the study
+    // hub and may never open the account page, so without this their code was
+    // never published and a parent (or school/tutor) always got "invalid code".
+    // Once per tab session; publishCode itself retries until the cloud token
+    // settles, no-ops for demo, and de-dupes server-side.
+    try {
+      if (s && s.role === 'student' && s.email && !s.demo && window.SY &&
+          !sessionStorage.getItem('sy-code-pub')) {
+        var _pc = window.SY.get('parentCode', null);
+        if (!_pc) { _pc = String(Math.floor(10000000 + Math.random() * 90000000)); window.SY.set('parentCode', _pc); }
+        window.SY.publishCode(_pc, 'account');
+        try { sessionStorage.setItem('sy-code-pub', '1'); } catch (e) {}
+      }
+    } catch (e) {}
     // register the offline/install service worker (scope-relative so / and /StudYear/ both work)
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register(base + 'sw.js', { scope: base }).catch(function () {});
