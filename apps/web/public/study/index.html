@@ -297,6 +297,7 @@
   <button data-t="path">🗺 Path</button>
   <button data-t="explain">💡 Explain my mistake</button>
   <button data-t="leagues">🏆 Leagues</button>
+  <button data-t="examsim">⏱ Exam simulator</button>
   <button data-t="search">🔎 Find resources</button>
   <button data-t="homework">📥 Homework</button>
   <button data-t="timetable">🗓 Timetable</button>
@@ -334,6 +335,9 @@
 
 <!-- ============================ FAIR ACADEMIC LEAGUES (PRD M16) ============================ -->
 <section id="tab-leagues"><div id="leagues-mount"></div></section>
+
+<!-- ============================ EXAM SIMULATOR + PREDICTED GRADE (PRD M14 / §4.8) ============================ -->
+<section id="tab-examsim"><div id="examsim-mount"></div></section>
 
 <!-- ============================ SEARCH ============================ -->
 <section id="tab-search">
@@ -1339,6 +1343,7 @@ function showTab(t){
   if(t==="path"){try{renderPath();}catch(e){}}
   if(t==="explain"){try{renderExplain();}catch(e){}}
   if(t==="leagues"){try{renderLeagues();}catch(e){}}
+  if(t==="examsim"){try{renderExamSim();}catch(e){}}
   if(t==="progress") renderProgress();
   if(t==="homework"&&window.SYHomework){try{SYHomework.mountStudent(document.getElementById("hw-mount"),{email:(SY&&SY.session&&SY.session.email)||""});}catch(e){}}
   var _em=(SY&&SY.session&&SY.session.email)||"";
@@ -5131,8 +5136,15 @@ function renderMastery(){
      tdTile(atrisk,"Need review",atrisk?"var(--crit)":"var(--good)")+'</div>';
   h+='<div class="note" style="font-style:normal;margin-bottom:12px">A subject only becomes <b>Exam ready</b> when your accuracy is high <b>and</b> you\'ve kept it fresh — completing lessons alone never moves this bar.</div>';
   h+=rows.map(function(r){
+    var pred=null;try{pred=predictGrade(r.subj,PROFILE.level);}catch(e){}
+    var predBadge='';
+    if(pred){
+      var arrow=pred.wide||pred.n<3?'':(pred.dir>3?' ↗':pred.dir<-3?' ↘':' →');
+      predBadge='<span class="badge" title="Predicted grade from your quiz trend'+(pred.ciLow!==pred.ciHigh?(' (likely '+esc(pred.ciLow)+'–'+esc(pred.ciHigh)+')'):'')+'" style="background:rgba(77,157,224,.14);color:var(--gold-300);border:1px solid rgba(77,157,224,.4)">Predicted '+esc(pred.grade)+arrow+'</span>';
+    }
     return '<div class="card" style="margin-bottom:10px">'+
       '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b style="flex:1;font-size:15px">'+esc(r.subj)+'</b>'+
+        predBadge+
         '<span class="badge" style="background:'+r.band.c+'22;color:'+r.band.c+';border:1px solid '+r.band.c+'55">'+r.band.k+'</span></div>'+
       '<div style="height:9px;border-radius:6px;background:rgba(170,182,204,.16);margin:9px 0 6px;overflow:hidden"><div style="height:100%;width:'+r.mastery+'%;background:'+r.band.c+'"></div></div>'+
       '<div class="note" style="margin:0;display:flex;gap:12px;flex-wrap:wrap"><span>Mastery <b style="color:'+r.band.c+'">'+r.mastery+'%</b></span><span>Accuracy '+r.acc+'%</span><span>·</span><span style="color:'+r.decay.c+'">'+r.decay.k+(r.days?(' · '+r.days+'d since practice'):'')+'</span>'+
@@ -5240,6 +5252,159 @@ function renderLeagues(){
           :'<div class="note" style="font-style:normal">Link your school to compete with your class — ranked by improvement and consistency, not grind. <a href="../account/#parent-link" style="color:var(--gold-300)">Connect your school →</a></div>')+'</div>';
   h+='<div class="note" style="margin-top:12px">Leagues rank <b>improvement, mastery and consistency</b> — never total time or clicks — so anyone can win a week. Names stay private and there\'s no public bottom of the table.</div>';
   mt.innerHTML=h;
+}
+
+/* ============================ PREDICTED GRADE ENGINE (PRD §4.8) ============================
+   A transparent, evidence-based forecast from the student's own quiz history — never
+   fabricated. Recency- and mock-weighted mean → mapped through the UK attainment engine
+   to a predicted grade, with a confidence band (±1 SD) and a trajectory arrow. Returns
+   null when there isn't enough evidence yet, so the UI can stay honest about uncertainty. */
+function predictGrade(subj,level){
+  level=level||PROFILE.level||dgLevelStr();
+  if(!(window.SY&&SY.attainment))return null;
+  var qz=(store.get("quizzes",[])||[]).filter(function(q){return (q.subj||"")===subj&&isFinite(+q.pct);});
+  if(!qz.length)return null;
+  qz.sort(function(a,b){return new Date(a.when||a.t||0)-new Date(b.when||b.t||0);});
+  var wsum=0,vsum=0;qz.forEach(function(q,i){var w=1+i/qz.length+(q.mock?1:0);wsum+=w;vsum+=w*(+q.pct||0);});
+  var mean=vsum/wsum;
+  var half=Math.max(1,Math.floor(qz.length/2)),early=qz.slice(0,half),late=qz.slice(-half);
+  var eavg=early.reduce(function(a,b){return a+(+b.pct||0);},0)/early.length,lavg=late.reduce(function(a,b){return a+(+b.pct||0);},0)/late.length;
+  var sd=Math.sqrt(qz.reduce(function(a,b){return a+Math.pow((+b.pct||0)-mean,2);},0)/qz.length);
+  var lo=Math.max(0,mean-sd),hi=Math.min(100,mean+sd);
+  var att=SY.attainment(level,Math.round(mean)),aLo=SY.attainment(level,Math.round(lo)),aHi=SY.attainment(level,Math.round(hi));
+  return {pct:Math.round(mean),grade:att.short,gradeLabel:att.label,ciLow:aLo.short,ciHigh:aHi.short,dir:Math.round(lavg-eavg),n:qz.length,wide:(hi-lo)>34};
+}
+
+/* ============================ EXAM SIMULATOR (PRD Module 14) ============================
+   A timed, exam-conditions mock: real questions (AI-generated at the student's level, with
+   an offline fallback from the quiz bank), a countdown that auto-submits at zero, answers
+   locked on submit, then a marked result that estimates a grade, feeds Mastery + the
+   Predicted Grade engine (recorded as mock:true), and turns marks lost into a practice CTA. */
+var examState=null,examTimer=null;
+function secHead(t,sub){return '<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line,rgba(170,182,204,.14));padding-bottom:12px;margin-bottom:16px"><h2 style="font-family:var(--serif);font-weight:500;font-size:26px;flex:1">'+t+'</h2><span class="note" style="margin:0">'+esc(sub)+'</span></div>';}
+function examClearTimer(){if(examTimer){clearInterval(examTimer);examTimer=null;}}
+function renderExamSim(){
+  var mt=document.getElementById("examsim-mount");if(!mt)return;
+  examClearTimer();examState=null;
+  var h=secHead("⏱ Exam simulator","real questions, real clock");
+  h+='<div class="card"><div class="note" style="font-style:normal;margin-bottom:12px">Sit a timed mock under exam conditions. Answers lock when you submit, the clock auto-submits at zero, and your result feeds your <b>Mastery</b> map and <b>Predicted grade</b> — mock scores count for more because they\'re the closest thing to the real exam.</div>'+
+     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><label class="f">Subject</label><select id="xm-subj"></select></div><div><label class="f">Level</label><select id="xm-level"></select></div>'+
+     '<div><label class="f">Questions</label><select id="xm-n"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></div>'+
+     '<div><label class="f">Time</label><select id="xm-time"><option value="0">Untimed</option><option value="5">5 min</option><option value="10" selected>10 min</option><option value="20">20 min</option><option value="30">30 min</option></select></div></div>'+
+     '<div style="margin-top:14px"><button class="btn" id="xm-start">Start mock →</button></div></div>';
+  var last=(store.get("quizzes",[])||[]).filter(function(q){return q.mock;}).slice(-3).reverse();
+  if(last.length){
+    h+='<div class="card" style="margin-top:12px"><b>Recent mocks</b>'+last.map(function(q){return '<div class="note" style="margin:6px 0 0;display:flex;gap:10px"><span style="flex:1">'+esc(q.subj||"")+(q.title?(" · "+esc(q.title)):"")+'</span><b>'+Math.round(+q.pct||0)+'%</b></div>';}).join("")+'</div>';
+  }
+  mt.innerHTML=h;
+  try{fillSelect(document.getElementById("xm-subj"),SUBJECTS);fillSelect(document.getElementById("xm-level"),LEVELS);
+      var ps=PROFILE.subjects&&PROFILE.subjects[0]&&PROFILE.subjects[0].s;if(ps)document.getElementById("xm-subj").value=ps;
+      if(PROFILE.level)document.getElementById("xm-level").value=PROFILE.level;}catch(e){}
+  var sb=document.getElementById("xm-start");if(sb)sb.onclick=examStart;
+}
+function examStart(){
+  var subj=$v("xm-subj")||"General",level=$v("xm-level")||dgLevelStr(),n=parseInt($v("xm-n")||"10",10),mt=parseInt($v("xm-time")||"10",10);
+  var mount=document.getElementById("examsim-mount");
+  mount.innerHTML=secHead("⏱ "+esc(subj)+" mock","building your paper…")+'<div class="card"><div class="note">Preparing '+n+' exam-level questions…</div></div>';
+  examBuild(subj,level,n,function(qs){
+    if(!qs||!qs.length){mount.innerHTML=secHead("⏱ Exam simulator","")+'<div class="card"><div class="note">Couldn\'t build a paper for that just yet. Try a broader subject or take a normal quiz first.</div><div style="margin-top:10px"><button class="btn ghost" onclick="renderExamSim()">← Back</button></div></div>';return;}
+    examState={subj:subj,level:level,qs:qs,answers:new Array(qs.length).fill(-1),started:Date.now?null:null,timeLimit:mt,submitted:false};
+    examRun(mt);
+  });
+}
+function examBuild(subj,level,n,cb){
+  if(window.SYAI&&SYAI.ready()){
+    var sys="You are an examiner writing a "+level+" "+subj+" mock exam."+((window.SY&&SY.stageStyle)?SY.stageStyle(level):"")+" Write exactly "+n+" multiple-choice questions of genuine exam standard, increasing in difficulty. For each output a line 'Q: <question>' then four lines 'A) ' 'B) ' 'C) ' 'D) ' then 'ANSWER: <letter>' then 'WHY: <one-sentence explanation>'. No preamble, no numbering label on its own line.";
+    SYAI.ask(sys,"Subject: "+subj+"\nLevel: "+level+"\nQuestions: "+n,{maxTokens:1600}).then(function(txt){
+      var qs=examParse(String(txt||""));
+      if(qs.length>=Math.min(3,n))cb(qs.slice(0,n));else cb(examBuildOffline(subj,n));
+    }).catch(function(){cb(examBuildOffline(subj,n));});
+  }else cb(examBuildOffline(subj,n));
+}
+function examParse(txt){
+  var qs=[],blocks=txt.split(/\n(?=Q\s*[:.)])/i);
+  blocks.forEach(function(b){
+    var qm=b.match(/Q\s*[:.)]\s*(.+)/i);if(!qm)return;
+    var q=qm[1].trim();if(/^(q|qu|ques|question|prompt|item|no)\s*[\d.:)]*$/i.test(q)){var nl=b.split("\n").slice(1).find(function(l){return l.trim();});if(nl)q=nl.trim();}
+    var opts=[];var re=/^[\s]*([A-D])[).:]\s*(.+)$/gim,m;while((m=re.exec(b)))opts.push(m[2].trim());
+    if(opts.length<4)return;opts=opts.slice(0,4);
+    var am=b.match(/ANSWER\s*[:.)]\s*([A-D])/i);var a=am?am[1].toUpperCase().charCodeAt(0)-65:0;
+    var wm=b.match(/WHY\s*[:.)]\s*(.+)/i);
+    qs.push({q:q,o:opts,a:(a>=0&&a<4)?a:0,exp:wm?wm[1].trim():""});
+  });
+  return qs;
+}
+function examBuildOffline(subj,n){
+  var pool=[];try{pool=tutorQuizBank(subj)||[];}catch(e){}
+  if(pool.length<3){try{(allResources()||[]).forEach(function(r){if(r.qs&&(r.subj===subj))r.qs.forEach(function(q){pool.push(q);});});}catch(e){}}
+  var seen={},uniq=[];pool.forEach(function(q){var k=(q.q||"").slice(0,40);if(q.q&&q.o&&q.o.length>=2&&!seen[k]){seen[k]=1;uniq.push(q);}});
+  for(var i=uniq.length-1;i>0;i--){var j=(i*7+3)%(i+1);var t=uniq[i];uniq[i]=uniq[j];uniq[j]=t;}
+  return uniq.slice(0,n);
+}
+function examRun(mt){
+  var st=examState,mount=document.getElementById("examsim-mount");if(!st)return;
+  var h='<div style="display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line,rgba(170,182,204,.14));padding-bottom:12px;margin-bottom:16px"><h2 style="font-family:var(--serif);font-weight:500;font-size:22px;flex:1">⏱ '+esc(st.subj)+' mock</h2>'+
+    (mt>0?'<span id="xm-clock" class="badge" style="background:rgba(77,157,224,.14);color:var(--gold-300);border:1px solid rgba(77,157,224,.4);font-variant-numeric:tabular-nums;font-size:15px">'+mt+':00</span>':'<span class="note" style="margin:0">Untimed</span>')+'</div>';
+  h+='<div class="note" style="font-style:normal;margin-bottom:12px">Exam conditions: answer every question, then submit. Answers lock once you submit.</div>';
+  h+=st.qs.map(function(q,i){
+    return '<div class="card" style="margin-bottom:10px"><div style="font-weight:600;font-size:14px;margin-bottom:8px">'+(i+1)+'. '+esc(q.q)+'</div>'+
+      q.o.map(function(o,oi){return '<label style="display:flex;align-items:center;gap:9px;padding:7px 9px;border:1px solid rgba(170,182,204,.16);border-radius:9px;margin:5px 0;cursor:pointer"><input type="radio" name="xmq'+i+'" value="'+oi+'"> <span style="font-size:13.5px">'+esc(o)+'</span></label>';}).join("")+'</div>';
+  }).join("");
+  h+='<div style="display:flex;gap:8px;margin-top:6px"><button class="btn" id="xm-submit">Submit paper</button><button class="btn ghost" id="xm-quit">Quit</button></div>';
+  mount.innerHTML=h;
+  mount.querySelectorAll('input[type=radio]').forEach(function(r){r.onchange=function(){var qi=parseInt(r.name.replace("xmq",""),10);st.answers[qi]=parseInt(r.value,10);};});
+  document.getElementById("xm-submit").onclick=function(){examFinish();};
+  document.getElementById("xm-quit").onclick=function(){examClearTimer();examState=null;renderExamSim();};
+  if(mt>0){
+    var remaining=mt*60;
+    examClearTimer();
+    examTimer=setInterval(function(){
+      remaining--;
+      var cl=document.getElementById("xm-clock");
+      if(cl){var m=Math.floor(remaining/60),s=remaining%60;cl.textContent=m+":"+(s<10?"0":"")+s;if(remaining<=30)cl.style.color="var(--crit)";}
+      if(remaining<=0){examClearTimer();examFinish(true);}
+    },1000);
+  }
+}
+function examFinish(auto){
+  var st=examState;if(!st||st.submitted)return;st.submitted=true;examClearTimer();
+  var correct=0;st.qs.forEach(function(q,i){if(st.answers[i]===q.a)correct++;});
+  var pct=Math.round(100*correct/st.qs.length);
+  try{var h=store.get("quizzes",[]);h.push({t:todayKey(),when:new Date().toISOString(),subj:st.subj,title:"Exam mock",pct:pct,mock:true});store.set("quizzes",h);}catch(e){}
+  try{addPoints(5+(pct>=70?5:0));logEvent("exam","Exam mock — "+st.subj,pct+"% ("+correct+"/"+st.qs.length+")");}catch(e){}
+  examResult(auto,correct,pct);
+}
+function examResult(auto,correct,pct){
+  var st=examState,mount=document.getElementById("examsim-mount");if(!st)return;
+  var att=(window.SY&&SY.attainment)?SY.attainment(st.level,pct):{short:"",label:""};
+  var pred=null;try{pred=predictGrade(st.subj,st.level);}catch(e){}
+  var col=pct>=70?"var(--good)":pct>=50?"#d3b13a":"var(--crit)";
+  var h=secHead("⏱ "+esc(st.subj)+" — result",auto?"time's up · auto-submitted":"marked");
+  h+='<div class="card" style="text-align:center;border:1px solid '+col+'55;background:'+col+'12"><div style="font-family:var(--serif);font-size:44px;color:'+col+'">'+pct+'%</div>'+
+     '<div class="note" style="margin:2px 0 0">'+correct+' of '+st.qs.length+' correct'+(att.short?(' · estimated '+esc(att.short)):"")+'</div></div>';
+  if(pred&&pred.n>=3&&!pred.wide){
+    var arrow=pred.dir>3?"↗ improving":pred.dir<-3?"↘ slipping":"→ steady";
+    h+='<div class="card" style="margin-top:10px"><div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-300)">Predicted grade</div>'+
+       '<div style="display:flex;align-items:baseline;gap:10px;margin-top:4px"><div style="font-family:var(--serif);font-size:28px">'+esc(pred.grade)+'</div><span class="note" style="margin:0">'+arrow+(pred.ciLow!==pred.ciHigh?(' · likely '+esc(pred.ciLow)+'–'+esc(pred.ciHigh)):"")+' · from '+pred.n+' scored quizzes</span></div></div>';
+  }else{
+    h+='<div class="card" style="margin-top:10px"><div class="note" style="font-style:normal">Sit a couple more mocks and your <b>predicted grade</b> for '+esc(st.subj)+' will appear here — it needs a few scores before it can be honest about your trajectory.</div></div>';
+  }
+  var lost=[];st.qs.forEach(function(q,i){if(st.answers[i]!==q.a)lost.push({q:q,i:i});});
+  if(lost.length){
+    h+='<div class="card" style="margin-top:10px"><b>Marks you lost — worth reviewing</b>'+lost.slice(0,8).map(function(o){
+      var picked=st.answers[o.i]>=0?o.q.o[st.answers[o.i]]:"(no answer)";
+      return '<div style="margin:9px 0;padding:9px;border:1px solid rgba(170,182,204,.14);border-radius:9px"><div style="font-size:13.5px;font-weight:600">'+(o.i+1)+'. '+esc(o.q.q)+'</div>'+
+        '<div class="note" style="margin:4px 0 0">You: <span style="color:var(--crit)">'+esc(picked)+'</span> · Correct: <b style="color:var(--good)">'+esc(o.q.o[o.q.a])+'</b>'+(o.q.exp?('<br>'+esc(o.q.exp)):"")+'</div></div>';
+    }).join("")+'</div>';
+  }else{
+    h+='<div class="card" style="margin-top:10px"><div class="note" style="font-style:normal;color:var(--good)">Full marks — every question correct. Outstanding exam performance. 🎯</div></div>';
+  }
+  h+='<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn" id="xm-again">Another mock</button>'+
+     (lost.length?'<button class="btn ghost" id="xm-practise">Practise '+esc(st.subj)+'</button>':"")+
+     '<button class="btn ghost" onclick="showTab(\'mastery\')">See Mastery</button></div>';
+  mount.innerHTML=h;
+  var ag=document.getElementById("xm-again");if(ag)ag.onclick=function(){renderExamSim();};
+  var pr=document.getElementById("xm-practise");if(pr)pr.onclick=function(){var s=st.subj;examState=null;try{pathGo(s,s);}catch(e){tdGo("lesson");}};
 }
 renderToday();
 renderResults();renderPapers();renderProgress();applyHash();
