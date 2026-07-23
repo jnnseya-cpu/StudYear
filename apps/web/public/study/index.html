@@ -299,6 +299,7 @@
   <button data-t="leagues">🏆 Leagues</button>
   <button data-t="examsim">⏱ Exam simulator</button>
   <button data-t="review">🔁 Smart review</button>
+  <button data-t="wins">🏅 Achievements</button>
   <button data-t="search">🔎 Find resources</button>
   <button data-t="homework">📥 Homework</button>
   <button data-t="timetable">🗓 Timetable</button>
@@ -342,6 +343,9 @@
 
 <!-- ============================ SMART REVIEW / SPACED REPETITION (PRD Module 6) ============================ -->
 <section id="tab-review"><div id="review-mount"></div></section>
+
+<!-- ============================ ACHIEVEMENTS / MILESTONES (PRD Module 15) ============================ -->
+<section id="tab-wins"><div id="wins-mount"></div></section>
 
 <!-- ============================ SEARCH ============================ -->
 <section id="tab-search">
@@ -1349,6 +1353,7 @@ function showTab(t){
   if(t==="leagues"){try{renderLeagues();}catch(e){}}
   if(t==="examsim"){try{renderExamSim();}catch(e){}}
   if(t==="review"){try{renderReview();}catch(e){}}
+  if(t==="wins"){try{renderAchievements();}catch(e){}}
   if(t==="progress") renderProgress();
   if(t==="homework"&&window.SYHomework){try{SYHomework.mountStudent(document.getElementById("hw-mount"),{email:(SY&&SY.session&&SY.session.email)||""});}catch(e){}}
   var _em=(SY&&SY.session&&SY.session.email)||"";
@@ -5469,6 +5474,69 @@ function renderReview(){
   var all=document.getElementById("rv-all");if(all&&due[0])all.onclick=function(){reviewGo(due[0].subj);};
   mt.querySelectorAll("[data-rvsubj]").forEach(function(b){b.onclick=function(){reviewGo(b.getAttribute("data-rvsubj"));};});
   mt.querySelectorAll("[data-rvlearn]").forEach(function(b){b.onclick=function(){var s=b.getAttribute("data-rvlearn");try{pathGo(s,s);}catch(e){tdGo("lesson");}};});
+}
+
+/* ============================ ACHIEVEMENTS / MILESTONES (PRD Module 15) ============================
+   A Duolingo-style achievements wall — but every badge is earned from real academic
+   work, never vanity metrics. Each achievement has tiers (bronze→legendary); we count
+   how many the student has passed and show honest progress toward the next. Computed
+   live from quizzes, momentum, mastery, reviews and mocks — nothing fabricated. */
+function achData(){
+  var qz=store.get("quizzes",[])||[];
+  var mo=tdMomentum(),kp=tdKP();
+  var rows=[];try{rows=(myMasteryRows().rows)||[];}catch(e){}
+  var examReady=rows.filter(function(r){return r.mastery>=90;}).length;
+  var secured=rows.filter(function(r){return r.mastery>=60;}).length;
+  var reviews=qz.filter(function(q){return q.review;}).length;
+  var mocks=qz.filter(function(q){return q.mock;}).length;
+  var perfect=qz.filter(function(q){return (+q.pct||0)>=100;}).length;
+  var diag=store.get("diagnostic",null)?1:0;
+  return [
+    {icon:"🔥",name:"Momentum",desc:"Your best learning streak",tiers:[3,7,14,30,60,100],v:mo.best,unit:" days"},
+    {icon:"💎",name:"Knowledge Points",desc:"Points earned from real work",tiers:[100,500,1000,2500,5000,10000],v:kp.total,unit:" KP"},
+    {icon:"✍️",name:"Quiz veteran",desc:"Quizzes completed",tiers:[1,10,25,50,100],v:qz.length,unit:""},
+    {icon:"🎓",name:"Exam ready",desc:"Subjects at exam-ready mastery",tiers:[1,3,5],v:examReady,unit:""},
+    {icon:"📚",name:"Well-rounded",desc:"Subjects secured (60%+ mastery)",tiers:[1,3,5,8],v:secured,unit:""},
+    {icon:"🔁",name:"Memory master",desc:"Smart reviews cleared",tiers:[1,10,25,50],v:reviews,unit:""},
+    {icon:"⏱",name:"Mock veteran",desc:"Exam mocks sat under timed conditions",tiers:[1,5,10,25],v:mocks,unit:""},
+    {icon:"💯",name:"Flawless",desc:"Perfect (100%) scores",tiers:[1,5,10],v:perfect,unit:""},
+    {icon:"📅",name:"Consistent",desc:"Study days this week",tiers:[3,5,7],v:mo.week,unit:"/7"},
+    {icon:"🧭",name:"Know thyself",desc:"Completed your academic diagnostic",tiers:[1],v:diag,unit:""}
+  ].map(function(a){
+    var level=0;for(var i=0;i<a.tiers.length;i++){if(a.v>=a.tiers[i])level=i+1;}
+    var maxed=level>=a.tiers.length, next=maxed?null:a.tiers[level], prev=level>0?a.tiers[level-1]:0;
+    var pct=maxed?100:Math.max(0,Math.min(100,Math.round(100*(a.v-prev)/((next-prev)||1))));
+    return {icon:a.icon,name:a.name,desc:a.desc,tiers:a.tiers,v:a.v,unit:a.unit,level:level,maxed:maxed,next:next,pct:pct,unlocked:level>0};
+  });
+}
+var ACH_TIERNAME=["Locked","Bronze","Silver","Gold","Platinum","Diamond","Legendary"];
+function renderAchievements(){
+  var mt=document.getElementById("wins-mount");if(!mt)return;
+  var data=achData();
+  var earned=data.reduce(function(a,b){return a+b.level;},0);
+  var possible=data.reduce(function(a,b){return a+b.tiers.length;},0);
+  var maxed=data.filter(function(x){return x.maxed;}).length;
+  var h=secHead("🏅 Achievements","earned from real work — never vanity");
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px">'+
+     tdTile(earned+" / "+possible,"Badges earned","var(--gold-300)")+
+     tdTile(data.filter(function(x){return x.unlocked;}).length,"Achievements started",null)+
+     tdTile(maxed,"Fully maxed",maxed?"var(--gold-300)":"var(--ink)")+'</div>';
+  h+='<div class="note" style="font-style:normal;margin-bottom:14px">Every badge here comes from something you actually did — a streak you kept, a subject you mastered, a mock you sat. Keep going and the next tier fills in automatically.</div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px">';
+  h+=data.map(function(x){
+    var tname=x.maxed?"Max · "+ACH_TIERNAME[Math.min(x.level,ACH_TIERNAME.length-1)]:(x.unlocked?ACH_TIERNAME[Math.min(x.level,ACH_TIERNAME.length-1)]:"Locked");
+    var col=x.unlocked?(x.maxed?"var(--gold-300)":"var(--good)"):"var(--ink-3,#8792a6)";
+    var target=x.maxed?("Maxed at "+x.tiers[x.tiers.length-1]+x.unit):("Next: "+x.next+x.unit);
+    return '<div class="card" style="margin:0;'+(x.unlocked?'':'opacity:.62')+'">'+
+      '<div style="display:flex;align-items:center;gap:10px"><div style="font-size:26px;filter:'+(x.unlocked?'none':'grayscale(1)')+'">'+x.icon+'</div>'+
+        '<div style="flex:1"><b style="font-size:14px">'+esc(x.name)+'</b><div class="note" style="margin:0;font-size:11.5px">'+esc(x.desc)+'</div></div>'+
+        '<span class="badge" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'55;white-space:nowrap">'+esc(tname)+'</span></div>'+
+      '<div style="height:8px;border-radius:6px;background:rgba(170,182,204,.16);margin:10px 0 6px;overflow:hidden"><div style="height:100%;width:'+x.pct+'%;background:'+col+'"></div></div>'+
+      '<div class="note" style="margin:0;display:flex;gap:8px"><span style="flex:1">'+x.v+x.unit+(x.maxed?' ⭐':'')+'</span><span>'+esc(target)+'</span></div>'+
+      '</div>';
+  }).join("");
+  h+='</div>';
+  mt.innerHTML=h;
 }
 renderToday();
 renderResults();renderPapers();renderProgress();applyHash();
