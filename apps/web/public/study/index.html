@@ -292,7 +292,8 @@
   <div style="margin-top:8px;font-size:11.5px;color:#77839B"><span id="wp-min"></span> · <span id="wp-stretch"></span></div>
 </div>
 <nav class="tabs" id="tabs">
-  <button data-t="search" class="on">🔎 Find resources</button>
+  <button data-t="today" class="on">☀️ Today</button>
+  <button data-t="search">🔎 Find resources</button>
   <button data-t="homework">📥 Homework</button>
   <button data-t="timetable">🗓 Timetable</button>
   <button data-t="notices">📣 Notices</button>
@@ -315,8 +316,11 @@
 
 <main>
 
+<!-- ============================ TODAY (daily learning loop) ============================ -->
+<section id="tab-today" class="on"><div id="today-mount"></div></section>
+
 <!-- ============================ SEARCH ============================ -->
-<section id="tab-search" class="on">
+<section id="tab-search">
   <div class="filters">
     <div><label class="f">Keyword</label><input type="text" id="q" placeholder="e.g. photosynthesis, quadratics, Macbeth…"></div>
     <div><label class="f">Subject</label><select id="f-subj" aria-label="Filter by subject"><option value="">All subjects</option></select></div>
@@ -1314,6 +1318,7 @@ document.addEventListener("click",function(e){
 function showTab(t){
   document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));
   document.querySelectorAll("main>section").forEach(s=>s.classList.toggle("on",s.id==="tab-"+t));
+  if(t==="today"){try{renderToday();}catch(e){}}
   if(t==="progress") renderProgress();
   if(t==="homework"&&window.SYHomework){try{SYHomework.mountStudent(document.getElementById("hw-mount"),{email:(SY&&SY.session&&SY.session.email)||""});}catch(e){}}
   var _em=(SY&&SY.session&&SY.session.email)||"";
@@ -4952,6 +4957,98 @@ let toastTimer;
 function toast(t){const el=document.getElementById("toast");el.textContent=t;el.style.opacity=1;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.style.opacity=0,2600)}
 
 applyProfileDefaults(); /* re-run now every section's selects exist */
+/* ============================ TODAY — daily learning loop ============================
+   Phase-A "retention core" from the Duolingo extraction (docs/competitors/
+   duolingo-ci-04.md · duolingo-deep-dive-extraction.md): Academic Momentum
+   (a LEARNING-EFFECTIVE streak — days you actually learn, with FREE forgiveness,
+   never a paywall), evidence-based Daily Missions, weighted Knowledge Points,
+   and the single Recommended-Today action. All computed from the student's real
+   signals (streak, quizzes, spelling, plan, activity feed) — no fabricated data. */
+function tdActsToday(){
+  var out={lesson:false,quiz:false,spelling:false,any:false},t=new Date().toISOString().slice(0,10);
+  try{(store.get("activity",[])||[]).forEach(function(e){ if(String(e.when||"").slice(0,10)!==t)return; out.any=true;
+    if(e.k==="lesson")out.lesson=true; if(e.k==="quiz")out.quiz=true; if(e.k==="spelling")out.spelling=true; });}catch(e){}
+  try{if((store.get("quizzes",[])||[]).some(function(q){return q.t===todayKey()}))out.quiz=true;}catch(e){}
+  return out;
+}
+function tdMomentum(){
+  var s=store.get("streak",{days:[]}),set=new Set(s.days||[]);
+  var mo=store.get("momentum",{best:0,rest:[]}),rest=new Set(mo.rest||[]);
+  var active=(s.days||[]).length, shields=Math.min(3,Math.floor(active/7)); /* earned, free — never sold */
+  var n=0,sh=shields,d=new Date();
+  for(var i=0;i<200;i++){var key=isoOf(d);
+    if(set.has(key)||rest.has(key))n++;
+    else if(sh>0&&i>0)sh--;                 /* a free shield bridges one missed day */
+    else break;
+    d.setDate(d.getDate()-1);}
+  var week=0,dd=new Date();for(var j=0;j<7;j++){if(set.has(isoOf(dd))||rest.has(isoOf(dd)))week++;dd.setDate(dd.getDate()-1);}
+  var best=Math.max(mo.best||0,n);if(best!==(mo.best||0)){mo.best=best;store.set("momentum",mo);}
+  return {days:n,best:best,week:week,shields:shields,restToday:rest.has(todayKey()),activeToday:set.has(todayKey())||rest.has(todayKey())};
+}
+function tdKP(){
+  var qz=store.get("quizzes",[])||[],total=0,today=0,tk=todayKey();
+  qz.forEach(function(q){var kp=5+(q.pct>=70?7:0)+(q.pct>=90?3:0);total+=kp;if(q.t===tk)today+=kp;}); /* quality-weighted */
+  total+=((store.get("streak",{days:[]}).days)||[]).length*3;                                          /* consistency */
+  var sp=store.get("spellingRecord",{});total+=(sp.tests||0)*5;if(sp.when===tk)today+=5;
+  var pl=store.get("plan",null);if(pl&&pl.done)total+=Object.keys(pl.done).length*4;
+  return {total:total,today:today};
+}
+function tdWeakest(){
+  var qz=store.get("quizzes",[])||[];if(!qz.length)return null;
+  var by={};qz.forEach(function(q){(by[q.subj||"General"]=by[q.subj||"General"]||[]).push(q.pct)});
+  var arr=Object.keys(by).map(function(k){var a=by[k];return{s:k,avg:Math.round(a.reduce(function(x,y){return x+y},0)/a.length)}});
+  arr.sort(function(a,b){return a.avg-b.avg});return arr[0]||null;
+}
+function tdRecommended(){
+  if(!store.get("diagnostic",null))return{text:"Start with a 5-minute academic diagnostic — it maps your strengths and builds your plan.",cta:"Run diagnostic",hash:"diag"};
+  if((store.get("recoveries",[])||[]).length)return{text:"You have a recovery plan ready. One mission today keeps you on track.",cta:"Open recovery plan",hash:"recovery"};
+  var w=tdWeakest();
+  if(w&&w.avg<70)return{text:"Your weakest area is <b>"+esc(w.s)+"</b> ("+w.avg+"% average). A 5-minute lesson will lift it.",cta:"Do a "+esc(w.s)+" lesson",hash:"lesson"};
+  return{text:"Keep your momentum going — a short lesson or quiz today protects your streak.",cta:"Start a lesson",hash:"lesson"};
+}
+function tdMissions(){
+  var a=tdActsToday(),flagged=store.get("spellingNeedsWork",false),m=[];
+  m.push({t:"Do one interactive lesson",kp:12,hash:"lesson",done:a.lesson});
+  m.push({t:"Take a quick quiz",kp:15,hash:"create",done:a.quiz});
+  if(flagged)m.push({t:"5-minute spelling practice",kp:10,hash:"spelling",done:a.spelling});
+  else m.push({t:"Review your weakest topic",kp:10,hash:"lesson",done:a.lesson&&a.quiz});
+  return m;
+}
+function tdGo(h){try{location.hash="#"+h;applyHash();}catch(e){}window.scrollTo({top:0,behavior:"smooth"});}
+function tdTile(v,k,color){return '<div class="tile" style="background:rgba(6,11,24,.4);border:1px solid rgba(170,182,204,.14);border-radius:12px;padding:12px 14px;text-align:center">'+
+  '<div style="font-family:var(--serif);font-size:24px;color:'+(color||"var(--ink)")+'">'+v+'</div>'+
+  '<div class="note" style="margin:2px 0 0;font-size:11px">'+esc(k)+'</div></div>';}
+function renderToday(){
+  var mt=document.getElementById("today-mount");if(!mt)return;
+  var mo=tdMomentum(),kp=tdKP(),rec=tdRecommended(),ms=tdMissions();
+  var done=ms.filter(function(x){return x.done}).length, toEarn=ms.reduce(function(a,b){return a+(b.done?0:b.kp)},0);
+  var h='<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line,rgba(170,182,204,.14));padding-bottom:12px;margin-bottom:16px"><h2 style="font-family:var(--serif);font-weight:500;font-size:26px;flex:1">☀️ Today</h2><span class="note" style="margin:0">small steps · real mastery</span></div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px">'+
+    tdTile("🔥 "+mo.days,"Momentum days",mo.activeToday?"var(--good)":"var(--ink)")+
+    tdTile(mo.week+" / 7","This week",null)+
+    tdTile("🛡 "+mo.shields,"Free streak shields",null)+
+    tdTile(kp.total.toLocaleString(),"Knowledge Points",null)+'</div>';
+  h+='<div class="card" style="margin-bottom:14px;border:1px solid var(--gold-500);background:rgba(77,157,224,.08)">'+
+     '<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-300)">Recommended right now</div>'+
+     '<div style="font-size:15.5px;margin:6px 0 10px;line-height:1.5">'+rec.text+'</div>'+
+     '<button class="btn" data-td="'+esc(rec.hash)+'">'+esc(rec.cta)+' →</button></div>';
+  h+='<div class="card" style="margin-bottom:14px"><h3 style="font-family:var(--serif)">Today’s missions <span class="note" style="font-weight:400">('+done+'/'+ms.length+' done · +'+toEarn+' KP to earn)</span></h3>'+
+     ms.map(function(x){return '<div style="display:flex;align-items:center;gap:10px;margin:9px 0">'+
+       '<span style="font-size:18px">'+(x.done?'✅':'⬜')+'</span>'+
+       '<span style="flex:1;font-size:14px;'+(x.done?'opacity:.6;text-decoration:line-through':'')+'">'+esc(x.t)+'</span>'+
+       '<span class="note" style="margin:0">+'+x.kp+' KP</span>'+
+       (x.done?'':'<button class="btn ghost sm" data-td="'+esc(x.hash)+'">Start</button>')+'</div>';}).join('')+'</div>';
+  h+='<div class="card"><h3 style="font-family:var(--serif)">🔥 Academic Momentum</h3>'+
+     '<div class="note" style="font-style:normal;margin-bottom:8px">Momentum counts days you actually <b>learn something</b> — a lesson, a quiz, a corrected mistake — not just opening the app. Best: <b>'+mo.best+' day'+(mo.best===1?'':'s')+'</b>.</div>'+
+     '<div class="note" style="font-style:normal;margin-bottom:10px">🛡 You have <b>'+mo.shields+' free streak shield'+(mo.shields===1?'':'s')+'</b> — they protect a missed day automatically. <b>We never charge you to keep your streak.</b></div>'+
+     (mo.restToday?'<div class="note" style="color:var(--good)">✓ Rest day set for today — your momentum is protected.</div>':'<button class="btn ghost sm" id="td-rest">Take a rest day (protects today)</button>')+'</div>';
+  mt.innerHTML=h;
+  mt.querySelectorAll("[data-td]").forEach(function(b){b.onclick=function(){tdGo(b.getAttribute("data-td"));};});
+  var rb=document.getElementById("td-rest");if(rb)rb.onclick=function(){
+    var m2=store.get("momentum",{best:0,rest:[]});m2.rest=(m2.rest||[]);if(m2.rest.indexOf(todayKey())<0)m2.rest.push(todayKey());m2.rest=m2.rest.slice(-60);store.set("momentum",m2);
+    try{toast("Rest day set — your momentum is safe today. 💙");}catch(e){}renderToday();};
+}
+renderToday();
 renderResults();renderPapers();renderProgress();applyHash();
 </script>
 <script>
