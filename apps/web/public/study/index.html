@@ -298,6 +298,7 @@
   <button data-t="explain">💡 Explain my mistake</button>
   <button data-t="leagues">🏆 Leagues</button>
   <button data-t="examsim">⏱ Exam simulator</button>
+  <button data-t="review">🔁 Smart review</button>
   <button data-t="search">🔎 Find resources</button>
   <button data-t="homework">📥 Homework</button>
   <button data-t="timetable">🗓 Timetable</button>
@@ -338,6 +339,9 @@
 
 <!-- ============================ EXAM SIMULATOR + PREDICTED GRADE (PRD M14 / §4.8) ============================ -->
 <section id="tab-examsim"><div id="examsim-mount"></div></section>
+
+<!-- ============================ SMART REVIEW / SPACED REPETITION (PRD Module 6) ============================ -->
+<section id="tab-review"><div id="review-mount"></div></section>
 
 <!-- ============================ SEARCH ============================ -->
 <section id="tab-search">
@@ -1344,6 +1348,7 @@ function showTab(t){
   if(t==="explain"){try{renderExplain();}catch(e){}}
   if(t==="leagues"){try{renderLeagues();}catch(e){}}
   if(t==="examsim"){try{renderExamSim();}catch(e){}}
+  if(t==="review"){try{renderReview();}catch(e){}}
   if(t==="progress") renderProgress();
   if(t==="homework"&&window.SYHomework){try{SYHomework.mountStudent(document.getElementById("hw-mount"),{email:(SY&&SY.session&&SY.session.email)||""});}catch(e){}}
   var _em=(SY&&SY.session&&SY.session.email)||"";
@@ -5303,12 +5308,15 @@ function renderExamSim(){
   var sb=document.getElementById("xm-start");if(sb)sb.onclick=examStart;
 }
 function examStart(){
-  var subj=$v("xm-subj")||"General",level=$v("xm-level")||dgLevelStr(),n=parseInt($v("xm-n")||"10",10),mt=parseInt($v("xm-time")||"10",10);
-  var mount=document.getElementById("examsim-mount");
-  mount.innerHTML=secHead("⏱ "+esc(subj)+" mock","building your paper…")+'<div class="card"><div class="note">Preparing '+n+' exam-level questions…</div></div>';
+  examStartWith($v("xm-subj")||"General",$v("xm-level")||dgLevelStr(),parseInt($v("xm-n")||"10",10),parseInt($v("xm-time")||"10",10),{});
+}
+function examStartWith(subj,level,n,mt,opts){
+  opts=opts||{};var review=!!opts.review;
+  var mount=document.getElementById("examsim-mount");if(!mount)return;
+  mount.innerHTML=secHead((review?"🔁 ":"⏱ ")+esc(subj)+(review?" review":" mock"),"building your "+(review?"review":"paper")+"…")+'<div class="card"><div class="note">Preparing '+n+' '+(review?"retrieval":"exam-level")+' questions…</div></div>';
   examBuild(subj,level,n,function(qs){
     if(!qs||!qs.length){mount.innerHTML=secHead("⏱ Exam simulator","")+'<div class="card"><div class="note">Couldn\'t build a paper for that just yet. Try a broader subject or take a normal quiz first.</div><div style="margin-top:10px"><button class="btn ghost" onclick="renderExamSim()">← Back</button></div></div>';return;}
-    examState={subj:subj,level:level,qs:qs,answers:new Array(qs.length).fill(-1),started:Date.now?null:null,timeLimit:mt,submitted:false};
+    examState={subj:subj,level:level,qs:qs,answers:new Array(qs.length).fill(-1),started:Date.now?null:null,timeLimit:mt,submitted:false,review:review};
     examRun(mt);
   });
 }
@@ -5370,8 +5378,9 @@ function examFinish(auto){
   var st=examState;if(!st||st.submitted)return;st.submitted=true;examClearTimer();
   var correct=0;st.qs.forEach(function(q,i){if(st.answers[i]===q.a)correct++;});
   var pct=Math.round(100*correct/st.qs.length);
-  try{var h=store.get("quizzes",[]);h.push({t:todayKey(),when:new Date().toISOString(),subj:st.subj,title:"Exam mock",pct:pct,mock:true});store.set("quizzes",h);}catch(e){}
-  try{addPoints(5+(pct>=70?5:0));logEvent("exam","Exam mock — "+st.subj,pct+"% ("+correct+"/"+st.qs.length+")");}catch(e){}
+  var kind=st.review?"Smart review":"Exam mock";
+  try{var h=store.get("quizzes",[]);h.push({t:todayKey(),when:new Date().toISOString(),subj:st.subj,title:kind,pct:pct,mock:!st.review,review:!!st.review});store.set("quizzes",h);}catch(e){}
+  try{addPoints(5+(pct>=70?5:0));logEvent(st.review?"review":"exam",kind+" — "+st.subj,pct+"% ("+correct+"/"+st.qs.length+")");}catch(e){}
   examResult(auto,correct,pct);
 }
 function examResult(auto,correct,pct){
@@ -5379,7 +5388,7 @@ function examResult(auto,correct,pct){
   var att=(window.SY&&SY.attainment)?SY.attainment(st.level,pct):{short:"",label:""};
   var pred=null;try{pred=predictGrade(st.subj,st.level);}catch(e){}
   var col=pct>=70?"var(--good)":pct>=50?"#d3b13a":"var(--crit)";
-  var h=secHead("⏱ "+esc(st.subj)+" — result",auto?"time's up · auto-submitted":"marked");
+  var h=secHead((st.review?"🔁 ":"⏱ ")+esc(st.subj)+" — result",auto?"time's up · auto-submitted":(st.review?"reviewed · mastery refreshed":"marked"));
   h+='<div class="card" style="text-align:center;border:1px solid '+col+'55;background:'+col+'12"><div style="font-family:var(--serif);font-size:44px;color:'+col+'">'+pct+'%</div>'+
      '<div class="note" style="margin:2px 0 0">'+correct+' of '+st.qs.length+' correct'+(att.short?(' · estimated '+esc(att.short)):"")+'</div></div>';
   if(pred&&pred.n>=3&&!pred.wide){
@@ -5399,12 +5408,67 @@ function examResult(auto,correct,pct){
   }else{
     h+='<div class="card" style="margin-top:10px"><div class="note" style="font-style:normal;color:var(--good)">Full marks — every question correct. Outstanding exam performance. 🎯</div></div>';
   }
-  h+='<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn" id="xm-again">Another mock</button>'+
+  h+='<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn" id="xm-again">'+(st.review?"Back to review":"Another mock")+'</button>'+
      (lost.length?'<button class="btn ghost" id="xm-practise">Practise '+esc(st.subj)+'</button>':"")+
      '<button class="btn ghost" onclick="showTab(\'mastery\')">See Mastery</button></div>';
   mount.innerHTML=h;
-  var ag=document.getElementById("xm-again");if(ag)ag.onclick=function(){renderExamSim();};
+  var _rev=st.review;
+  var ag=document.getElementById("xm-again");if(ag)ag.onclick=function(){examState=null;if(_rev){try{showTab("review");return;}catch(e){}}renderExamSim();};
   var pr=document.getElementById("xm-practise");if(pr)pr.onclick=function(){var s=st.subj;examState=null;try{pathGo(s,s);}catch(e){tdGo("lesson");}};
+}
+
+/* ============================ SMART REVIEW / SPACED REPETITION (PRD Module 6) ============================
+   Knowledge decays if it isn't retrieved. Each subject gets a review interval scaled
+   to how well it's held (weaker = sooner, exam-ready = later); when days-since-practice
+   passes that interval the topic is DUE. A one-tap retrieval quiz refreshes it — and,
+   because the result records as a real quiz, mastery + the decay clock reset on the spot.
+   Everything is computed from the student's own quiz history — nothing fabricated. */
+function reviewInterval(mastery){return mastery<40?1:mastery<55?2:mastery<70?4:mastery<85?7:14;}
+function reviewQueue(){
+  var rows=(myMasteryRows().rows)||[];
+  return rows.map(function(r){
+    var iv=reviewInterval(r.mastery),over=r.days-iv;
+    return {subj:r.subj,mastery:r.mastery,band:r.band,days:r.days,n:r.n,interval:iv,over:over,due:over>=0,inDays:Math.max(0,-over)};
+  }).sort(function(a,b){return b.over-a.over;});
+}
+function reviewGo(subj){
+  try{showTab("review");}catch(e){}
+  try{showTab("examsim");}catch(e){}
+  examStartWith(subj,PROFILE.level||dgLevelStr(),6,0,{review:true});
+}
+function renderReview(){
+  var mt=document.getElementById("review-mount");if(!mt)return;
+  var q=reviewQueue();
+  var h=secHead("🔁 Smart review","practise what you're about to forget");
+  if(!q.length){
+    h+='<div class="card"><div class="note" style="font-style:normal">Smart review works from what you\'ve actually been tested on. Take a quiz or run the diagnostic, and each subject will reappear here right before you\'re due to forget it — so a quick retrieval keeps it locked in.</div>'+
+       '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-rv="diag">Run a diagnostic →</button><button class="btn ghost" data-rv="create">Take a quiz →</button></div></div>';
+    mt.innerHTML=h;mt.querySelectorAll("[data-rv]").forEach(function(b){b.onclick=function(){tdGo(b.getAttribute("data-rv"));};});return;
+  }
+  var due=q.filter(function(x){return x.due;}),soon=q.filter(function(x){return !x.due&&x.inDays<=2;}),fresh=q.filter(function(x){return !x.due&&x.inDays>2;});
+  h+='<div class="note" style="font-style:normal;margin-bottom:14px">Retrieval beats re-reading. Each subject has a review window scaled to how well you hold it — the moment it\'s <b>due</b>, a 6-question retrieval refreshes your memory and resets the decay clock.</div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px">'+
+     tdTile("🔁 "+due.length,"Due now",due.length?"var(--crit)":"var(--good)")+
+     tdTile(soon.length,"Due within 2 days",null)+
+     tdTile(fresh.length,"Still fresh","var(--good)")+'</div>';
+  if(due.length){
+    h+='<button class="btn" id="rv-all" style="margin-bottom:14px">🔁 Review the most-overdue now →</button>';
+  }
+  function card(x){
+    var dueBadge=x.due?'<span class="badge" style="background:rgba(230,103,103,.14);color:#f0a0a0;border:1px solid rgba(230,103,103,.4)">Due'+(x.over>0?(' · '+x.over+'d overdue'):' now')+'</span>'
+                       :'<span class="badge" style="background:rgba(122,200,140,.14);color:var(--good);border:1px solid rgba(122,200,140,.4)">'+(x.inDays===0?'Due today':'Fresh · review in '+x.inDays+'d')+'</span>';
+    return '<div class="card" style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b style="flex:1;font-size:15px">'+esc(x.subj)+'</b>'+dueBadge+
+      '<span class="badge" style="background:'+x.band.c+'22;color:'+x.band.c+';border:1px solid '+x.band.c+'55">'+x.band.k+'</span></div>'+
+      '<div class="note" style="margin:8px 0 10px;display:flex;gap:12px;flex-wrap:wrap"><span>Mastery <b style="color:'+x.band.c+'">'+x.mastery+'%</b></span><span>Last practised '+(x.days===0?'today':x.days+'d ago')+'</span><span>Review every '+x.interval+'d</span></div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn'+(x.due?'':' ghost')+' sm" data-rvsubj="'+esc(x.subj)+'">🔁 Review now</button><button class="btn ghost sm" data-rvlearn="'+esc(x.subj)+'">Re-learn</button></div></div>';
+  }
+  if(due.length){h+='<h3 style="font-family:var(--serif);margin:6px 0 8px">Due now</h3>'+due.map(card).join("");}
+  if(soon.length){h+='<h3 style="font-family:var(--serif);margin:14px 0 8px">Coming up</h3>'+soon.map(card).join("");}
+  if(fresh.length){h+='<h3 style="font-family:var(--serif);margin:14px 0 8px">Still fresh</h3>'+fresh.map(card).join("");}
+  mt.innerHTML=h;
+  var all=document.getElementById("rv-all");if(all&&due[0])all.onclick=function(){reviewGo(due[0].subj);};
+  mt.querySelectorAll("[data-rvsubj]").forEach(function(b){b.onclick=function(){reviewGo(b.getAttribute("data-rvsubj"));};});
+  mt.querySelectorAll("[data-rvlearn]").forEach(function(b){b.onclick=function(){var s=b.getAttribute("data-rvlearn");try{pathGo(s,s);}catch(e){tdGo("lesson");}};});
 }
 renderToday();
 renderResults();renderPapers();renderProgress();applyHash();
