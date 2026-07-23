@@ -5014,6 +5014,20 @@ function tdMissions(){
   else m.push({t:"Review your weakest topic",kp:10,hash:"lesson",done:a.lesson&&a.quiz});
   return m;
 }
+/* Exam Countdown module (CI-04 "Exam Countdown Streak" — anchor everything to the
+   real exam date; a second, dual-flame streak in the final 90 days). */
+function tdExam(){
+  var d=null;try{d=store.get("examdate",null);}catch(e){}
+  if(!d)return null;
+  var today=new Date();today.setHours(0,0,0,0);
+  var ex=new Date(d+"T00:00:00");if(isNaN(ex))return {date:d,days:null};
+  var days=Math.round((ex-today)/86400000);
+  var s=store.get("streak",{days:[]}),set=new Set(s.days||[]);
+  var mo=store.get("momentum",{rest:[]}),rest=new Set(mo.rest||[]);
+  var cd=0;
+  if(days>=0&&days<=90){var dd=new Date(today);for(var i=0;i<90;i++){if(set.has(isoOf(dd))||rest.has(isoOf(dd)))cd++;else break;dd.setDate(dd.getDate()-1);}}
+  return {date:d,days:days,countdown:cd,active:days>=0&&days<=90};
+}
 function tdGo(h){try{location.hash="#"+h;applyHash();}catch(e){}window.scrollTo({top:0,behavior:"smooth"});}
 function tdTile(v,k,color){return '<div class="tile" style="background:rgba(6,11,24,.4);border:1px solid rgba(170,182,204,.14);border-radius:12px;padding:12px 14px;text-align:center">'+
   '<div style="font-family:var(--serif);font-size:24px;color:'+(color||"var(--ink)")+'">'+v+'</div>'+
@@ -5038,6 +5052,14 @@ function renderToday(){
        '<span style="flex:1;font-size:14px;'+(x.done?'opacity:.6;text-decoration:line-through':'')+'">'+esc(x.t)+'</span>'+
        '<span class="note" style="margin:0">+'+x.kp+' KP</span>'+
        (x.done?'':'<button class="btn ghost sm" data-td="'+esc(x.hash)+'">Start</button>')+'</div>';}).join('')+'</div>';
+  var ex=tdExam();
+  h+='<div class="card" style="margin-bottom:14px"><h3 style="font-family:var(--serif)">🎯 Exam Countdown</h3>'+
+     (ex&&ex.days!=null?(
+       ex.days<0?'<div class="note" style="font-style:normal">That exam date has passed — set your next one below.</div>'
+       :'<div style="font-size:15px;margin-bottom:6px">Your exam is in <b style="color:var(--gold-300)">'+ex.days+' day'+(ex.days===1?'':'s')+'</b> <span class="note">('+esc(ex.date)+')</span>.</div>'+
+         (ex.active?'<div class="note" style="font-style:normal">'+(ex.countdown>0?'🔥🔥 <b>Exam Countdown Streak: '+ex.countdown+' day'+(ex.countdown===1?'':'s')+'</b> — you\'re in the final-90 sprint, and every study day now counts double.':'The 90-day sprint is on — study today to light your Exam Countdown Streak.')+'</div>':'<div class="note">Your Exam Countdown Streak switches on in the last 90 days before the exam.</div>')
+     ):'<div class="note" style="font-style:normal;margin-bottom:6px">Set your exam date and StudYear anchors everything to it — the countdown, your missions, and a special dual-flame streak in the final 90 days.</div>')+
+     '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center"><input type="date" id="td-exam" value="'+esc((ex&&ex.date)||'')+'" style="max-width:180px"><button class="btn ghost sm" id="td-exam-save">Save exam date</button></div></div>';
   h+='<div class="card"><h3 style="font-family:var(--serif)">🔥 Academic Momentum</h3>'+
      '<div class="note" style="font-style:normal;margin-bottom:8px">Momentum counts days you actually <b>learn something</b> — a lesson, a quiz, a corrected mistake — not just opening the app. Best: <b>'+mo.best+' day'+(mo.best===1?'':'s')+'</b>.</div>'+
      '<div class="note" style="font-style:normal;margin-bottom:10px">🛡 You have <b>'+mo.shields+' free streak shield'+(mo.shields===1?'':'s')+'</b> — they protect a missed day automatically. <b>We never charge you to keep your streak.</b></div>'+
@@ -5047,6 +5069,9 @@ function renderToday(){
   var rb=document.getElementById("td-rest");if(rb)rb.onclick=function(){
     var m2=store.get("momentum",{best:0,rest:[]});m2.rest=(m2.rest||[]);if(m2.rest.indexOf(todayKey())<0)m2.rest.push(todayKey());m2.rest=m2.rest.slice(-60);store.set("momentum",m2);
     try{toast("Rest day set — your momentum is safe today. 💙");}catch(e){}renderToday();};
+  var eb=document.getElementById("td-exam-save");if(eb)eb.onclick=function(){
+    var v=document.getElementById("td-exam").value;if(!v){try{toast("Pick a date first.");}catch(e){}return;}
+    store.set("examdate",v);try{toast("Exam date saved — your countdown is on. 🎯");}catch(e){}renderToday();};
 }
 renderToday();
 renderResults();renderPapers();renderProgress();applyHash();
