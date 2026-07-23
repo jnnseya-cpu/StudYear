@@ -294,6 +294,9 @@
 <nav class="tabs" id="tabs">
   <button data-t="today" class="on">☀️ Today</button>
   <button data-t="mastery">📊 Mastery</button>
+  <button data-t="path">🗺 Path</button>
+  <button data-t="explain">💡 Explain my mistake</button>
+  <button data-t="leagues">🏆 Leagues</button>
   <button data-t="search">🔎 Find resources</button>
   <button data-t="homework">📥 Homework</button>
   <button data-t="timetable">🗓 Timetable</button>
@@ -322,6 +325,15 @@
 
 <!-- ============================ MASTERY (mastery ≠ completion) ============================ -->
 <section id="tab-mastery"><div id="mastery-mount"></div></section>
+
+<!-- ============================ ADAPTIVE ACADEMIC PATH (PRD M3) ============================ -->
+<section id="tab-path"><div id="path-mount"></div></section>
+
+<!-- ============================ EXPLAIN MY MISTAKE (PRD M10) ============================ -->
+<section id="tab-explain"><div id="explain-mount"></div></section>
+
+<!-- ============================ FAIR ACADEMIC LEAGUES (PRD M16) ============================ -->
+<section id="tab-leagues"><div id="leagues-mount"></div></section>
 
 <!-- ============================ SEARCH ============================ -->
 <section id="tab-search">
@@ -1324,6 +1336,9 @@ function showTab(t){
   document.querySelectorAll("main>section").forEach(s=>s.classList.toggle("on",s.id==="tab-"+t));
   if(t==="today"){try{renderToday();}catch(e){}}
   if(t==="mastery"){try{renderMastery();}catch(e){}}
+  if(t==="path"){try{renderPath();}catch(e){}}
+  if(t==="explain"){try{renderExplain();}catch(e){}}
+  if(t==="leagues"){try{renderLeagues();}catch(e){}}
   if(t==="progress") renderProgress();
   if(t==="homework"&&window.SYHomework){try{SYHomework.mountStudent(document.getElementById("hw-mount"),{email:(SY&&SY.session&&SY.session.email)||""});}catch(e){}}
   var _em=(SY&&SY.session&&SY.session.email)||"";
@@ -5126,6 +5141,105 @@ function renderMastery(){
   }).join('');
   mt.innerHTML=h;
   mt.querySelectorAll("[data-md]").forEach(function(b){b.onclick=function(){tdGo(b.getAttribute("data-md"));};});
+}
+/* ============================ ADAPTIVE ACADEMIC PATH (PRD Module 3) ============================
+   One clear journey per subject, rebuilt from diagnostic + mastery: subjects that
+   need the student most come first (priority ≈ mastery gap + decay), each with its
+   topic sequence and a ⭐ recommended next step that deep-links into a lesson. */
+function pathSubjects(){
+  var rows=myMasteryRows().rows,have={};rows.forEach(function(r){have[r.subj]=r;});
+  var subs=[];try{(PROFILE.subjects||[]).forEach(function(x){var s=x&&(x.s||x);if(s&&subs.indexOf(s)<0)subs.push(s);});}catch(e){}
+  rows.forEach(function(r){if(subs.indexOf(r.subj)<0)subs.push(r.subj);});
+  if(!subs.length)subs=["Mathematics","English","Science"];
+  subs.sort(function(a,b){var ma=have[a]?have[a].mastery:50,mb=have[b]?have[b].mastery:50;return ma-mb;});
+  return subs.map(function(s){return {subj:s,m:have[s]||null};});
+}
+function pathGo(subj,topic){
+  try{var ls=document.getElementById("il-subj");if(ls){for(var i=0;i<ls.options.length;i++){if(ls.options[i].value===subj||ls.options[i].text===subj){ls.value=ls.options[i].value;break;}}}
+      var lt=document.getElementById("il-topic");if(lt)lt.value=topic||subj;}catch(e){}
+  tdGo("lesson");
+}
+function renderPath(){
+  var mt=document.getElementById("path-mount");if(!mt)return;
+  var subs=pathSubjects();
+  var h='<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line,rgba(170,182,204,.14));padding-bottom:12px;margin-bottom:16px"><h2 style="font-family:var(--serif);font-weight:500;font-size:26px;flex:1">🗺 Your learning path</h2><span class="note" style="margin:0">one clear journey per subject</span></div>';
+  h+='<div class="note" style="font-style:normal;margin-bottom:14px">Rebuilt from your diagnostic and mastery — the subjects that need you most come first, and the ⭐ marks your recommended next step.</div>';
+  subs.forEach(function(o){
+    var topics=[];try{topics=diagTopics(o.subj)||[];}catch(e){}
+    if(!topics.length)topics=["Core concepts","Applying knowledge","Exam technique"];
+    var band=o.m?o.m.band:{k:"Not assessed",c:"var(--ink-3)"};
+    var layers=[["Foundation",0],["Develop",Math.ceil(topics.length/3)],["Exam",Math.ceil(2*topics.length/3)]];
+    h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b style="flex:1;font-size:16px">'+esc(o.subj)+'</b><span class="badge" style="background:'+band.c+'22;color:'+band.c+';border:1px solid '+band.c+'55">'+band.k+(o.m?(" · "+o.m.mastery+"%"):"")+'</span></div><div style="margin-top:10px">'+
+      topics.map(function(t,i){
+        var isRec=i===0,lyr="";for(var L=layers.length-1;L>=0;L--){if(i>=layers[L][1]){lyr=layers[L][0];break;}}
+        return '<div style="display:flex;align-items:center;gap:10px;margin:6px 0"><span style="width:26px;text-align:center;font-size:15px">'+(isRec?"⭐":"○")+'</span>'+
+          '<span style="flex:1;font-size:13.5px;'+(isRec?"font-weight:600":"")+'">'+esc(t)+' <span class="note" style="margin:0">· '+lyr+'</span></span>'+
+          '<button class="btn '+(isRec?"":"ghost ")+'sm" data-pathsub="'+esc(o.subj)+'" data-pathtop="'+esc(t)+'">'+(isRec?"Start ⭐":"Learn")+'</button></div>';
+      }).join("")+'</div></div>';
+  });
+  mt.innerHTML=h;
+  mt.querySelectorAll("[data-pathsub]").forEach(function(b){b.onclick=function(){pathGo(b.getAttribute("data-pathsub"),b.getAttribute("data-pathtop"));};});
+}
+
+/* ============================ EXPLAIN MY MISTAKE (PRD Module 10) ============================
+   Diagnose WHY an answer was wrong and give the smallest useful help — the student
+   picks the explanation strategy; the AI first classifies the misconception, then
+   explains without shaming, and (in guided mode) leads rather than hands the answer. */
+var EXP_STRATS=[["simple","Explain simply"],["firststep","Show the first step"],["worked","Worked example"],["compare","Compare my answer"],["guide","Ask me guiding questions"],["similar","Give a similar question"],["examlevel","Explain at exam level"]];
+function renderExplain(){
+  var mt=document.getElementById("explain-mount");if(!mt)return;
+  var h='<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line,rgba(170,182,204,.14));padding-bottom:12px;margin-bottom:16px"><h2 style="font-family:var(--serif);font-weight:500;font-size:26px;flex:1">💡 Explain my mistake</h2><span class="note" style="margin:0">understand it — don\'t just copy it</span></div>';
+  h+='<div class="card"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><label class="f">Subject</label><select id="ex-subj"></select></div><div><label class="f">Level</label><select id="ex-level"></select></div></div>'+
+     '<label class="f" style="margin-top:10px">The question</label><textarea id="ex-q" rows="2" placeholder="Type or paste the question you got wrong"></textarea>'+
+     '<label class="f" style="margin-top:10px">What I wrote (my answer)</label><input type="text" id="ex-mine" placeholder="Your answer">'+
+     '<label class="f" style="margin-top:10px">The correct answer (optional)</label><input type="text" id="ex-correct" placeholder="If you know it — helps pinpoint the slip">'+
+     '<div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">'+EXP_STRATS.map(function(s){return '<button class="btn ghost sm" data-exs="'+s[0]+'">'+esc(s[1])+'</button>';}).join("")+'</div>'+
+     '<div id="ex-out" style="margin-top:14px"></div></div>';
+  mt.innerHTML=h;
+  try{fillSelect(document.getElementById("ex-subj"),SUBJECTS);fillSelect(document.getElementById("ex-level"),LEVELS);
+      var ps=PROFILE.subjects&&PROFILE.subjects[0]&&PROFILE.subjects[0].s;if(ps)document.getElementById("ex-subj").value=ps;
+      if(PROFILE.level)document.getElementById("ex-level").value=PROFILE.level;}catch(e){}
+  mt.querySelectorAll("[data-exs]").forEach(function(b){b.onclick=function(){explainGo(b.getAttribute("data-exs"));};});
+}
+function explainGo(strat){
+  var q=($v("ex-q")||"").trim(),mine=($v("ex-mine")||"").trim(),correct=($v("ex-correct")||"").trim();
+  var subj=$v("ex-subj")||"General",lvl=$v("ex-level")||dgLevelStr(),out=document.getElementById("ex-out");
+  if(!q||!mine){out.innerHTML='<div class="note">Add the question and what you wrote, then pick how you\'d like it explained.</div>';return;}
+  if(!(window.SYAI&&SYAI.ready())){out.innerHTML='<div class="note">Live AI is warming up — try again in a moment.</div>';return;}
+  var modeMap={simple:"Explain simply, in plain age-appropriate language.",firststep:"Show ONLY the first step to take — do not solve the whole thing.",worked:"Give a fully worked example of a SIMILAR problem (not this exact one).",compare:"Compare the student's answer with the correct approach and pinpoint exactly where it went wrong.",guide:"Do NOT give the answer. Ask 2–3 short guiding questions that lead the student to find their own mistake.",similar:"Give ONE similar practice question (no answer) for them to try.",examlevel:"Explain how an examiner marks this and the exact technique or phrase needed to earn the marks."};
+  out.innerHTML='<div class="note">Thinking…</div>';
+  var sys="You are a supportive "+subj+" tutor for a "+lvl+" student."+((window.SY&&SY.stageStyle)?SY.stageStyle(lvl):"")+" On line 1 output exactly 'MISCONCEPTION: <one of: knowledge gap, missing prerequisite, calculation error, method error, misread question, vocabulary gap, weak recall, incomplete reasoning, time-pressure error, careless mistake, overconfidence>'. Then "+(modeMap[strat]||modeMap.simple)+" Never shame the student; be warm and brief.";
+  var usr="Question: "+q+"\nStudent's answer: "+mine+(correct?("\nCorrect answer: "+correct):"");
+  SYAI.ask(sys,usr,{maxTokens:420}).then(function(t){
+    t=String(t||"");var mis=null,m=t.match(/MISCONCEPTION:\s*(.+)/i);if(m){mis=m[1].split("\n")[0].trim();t=t.replace(/MISCONCEPTION:.*(\n|$)/i,"").trim();}
+    var body=(window.SYAI&&SYAI.render)?SYAI.render(t):esc(t).replace(/\n/g,"<br>");
+    out.innerHTML=(mis?'<div style="margin-bottom:8px"><span class="badge" style="background:rgba(230,103,103,.14);color:#f0a0a0;border:1px solid rgba(230,103,103,.4)">Likely slip: '+esc(mis)+'</span></div>':'')+'<div class="notes-body">'+body+'</div>';
+    try{logEvent("explain","Explain my mistake — "+subj,(mis||"")+" · "+strat);addPoints(2);}catch(e){}
+  }).catch(function(){out.innerHTML='<div class="note">Live AI hiccup — try again in a moment.</div>';});
+}
+
+/* ============================ FAIR ACADEMIC LEAGUES (PRD Module 16) ============================
+   Rank by IMPROVEMENT and CONSISTENCY, never raw clicks/time — so anyone can win a
+   week. Personal-best / most-improved / consistency leagues are self-referential and
+   fully computable; class/school leagues activate when the student links a school. */
+function weekBounds(off){var d=new Date();d.setHours(0,0,0,0);var day=(d.getDay()+6)%7;d.setDate(d.getDate()-day-(off||0)*7);var start=new Date(d),end=new Date(d);end.setDate(end.getDate()+7);return {start:start,end:end};}
+function kpInWeek(off){var qz=store.get("quizzes",[])||[],w=weekBounds(off),kp=0;qz.forEach(function(q){var t=new Date(q.when||0);if(t>=w.start&&t<w.end)kp+=5+(q.pct>=70?7:0)+(q.pct>=90?3:0);});return kp;}
+function leagueTier(total){var T=[["Explorer",0],["Builder",150],["Thinker",400],["Solver",800],["Scholar",1500],["Master",3000],["Academic Elite",6000]],cur=T[0];for(var i=0;i<T.length;i++){if(total>=T[i][1])cur=T[i];}var nx=T[T.indexOf(cur)+1];return {name:cur[0],next:nx?nx[0]:null,toNext:nx?nx[1]-total:0};}
+function renderLeagues(){
+  var mt=document.getElementById("leagues-mount");if(!mt)return;
+  var kp=tdKP(),thisW=kpInWeek(0),lastW=kpInWeek(1),mo=tdMomentum(),tier=leagueTier(kp.total),improved=thisW-lastW;
+  var h='<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line,rgba(170,182,204,.14));padding-bottom:12px;margin-bottom:16px"><h2 style="font-family:var(--serif);font-weight:500;font-size:26px;flex:1">🏆 Fair Leagues</h2><span class="note" style="margin:0">win by improving, not by grinding</span></div>';
+  h+='<div class="card" style="margin-bottom:14px;border:1px solid var(--gold-500);background:rgba(77,157,224,.08)"><div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-300)">Your academic tier</div><div style="font-family:var(--serif);font-size:26px;margin:4px 0">'+esc(tier.name)+'</div>'+(tier.next?'<div class="note" style="margin:0">'+tier.toNext+' Knowledge Points to reach <b>'+esc(tier.next)+'</b></div>':'<div class="note" style="margin:0">Top tier — outstanding.</div>')+'</div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px">'+
+     '<div class="card"><b>🥇 Personal Best</b><div class="note" style="margin:4px 0 0">Best momentum: <b>'+mo.best+' day'+(mo.best===1?'':'s')+'</b></div></div>'+
+     '<div class="card"><b>📈 Most Improved</b><div class="note" style="margin:4px 0 0">This week vs last: <b style="color:'+(improved>=0?"var(--good)":"var(--crit)")+'">'+(improved>=0?"+":"")+improved+' KP</b></div></div>'+
+     '<div class="card"><b>🎯 Consistency</b><div class="note" style="margin:4px 0 0">Study days this week: <b>'+mo.week+' / 7</b></div></div></div>';
+  var code=null;try{code=SY.get("schoolCode",null);}catch(e){}
+  h+='<div class="card"><h3 style="font-family:var(--serif)">🏫 Class &amp; school leagues</h3>'+
+     (code?'<div class="note" style="font-style:normal">You\'re linked to a school. Class leagues rank by <b>improvement and consistency</b> (never raw clicks), with private names to keep it kind — rankings fill in as your classmates study this week.</div>'
+          :'<div class="note" style="font-style:normal">Link your school to compete with your class — ranked by improvement and consistency, not grind. <a href="../account/#parent-link" style="color:var(--gold-300)">Connect your school →</a></div>')+'</div>';
+  h+='<div class="note" style="margin-top:12px">Leagues rank <b>improvement, mastery and consistency</b> — never total time or clicks — so anyone can win a week. Names stay private and there\'s no public bottom of the table.</div>';
+  mt.innerHTML=h;
 }
 renderToday();
 renderResults();renderPapers();renderProgress();applyHash();
