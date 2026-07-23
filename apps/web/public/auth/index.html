@@ -283,7 +283,35 @@ $('f').addEventListener('submit',async function(e){
       if(matches[i].hash===await hash(matches[i].salt,pw)){authed=matches[i];
         if(wantRole&&matches[i].role===wantRole)break}
     }
-    if(!authed){say('Wrong password.','err');_fail();_resetHuman();return}
+    if(!authed){
+      /* The local password hash didn't match — but the password may have been
+         CHANGED or RESET in the cloud on another device (e.g. via the reset email).
+         The record on THIS device still carries the OLD hash, so the check above
+         fails even though the new password is correct — this is exactly the
+         "changed my password, now it won't sign in on my other device" trap.
+         Before rejecting, ask Firebase Auth (the source of truth for resets): if
+         it confirms this password, adopt it locally — rewrite the salt+hash so this
+         device works now and every future sign-in is instant and offline. */
+      if(window.SYCloud){
+        try{await SYCloud.whenReady();}catch(err){}
+        if(SYCloud.ready()&&SYCloud.reauth){
+          say('Checking your account…','info');
+          var rr2=null;try{rr2=await SYCloud.reauth(email,pw);}catch(err){}
+          if(rr2&&rr2.ok){
+            var rec=(wantRole&&matches.filter(function(u){return u.role===wantRole})[0])||matches[0];
+            var nsalt=Array.from(crypto.getRandomValues(new Uint8Array(12))).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
+            rec.salt=nsalt;rec.hash=await hash(nsalt,pw);
+            save('sy-users',users);
+            authed=rec;
+          }else if(rr2&&rr2.reason==='wrong_password'){
+            say('Wrong password.','err');_fail();_resetHuman();return;
+          }else if(rr2&&(rr2.reason==='network'||rr2.reason==='offline')){
+            say('Couldn’t reach sign-in right now — check your connection and try again.','err');return;
+          }
+        }
+      }
+      if(!authed){say('Wrong password.','err');_fail();_resetHuman();return}
+    }
     _pass();
     /* unlock (or backfill) the account's end-to-end encryption keys */
     try{if(window.SYE2E)await SYE2E.setupAccount(email,pw)}catch(err){}
