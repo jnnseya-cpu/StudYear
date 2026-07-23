@@ -293,6 +293,7 @@
 </div>
 <nav class="tabs" id="tabs">
   <button data-t="today" class="on">☀️ Today</button>
+  <button data-t="mastery">📊 Mastery</button>
   <button data-t="search">🔎 Find resources</button>
   <button data-t="homework">📥 Homework</button>
   <button data-t="timetable">🗓 Timetable</button>
@@ -318,6 +319,9 @@
 
 <!-- ============================ TODAY (daily learning loop) ============================ -->
 <section id="tab-today" class="on"><div id="today-mount"></div></section>
+
+<!-- ============================ MASTERY (mastery ≠ completion) ============================ -->
+<section id="tab-mastery"><div id="mastery-mount"></div></section>
 
 <!-- ============================ SEARCH ============================ -->
 <section id="tab-search">
@@ -1319,6 +1323,7 @@ function showTab(t){
   document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));
   document.querySelectorAll("main>section").forEach(s=>s.classList.toggle("on",s.id==="tab-"+t));
   if(t==="today"){try{renderToday();}catch(e){}}
+  if(t==="mastery"){try{renderMastery();}catch(e){}}
   if(t==="progress") renderProgress();
   if(t==="homework"&&window.SYHomework){try{SYHomework.mountStudent(document.getElementById("hw-mount"),{email:(SY&&SY.session&&SY.session.email)||""});}catch(e){}}
   var _em=(SY&&SY.session&&SY.session.email)||"";
@@ -5072,6 +5077,55 @@ function renderToday(){
   var eb=document.getElementById("td-exam-save");if(eb)eb.onclick=function(){
     var v=document.getElementById("td-exam").value;if(!v){try{toast("Pick a date first.");}catch(e){}return;}
     store.set("examdate",v);try{toast("Exam date saved — your countdown is on. 🎯");}catch(e){}renderToday();};
+}
+/* ============================ MASTERY ENGINE (PRD Module 5) ============================
+   The North Star: mastery ≠ completion. Per subject we blend measured ACCURACY
+   (quiz results) with RETENTION (recency — knowledge decays if not practised),
+   band it (Critical…Exam-ready), and flag decay risk (PRD Module 6). All computed
+   from the student's real quiz history + diagnostic — never lesson-opens. */
+function myMasteryBand(m){return m<20?{k:"Critical gap",c:"var(--crit)"}:m<40?{k:"Emerging",c:"#e0954d"}:m<60?{k:"Developing",c:"#d3b13a"}:m<75?{k:"Secure",c:"var(--good)"}:m<90?{k:"Strong",c:"#3aa7c9"}:{k:"Exam ready",c:"var(--gold-300)"};}
+function myMasteryRows(){
+  var qz=store.get("quizzes",[])||[],by={},now=Date.now();
+  qz.forEach(function(q){var s=q.subj||"General";(by[s]=by[s]||[]).push(q);});
+  var dg=store.get("diagnostic",null); /* diagnostic seeds a baseline when few quizzes */
+  var rows=Object.keys(by).map(function(s){
+    var arr=by[s].slice().sort(function(a,b){return new Date(a.when||0)-new Date(b.when||0)});
+    var acc=Math.round(arr.reduce(function(x,y){return x+(+y.pct||0)},0)/arr.length);
+    var lastMs=new Date(arr[arr.length-1].when||now).getTime();
+    var days=Math.max(0,Math.floor((now-lastMs)/86400000));
+    var penalty=days>90?20:days>30?12:days>14?6:days>7?3:0;            /* retention decay */
+    var mastery=Math.max(0,Math.min(100,acc-penalty));
+    var decay=days<=3?{k:"Stable",c:"var(--good)"}:days<=7?{k:"Review soon",c:"#d3b13a"}:days<=14?{k:"At risk",c:"#e0954d"}:days<=30?{k:"Decaying",c:"var(--crit)"}:{k:"Lost mastery",c:"var(--crit)"};
+    return {subj:s,n:arr.length,acc:acc,mastery:mastery,band:myMasteryBand(mastery),days:days,decay:decay};
+  }).sort(function(a,b){return a.mastery-b.mastery});
+  return {rows:rows,hasDg:!!dg};
+}
+function renderMastery(){
+  var mt=document.getElementById("mastery-mount");if(!mt)return;
+  var data=myMasteryRows(),rows=data.rows;
+  var h='<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line,rgba(170,182,204,.14));padding-bottom:12px;margin-bottom:16px"><h2 style="font-family:var(--serif);font-weight:500;font-size:26px;flex:1">📊 Mastery</h2><span class="note" style="margin:0">real mastery, not lessons opened</span></div>';
+  if(!rows.length){
+    h+='<div class="card"><div class="note" style="font-style:normal">Your mastery map builds from what you actually get right. Take a quiz or run the diagnostic and your subjects appear here — each scored on accuracy <b>and</b> whether you\'ve kept it fresh.</div>'+
+       '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-md="diag">Run a diagnostic →</button><button class="btn ghost" data-md="create">Take a quiz →</button></div></div>';
+    mt.innerHTML=h;mt.querySelectorAll("[data-md]").forEach(function(b){b.onclick=function(){tdGo(b.getAttribute("data-md"));};});return;
+  }
+  var exam=rows.filter(function(r){return r.mastery>=90}).length, atrisk=rows.filter(function(r){return r.days>7}).length;
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px">'+
+     tdTile(rows.length,"Subjects tracked",null)+
+     tdTile(exam,"Exam-ready",exam?"var(--gold-300)":"var(--ink)")+
+     tdTile(atrisk,"Need review",atrisk?"var(--crit)":"var(--good)")+'</div>';
+  h+='<div class="note" style="font-style:normal;margin-bottom:12px">A subject only becomes <b>Exam ready</b> when your accuracy is high <b>and</b> you\'ve kept it fresh — completing lessons alone never moves this bar.</div>';
+  h+=rows.map(function(r){
+    return '<div class="card" style="margin-bottom:10px">'+
+      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b style="flex:1;font-size:15px">'+esc(r.subj)+'</b>'+
+        '<span class="badge" style="background:'+r.band.c+'22;color:'+r.band.c+';border:1px solid '+r.band.c+'55">'+r.band.k+'</span></div>'+
+      '<div style="height:9px;border-radius:6px;background:rgba(170,182,204,.16);margin:9px 0 6px;overflow:hidden"><div style="height:100%;width:'+r.mastery+'%;background:'+r.band.c+'"></div></div>'+
+      '<div class="note" style="margin:0;display:flex;gap:12px;flex-wrap:wrap"><span>Mastery <b style="color:'+r.band.c+'">'+r.mastery+'%</b></span><span>Accuracy '+r.acc+'%</span><span>·</span><span style="color:'+r.decay.c+'">'+r.decay.k+(r.days?(' · '+r.days+'d since practice'):'')+'</span>'+
+        '<button class="btn ghost sm" style="margin-left:auto" data-md="lesson">Practise '+esc(r.subj)+'</button></div>'+
+      '</div>';
+  }).join('');
+  mt.innerHTML=h;
+  mt.querySelectorAll("[data-md]").forEach(function(b){b.onclick=function(){tdGo(b.getAttribute("data-md"));};});
 }
 renderToday();
 renderResults();renderPapers();renderProgress();applyHash();
