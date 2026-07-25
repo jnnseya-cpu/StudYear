@@ -23,8 +23,12 @@ jobs:
       - name: Build static OS
         run: npm run build:pages
       - name: Install Chromium for e2e
+        # Use the repo's OWN playwright-core to install its matching browser build,
+        # so the launched executable always exists (a hardcoded playwright@X.Y.Z
+        # installs a different build than playwright-core expects → "executable
+        # doesn't exist"). Then point the tests at that exact binary.
         run: |
-          npx --yes playwright@1.49.0 install --with-deps chromium
-          echo "CHROMIUM_PATH=$(npx --yes playwright@1.49.0 --version >/dev/null 2>&1; node -e "console.log(require('playwright-core').chromium.executablePath())")" >> "$GITHUB_ENV"
-      - name: Run e2e verification (7 suites + 82-page crawl)
+          node node_modules/playwright-core/cli.js install --with-deps chromium
+          echo "CHROMIUM_PATH=$(node -e "console.log(require('playwright-core').chromium.executablePath())")" >> "$GITHUB_ENV"
+      - name: Run e2e verification (12 suites + full-site crawl)
         run: node tests/run.mjs

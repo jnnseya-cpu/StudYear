@@ -1,7 +1,10 @@
 import { chromium } from 'playwright-core';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
-const OUT='/home/user/StudYear/apps/web/out';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+/* repo-relative (tests/e2e/crawl.mjs -> repo root), overridable via SY_OUT —
+   never a machine-specific absolute path, so it works on CI runners too */
+const OUT=process.env.SY_OUT||join(dirname(fileURLToPath(import.meta.url)),'..','..','apps/web/out');
 const B=process.env.SY_BASE||'http://localhost:8137/StudYear';
 
 /* collect every page + its guard role */
