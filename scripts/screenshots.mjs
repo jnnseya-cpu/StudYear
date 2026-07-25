@@ -12,7 +12,9 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = process.env.SY_OUT || join(ROOT, 'apps/web/out');
-const SHOTS = join(ROOT, 'screenshots');
+/* Commit into the repo so GitHub renders the gallery inline in the browser
+   (README.md with relative images) — no artifact download needed. */
+const SHOTS = join(ROOT, 'docs/screenshots');
 mkdirSync(SHOTS, { recursive: true });
 const PORT = 8321;
 const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.webmanifest':'application/manifest+json','.ico':'image/x-icon' };
@@ -135,5 +137,22 @@ img{display:block;width:100%;border-top:1px solid #24324a}</style>
 <div class="sum">${okN}/${shots.length} rendered cleanly · generated from the production static export</div>
 ${rows}`);
 writeFileSync(join(SHOTS, 'manifest.json'), JSON.stringify(shots, null, 2));
-process.stdout.write(`\nSCREENSHOTS: ${okN}/${shots.length} clean · wrote ${SHOTS}/index.html\n`);
+
+/* Markdown gallery — GitHub renders this inline when you open the folder,
+   so every screenshot is viewable in the browser with no download. */
+const groups = [
+  ['Public pages', s => s.id.includes('public')],
+  ['Student — study hub (all modules)', s => s.id.includes('student')],
+  ['Admin console (all modules)', s => s.id.includes('admin')],
+  ['Other role consoles', s => s.id.includes('console')],
+];
+let md = `# StudYear — component screenshots\n\n**${okN}/${shots.length} components rendered cleanly** (zero page errors), captured from the production static export as admin and as every user role. Regenerated automatically on every push.\n`;
+for (const [name, pred] of groups) {
+  const g = shots.filter(pred);
+  if (!g.length) continue;
+  md += `\n## ${name}\n\n`;
+  for (const s of g) md += `### ${s.ok ? '✓' : '⚠'} ${s.title}\n\n![${s.title}](${s.id}.png)\n\n`;
+}
+writeFileSync(join(SHOTS, 'README.md'), md);
+process.stdout.write(`\nSCREENSHOTS: ${okN}/${shots.length} clean · wrote ${SHOTS}/README.md\n`);
 if (okN === 0) process.exit(1);
