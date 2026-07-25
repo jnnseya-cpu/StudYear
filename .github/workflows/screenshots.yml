@@ -1,0 +1,37 @@
+name: Component Screenshots
+
+# Captures a screenshot of every StudYear surface (admin + every user role) from
+# the production static export and uploads them as a downloadable artifact.
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/continue-from-here-y37pvu]
+    paths:
+      - 'apps/web/public/**'
+      - 'scripts/screenshots.mjs'
+      - '.github/workflows/screenshots.yml'
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install workspaces
+        run: npm install
+      - name: Build static OS
+        run: npm run build:pages
+      - name: Install Chromium
+        run: |
+          node node_modules/playwright-core/cli.js install --with-deps chromium
+          echo "CHROMIUM_PATH=$(node -e "console.log(require('playwright-core').chromium.executablePath())")" >> "$GITHUB_ENV"
+      - name: Capture component screenshots
+        run: node scripts/screenshots.mjs
+      - name: Upload screenshot gallery
+        uses: actions/upload-artifact@v4
+        with:
+          name: studyear-component-screenshots
+          path: screenshots/
+          if-no-files-found: error
