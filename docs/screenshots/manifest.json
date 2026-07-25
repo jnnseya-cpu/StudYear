@@ -1,0 +1,194 @@
+[
+  {
+    "id": "01-public-landing",
+    "title": "Landing page",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "02-public-demo-hub",
+    "title": "Demo hub (all roles)",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "03-public-signin",
+    "title": "Sign in — Student",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "10-student-today",
+    "title": "Student · Today",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "11-student-mastery",
+    "title": "Student · Mastery",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "12-student-path",
+    "title": "Student · Adaptive Path",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "13-student-explain",
+    "title": "Student · Explain My Mistake",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "14-student-leagues",
+    "title": "Student · Fair Leagues",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "15-student-examsim",
+    "title": "Student · Exam Simulator",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "16-student-review",
+    "title": "Student · Smart Review",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "17-student-wins",
+    "title": "Student · Achievements",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "18-student-create",
+    "title": "Student · Create Tools",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "19-student-search",
+    "title": "Student · Find Resources",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "20-student-progress",
+    "title": "Student · Progress",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "30-admin-dashboard",
+    "title": "Admin · Dashboard",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "31-admin-users",
+    "title": "Admin · Users",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "32-admin-tutors",
+    "title": "Admin · Tutors",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "33-admin-schools",
+    "title": "Admin · Schools",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "34-admin-content",
+    "title": "Admin · Content",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "35-admin-revenue",
+    "title": "Admin · Revenue & Stripe",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "36-admin-ai",
+    "title": "Admin · AI usage log",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "37-admin-inbox",
+    "title": "Admin · Contact inbox",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "38-admin-analytics",
+    "title": "Admin · Analytics",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "39-admin-settings",
+    "title": "Admin · Settings",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "40-admin-fraud",
+    "title": "Admin · Fraud",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "41-admin-support",
+    "title": "Admin · Support",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "42-admin-growth",
+    "title": "Admin · Growth",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "50-console-parent",
+    "title": "Parent command centre",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "51-console-teacher",
+    "title": "Teacher console",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "52-console-school",
+    "title": "School console",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "53-console-tutor",
+    "title": "Tutor console",
+    "ok": true,
+    "err": null
+  },
+  {
+    "id": "54-console-authority",
+    "title": "Local Authority console",
+    "ok": true,
+    "err": null
+  }
+]
