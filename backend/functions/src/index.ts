@@ -251,11 +251,17 @@ export const stripeWebhook = onRequest({ region: 'europe-west2' }, async (req, r
       const item = STRIPE_CATALOG[planId];
       const buyer = await resolveBuyer(ref);
       const amt = typeof s.amount_total === 'number' ? s.amount_total : null;
-      // Bind the ACU grant to the money actually collected: the planId is
-      // client-influenced (client_reference_id), so a buyer must not be able to
-      // pay the cheapest Payment Link and claim the most expensive plan. When the
-      // amount is known it must cover the catalogue price for the claimed plan.
-      const priceOk = amt == null || !item ? true : amt >= item.pence;
+      // Bind the ACU grant to the money actually collected: for the LEGACY path
+      // (client_reference_id only, no server metadata) the planId is
+      // client-influenced, so a buyer must not pay the cheapest Payment Link and
+      // claim the most expensive plan — the amount must cover the catalogue price.
+      // For a dynamic Checkout Session the planId is stamped into server metadata
+      // (tamper-proof), and a Stripe-applied promotion code legitimately lowers
+      // amount_total below the catalogue price — so trust the metadata plan and
+      // credit despite the discount, instead of charging the buyer and crediting
+      // nothing (the previous behaviour whenever any discount code was used).
+      const trustedPlan = !!((s.metadata as Record<string, string> | undefined)?.planId);
+      const priceOk = trustedPlan || amt == null || !item ? true : amt >= item.pence;
       const applied = !!(paid && item && buyer.ownerKey && priceOk);
       await db.collection('stripePayments').add({
         eventId: event.id, sessionId: s.id ?? null, paymentIntent: s.payment_intent ?? null, planId: planId || null, ref: ref || null,

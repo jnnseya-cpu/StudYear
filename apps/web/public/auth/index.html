@@ -84,6 +84,14 @@
       <label for="invite">Admin invite code</label>
       <input id="invite" type="password" autocomplete="off" placeholder="provided by platform ops">
     </div>
+    <div id="row-consent" style="display:none;margin-top:8px">
+      <label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer;font-weight:400;font-size:13px;line-height:1.5">
+        <input type="checkbox" id="agree-ck" style="width:auto;margin-top:3px;accent-color:#4FA6E0">
+        <span>I agree to the <a href="../terms/" target="_blank" rel="noopener">Terms</a> and
+        <a href="../privacy/" target="_blank" rel="noopener">Privacy&nbsp;Policy</a>, and I am <b>18 or over</b> —
+        or a parent, guardian or school creating/approving this account for a child.</span>
+      </label>
+    </div>
     <!-- honeypot: real people never see or fill this; automated bots do -->
     <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden">
       <label>Company website</label>
@@ -152,6 +160,7 @@ function setMode(m){
   $('row-name').style.display=m==='up'?'block':'none';
   $('row-role').style.display=m==='up'&&!adminFlow?'block':'none';
   $('row-invite').style.display=m==='up'&&adminFlow?'block':'none';
+  $('row-consent').style.display=m==='up'?'block':'none';
   $('go').textContent=m==='up'?'Create my account →':'Sign in →';
   $('pw').autocomplete=m==='up'?'new-password':'current-password';
 }
@@ -205,6 +214,7 @@ $('f').addEventListener('submit',async function(e){
   if(mode==='up'){
     var name=$('name').value.trim();
     if(name.length<2){say('Enter your name.','err');return}
+    if(!$('agree-ck').checked){say('Please accept the Terms &amp; Privacy Policy and confirm you are 18+ or a parent/guardian.','err');$('agree-ck').focus();return}
     var role=pickedRole;
     if(wantRole==='admin'){
       var inv=$('invite').value.trim();
@@ -215,7 +225,7 @@ $('f').addEventListener('submit',async function(e){
     if(users.some(function(u){return u.email===email&&u.role===role})){
       say('An account with this email already exists for that category — use Sign in.','err');return}
     var salt=Array.from(crypto.getRandomValues(new Uint8Array(12))).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
-    users.push({name:name,email:email,role:role,salt:salt,hash:await hash(salt,pw)});
+    users.push({name:name,email:email,role:role,salt:salt,hash:await hash(salt,pw),termsAcceptedAt:new Date().toISOString(),ageAttested:true});
     save('sy-users',users);
     _pass();
     /* end-to-end encryption: mint the account's data key, wrapped by a
