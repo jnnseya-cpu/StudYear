@@ -61,13 +61,34 @@
     toast('Checkout is temporarily unavailable — please try again in a moment.');
     return 'unavailable';
   }
-  /* checkout(planId, {promo, email, ref, activate}) → 'redirect' | 'preview' | 'unavailable'
-     PREFERRED path: ask the server to create a Stripe Checkout Session on demand
-     (price + planId set server-side, tamper-proof) and redirect to it — no
-     Payment Links to author. Falls back to legacy only if the server path is
-     unavailable. The webhook credits ACUs on payment. */
-  function checkout(planId, opts){
-    opts=opts||{};
+  /* Payment gate: only an 18+ cardholder may pay (children use the free tier and
+     never transact), and — for digital content supplied immediately — UK distance-
+     selling law needs the buyer's explicit consent to start now and waive the
+     14-day cooling-off. One required confirmation per purchase. Resolves true only
+     when both boxes are ticked. Demo/preview never reaches this. */
+  function payerGate(){
+    return new Promise(function(resolve){
+      var ov=document.createElement('div');
+      ov.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(4,10,22,.72);display:flex;align-items:center;justify-content:center;padding:18px';
+      ov.innerHTML='<div role="dialog" aria-modal="true" aria-label="Confirm before payment" style="max-width:460px;background:#0f1830;color:#e8eef8;border:1px solid #2a3a56;border-radius:16px;padding:22px;font:14px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.5)">'+
+        '<h3 style="margin:0 0 6px;font-size:18px;font-weight:700">Confirm before payment</h3>'+
+        '<p style="margin:0 0 12px;color:#aab6cc">Learning is free to use — payment is only for extra AI credits/plans.</p>'+
+        '<label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer;margin:10px 0"><input type="checkbox" id="pg-age" style="margin-top:3px;accent-color:#4FA6E0"><span>I am <b>18 or over</b> and the cardholder making this payment.</span></label>'+
+        '<label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer;margin:10px 0"><input type="checkbox" id="pg-now" style="margin-top:3px;accent-color:#4FA6E0"><span>I want my credits/access to start <b>immediately</b> and understand my 14-day right to cancel is lost once I begin using them. See <a href="../terms/" target="_blank" rel="noopener" style="color:#8FC2EC">Terms &amp; refunds</a>.</span></label>'+
+        '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button id="pg-cancel" style="cursor:pointer;background:transparent;color:#e8eef8;border:1px solid #3a4a66;border-radius:9px;padding:9px 14px;font-weight:600">Cancel</button><button id="pg-go" disabled style="background:#4FA6E0;color:#04101f;border:0;border-radius:9px;padding:9px 16px;font-weight:700;opacity:.5;cursor:not-allowed">Continue to payment</button></div>'+
+        '</div>';
+      document.body.appendChild(ov);
+      var age=ov.querySelector('#pg-age'),now=ov.querySelector('#pg-now'),go=ov.querySelector('#pg-go');
+      function upd(){var ok=age.checked&&now.checked;go.disabled=!ok;go.style.opacity=ok?'1':'.5';go.style.cursor=ok?'pointer':'not-allowed';}
+      age.addEventListener('change',upd);now.addEventListener('change',upd);
+      function done(v){try{document.body.removeChild(ov);}catch(e){}resolve(v);}
+      ov.querySelector('#pg-cancel').onclick=function(){done(false);};
+      go.onclick=function(){if(age.checked&&now.checked)done(true);};
+      ov.addEventListener('click',function(e){if(e.target===ov)done(false);});
+    });
+  }
+  /* the real charge path, run only after the payer gate passes */
+  function proceed(planId, opts){
     var ref=opts.ref!=null?String(opts.ref):(opts.email?String(opts.email):'');
     if(!isDemo() && window.SYCloud && typeof SYCloud.checkoutSession==='function'){
       var back=location.origin+location.pathname;
@@ -77,10 +98,22 @@
         SYCloud.checkoutSession(planId, ref, {successUrl:succ, cancelUrl:back, promo:opts.promo}, opts.email)
           .then(function(r){ if(r&&r.url){location.href=r.url;} else {legacyCheckout(planId,opts);} })
           .catch(function(){ legacyCheckout(planId,opts); });
-        return 'redirect';
+        return;
       }catch(e){/* fall through to legacy */}
     }
-    return legacyCheckout(planId,opts);
+    legacyCheckout(planId,opts);
+  }
+  /* checkout(planId, {promo, email, ref, activate}) → 'redirect' | 'preview' | 'unavailable'
+     PREFERRED path: ask the server to create a Stripe Checkout Session on demand
+     (price + planId set server-side, tamper-proof) and redirect to it. Real charges
+     first pass the 18+ cardholder / immediate-supply consent gate. The webhook
+     credits ACUs on payment. */
+  function checkout(planId, opts){
+    opts=opts||{};
+    /* demo/preview never charges → no gate, keep presentations frictionless */
+    if(isDemo())return legacyCheckout(planId,opts);
+    payerGate().then(function(ok){ if(ok)proceed(planId,opts); else toast('Payment cancelled.'); });
+    return 'redirect';
   }
   /* On returning from a successful Stripe checkout the URL carries ?paid=1&sybuy=<planId>.
      consumeReturn() returns that planId once (then strips the params so a refresh
