@@ -62,6 +62,10 @@
     <div id="paths"></div>
   </div>
 
+  <div class="card" id="gcse-route-card" style="display:none"><h3>🎯 Your Year 10 route planner</h3><div class="sub">Deciding what comes after GCSEs? Here's how your current grades map to every post-16 route — and exactly what keeps each door open.</div>
+    <div id="gcse-routes"></div>
+  </div>
+
   <div class="card" id="ai-impact-card" style="display:none"><h3>🤖 AI &amp; the future of work</h3><div class="sub">How automation and AI could reshape each pathway — and how to stay ahead of it, from Year 5</div>
     <div id="ai-impact"></div>
   </div>
@@ -268,6 +272,51 @@ function generatePrimary(){
   document.querySelector('#emp-card h3').textContent='🌟 Your explorer tip';
   var _es=document.querySelector('#emp-card .sub');if(_es)_es.style.display='none';
 }
+/* GCSE-stage (Year 10/11) route planner: map the student's real GCSE grades to
+   the entry requirements of every post-16 route, so a Year 10 student and parent
+   can see which doors are open, which are within reach, and exactly what to lift
+   to keep each one open. GCSE-stage only — never shown to primary or post-16. */
+var isGCSE=!!(_ATT&&_ATT.system==='gcse');
+function gradeOf(x){return parseInt(x&&(x.current||x.target)||'0',10)||0;}
+function findSubj(re){return (profile.subjects||[]).find(function(x){return re.test(String(x&&x.s||'').toLowerCase());});}
+function renderGcseRoutes(){
+  var subs=profile.subjects||[];
+  var grades=subs.map(gradeOf).filter(function(g){return g>0;});
+  if(!grades.length){ $('gcse-routes').innerHTML='<div class="note" style="font-style:normal">Add your GCSE subjects and current/target grades in your <a href="../account/profile/">profile</a> — then this planner shows exactly which post-16 routes are open to you and what to aim for.</div>'; $('gcse-route-card').style.display='block'; return; }
+  var pass4=grades.filter(function(g){return g>=4;}).length;
+  var strong6=grades.filter(function(g){return g>=6;}).length;
+  var eng=findSubj(/english/), maths=findSubj(/math/);
+  var engG=eng?gradeOf(eng):0, mathG=maths?gradeOf(maths):0;
+  var core4=(engG>=4&&mathG>=4), core5=(engG>=5&&mathG>=5);
+  var ROUTES=[
+    {ic:'🎓',t:'A-levels (school sixth form)',req:'Typically 5+ GCSEs at grade 4+ including English &amp; Maths, and grade 6+ in the subjects you want to study.',
+     ok:(strong6>=3&&core5), close:(strong6>=2&&core4),
+     act:function(){return core5?'Hold grade 6+ in the subjects you\'d take at A-level — you\'re on the academic route.':'Lift English &amp; Maths to grade 5+ and push your best 3 subjects toward grade 6.';}},
+    {ic:'🧰',t:'Applied / BTEC (college)',req:'Typically 4+ GCSEs at grade 4+. More coursework and a clear vocational focus.',
+     ok:(pass4>=4), close:(pass4>=3),
+     act:function(){return pass4>=4?'You meet this — choose a sector you enjoy (health, business, IT, engineering…).':'Aim for grade 4+ in a couple more subjects to open the full range.';}},
+    {ic:'🛠️',t:'T-Levels (technical, college)',req:'Typically 4–5 GCSEs grade 4+ including English &amp; Maths — a 2-year technical qualification with a real industry placement.',
+     ok:(pass4>=4&&core4), close:(pass4>=3),
+     act:function(){return core4?'Core met — pick a T-Level route (digital, health &amp; science, construction, education…).':'Secure grade 4+ in English &amp; Maths first — that\'s the gateway.';}},
+    {ic:'🏗️',t:'Apprenticeship (Level 2/3)',req:'Grade 4+ in English &amp; Maths is the common baseline; the rest is set by the employer. Earn while you learn.',
+     ok:core4, close:(engG>=3||mathG>=3),
+     act:function(){return core4?'You\'re eligible — browse vacancies on gov.uk/apply-apprenticeship in a field you like.':'Grade 4 in English &amp; Maths unlocks most apprenticeships — target those two.';}},
+    {ic:'💼',t:'Employment / traineeship',req:'Entry-level roles and traineeships with few formal GCSE requirements — a traineeship can bridge you into an apprenticeship.',
+     ok:true, close:true,
+     act:function(){return 'Always an option — and a traineeship is a strong stepping-stone if you\'re not sure yet.';}}
+  ];
+  var open=ROUTES.filter(function(r){return r.ok;}).length;
+  var html='<div class="note" style="font-style:normal;margin-bottom:12px">From your current grades — <b>'+grades.length+' subjects</b>, <b>'+pass4+'</b> at grade 4+, <b>'+strong6+'</b> at grade 6+ (English <b>'+(engG||'—')+'</b>, Maths <b>'+(mathG||'—')+'</b>). <b>'+open+' of '+ROUTES.length+'</b> routes are on track today, and every route stays open with the right grades — nothing is decided for you.</div>';
+  html+=ROUTES.map(function(r){
+    var st=r.ok?{k:'On track',c:'var(--good)'}:r.close?{k:'Within reach',c:'var(--gold-500)'}:{k:'Grades to lift',c:'var(--warn)'};
+    return '<div class="path"><div class="ph"><span class="ic">'+r.ic+'</span><b>'+r.t+'</b><span class="fit" style="color:'+st.c+'">'+st.k+'</span></div>'+
+      '<div class="why">'+r.req+'</div>'+
+      '<div class="meta"><span>👉 '+r.act()+'</span></div></div>';
+  }).join('');
+  html+='<div class="note" style="margin-top:10px">Not sure yet? That\'s normal in Year 10. Keep your grades up in English &amp; Maths and your favourite subjects — that keeps the most doors open while you decide. Your best-fit pathways above rank these by <i>you</i>, not just grades.</div>';
+  $('gcse-routes').innerHTML=html;
+  $('gcse-route-card').style.display='block';
+}
 function generate(){
   if(isPrimary)return generatePrimary();
   var a=academicScore();var p=$('c-style').value;var intr=readInterests();var pers=$('c-personality').value;var income=$('c-income').value;var loc=$('c-locality').value.trim();
@@ -295,6 +344,8 @@ function generate(){
       '<div class="meta"><span>💷 '+esc(o.pw.sal)+'</span><span>📊 labour demand: '+demand(o.pw.k)+'</span></div></div>';
   }).join('');
   $('paths-card').style.display='block';
+  /* Year 10/11 route planner: real GCSE grades → post-16 route requirements */
+  if(isGCSE){try{renderGcseRoutes();}catch(e){}}else{$('gcse-route-card').style.display='none';}
   /* employers — composed from THIS student's data: quiz results + subject
      strengths + interests decide the sectors; locality picks the region. */
   var qm=quizMastery();                                     // real results
