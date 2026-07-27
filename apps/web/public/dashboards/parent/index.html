@@ -343,6 +343,13 @@ function render(){
         (career.post16&&career.post16.length?'<div style="font-size:12.5px;color:var(--ink-2);margin-top:4px">Post-16 subjects: '+career.post16.map(chip).join('')+'</div>':'')+
         '<div class="note" style="font-style:normal;margin-top:6px">From '+esc(name.split(' ')[0])+'’s Career Passport — based on their strengths &amp; interests.</div>'+
         '</div>';
+    } else if((window.SY&&SY.attainment&&d.profile.level)?SY.attainment(d.profile.level,60).system==='gcse':false){
+      /* GCSE-stage child who hasn't run their passport yet — gentle nudge so the
+         parent isn't left wondering why the summary is missing */
+      careerBlock='<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">'+
+        '<div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-400)">Post-16 &amp; subject choices</div>'+
+        '<div class="note" style="font-style:normal;margin-top:6px">Not generated yet — nudge '+esc(name.split(' ')[0])+' to open their <b>Career Passport</b> (in their study workspace) and tap “Generate my pathways”. It maps their post-16 routes and best-fit GCSE options, and the summary will appear here automatically.</div>'+
+        '</div>';
     }
     return '<div class="card c12" style="margin-bottom:14px">'+
       '<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><h3 style="font-size:18px;font-family:var(--serif)">'+esc(name)+'</h3>'+
