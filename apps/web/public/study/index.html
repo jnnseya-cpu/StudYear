@@ -5540,6 +5540,12 @@ function renderAchievements(){
 }
 renderToday();
 renderResults();renderPapers();renderProgress();applyHash();
+/* arriving from the Career Passport's "Discuss my choices" → open the AI tutor
+   pre-loaded with the student's strengths + shortlisted subjects (they press Send) */
+try{var _tp=localStorage.getItem("sy-tutor-prefill");if(_tp){localStorage.removeItem("sy-tutor-prefill");
+  try{showTab("tutor");}catch(e){}
+  var _ci=document.getElementById("chat-in");if(_ci){_ci.value=_tp;try{_ci.focus();}catch(e){}}
+}}catch(e){}
 </script>
 <script>
 (function(){

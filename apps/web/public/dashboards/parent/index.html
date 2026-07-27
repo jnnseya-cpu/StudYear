@@ -329,6 +329,21 @@ function render(){
         schoolBlock='<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px"><div class="note" style="font-style:normal">'+esc(name)+' is linked to '+esc(d.school.name||d.school.code)+' but has not shared school data with you.</div></div>';
       }
     }
+    /* post-16 & subject choices — the compact summary the child generated in
+       their Career Passport (GCSE-stage only; nothing shown for younger children) */
+    var career=SY.readAccount(kid.email,'careerSummary',null);
+    var careerBlock='';
+    if(career&&career.stage==='gcse'){
+      var onTrack=(career.routes||[]).filter(function(r){return r.status==='On track';}).map(function(r){return r.t;});
+      var chip=function(s){return '<span style="display:inline-block;background:rgba(77,157,224,.12);color:var(--gold-300);border-radius:20px;padding:2px 9px;margin:2px 4px 2px 0;font-size:11.5px">'+esc(s)+'</span>';};
+      careerBlock='<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">'+
+        '<div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-400)">Post-16 &amp; subject choices</div>'+
+        '<div style="font-size:12.5px;color:var(--ink-2);margin-top:6px">Best-fit route: <b style="color:var(--ink)">'+esc(career.bestRoute||'—')+'</b> · <b>'+(career.routesOpen||0)+'</b> routes on track'+(onTrack.length?' <span style="color:var(--ink-3)">('+esc(onTrack.slice(0,3).join(', '))+')</span>':'')+'</div>'+
+        (career.gcseOptions&&career.gcseOptions.length?'<div style="font-size:12.5px;color:var(--ink-2);margin-top:6px">Suggested GCSE options: '+career.gcseOptions.map(chip).join('')+'</div>':'')+
+        (career.post16&&career.post16.length?'<div style="font-size:12.5px;color:var(--ink-2);margin-top:4px">Post-16 subjects: '+career.post16.map(chip).join('')+'</div>':'')+
+        '<div class="note" style="font-style:normal;margin-top:6px">From '+esc(name.split(' ')[0])+'’s Career Passport — based on their strengths &amp; interests.</div>'+
+        '</div>';
+    }
     return '<div class="card c12" style="margin-bottom:14px">'+
       '<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><h3 style="font-size:18px;font-family:var(--serif)">'+esc(name)+'</h3>'+
       '<span class="note" style="margin:0;font-style:normal">'+esc(d.profile.level||'—')+(d.profile.board?' · '+esc(d.profile.board):'')+'</span>'+
@@ -342,6 +357,7 @@ function render(){
       '<div class="grid"><div class="card c7" style="background:none;border:none;padding:0"><h3 style="font-family:var(--serif);font-size:15px;color:var(--gold-300)">Subject progress</h3>'+subjRows+
         (d.diag?'<div class="note" style="font-style:normal;margin-top:8px">Latest diagnostic risk: <b style="color:'+(d.diag.risk==='CRITICAL'?'var(--crit)':d.diag.risk==='HIGH'?'var(--warn)':'var(--good)')+'">'+esc(d.diag.risk)+'</b></div>':'')+'</div>'+
       '<div class="card c5" style="background:none;border:none;padding:0"><h3 style="font-family:var(--serif);font-size:15px;color:var(--gold-300)">Recent activity</h3>'+acts+'</div></div>'+
+      careerBlock+
       schoolBlock+
       '<div style="margin-top:12px"><a class="btn" href="../../app/parent/" style="border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12px var(--sans);border-radius:8px;padding:7px 13px;text-decoration:none">Book support for '+esc(name.split(' ')[0])+'</a></div>'+
       '</div>';

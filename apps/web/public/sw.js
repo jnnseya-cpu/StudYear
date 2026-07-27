@@ -3,7 +3,7 @@
  * network-first for HTML navigations (so deploys show up), offline fallback to
  * the cached page. Scope-relative so it works at / (Vercel) and /StudYear/ (Pages).
  */
-const CACHE = 'studyear-v78';
+const CACHE = 'studyear-v79';
 const PRECACHE = ['./', './app/', './study/', './auth/', './manifest.json', './logo.svg', './icon.svg',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 

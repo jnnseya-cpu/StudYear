@@ -281,6 +281,7 @@ function generatePrimary(){
    can see which doors are open, which are within reach, and exactly what to lift
    to keep each one open. GCSE-stage only — never shown to primary or post-16. */
 var isGCSE=!!(_ATT&&_ATT.system==='gcse');
+var CAREER_SUMMARY={}; /* compact, persisted for the parent dashboard summary card */
 function gradeOf(x){return parseInt(x&&(x.current||x.target)||'0',10)||0;}
 function findSubj(re){return (profile.subjects||[]).find(function(x){return re.test(String(x&&x.s||'').toLowerCase());});}
 function renderGcseRoutes(){
@@ -310,6 +311,9 @@ function renderGcseRoutes(){
      act:function(){return 'Always an option — and a traineeship is a strong stepping-stone if you\'re not sure yet.';}}
   ];
   var open=ROUTES.filter(function(r){return r.ok;}).length;
+  CAREER_SUMMARY.routesOpen=open;
+  CAREER_SUMMARY.routes=ROUTES.map(function(r){return {t:r.t.replace(/&amp;/g,'&'),status:r.ok?'On track':r.close?'Within reach':'Grades to lift'};});
+  CAREER_SUMMARY.grades={subjects:grades.length,pass4:pass4,strong6:strong6,english:engG,maths:mathG};
   var html='<div class="note" style="font-style:normal;margin-bottom:12px">From your current grades — <b>'+grades.length+' subjects</b>, <b>'+pass4+'</b> at grade 4+, <b>'+strong6+'</b> at grade 6+ (English <b>'+(engG||'—')+'</b>, Maths <b>'+(mathG||'—')+'</b>). <b>'+open+' of '+ROUTES.length+'</b> routes are on track today, and every route stays open with the right grades — nothing is decided for you.</div>';
   html+=ROUTES.map(function(r){
     var st=r.ok?{k:'On track',c:'var(--good)'}:r.close?{k:'Within reach',c:'var(--gold-500)'}:{k:'Grades to lift',c:'var(--warn)'};
@@ -342,7 +346,7 @@ var SUBJECT_ADVICE={
   marine:{gcse:['Triple Science','Geography','Design &amp; Technology'],post16:['Biology','Physics','Geography'],why:'marine engineering &amp; ocean science'},
   agriculture:{gcse:['Triple Science','Geography','Business Studies'],post16:['Biology','Geography','Environmental Science'],why:'agri-tech, land &amp; food'}
 };
-function renderSubjectAdvice(intr,strengths){
+function renderSubjectAdvice(intr,strengths,bestRoute){
   var keys=intr.slice();
   subjectSectors(strengths||[]).forEach(function(k){if(keys.indexOf(k)<0)keys.push(k);}); // strong subjects → sectors (same keys)
   if(!keys.length)keys=['science','business','creative'];
@@ -358,12 +362,31 @@ function renderSubjectAdvice(intr,strengths){
   var html='';
   html+='<div class="passrow"><span style="flex:1"><b>Your grade-getters</b> — keep these strong</span><span>'+(strengths&&strengths.length?strengths.map(function(s){return '<span class="pill">'+esc(s)+'</span>';}).join(''):'<span class="pill">add subjects in your profile</span>')+'</span></div>';
   html+='<div class="passrow"><span style="flex:1"><b>Compulsory core</b> (everyone) — keeps every door open</span><span><span class="pill">English</span><span class="pill">Maths</span><span class="pill">Science</span></span></div>';
-  html+='<div class="passrow"><span style="flex:1"><b>GCSE options that suit you</b></span><span>'+pills(top(gcse,6))+'</span></div>';
-  html+='<div class="passrow"><span style="flex:1"><b>Post-16 subjects to aim for</b></span><span>'+pills(top(post16,5))+'</span></div>';
+  var gcseList=top(gcse,6), post16List=top(post16,5);
+  var deco=function(list){return list.map(function(s){return s.replace(/&amp;/g,'&');});}; // decoded for storage/messages
+  html+='<div class="passrow"><span style="flex:1"><b>GCSE options that suit you</b></span><span>'+pills(gcseList)+'</span></div>';
+  html+='<div class="passrow"><span style="flex:1"><b>Post-16 subjects to aim for</b></span><span>'+pills(post16List)+'</span></div>';
   html+='<div class="passrow" style="border:0"><span style="flex:1"><b>Why these</b></span><span style="max-width:60%">'+(reasons.length?reasons.join(' · '):'pick interests above to personalise')+'</span></div>';
-  html+='<div class="note" style="margin-top:10px">Choose <b>3–4 options you enjoy and are strong in</b> — grades matter more than the exact subject for most routes, and a language + a humanity (History/Geography) keep academic doors widest. Not sure? Ask the AI tutor in your study workspace to talk it through.</div>';
+  html+='<div class="note" style="margin-top:10px">Choose <b>3–4 options you enjoy and are strong in</b> — grades matter more than the exact subject for most routes, and a language + a humanity (History/Geography) keep academic doors widest.</div>';
+  html+='<div style="margin-top:12px"><button class="btn solid" id="discuss-choices">💬 Discuss my choices with the AI tutor</button></div>';
   $('subject-advice').innerHTML=html;
   $('subject-advice-card').style.display='block';
+  /* persist a compact summary for the parent dashboard */
+  CAREER_SUMMARY.gcseOptions=deco(gcseList);
+  CAREER_SUMMARY.post16=deco(post16List);
+  CAREER_SUMMARY.strengths=(strengths||[]).slice(0,3);
+  /* open the AI tutor pre-loaded with this student's strengths + shortlist */
+  var db=$('discuss-choices');
+  if(db)db.onclick=function(){
+    var msg="I'm a "+(profile.level||'GCSE')+" student deciding my subjects and post-16 route. My strongest subjects are: "+
+      ((strengths&&strengths.length)?strengths.join(', '):'still building')+
+      ". Based on my strengths I'm considering these GCSE options: "+deco(gcseList).join(', ')+
+      "; and post-16 subjects: "+deco(post16List).join(', ')+
+      ". My best-fit route looks like "+(bestRoute||'still open')+
+      ". Please talk me through whether these suit me, what to prioritise, and anything I've missed.";
+    try{localStorage.setItem('sy-tutor-prefill',msg);}catch(e){}
+    location.href='../study/#tutor';
+  };
 }
 function generate(){
   if(isPrimary)return generatePrimary();
@@ -395,7 +418,9 @@ function generate(){
   /* Year 10/11 route planner: real GCSE grades → post-16 route requirements */
   if(isGCSE){try{renderGcseRoutes();}catch(e){}}else{$('gcse-route-card').style.display='none';}
   /* GCSE options + post-16 subject choices from strengths & interests */
-  if(isGCSE){try{renderSubjectAdvice(intr,strengths);}catch(e){}}else{$('subject-advice-card').style.display='none';}
+  if(isGCSE){try{renderSubjectAdvice(intr,strengths,scored[0]&&scored[0].pw.t);}catch(e){}}else{$('subject-advice-card').style.display='none';}
+  /* persist the compact summary for the parent dashboard's at-a-glance card */
+  if(isGCSE){try{CAREER_SUMMARY.stage='gcse';CAREER_SUMMARY.bestRoute=scored[0]&&scored[0].pw.t;CAREER_SUMMARY.when=new Date().toISOString();SY.set('careerSummary',CAREER_SUMMARY);}catch(e){}}
   /* employers — composed from THIS student's data: quiz results + subject
      strengths + interests decide the sectors; locality picks the region. */
   var qm=quizMastery();                                     // real results
