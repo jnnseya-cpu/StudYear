@@ -66,6 +66,10 @@
     <div id="gcse-routes"></div>
   </div>
 
+  <div class="card" id="subject-advice-card" style="display:none"><h3>📚 Choosing subjects — GCSE options &amp; post-16</h3><div class="sub">Pick subjects that play to your strengths — better grades come from subjects you're good at and enjoy, and that keeps the most routes open.</div>
+    <div id="subject-advice"></div>
+  </div>
+
   <div class="card" id="ai-impact-card" style="display:none"><h3>🤖 AI &amp; the future of work</h3><div class="sub">How automation and AI could reshape each pathway — and how to stay ahead of it, from Year 5</div>
     <div id="ai-impact"></div>
   </div>
@@ -317,6 +321,50 @@ function renderGcseRoutes(){
   $('gcse-routes').innerHTML=html;
   $('gcse-route-card').style.display='block';
 }
+/* Subject-choice advice keyed by interest/sector (same keys as INTERESTS &
+   SUBJ_SECTOR). Recommends GCSE OPTION subjects and POST-16 subjects that follow
+   from a student's strengths + interests. Core (English, Maths, Science) is
+   compulsory and called out separately — it keeps every door open. */
+var SUBJECT_ADVICE={
+  tech:{gcse:['Computer Science','Triple Science','a Modern Language'],post16:['Maths','Computer Science','Physics'],why:'coding, data &amp; digital careers'},
+  engineering:{gcse:['Triple Science','Design &amp; Technology','Computer Science'],post16:['Maths','Physics','Design &amp; Technology / Engineering'],why:'design, build &amp; problem-solving'},
+  health:{gcse:['Triple Science','Health &amp; Social Care or PE','a Modern Language'],post16:['Biology','Chemistry','Psychology'],why:'medicine, nursing &amp; care'},
+  business:{gcse:['Business Studies','Economics or Geography','a Modern Language'],post16:['Business','Economics','Maths'],why:'enterprise, finance &amp; management'},
+  creative:{gcse:['Art &amp; Design','Design &amp; Technology','Drama or Music'],post16:['Art &amp; Design','Graphics / Photography','Media Studies'],why:'design, art &amp; production'},
+  media:{gcse:['Media Studies','English','Drama or Art'],post16:['Media Studies','English Language','Film Studies'],why:'film, journalism &amp; content'},
+  science:{gcse:['Triple Science','Computer Science','Geography'],post16:['Biology','Chemistry','Physics'],why:'research &amp; applied science'},
+  construction:{gcse:['Design &amp; Technology','Combined/Triple Science','Business Studies'],post16:['T-Level Construction','Maths','Design &amp; Technology'],why:'trades, surveying &amp; civil engineering'},
+  law:{gcse:['History','English Literature','a Modern Language'],post16:['History','English Literature','Politics / Law'],why:'law, politics &amp; public service'},
+  sport:{gcse:['PE','Combined/Triple Science','Business Studies'],post16:['PE','Biology','Psychology'],why:'sport science, coaching &amp; physio'},
+  education:{gcse:['English','a subject you love','Psychology/Sociology if offered'],post16:['English / your specialist subject','Psychology','Sociology'],why:'teaching &amp; child development'},
+  environment:{gcse:['Geography','Triple Science','Biology focus'],post16:['Geography','Biology','Environmental Science'],why:'sustainability, energy &amp; conservation'},
+  hospitality:{gcse:['Business Studies','Food Technology','a Modern Language'],post16:['BTEC/T-Level Hospitality','Business','a Language'],why:'travel, events &amp; catering'},
+  marine:{gcse:['Triple Science','Geography','Design &amp; Technology'],post16:['Biology','Physics','Geography'],why:'marine engineering &amp; ocean science'},
+  agriculture:{gcse:['Triple Science','Geography','Business Studies'],post16:['Biology','Geography','Environmental Science'],why:'agri-tech, land &amp; food'}
+};
+function renderSubjectAdvice(intr,strengths){
+  var keys=intr.slice();
+  subjectSectors(strengths||[]).forEach(function(k){if(keys.indexOf(k)<0)keys.push(k);}); // strong subjects → sectors (same keys)
+  if(!keys.length)keys=['science','business','creative'];
+  var gcse={},post16={},reasons=[];
+  keys.slice(0,5).forEach(function(k){var a=SUBJECT_ADVICE[k];if(!a)return;
+    a.gcse.forEach(function(s){gcse[s]=(gcse[s]||0)+1;});
+    a.post16.forEach(function(s){post16[s]=(post16[s]||0)+1;});
+    var lbl=(INTERESTS.find(function(i){return i[0]===k;})||[0,k])[1];
+    reasons.push('<b>'+esc(lbl)+'</b> → '+a.why);
+  });
+  function top(obj,n){return Object.keys(obj).sort(function(a,b){return obj[b]-obj[a];}).slice(0,n);}
+  var pills=function(list){return list.map(function(s){return '<span class="pill">'+s+'</span>';}).join('');};
+  var html='';
+  html+='<div class="passrow"><span style="flex:1"><b>Your grade-getters</b> — keep these strong</span><span>'+(strengths&&strengths.length?strengths.map(function(s){return '<span class="pill">'+esc(s)+'</span>';}).join(''):'<span class="pill">add subjects in your profile</span>')+'</span></div>';
+  html+='<div class="passrow"><span style="flex:1"><b>Compulsory core</b> (everyone) — keeps every door open</span><span><span class="pill">English</span><span class="pill">Maths</span><span class="pill">Science</span></span></div>';
+  html+='<div class="passrow"><span style="flex:1"><b>GCSE options that suit you</b></span><span>'+pills(top(gcse,6))+'</span></div>';
+  html+='<div class="passrow"><span style="flex:1"><b>Post-16 subjects to aim for</b></span><span>'+pills(top(post16,5))+'</span></div>';
+  html+='<div class="passrow" style="border:0"><span style="flex:1"><b>Why these</b></span><span style="max-width:60%">'+(reasons.length?reasons.join(' · '):'pick interests above to personalise')+'</span></div>';
+  html+='<div class="note" style="margin-top:10px">Choose <b>3–4 options you enjoy and are strong in</b> — grades matter more than the exact subject for most routes, and a language + a humanity (History/Geography) keep academic doors widest. Not sure? Ask the AI tutor in your study workspace to talk it through.</div>';
+  $('subject-advice').innerHTML=html;
+  $('subject-advice-card').style.display='block';
+}
 function generate(){
   if(isPrimary)return generatePrimary();
   var a=academicScore();var p=$('c-style').value;var intr=readInterests();var pers=$('c-personality').value;var income=$('c-income').value;var loc=$('c-locality').value.trim();
@@ -346,6 +394,8 @@ function generate(){
   $('paths-card').style.display='block';
   /* Year 10/11 route planner: real GCSE grades → post-16 route requirements */
   if(isGCSE){try{renderGcseRoutes();}catch(e){}}else{$('gcse-route-card').style.display='none';}
+  /* GCSE options + post-16 subject choices from strengths & interests */
+  if(isGCSE){try{renderSubjectAdvice(intr,strengths);}catch(e){}}else{$('subject-advice-card').style.display='none';}
   /* employers — composed from THIS student's data: quiz results + subject
      strengths + interests decide the sectors; locality picks the region. */
   var qm=quizMastery();                                     // real results
