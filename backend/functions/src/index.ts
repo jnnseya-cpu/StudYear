@@ -625,12 +625,20 @@ export const aiProxy = onRequest({ region: 'europe-west2', cors: true, maxInstan
   try {
     const user = await requireUser(req.headers.authorization);
     // Denial-of-wallet backstop: cap calls per account per day. This is an abuse
-    // ceiling (well above any legitimate use), NOT the ACU meter — real per-call
-    // ACU debiting is the architectural fix tracked separately. Bounds a single
-    // account or stolen token to a finite provider spend instead of unlimited.
+    // ceiling (well above any legitimate use), NOT the ACU meter. It is now
+    // PLAN-AWARE: a free (child_free) account — the only free tier — is bounded
+    // tightly so unmetered/free-tool AI usage (or a stolen free token, or a client
+    // that skips the local ACU charge) can't erode margin; paid plans keep a
+    // generous ceiling. Worst-case free-tier provider cost falls from ~500 to a few
+    // dozen calls/day (pennies). Both caps are env-tunable. This protects the
+    // ~95% margin with no wallet migration and no risk to paid users.
     const dayKey = new Date().toISOString().slice(0, 10);
     const rateRef = db.doc(`aiRateLimits/${user.uid}_${dayKey}`);
-    const AI_DAILY_CAP = Number(process.env.AI_DAILY_CALL_CAP) || 500;
+    let plan = 'child_free';
+    try { plan = ((await db.doc(`users/${user.uid}`).get()).data()?.plan as string) ?? 'child_free'; } catch { /* default free */ }
+    const FREE_CAP = Number(process.env.AI_DAILY_CAP_FREE) || 60;
+    const PAID_CAP = Number(process.env.AI_DAILY_CALL_CAP) || 500;
+    const AI_DAILY_CAP = plan === 'child_free' ? FREE_CAP : PAID_CAP;
     const used = (await rateRef.get().then((d) => (d.exists ? Number(d.data()!.count) || 0 : 0)));
     if (used >= AI_DAILY_CAP) throw httpError(429, 'daily AI limit reached — please try again tomorrow');
     await rateRef.set({ count: FieldValue.increment(1), day: dayKey, uid: user.uid, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
