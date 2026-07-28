@@ -343,7 +343,18 @@ function render(){
         (career.post16&&career.post16.length?'<div style="font-size:12.5px;color:var(--ink-2);margin-top:4px">Post-16 subjects: '+career.post16.map(chip).join('')+'</div>':'')+
         '<div class="note" style="font-style:normal;margin-top:6px">From '+esc(name.split(' ')[0])+'’s Career Passport — based on their strengths &amp; interests.</div>'+
         '</div>';
-    } else if((window.SY&&SY.attainment&&d.profile.level)?SY.attainment(d.profile.level,60).system==='gcse':false){
+    }
+    /* 14+ technical pathway + real-world experience the child is building */
+    var pw=SY.readAccount(kid.email,'pathwaysSummary',null);
+    if(pw&&(pw.sectorName||pw.encounters)){
+      careerBlock+='<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">'+
+        '<div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-400)">Technical pathway &amp; experience</div>'+
+        (pw.sectorName?'<div style="font-size:12.5px;color:var(--ink-2);margin-top:6px">Focus sector: <b style="color:var(--ink)">'+esc(pw.sectorName)+'</b>'+(pw.technicalRoute?' · '+esc(pw.technicalRoute):'')+'</div>':'')+
+        '<div style="font-size:12.5px;color:var(--ink-2);margin-top:4px"><b>'+(pw.encounters||0)+'</b> employer encounter'+((pw.encounters||0)===1?'':'s')+' logged'+(pw.gatsby?' · evidences '+pw.gatsby+'/8 careers standards':'')+'</div>'+
+        '<div class="note" style="font-style:normal;margin-top:6px">Real-world experience — mentoring, workplace visits, business projects &amp; work experience — builds '+esc(name.split(' ')[0])+'’s CV and confidence.</div>'+
+        '</div>';
+    }
+    if(!career&&((window.SY&&SY.attainment&&d.profile.level)?SY.attainment(d.profile.level,60).system==='gcse':false)&&!pw){
       /* GCSE-stage child who hasn't run their passport yet — gentle nudge so the
          parent isn't left wondering why the summary is missing */
       careerBlock='<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">'+
