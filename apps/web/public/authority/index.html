@@ -32,6 +32,17 @@
   .impact{font-family:var(--serif);font-size:20px;color:var(--good)}
   .empty{color:var(--ink-3);font-style:italic;padding:12px 0}.note{font-size:11.5px;color:var(--ink-3);margin-top:8px}
   .trust{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}.tb{font-size:11.5px;color:var(--ink-2);border:1px solid var(--line);border-radius:20px;padding:6px 12px}.tb b{color:var(--gold-300)}
+  .sa-lbl{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:6px 0 6px}
+  .sa-chips{display:flex;flex-wrap:wrap;gap:8px}
+  .sa-chip{appearance:none;font:600 12px var(--sans);border:1px solid var(--line);background:rgba(6,11,24,.4);color:var(--ink-2);border-radius:20px;padding:7px 13px;cursor:pointer}
+  .sa-chip.on{border-color:var(--gold-500);background:rgba(77,157,224,.14);color:var(--gold-300)}
+  .sa-net{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}@media(max-width:640px){.sa-net{grid-template-columns:1fr 1fr}}
+  .sa-ct{border:1px solid var(--line);border-radius:11px;padding:12px;background:rgba(6,11,24,.32);text-align:center}
+  .sa-ct .v{font-family:var(--serif);font-size:24px}.sa-ct .l{font-size:11px;color:var(--ink-3);margin-top:2px}
+  .sa-btns{display:flex;gap:6px;justify-content:center;margin-top:8px}
+  .sa-inc{appearance:none;width:30px;height:28px;border:1px solid rgba(170,182,204,.3);background:transparent;color:var(--ink-2);border-radius:8px;cursor:pointer;font-size:15px}
+  .sa-status{font-size:12.5px;color:var(--ink-2);margin-top:14px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:rgba(6,11,24,.32)}
+  .sa-status.ok{border-color:rgba(92,187,123,.4);background:rgba(92,187,123,.06);color:var(--ink)}
   .flow{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.flow .fb{flex:1;min-width:220px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:rgba(6,11,24,.3)}.flow .fb b{color:var(--gold-300);font-size:12px}.flow .fb span{display:block;font-size:11.5px;color:var(--ink-3);margin-top:3px}
   .demobar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid rgba(201,133,0,.35);background:rgba(201,133,0,.07);border-radius:12px;padding:11px 15px;margin-top:14px;font-size:12.5px;color:#e0b566}
   .drill{background:rgba(6,11,24,.4);border-left:2px solid var(--gold-500);padding:10px 14px;margin:2px 0 8px;border-radius:0 8px 8px 0;font-size:12px;display:none}
@@ -51,6 +62,7 @@
   #modal .msub{font-size:12px;color:var(--ink-3);margin:4px 0 14px}
 </style></head><body>
 <script src="../guard.js" data-role="authority" data-base="../"></script>
+<script src="../pathways.js"></script>
 <script src="../export.js"></script>
 <div class="shell">
 <aside><a class="slogo" href="../">⌂ <b>StudYear</b></a><div class="role">Local Authority</div><nav>
@@ -146,6 +158,11 @@
     <div class="card c6" id="inclusion"><h3>📶 Digital inclusion &amp; funded learning</h3><div class="sub">Digital-poverty priorities by area/group + learners funded through sponsor gift codes</div><div id="inclusion-body"></div></div>
     <div class="card c6"><h3>Wellbeing &amp; safeguarding</h3><div class="sub">Aggregate signals (KCSIE workflows in the secure backend)</div><div id="safeguard"></div></div>
 
+    <div class="card c12" id="sa-pathways"><h3>🧭 Strategic Authority — technical-pathway coordination</h3>
+      <div class="sub">Shape 14+ education around the industries growing in your area: set local priority sectors, convene schools, colleges &amp; employers, and secure work experience — the MBacc-style, place-based model. Priorities publish to every connected school.</div>
+      <div id="sa-body"></div>
+    </div>
+
     <div class="card c12"><h3>Compliance &amp; licensing</h3>
       <div class="trust">
         <span class="tb"><b>Verified impact</b> · before/after mastery</span>
@@ -207,8 +224,55 @@ function sparkline(series,w,h){
     '<path d="'+area+'" fill="url(#gsp)"/><path d="'+d+'" fill="none" stroke="#4FA6E0" stroke-width="2"/>'+dots+labs+'</svg>';
 }
 
+/* ---- Strategic Authority pathway coordination: set local priority sectors,
+   convene the network, secure work experience. Priorities persist to the
+   authority (regionSectors) so connected schools can adopt them. ---- */
+function renderSAPathways(S){
+  var PW=window.SYPathways;if(!PW){var b0=document.getElementById('sa-body');if(b0)b0.style.display='none';return;}
+  var body=document.getElementById('sa-body');if(!body)return;
+  var pri=laGet('regionSectors',[]);
+  var net=laGet('saNetwork',{schools:0,colleges:0,employers:0,pledges:0});
+  if(!net.schools&&S&&S.length)net.schools=S.length; // seed schools from connected roll
+  var chips=PW.SECTORS.map(function(s){var on=pri.indexOf(s.k)>=0;
+    return '<button type="button" class="sa-chip'+(on?' on':'')+'" data-s="'+s.k+'">'+s.ic+' '+s.name.replace(/&/g,'&amp;')+'</button>';
+  }).join('');
+  var counters=[['schools','🏫','Schools convened'],['colleges','🏫','Colleges'],['employers','💼','Employers engaged'],['pledges','🗓️','Work-experience pledges']].map(function(c){
+    return '<div class="sa-ct"><div class="v" id="sa-'+c[0]+'">'+(net[c[0]]||0)+'</div><div class="l">'+c[1]+' '+c[2]+'</div>'+
+      '<div class="sa-btns"><button type="button" class="sa-inc" data-k="'+c[0]+'" data-d="-1">–</button><button type="button" class="sa-inc" data-k="'+c[0]+'" data-d="1">+</button></div></div>';
+  }).join('');
+  var priNames=pri.map(function(k){var s=PW.sector(k);return s?s.ic+' '+s.name:k});
+  var ready=pri.length&&net.employers>0&&net.pledges>0;
+  body.innerHTML=
+    '<div class="sa-lbl">Local growth sectors — your area\'s priorities</div>'+
+    '<div class="sa-chips">'+chips+'</div>'+
+    '<div class="sa-net">'+counters+'</div>'+
+    '<div class="sa-status '+(ready?'ok':'')+'">'+(ready
+      ? '✅ Coordination live: '+pri.length+' priority sector'+(pri.length>1?'s':'')+' set, '+net.employers+' employers engaged, '+net.pledges+' work-experience pledges secured across '+(net.schools||0)+' schools.'
+      : '◻︎ To go live: set at least one priority sector, engage employers, and secure work-experience pledges. '+(pri.length?'Priorities: '+priNames.join(' · '):'No sectors set yet.'))+'</div>'+
+    '<div style="margin-top:12px"><button class="btn solid" id="sa-export">Download coordination summary (Word)</button></div>';
+  Array.prototype.forEach.call(body.querySelectorAll('.sa-chip'),function(btn){btn.onclick=function(){
+    var k=btn.getAttribute('data-s'),cur=laGet('regionSectors',[]);var i=cur.indexOf(k);
+    if(i>=0)cur.splice(i,1);else cur.push(k);laSet('regionSectors',cur);renderSAPathways(S);toast('Local priorities updated');
+  }});
+  Array.prototype.forEach.call(body.querySelectorAll('.sa-inc'),function(btn){btn.onclick=function(){
+    var k=btn.getAttribute('data-k'),d=+btn.getAttribute('data-d');var n=laGet('saNetwork',{schools:0,colleges:0,employers:0,pledges:0});
+    n[k]=Math.max(0,(n[k]||0)+d);laSet('saNetwork',n);renderSAPathways(S);
+  }});
+  var ex=document.getElementById('sa-export');if(ex)ex.onclick=function(){
+    if(!window.SYExport){toast('Export unavailable');return;}
+    var n=laGet('saNetwork',{}),pr=laGet('regionSectors',[]);
+    SYExport.word('StudYear-Pathway-Coordination.docx',{title:'Strategic Authority — Technical-Pathway Coordination',blocks:[
+      {p:'Authority '+code+' · '+new Date().toLocaleDateString()},
+      {h:'Local priority sectors'},
+      {table:{headers:['Sector','Routes in'],rows:pr.length?pr.map(function(k){var s=PW.sector(k)||{name:k,routes:[]};return [s.name,(s.routes||[]).join(', ')]}):[['None set yet','—']]}},
+      {h:'Convened network'},
+      {table:{headers:['Partner type','Count'],rows:[['Schools',String(n.schools||0)],['Colleges',String(n.colleges||0)],['Employers',String(n.employers||0)],['Work-experience pledges',String(n.pledges||0)]]}}
+    ]});toast('Coordination summary downloaded');
+  };
+}
 function draw(){
   var S=schools();
+  try{renderSAPathways(S);}catch(e){}
   var totalStudents=S.reduce(function(a,s){return a+(s.students||0)},0);
   var attain=S.length?avg(S.map(function(s){return s.avg||0})):0;
   var prevAttain=S.length?avg(S.map(function(s){return s.prevAvg||s.avg||0})):0;
