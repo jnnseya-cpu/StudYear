@@ -202,10 +202,57 @@
     return gatsbyStatus(sig).filter(function (b) { return b.met; });
   }
 
+  /* ---- shared opportunities marketplace ----
+     Employers and colleges post opportunities (encounters, work experience,
+     apprenticeships, courses, provider-access offers); students and schools
+     discover them. Stored in a shared (non-namespaced) key for the same-device
+     preview build; production swaps this for a backend directory with the same
+     shape and the same owner-only write rule. */
+  var MKEY = 'sy-pathways-market';
+  function marketAll() {
+    try { var v = JSON.parse(localStorage.getItem(MKEY)); return v && v.length ? v : []; }
+    catch (e) { return []; }
+  }
+  function marketSave(list) { try { localStorage.setItem(MKEY, JSON.stringify(list.slice(0, 500))); } catch (e) {} }
+  function marketList(filter) {
+    var list = marketAll();
+    if (filter && filter.sector) list = list.filter(function (o) { return o.sector === filter.sector; });
+    if (filter && filter.ownerKind) list = list.filter(function (o) { return o.ownerKind === filter.ownerKind; });
+    if (filter && filter.mine && window.SY) { var me = (SY.session || {}).email; list = list.filter(function (o) { return o.owner === me; }); }
+    return list;
+  }
+  function marketAdd(o) {
+    var s = (window.SY && SY.session) || {};
+    var e = {
+      id: uid(),
+      owner: s.email || 'anon',
+      ownerName: String(o.ownerName || s.name || 'Organisation').slice(0, 120),
+      ownerKind: o.ownerKind || s.role || 'employer',
+      kind: o.kind || 'encounter',           // encounter | workexp | apprenticeship | course | provider
+      type: o.type || null,                    // encounter type when kind==='encounter'
+      sector: o.sector || null,
+      title: String(o.title || '').slice(0, 160),
+      level: String(o.level || '').slice(0, 60),
+      location: String(o.location || '').slice(0, 80),
+      capacity: o.capacity || null,
+      date: o.date || null,
+      created: new Date().toISOString()
+    };
+    var list = marketAll(); list.unshift(e); marketSave(list);
+    return e;
+  }
+  function marketRemove(id) {
+    var me = (window.SY && SY.session || {}).email;
+    marketSave(marketAll().filter(function (o) { return !(o.id === id && o.owner === me); }));
+  }
+
   window.SYPathways = {
     SECTORS: SECTORS,
     ENCOUNTERS: ENCOUNTERS,
     GATSBY: GATSBY,
+    marketList: marketList,
+    marketAdd: marketAdd,
+    marketRemove: marketRemove,
     sector: sector,
     encType: encType,
     sectorForInterest: sectorForInterest,

@@ -47,6 +47,7 @@
   .pw-eic{font-size:18px}.pw-date2{font-size:11px;color:var(--ink-3);margin-left:8px}
   .pw-del{appearance:none;border:1px solid rgba(170,182,204,.25);background:transparent;color:var(--ink-3);border-radius:8px;width:26px;height:26px;cursor:pointer}
   .pw-empty{font-size:12.5px;color:var(--ink-3);padding:10px 0}
+  .pw-opp{display:flex;align-items:center;gap:10px;border:1px solid rgba(92,187,123,.3);border-radius:10px;padding:9px 12px;margin-top:8px;background:rgba(92,187,123,.05);font-size:13px}
 </style></head><body>
 <script src="../guard.js" data-role="student" data-base="../"></script>
 <script src="../pathways.js"></script>
@@ -436,7 +437,12 @@ function renderTechPathways(intr,bestRouteKey){
       '<div class="pw-res">🤖 <b>Future-proof:</b> '+esc(s.resilience)+'</div>'+
       '<div class="pw-tip">By 16 you\'ll understand the local jobs, the skills employers want, and whether an apprenticeship, college or another route fits you best.</div>'+
     '</div>';
-  $('tech-path').innerHTML='<div class="pw-chips">'+chips+'</div>'+detail;
+  var opps=(SYPathways.marketList?SYPathways.marketList({sector:focus}):[]).slice(0,6);
+  var oppHtml=opps.length?'<div class="pw-lbl">Live opportunities near you — posted by employers &amp; colleges</div>'+opps.map(function(o){
+    var tag={workexp:'🗓️ Work experience',mentoring:'🤝 Mentoring',project:'🧩 Project',visit:'🏢 Visit',apprenticeship:'🎓 Apprenticeship',vacancy:'💼 Vacancy',course:'🎓 Course',provider:'🧭 Provider'}[o.kind]||o.kind;
+    return '<div class="pw-opp"><span class="pw-eic">'+(tag.split(' ')[0])+'</span><span style="flex:1"><b>'+esc(o.title||'')+'</b><span class="pw-date2">'+esc(o.ownerName||'')+(o.location?' · '+esc(o.location):'')+'</span></span></div>';
+  }).join(''):'';
+  $('tech-path').innerHTML='<div class="pw-chips">'+chips+'</div>'+detail+oppHtml;
   [].slice.call($('tech-path').querySelectorAll('.pw-chip')).forEach(function(b){
     b.onclick=function(){SYPathways.setFocus(b.getAttribute('data-s'),(SYPathways.sector(b.getAttribute('data-s'))||{}).routes[0]);renderTechPathways(intr,bestRouteKey);renderPassport();toast('Technical pathway updated');};
   });
