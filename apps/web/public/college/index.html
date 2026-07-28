@@ -61,7 +61,8 @@
 
   <div class="card"><h3>Your reach</h3>
     <div class="stat" id="stat"></div>
-    <div style="margin-top:12px"><button class="btn" id="export">Download prospectus summary (Word)</button></div>
+    <div style="margin-top:12px"><button class="btn" id="export">Download prospectus summary (Word)</button>
+      <button class="btn sm" id="demo" style="margin-left:8px">Load sample listings</button></div>
   </div>
 
   <div class="card"><h3>Your listings</h3><div id="list"></div></div>
@@ -122,6 +123,17 @@ $('export').onclick=function(){
     {h:'Listings'},
     {table:{headers:['Type','Title','Level','Sector'],rows:o.length?o.map(function(x){return [x.kind==='provider'?'Provider access':'Course',x.title||'',x.level||'',x.sector?(PW.sector(x.sector)||{}).name:'']}):[['—','Nothing listed yet','','']]}}
   ]});toast('Summary downloaded');
+};
+$('demo').onclick=function(){
+  if(!prof.name){prof={name:'Riverside College',location:'Leeds'};SY.set('collegeProfile',prof);$('o-name').value=prof.name;$('o-loc').value=prof.location;$('org-title').textContent=prof.name;}
+  [['course','digital','T-Level','T-Level in Digital Production, Design & Development'],
+   ['course','healthcare','T-Level','T-Level in Health'],
+   ['course','construction','Apprenticeship','Level 2 Bricklaying apprenticeship'],
+   ['course','manufacturing','BTEC','BTEC Level 3 Engineering']
+  ].forEach(function(c){PW.marketAdd({ownerName:prof.name,ownerKind:'college',kind:'course',sector:c[1],level:c[2],title:c[3],location:prof.location})});
+  [['digital','Careers assembly + coding taster day'],['construction','Campus tour + trades workshop']
+  ].forEach(function(p){PW.marketAdd({ownerName:prof.name,ownerKind:'college',kind:'provider',sector:p[0],title:p[1],location:prof.location})});
+  redraw();toast('Sample listings loaded — no AI cost');
 };
 redraw();
 })();

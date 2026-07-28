@@ -112,6 +112,14 @@
   #advisor-out{border:1px solid var(--line);border-radius:10px;background:rgba(6,11,24,.5);padding:12px 14px;font-size:13.5px;color:var(--ink-2);min-height:40px;margin-top:10px;white-space:pre-wrap}
   .note{font-size:11.5px;color:var(--ink-3);font-style:italic;margin-top:10px}
   #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+  .parity-item{border:1px solid var(--line);border-radius:11px;background:rgba(6,11,24,.32);margin-top:9px;overflow:hidden}
+  .parity-item summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:14px}
+  .parity-item summary::-webkit-details-marker{display:none}.parity-item .pi-ic{font-size:18px}
+  .parity-item[open] summary{border-bottom:1px solid var(--line)}
+  .pi-body{padding:12px 14px;font-size:13px;color:var(--ink-2);display:grid;gap:8px;line-height:1.6}
+  .pi-lbl{display:inline-block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-400);margin-right:4px}
+  .pi-myth{color:var(--good);background:rgba(92,187,123,.06);border:1px solid rgba(92,187,123,.3);border-radius:9px;padding:8px 11px;font-size:12.5px}
+  .pi-foot{font-size:12px;color:var(--ink-3);margin-top:12px}
 </style>
 </head>
 <body>
@@ -263,6 +271,11 @@
 
   <div class="tabpane" id="pane-pathway">
     <div class="card c12"><h3>Future pathway</h3><div class="sub" id="pathway-sub">Data-driven next steps — GCSE, A-level, and university direction</div><div id="pathway"></div></div>
+    <div class="card c12" id="parity-card"><h3>🧭 Understanding your child's options — every route explained</h3>
+      <div class="sub">University isn't the only road to a good career. From 14, children can combine academic subjects with technical
+        training tied to local jobs. Here's what each route really is, and where it leads — no route is a lesser choice.</div>
+      <div id="parity"></div>
+    </div>
   </div>
 </div>
 
@@ -851,6 +864,25 @@ $('tabs').addEventListener('click',function(e){var b=e.target.closest('button');
   document.querySelectorAll('.tabpane').forEach(function(p){p.classList.toggle('on',p.id==='pane-'+b.dataset.t)});
 });
 $('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+
+/* ---- Parity explainer: every post-16 route in plain language (zero AI cost) ---- */
+(function(){var host=document.getElementById('parity');if(!host)return;
+  var ROUTES=[
+    {ic:'🎓',t:'University (degree)',is:'Three or more years studying one subject in depth. Tuition is paid by a student loan that is only repaid once your child earns above a threshold — it is not upfront debt like a normal loan.',leads:'Graduate careers and professions that require a degree (medicine, law, engineering design, teaching).',good:'your child loves academic study and wants a profession that needs a degree.',myth:'A degree is one good route — not the only sign of success.'},
+    {ic:'🏗️',t:'Degree apprenticeship',is:'A full university degree done while employed and paid — the employer and government cover the tuition, so your child leaves with a degree and no tuition debt.',leads:'The same degree as university, plus years of real work experience and, very often, a permanent job at the end.',good:'your child wants a degree but also wants to earn, work and avoid tuition fees.',myth:'This is often the hardest route to get onto — it is prestigious, not a fallback.'},
+    {ic:'🔧',t:'T-Level',is:'A two-year technical qualification (ages 16–18) that is the same size as three A-levels, built with employers and including a substantial industry placement.',leads:'Skilled employment, a higher/degree apprenticeship, or university.',good:'your child knows the field they want and learns best by doing, not just exams.',myth:'T-Levels are a rigorous, respected qualification — universities accept them.'},
+    {ic:'🛠️',t:'Apprenticeship',is:'A paid job with structured training, from level 2 up to degree level. Your child earns a wage from day one while gaining a nationally recognised qualification.',leads:'A trade or profession with a qualification and real experience — and no tuition debt.',good:'your child wants to earn while they learn and build a career through work.',myth:'Apprenticeships now run all the way to degree level — the ceiling is high.'},
+    {ic:'🏫',t:'College / further education',is:'Technical and vocational courses (BTECs, technical certificates, Access to HE) at a local college.',leads:'Employment, apprenticeships, or university — it keeps every door open.',good:'your child wants a practical, supported route and time to decide their direction.',myth:'College is a genuine springboard, including to university.'},
+    {ic:'💼',t:'Employment / entry role',is:'Starting work with training on the job, gaining qualifications alongside employment.',leads:'Progression through experience, promotion and qualifications earned while working.',good:'your child is ready for the workplace and learns best in a real job.',myth:'Starting work early is a strong path when it comes with training and progression.'}
+  ];
+  host.innerHTML=ROUTES.map(function(r){
+    return '<details class="parity-item"><summary><span class="pi-ic">'+r.ic+'</span><b>'+r.t+'</b></summary>'+
+      '<div class="pi-body"><div><span class="pi-lbl">What it is</span> '+r.is+'</div>'+
+      '<div><span class="pi-lbl">Where it leads</span> '+r.leads+'</div>'+
+      '<div><span class="pi-lbl">Good if</span> '+r.good+'</div>'+
+      '<div class="pi-myth">💡 '+r.myth+'</div></div></details>';
+  }).join('')+'<div class="pi-foot">Your child can explore their best-fit routes any time in their <b>Career Passport</b> — it maps these options to their own strengths, interests and local jobs.</div>';
+})();
 
 /* ---- Elite suite quick-access: scroll to a section, or open a deep-view tab ---- */
 function activateTab(t){var deep=$('deep');if(!deep||deep.style.display==='none'){var n=$('elite-note');if(n)n.textContent='Link a child above to open live '+t+' — your Elite tools activate the moment a learner is connected.';deep&&deep.scrollIntoView&&deep.scrollIntoView({behavior:'smooth'});return}

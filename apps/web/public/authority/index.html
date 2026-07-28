@@ -43,6 +43,10 @@
   .sa-inc{appearance:none;width:30px;height:28px;border:1px solid rgba(170,182,204,.3);background:transparent;color:var(--ink-2);border-radius:8px;cursor:pointer;font-size:15px}
   .sa-status{font-size:12.5px;color:var(--ink-2);margin-top:14px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:rgba(6,11,24,.32)}
   .sa-status.ok{border-color:rgba(92,187,123,.4);background:rgba(92,187,123,.06);color:var(--ink)}
+  .intel-rows{margin-top:14px;display:grid;gap:8px}
+  .intel-row{border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:rgba(6,11,24,.32)}
+  .intel-row .ir-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px}
+  .intel-row .ir-m{font-size:12px;color:var(--ink-3);margin-top:3px}.intel-row .ir-a{font-size:12px;color:var(--ink-2);margin-top:4px}
   .flow{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.flow .fb{flex:1;min-width:220px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:rgba(6,11,24,.3)}.flow .fb b{color:var(--gold-300);font-size:12px}.flow .fb span{display:block;font-size:11.5px;color:var(--ink-3);margin-top:3px}
   .demobar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid rgba(201,133,0,.35);background:rgba(201,133,0,.07);border-radius:12px;padding:11px 15px;margin-top:14px;font-size:12.5px;color:#e0b566}
   .drill{background:rgba(6,11,24,.4);border-left:2px solid var(--gold-500);padding:10px 14px;margin:2px 0 8px;border-radius:0 8px 8px 0;font-size:12px;display:none}
@@ -163,6 +167,11 @@
       <div id="sa-body"></div>
     </div>
 
+    <div class="card c12" id="skills-intel"><h3>📊 Skills supply &amp; demand — regional intelligence</h3>
+      <div class="sub">Match your priority sectors against the real opportunities employers and colleges are posting in your area — so you can see where to convene more employers, and where demand is running ahead of strategy.</div>
+      <div id="intel-body"></div>
+    </div>
+
     <div class="card c12"><h3>Compliance &amp; licensing</h3>
       <div class="trust">
         <span class="tb"><b>Verified impact</b> · before/after mastery</span>
@@ -270,9 +279,56 @@ function renderSAPathways(S){
     ]});toast('Coordination summary downloaded');
   };
 }
+/* ---- Skills supply & demand: strategic priority sectors vs the opportunities
+   employers & colleges are actually posting. Surfaces gaps (priority, no
+   supply) and unfocused supply (opportunities, no priority). ---- */
+function renderSkillsIntel(){
+  var PW=window.SYPathways;var body=document.getElementById('intel-body');if(!PW||!body)return;
+  var pri=laGet('regionSectors',[]);
+  var market=PW.marketList?PW.marketList():[];
+  var rows=PW.SECTORS.map(function(s){
+    var os=market.filter(function(o){return o.sector===s.k;});
+    var places=os.reduce(function(a,o){return a+(+o.capacity||0);},0);
+    var appr=os.filter(function(o){return o.kind==='apprenticeship';}).length;
+    var priority=pri.indexOf(s.k)>=0;
+    var status,cls,act;
+    if(priority&&os.length===0){status='Gap — priority, no employers yet';cls='gap';act='Convene employers in this sector and secure work-experience pledges.';}
+    else if(priority&&os.length>0){status='Aligned';cls='ok';act='On track — keep growing placements to meet pupil demand.';}
+    else if(!priority&&os.length>0){status='Supply without focus';cls='warn';act='Employers are active here — consider making it a priority sector.';}
+    else{status='No activity';cls='';act='Not a priority and no opportunities posted.';}
+    return {s:s,opps:os.length,places:places,appr:appr,priority:priority,status:status,cls:cls,act:act};
+  });
+  var gaps=rows.filter(function(r){return r.cls==='gap';}).length;
+  var aligned=rows.filter(function(r){return r.cls==='ok';}).length;
+  var totalOpps=market.length,totalPlaces=market.reduce(function(a,o){return a+(+o.capacity||0);},0);
+  body.innerHTML=
+    '<div class="sa-net" style="grid-template-columns:repeat(4,1fr)">'+
+      '<div class="sa-ct"><div class="v">'+totalOpps+'</div><div class="l">Opportunities in area</div></div>'+
+      '<div class="sa-ct"><div class="v">'+totalPlaces+'</div><div class="l">Places offered</div></div>'+
+      '<div class="sa-ct"><div class="v" style="color:'+(aligned?'var(--good)':'var(--ink)')+'">'+aligned+'</div><div class="l">Sectors aligned</div></div>'+
+      '<div class="sa-ct"><div class="v" style="color:'+(gaps?'var(--warn)':'var(--ink)')+'">'+gaps+'</div><div class="l">Priority gaps</div></div>'+
+    '</div>'+
+    '<div class="intel-rows">'+rows.map(function(r){
+      var col=r.cls==='ok'?'var(--good)':r.cls==='gap'?'var(--warn)':r.cls==='warn'?'var(--gold-400)':'var(--ink-3)';
+      return '<div class="intel-row"><div class="ir-h"><b>'+r.s.ic+' '+r.s.name.replace(/&/g,'&amp;')+'</b>'+(r.priority?' <span class="pill" style="border-color:rgba(77,157,224,.4);color:var(--gold-300)">★ priority</span>':'')+
+        '<span style="margin-left:auto;color:'+col+';font-size:12px;font-weight:600">'+r.status+'</span></div>'+
+        '<div class="ir-m">'+r.opps+' opportunit'+(r.opps===1?'y':'ies')+' · '+r.places+' places'+(r.appr?' · '+r.appr+' apprenticeship'+(r.appr>1?'s':''):'')+'</div>'+
+        '<div class="ir-a">→ '+r.act+'</div></div>';
+    }).join('')+'</div>'+
+    '<div style="margin-top:12px"><button class="btn solid" id="intel-export">Download skills-intelligence report (Word)</button></div>';
+  var ex=document.getElementById('intel-export');if(ex)ex.onclick=function(){
+    if(!window.SYExport){toast('Export unavailable');return;}
+    SYExport.word('StudYear-Skills-Intelligence.docx',{title:'Regional Skills Supply & Demand',blocks:[
+      {p:'Authority '+code+' · '+new Date().toLocaleDateString()},
+      {p:'Opportunities in area: '+totalOpps+' · Places: '+totalPlaces+' · Aligned sectors: '+aligned+' · Priority gaps: '+gaps},
+      {h:'Sector analysis'},
+      {table:{headers:['Sector','Priority','Opportunities','Places','Status','Action'],rows:rows.map(function(r){return [r.s.name,r.priority?'Yes':'No',String(r.opps),String(r.places),r.status,r.act]})}}
+    ]});toast('Report downloaded');
+  };
+}
 function draw(){
   var S=schools();
-  try{renderSAPathways(S);}catch(e){}
+  try{renderSAPathways(S);renderSkillsIntel();}catch(e){}
   var totalStudents=S.reduce(function(a,s){return a+(s.students||0)},0);
   var attain=S.length?avg(S.map(function(s){return s.avg||0})):0;
   var prevAttain=S.length?avg(S.map(function(s){return s.prevAvg||s.avg||0})):0;

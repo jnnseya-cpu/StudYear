@@ -59,7 +59,8 @@
 
   <div class="card"><h3>Your impact</h3>
     <div class="stat" id="stat"></div>
-    <div style="margin-top:12px"><button class="btn" id="export">Download social-value summary (Word)</button></div>
+    <div style="margin-top:12px"><button class="btn" id="export">Download social-value summary (Word)</button>
+      <button class="btn sm" id="demo" style="margin-left:8px">Load sample opportunities</button></div>
   </div>
 
   <div class="card"><h3>Your posted opportunities</h3><div id="list"></div></div>
@@ -128,6 +129,17 @@ $('export').onclick=function(){
     {h:'Opportunities'},
     {table:{headers:['Type','Title','Sector','Location','Places'],rows:o.length?o.map(function(x){return [kindLabel(x.kind).replace(/^[^ ]+ /,''),x.title||'',x.sector?(PW.sector(x.sector)||{}).name:'',x.location||'',String(x.capacity||'')]}):[['—','No opportunities yet','','','']]}}
   ]});toast('Summary downloaded');
+};
+$('demo').onclick=function(){
+  if(!prof.name){prof={name:'Northgate Engineering',sector:'manufacturing',location:'Manchester'};SY.set('employerProfile',prof);
+    $('o-name').value=prof.name;$('o-sector').innerHTML=sectorOpts(prof.sector);$('p-sector').innerHTML=sectorOpts(prof.sector);$('o-loc').value=prof.location;$('p-loc').value=prof.location;$('org-title').textContent=prof.name;}
+  [['workexp','manufacturing','One-week work experience — precision engineering',4,'Manchester'],
+   ['mentoring','digital','Monthly mentoring with a software engineer',6,'Manchester'],
+   ['project','manufacturing','Design brief: prototype a low-cost sensor mount',30,'Remote + site'],
+   ['visit','cleanenergy','Half-day site visit — wind-turbine assembly',20,'Trafford Park'],
+   ['apprenticeship','manufacturing','Level 3 Engineering Technician apprenticeship',3,'Manchester']
+  ].forEach(function(o){PW.marketAdd({ownerName:prof.name,ownerKind:'employer',kind:o[0],type:['workexp','mentoring','project','visit'].indexOf(o[0])>=0?o[0]:null,sector:o[1],title:o[2],capacity:o[3],location:o[4]})});
+  redraw();toast('Sample opportunities loaded — no AI cost');
 };
 redraw();
 })();
