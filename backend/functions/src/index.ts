@@ -1062,6 +1062,96 @@ export const directory = onRequest({ region: 'europe-west2', cors: true }, async
   }
 });
 
+// ------------------------------------------------ Pathways opportunities market ----
+/**
+ * POST/GET /market — the cross-device opportunities marketplace for the 14+
+ * technical-education layer. Employers and colleges publish opportunities
+ * (work experience, mentoring, business-set projects, workplace visits,
+ * apprenticeships, courses, provider-access offers); students, schools and
+ * Strategic Authorities read them to discover local provision and compute
+ * skills supply-vs-demand.
+ *
+ * Public read (any signed-in account); write and delete are owner-only. No
+ * personal/child data lives here — only organisation-published opportunities —
+ * so it is deliberately NOT in the E2EE personal namespace.
+ */
+const MARKET_KINDS = ['encounter', 'workexp', 'mentoring', 'project', 'visit', 'apprenticeship', 'vacancy', 'course', 'provider'];
+const MARKET_OWNER_KINDS = ['employer', 'college'];
+function marketShape(d: FirebaseFirestore.QueryDocumentSnapshot) {
+  const v = d.data();
+  return {
+    id: d.id, owner: v.ownerEmail ?? null, ownerName: v.ownerName ?? null, ownerKind: v.ownerKind ?? 'employer',
+    kind: v.kind ?? 'encounter', type: v.type ?? null, sector: v.sector ?? null, title: v.title ?? '',
+    level: v.level ?? '', location: v.location ?? '', capacity: v.capacity ?? null, date: v.date ?? null,
+    created: v.createdAt && v.createdAt.toMillis ? v.createdAt.toMillis() : null,
+  };
+}
+export const market = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const user = await requireUser(req.headers.authorization);
+    const op = String(req.query.op ?? req.body?.op ?? 'list');
+
+    if (op === 'list') {
+      // equality filters only (no composite index needed); sort newest-first in memory
+      const sector = String(req.query.sector ?? '').trim();
+      const ownerKind = String(req.query.ownerKind ?? '').trim();
+      const mine = String(req.query.mine ?? '') === '1';
+      let q: FirebaseFirestore.Query = db.collection('pathwaysMarket');
+      if (mine) q = q.where('ownerId', '==', user.uid);
+      else if (sector) q = q.where('sector', '==', sector);
+      else if (ownerKind) q = q.where('ownerKind', '==', ownerKind);
+      const snap = await q.limit(400).get();
+      let items = snap.docs.map(marketShape);
+      if (sector && mine) items = items.filter((o) => o.sector === sector);
+      items.sort((a, b) => (b.created ?? 0) - (a.created ?? 0));
+      res.json({ ok: true, items: items.slice(0, 300) });
+      return;
+    }
+
+    if (op === 'publish') {
+      const e = req.body?.entry ?? {};
+      const id = String(e.id ?? '').trim();
+      const kind = String(e.kind ?? 'encounter');
+      if (!/^[A-Za-z0-9_-]{4,48}$/.test(id)) throw httpError(400, 'invalid id');
+      if (!MARKET_KINDS.includes(kind)) throw httpError(400, 'invalid kind');
+      const title = String(e.title ?? '').trim().slice(0, 160);
+      if (!title) throw httpError(400, 'title required');
+      const ref = db.doc(`pathwaysMarket/${id}`);
+      const existing = await ref.get();
+      // an opportunity already owned by another account cannot be overwritten
+      if (existing.exists && existing.data()!.ownerId !== user.uid) throw httpError(409, 'not your opportunity');
+      const ownerKind = MARKET_OWNER_KINDS.includes(String(e.ownerKind)) ? String(e.ownerKind) : 'employer';
+      const cap = e.capacity != null && e.capacity !== '' ? Math.max(0, Math.min(9999, Number(e.capacity) || 0)) : null;
+      await ref.set({
+        ownerId: user.uid, ownerEmail: user.email ?? null, ownerName: String(e.ownerName ?? '').slice(0, 120),
+        ownerKind, kind, type: e.type ? String(e.type).slice(0, 24) : null,
+        sector: e.sector ? String(e.sector).slice(0, 24) : null, title,
+        level: String(e.level ?? '').slice(0, 60), location: String(e.location ?? '').slice(0, 80),
+        capacity: cap, date: e.date ? String(e.date).slice(0, 10) : null,
+        createdAt: existing.exists ? (existing.data()!.createdAt ?? FieldValue.serverTimestamp()) : FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      res.json({ ok: true, id });
+      return;
+    }
+
+    if (op === 'remove') {
+      const id = String(req.body?.id ?? '').trim();
+      if (!id) throw httpError(400, 'id required');
+      const ref = db.doc(`pathwaysMarket/${id}`);
+      const d = await ref.get();
+      if (d.exists && d.data()!.ownerId === user.uid) await ref.delete();
+      res.json({ ok: true });
+      return;
+    }
+
+    throw httpError(400, 'unknown op');
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
 // ------------------------------------------------------ E2E-encrypted sync ----
 /**
  * POST /sync — the end-to-end encryption boundary.

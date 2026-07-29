@@ -543,6 +543,8 @@ function generate(){
   $('emp-card').style.display='block';
   /* 14+ technical pathway + Skills & Experience Passport (secondary stage) */
   try{renderTechPathways(intr,scored[0]&&scored[0].pw.k);renderPassport();}catch(e){}
+  /* pull live employer/college opportunities from the backend, then re-render */
+  try{if(window.SYPathways&&SYPathways.marketSync)SYPathways.marketSync().then(function(){try{renderTechPathways(intr,scored[0]&&scored[0].pw.k);}catch(e){}});}catch(e){}
   renderAIImpact(intr);
 }
 

@@ -142,6 +142,7 @@ $('demo').onclick=function(){
   redraw();toast('Sample opportunities loaded — no AI cost');
 };
 redraw();
+try{if(PW.marketSync)PW.marketSync().then(redraw);}catch(e){}
 })();
 </script>
 </body></html>

@@ -214,6 +214,42 @@
     catch (e) { return []; }
   }
   function marketSave(list) { try { localStorage.setItem(MKEY, JSON.stringify(list.slice(0, 500))); } catch (e) {} }
+  /* the signed-in cloud identity, or null for demo/offline (never sync demo) */
+  function cloudEmail() {
+    var s = (window.SY && SY.session) || {};
+    if (!window.SYCloud || s.demo || !s.email) return null;
+    return s.email;
+  }
+  /* pull the shared marketplace from the backend, merge with any local-only
+     entries this account hasn't pushed yet, and refresh the local cache.
+     Resolves to the filtered view (local fallback offline/on error). */
+  /* cloud.js is injected with defer by guard, so window.SYCloud may not exist
+     at first paint — wait briefly for it before giving up to the local cache. */
+  function whenCloud() {
+    if (window.SYCloud) return Promise.resolve(window.SYCloud);
+    return new Promise(function (res) {
+      var n = 0, t = setInterval(function () {
+        if (window.SYCloud || ++n > 30) { clearInterval(t); res(window.SYCloud || null); }
+      }, 100);
+    });
+  }
+  function marketSync(filter) {
+    var s = (window.SY && SY.session) || {};
+    if (s.demo || !s.email) return Promise.resolve(marketList(filter));
+    return whenCloud().then(function (cl) {
+      if (!cl || !cl.marketList) return marketList(filter);
+      var em = s.email;
+    return Promise.resolve(cl.marketList({}, em)).then(function (remote) {
+      if (!remote) return marketList(filter);
+      var local = marketAll(), rids = {};
+      remote.forEach(function (o) { rids[o.id] = 1; });
+      var pending = local.filter(function (o) { return o.owner === em && !rids[o.id]; });
+      pending.forEach(function (o) { try { cl.marketPublish(o, em); } catch (e) {} });
+      marketSave(remote.concat(pending));
+      return marketList(filter);
+      }).catch(function () { return marketList(filter); });
+    });
+  }
   function marketList(filter) {
     var list = marketAll();
     if (filter && filter.sector) list = list.filter(function (o) { return o.sector === filter.sector; });
@@ -239,11 +275,23 @@
       created: new Date().toISOString()
     };
     var list = marketAll(); list.unshift(e); marketSave(list);
+    // publish cross-device (best-effort, retries); demo/offline stays local
+    var em = cloudEmail();
+    if (em && SYCloud.marketPublish) {
+      var tries = 0;
+      (function push() {
+        Promise.resolve(SYCloud.marketPublish(e, em)).then(function (ok) {
+          if (!ok && ++tries < 3) setTimeout(push, 2500);
+        }).catch(function () {});
+      })();
+    }
     return e;
   }
   function marketRemove(id) {
     var me = (window.SY && SY.session || {}).email;
     marketSave(marketAll().filter(function (o) { return !(o.id === id && o.owner === me); }));
+    var em = cloudEmail();
+    if (em && SYCloud.marketRemove) { try { SYCloud.marketRemove(id, em); } catch (e) {} }
   }
 
   window.SYPathways = {
@@ -251,6 +299,7 @@
     ENCOUNTERS: ENCOUNTERS,
     GATSBY: GATSBY,
     marketList: marketList,
+    marketSync: marketSync,
     marketAdd: marketAdd,
     marketRemove: marketRemove,
     sector: sector,

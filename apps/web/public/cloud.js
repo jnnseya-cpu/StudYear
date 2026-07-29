@@ -417,12 +417,37 @@
     catch (e) { return null; }
   }
 
+  /* Pathways opportunities marketplace — cross-device. Read is any signed-in
+     account; publish/remove are owner-only (enforced server-side). Returns null
+     on offline/error so the caller falls back to the same-device cache. */
+  async function marketList(filter, email) {
+    await whenReady(); if (!CFG || !email) return null;
+    filter = filter || {};
+    var qs = 'op=list';
+    if (filter.sector) qs += '&sector=' + encodeURIComponent(filter.sector);
+    if (filter.ownerKind) qs += '&ownerKind=' + encodeURIComponent(filter.ownerKind);
+    if (filter.mine) qs += '&mine=1';
+    try { var j = await api('/market?' + qs, 'GET', null, email); return j && j.ok ? (j.items || []) : null; }
+    catch (e) { return null; }
+  }
+  async function marketPublish(entry, email) {
+    await whenReady(); if (!CFG || !email) return false;
+    try { var j = await api('/market', 'POST', { op: 'publish', entry: entry }, email); return !!(j && j.ok); }
+    catch (e) { return false; }
+  }
+  async function marketRemove(id, email) {
+    await whenReady(); if (!CFG || !email) return false;
+    try { var j = await api('/market', 'POST', { op: 'remove', id: id }, email); return !!(j && j.ok); }
+    catch (e) { return false; }
+  }
+
   window.SYCloud = { ready: ready, whenReady: whenReady, signUp: signUp, signIn: signIn, reauth: reauth,
     restore: restore, push: push, schedulePush: schedulePush, upload: upload, token: token,
     resetPassword: resetPassword, sendVerify: sendVerify,
     reachable: function () { return CLOUD_UP; }, reconnect: reconnect,
     dirPublish: dirPublish, dirResolve: dirResolve, dirConnect: dirConnect,
     dirDisconnect: dirDisconnect, dirLinks: dirLinks,
+    marketList: marketList, marketPublish: marketPublish, marketRemove: marketRemove,
     /* redeem a StudYear bonus/promo code server-side (validated window/limits/
        audience, ledgered once per user, ACUs credited on the server). Resolves
        to { ok, bonusAcus, discountPct, label } or throws with the reason. */

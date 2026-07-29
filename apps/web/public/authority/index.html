@@ -613,6 +613,9 @@ else $('demo-btn').onclick=function(){
   laSet('demo',true);SY.log('demo','LA demo loaded','6 schools, 4 programmes — no AI cost');location.reload();
 };
 draw();
+/* pull the live cross-device opportunities marketplace, then refresh the
+   supply/demand intelligence + coordination readiness */
+try{if(window.SYPathways&&SYPathways.marketSync)SYPathways.marketSync().then(function(){try{draw();}catch(e){}});}catch(e){}
 })();
 </script>
 </body></html>
