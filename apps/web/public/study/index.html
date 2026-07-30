@@ -4825,8 +4825,16 @@ function cgStatic(subject,level,board,cap,focus){
       var ac=audioCtx();if(!ac){rej(new Error("no audio"));return;}
       try{ac.decodeAudioData(buf.slice(0),function(audio){
         var src=ac.createBufferSource();src.buffer=audio;
-        var g=ac.createGain();g.gain.value=gain||2.6;   /* louder than device-normal */
-        src.connect(g);g.connect(ac.destination);
+        /* Loud AND clear: a compressor lifts the quiet parts and hard-limits the
+           peaks so a big makeup gain can't clip into distortion (distortion is
+           what made it unintelligible, not just quietness). */
+        var comp=ac.createDynamicsCompressor();
+        try{comp.threshold.value=-32;comp.knee.value=24;comp.ratio.value=16;comp.attack.value=0.003;comp.release.value=0.25;}catch(e){}
+        var g=ac.createGain();g.gain.value=gain||5.5;   /* well above device-normal */
+        /* brick-wall limiter right before output — guarantees no clipping */
+        var lim=ac.createDynamicsCompressor();
+        try{lim.threshold.value=-2;lim.knee.value=0;lim.ratio.value=20;lim.attack.value=0.001;lim.release.value=0.1;}catch(e){}
+        src.connect(comp);comp.connect(g);g.connect(lim);lim.connect(ac.destination);
         src.onended=function(){res();};src.start(0);
       },function(e){rej(e||new Error("decode"));});}catch(e){rej(e);}
     });
@@ -4837,7 +4845,7 @@ function cgStatic(subject,level,board,cap,focus){
     if(cloudCanSpeak()){
       try{
         SYCloud.speak(text,{voice:"nova",speed:Math.max(0.6,Math.min(1.2,rate*1.05))})
-          .then(function(buf){return playBoosted(buf,2.6);})
+          .then(function(buf){return playBoosted(buf,5.5);})
           .catch(function(){sayLocal(text,rate);});
         return;
       }catch(e){/* fall through to the built-in voice */}
