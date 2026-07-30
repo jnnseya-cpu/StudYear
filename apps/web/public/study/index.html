@@ -3975,6 +3975,24 @@ function buildQuiz(topic,subj,type){
     {q:"Best first move when revising "+T+"?",o:["Retrieve from memory, then check notes","Re-read notes passively","Highlight the textbook","Copy the definition out"],a:0,exp:"Active retrieval beats passive re-reading for long-term memory."},
     {q:"To lock "+T+" into memory you should:",o:["Space practice over several days","Cram it once the night before","Read it aloud once","Watch a video only"],a:0,exp:"Spaced retrieval is the strongest evidence-based technique."}];
 }
+/* parse an AI 'question :: correct :: wrong :: wrong' block into quiz items,
+   shuffling options so the answer isn't always A. Returns [] if unparseable
+   (caller keeps the template quiz as a safe fallback). */
+function parseLessonQuiz(txt){
+  const out=[];
+  String(txt||"").split("\n").forEach(line=>{
+    line=line.replace(/^[-*\d.)\s#]+/,"").trim();
+    if(!line||line.indexOf("::")<0)return;
+    const parts=line.split("::").map(s=>s.replace(/^\*+|\*+$/g,"").trim()).filter(Boolean);
+    if(parts.length<3)return;                 // need a question + ≥2 options
+    const q=parts[0],opts=parts.slice(1);
+    if(q.length<4||/^(question|q\d*|end-of-lesson|quick quiz)$/i.test(q))return;
+    const correct=opts[0],o=opts.slice();
+    for(let i=o.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const tmp=o[i];o[i]=o[j];o[j]=tmp;}
+    out.push({q:q,o:o,a:o.indexOf(correct),exp:""});
+  });
+  return out.filter(x=>x.o.length>=2&&x.a>=0).slice(0,4);
+}
 function buildLesson(topic,level,subj){
   const cap=_cap(topic),type=lessonType(topic,subj||"");
   const steps=[{type:"intro",objectives:type
@@ -4149,15 +4167,19 @@ document.getElementById("il-go").onclick=()=>{
     document.getElementById("il-sub").textContent=_L.topic+" · "+level+" · writing your curriculum-aligned lesson with "+SYAI.provider()+"…";
     const isPrimaryLesson=(typeof dgTier==='function'&&dgTier()==='primary')||(!/universit|undergrad|degree|postgrad|master/i.test(String(level))&&/reception|eyfs|key stage 1|\bks1\b|key stage 2|\bks2\b|\byear\s?[1-6]\b|11\s?\+|primary|junior/i.test(level));
     const lessonSys=(isPrimaryLesson
-      ? "You are StudYear's primary-school lesson author. Write a clear, warm, curriculum-accurate lesson on the topic for a "+level+(subj?" "+subj:"")+" child (UK national curriculum). Use simple, encouraging language a 7–11 year old understands — NO exams, mark schemes, spec codes or command words. Return EXACTLY six sections separated by lines containing only '---':\n1) 3–4 simple 'I can…' goals, one per line;\n2) Key words: 5–6 words, each as '**word** — a simple, child-friendly meaning';\n3) Let's learn it: a clear step-by-step explanation with **bold key words** and two everyday examples a child relates to;\n4) A bit more: one more example done slowly, and the mistake children often make and how to avoid it;\n5) Your turn: one practice question on the first line, then the answer explained in simple numbered steps;\n6) How to remember it: 2–3 memory tips or a little rhyme, and one fun way to practise at home.\nUse markdown. Short, kind sentences."
-      : "You are StudYear's curriculum lesson author. Write an EXTREMELY detailed, curriculum-accurate lesson on the topic for a "+level+(subj?" "+subj:"")+" student, aligned to "+curric+(board?" and the "+board+" specification":"")+". Return EXACTLY six sections separated by lines containing only '---':\n1) 4–6 learning objectives, one per line, each tied to the curriculum/specification point it serves (name the spec area, e.g. 'AQA 4.4.1' style where known, otherwise the curriculum strand);\n2) Key vocabulary: 6–8 terms, each as '**term** — precise definition';\n3) The core teaching: a genuinely educational, detailed explanation with sub-points, **bold key terms** and at least two concrete examples — real subject content, not study advice;\n4) Going deeper: the mechanisms (how and why), links to related spec topics, one more worked micro-example, and the single most common misunderstanding corrected;\n5) A worked exam-style question: the question on the first line (with mark allocation), then the full model answer as numbered mark-scheme-style steps showing where each mark is earned;\n6) Exam technique for this level"+(board?" and "+board:"")+": the command words that appear on this topic and what each demands, typical mark allocations, and the 3 most common traps with fixes.\nUse markdown throughout. Depth and accuracy over brevity.")
+      ? "You are StudYear's primary-school lesson author. Write a clear, warm, curriculum-accurate lesson on the topic for a "+level+(subj?" "+subj:"")+" child (UK national curriculum). Use simple, encouraging language a 7–11 year old understands — NO exams, mark schemes, spec codes or command words. Return EXACTLY seven sections separated by lines containing only '---':\n1) 3–4 simple 'I can…' goals, one per line;\n2) Key words: 5–6 words, each as '**word** — a simple, child-friendly meaning';\n3) Let's learn it: a clear step-by-step explanation with **bold key words** and two everyday examples a child relates to;\n4) A bit more: one more example done slowly, and the mistake children often make and how to avoid it;\n5) Your turn: one practice question on the first line, then the answer explained in simple numbered steps;\n6) How to remember it: 2–3 memory tips or a little rhyme, and one fun way to practise at home;\n7) Quick quiz: EXACTLY 3 multiple-choice questions that check what THIS lesson taught about the topic (never generic 'how to study' questions) — each on ONE line as 'question :: correct answer :: wrong answer :: wrong answer', with the CORRECT answer FIRST. Make them specific to the actual content above.\nUse markdown for sections 1–6; section 7 is plain '::' lines only. Short, kind sentences."
+      : "You are StudYear's curriculum lesson author. Write an EXTREMELY detailed, curriculum-accurate lesson on the topic for a "+level+(subj?" "+subj:"")+" student, aligned to "+curric+(board?" and the "+board+" specification":"")+". Return EXACTLY seven sections separated by lines containing only '---':\n1) 4–6 learning objectives, one per line, each tied to the curriculum/specification point it serves (name the spec area, e.g. 'AQA 4.4.1' style where known, otherwise the curriculum strand);\n2) Key vocabulary: 6–8 terms, each as '**term** — precise definition';\n3) The core teaching: a genuinely educational, detailed explanation with sub-points, **bold key terms** and at least two concrete examples — real subject content, not study advice;\n4) Going deeper: the mechanisms (how and why), links to related spec topics, one more worked micro-example, and the single most common misunderstanding corrected;\n5) A worked exam-style question: the question on the first line (with mark allocation), then the full model answer as numbered mark-scheme-style steps showing where each mark is earned;\n6) Exam technique for this level"+(board?" and "+board:"")+": the command words that appear on this topic and what each demands, typical mark allocations, and the 3 most common traps with fixes;\n7) End-of-lesson quiz: EXACTLY 3 multiple-choice questions that test the ACTUAL subject content taught above (NEVER generic study-skills questions) — each on ONE line as 'question :: correct answer :: wrong answer :: wrong answer', with the CORRECT answer FIRST, one question per line.\nUse markdown for sections 1–6; section 7 is plain '::' lines only. Depth and accuracy over brevity.")
       +((window.SY&&SY.stageStyle)?SY.stageStyle(level):"");
     SYAI.ask(lessonSys+
       (LEARN.style?" The student's learning style is "+LEARN.style+" — shape explanations accordingly (diagrams described in words for visual learners, spoken-rhythm mnemonics for auditory, do-it steps for kinaesthetic).":"")+
       (LEARN.pace==="gentle"?" The student prefers a gentle pace: smaller steps, more recaps.":LEARN.pace==="fast"?" The student moves fast: denser content, fewer recaps.":""),
-      "Topic: "+topic,{maxTokens:2800}).then(t=>{
+      "Topic: "+topic,{maxTokens:3000}).then(t=>{
       const parts=String(t).split(/\n-{3,}\n?/);
-      const quiz=_L.steps.find(s=>s.type==="quiz");
+      let quiz=_L.steps.find(s=>s.type==="quiz");
+      /* real, content-specific end-of-lesson quiz from the AI's section 7 —
+         replaces the generic template so questions differ per lesson */
+      const aiQuiz=parts[6]?parseLessonQuiz(parts[6]):[];
+      if(aiQuiz.length>=2)quiz={type:"quiz",qs:aiQuiz};
       const steps=[];
       const objLines=(parts[0]||"").split("\n").map(x=>x.replace(/^[-*\d.)\s#]+/,"").trim()).filter(Boolean);
       steps.push({type:"intro",objectives:objLines.length?objLines.slice(0,8):_L.steps[0].objectives});
