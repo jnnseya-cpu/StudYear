@@ -128,7 +128,33 @@
       return id||'';
     }catch(e){return null;}
   }
-  window.SYBill={ready:ready,cfg:cfg,linkFor:linkFor,checkout:checkout,consumeReturn:consumeReturn,
+  /* Reconcile the local wallet UP from the authoritative server ledger so a
+     buyer who completed payment but lost the redirect (closed the tab, paid on
+     another device) still gets their plan on the next upgrade-page load.
+     UPGRADE-ONLY — it never downgrades, so it can never harm a legitimate user
+     (full server-authoritative gating, incl. clawback downgrades, is the first
+     post-launch hardening). Runs only for real, signed-in, non-demo accounts. */
+  function reconcile(){
+    try{
+      if(isDemo()||!window.SY||!window.SYCloud||typeof SYCloud.walletState!=='function')return;
+      var s=null;try{s=JSON.parse(localStorage.getItem('sy-session'));}catch(e){}
+      if(!s||!s.email)return;
+      SYCloud.walletState(s.email).then(function(st){
+        if(!st||!st.plan||st.plan==='child_free')return;   // never downgrade
+        var w=(window.SY.get('wallet',{}))||{};
+        if(w.plan===st.plan)return;                         // already in sync
+        w.plan=st.plan;
+        w.planExpires=new Date(Date.now()+31*864e5).toISOString();
+        w.month=new Date().toISOString().slice(0,7);
+        window.SY.set('wallet',w);
+        try{window.SY.log('billing','Plan confirmed from your account','Your '+st.plan+' plan is active on this device.');}catch(e){}
+        try{toast('Your plan is active.');}catch(e){}
+      }).catch(function(){});
+    }catch(e){}
+  }
+  window.SYBill={ready:ready,cfg:cfg,linkFor:linkFor,checkout:checkout,consumeReturn:consumeReturn,reconcile:reconcile,
     setConfig:function(o){try{localStorage.setItem('sy-billing-live',JSON.stringify(o))}catch(e){}},
     clear:function(){localStorage.removeItem('sy-billing-live')}};
+  /* run once shortly after load (guard + cloud have initialised by then) */
+  try{setTimeout(reconcile,1600);}catch(e){}
 })();

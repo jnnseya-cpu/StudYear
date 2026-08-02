@@ -4196,7 +4196,7 @@ document.getElementById("il-go").onclick=()=>{
         if(parts[4])steps.push({type:"teach",h:isPrimaryLesson?"Another worked example":"Exam-style worked example",html:SYAI.render(parts[4]),live:true});
       }else{
         if(parts[4]){const lines=parts[4].split("\n").map(x=>x.trim()).filter(Boolean);
-          steps.push({type:"example",h:isPrimaryLesson?"4 · Your turn":"4 · Worked exam-style example",ex:{q:lines[0].replace(/^\*+|\*+$/g,""),steps:lines.slice(1).map(l=>SYAI.render(l)),answer:null}});}
+          if(lines.length)steps.push({type:"example",h:isPrimaryLesson?"4 · Your turn":"4 · Worked exam-style example",ex:{q:lines[0].replace(/^\*+|\*+$/g,""),steps:lines.slice(1).map(l=>SYAI.render(l)),answer:null}});}
         const recall=_L.steps.find(s=>s.type==="recall");if(recall)steps.push(recall);
       }
       if(parts[5])steps.push({type:"teach",h:isPrimaryLesson?"How to remember it":"Exam technique & common traps",html:SYAI.render(parts[5]),live:true});

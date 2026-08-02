@@ -58,6 +58,17 @@ async function walletBalance(ownerId: string): Promise<number> {
   return snap.docs.reduce((sum, d) => sum + (d.data().delta as number), 0);
 }
 
+/** Per-caller daily rate limit — bounds share-code enumeration and gift/discount
+    brute-force. Throws 429 when the cap is hit. Buckets are function-only
+    (default-deny in firestore.rules), keyed by uid + name + UTC day. */
+async function enforceRate(uid: string, name: string, cap: number): Promise<void> {
+  const day = new Date().toISOString().slice(0, 10);
+  const ref = db.doc(`apiRateLimits/${uid}_${name}_${day}`);
+  const used = await ref.get().then((d) => (d.exists ? Number(d.data()!.count) || 0 : 0));
+  if (used >= cap) throw httpError(429, 'too many requests — please slow down and try again later');
+  await ref.set({ count: FieldValue.increment(1), day, uid, name, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+}
+
 // ------------------------------------------------------------------ health ----
 export const health = onRequest({ region: 'europe-west2' }, (_req, res) => {
   res.json({ ok: true, service: 'studyear-api', marginFloor: MARGIN.FLOOR });
@@ -370,6 +381,7 @@ export const stripeWebhook = onRequest({ region: 'europe-west2' }, async (req, r
 export const redeemCode = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
   try {
     const user = await requireUser(req.headers.authorization);
+    await enforceRate(user.uid, 'redeem', 40);
     const code = String(req.body?.code ?? '').trim().toUpperCase();
     if (!code) throw httpError(400, 'code required');
     const toMs = (v: unknown): number | null => {
@@ -426,6 +438,7 @@ export const redeemCode = onRequest({ region: 'europe-west2', cors: true }, asyn
 export const redeemGift = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
   try {
     const user = await requireUser(req.headers.authorization);
+    await enforceRate(user.uid, 'redeem', 40);
     const code = String(req.body?.code ?? '').trim().toUpperCase();
     if (!/^SY-GIFT-[A-Z0-9-]{6,20}$/.test(code)) throw httpError(400, 'invalid gift code');
     const giftRef = db.doc(`giftCodes/${code}`);
@@ -779,7 +792,7 @@ export const contact = onRequest({ region: 'europe-west2', cors: true }, async (
  * role list is validated here and the users/{uid} document is server-owned:
  * clients can never self-assign admin or change plan through this path.
  */
-const PUBLIC_ROLES = ['student', 'parent', 'teacher', 'school', 'tutor', 'authority'];
+const PUBLIC_ROLES = ['student', 'parent', 'teacher', 'school', 'tutor', 'authority', 'employer', 'college'];
 export const register = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
   try {
     const user = await requireUser(req.headers.authorization);
@@ -798,6 +811,27 @@ export const register = onRequest({ region: 'europe-west2', cors: true }, async 
     }, { merge: true });
     await audit(existing.exists ? 'USER_ROLE_ADDED' : 'USER_REGISTERED', user.uid, { role });
     res.json({ ok: true });
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
+// ------------------------------------------------------------- wallet state ----
+/** GET /walletState — the authoritative, signed-in ACU balance + plan from the
+    server ledger. The client reconciles its local wallet UPWARD from this so a
+    buyer who completed payment but lost the redirect (closed tab, paid on
+    another device) is still credited on next load, and a real plan/clawback is
+    reflected. Read-only, owner-scoped. */
+export const walletState = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const user = await requireUser(req.headers.authorization);
+    const [balance, udoc] = await Promise.all([
+      walletBalance(user.uid),
+      db.doc(`users/${user.uid}`).get(),
+    ]);
+    const plan = (udoc.exists && (udoc.data()!.plan as string)) || 'child_free';
+    res.json({ ok: true, balance, plan });
   } catch (e) {
     const err = e as Error & { status?: number };
     res.status(err.status ?? 500).json({ ok: false, error: err.message });
@@ -976,6 +1010,9 @@ export const directory = onRequest({ region: 'europe-west2', cors: true }, async
     const user = await requireUser(req.headers.authorization);
     const op = String(req.query.op ?? req.body?.op ?? '');
     const myEmail = user.email ?? null;
+    // bound share-code enumeration: cap the lookup/link ops per caller per day
+    // (publish is the caller's OWN code, so it is not enumeration and not capped)
+    if (op === 'resolve' || op === 'connect') await enforceRate(user.uid, 'dir', 150);
 
     if (op === 'publish') {
       const code = String(req.body?.code ?? '').trim();

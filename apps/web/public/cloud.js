@@ -440,6 +440,14 @@
     try { var j = await api('/market', 'POST', { op: 'remove', id: id }, email); return !!(j && j.ok); }
     catch (e) { return false; }
   }
+  /* authoritative server ACU balance + plan (from the append-only ledger). The
+     client reconciles its local wallet UPWARD from this so a paid buyer who
+     lost the redirect is still credited. Null on offline/error. */
+  async function walletState(email) {
+    await whenReady(); if (!CFG || !email) return null;
+    try { var j = await api('/walletState', 'GET', null, email); return j && j.ok ? { balance: j.balance, plan: j.plan } : null; }
+    catch (e) { return null; }
+  }
 
   window.SYCloud = { ready: ready, whenReady: whenReady, signUp: signUp, signIn: signIn, reauth: reauth,
     restore: restore, push: push, schedulePush: schedulePush, upload: upload, token: token,
@@ -448,6 +456,7 @@
     dirPublish: dirPublish, dirResolve: dirResolve, dirConnect: dirConnect,
     dirDisconnect: dirDisconnect, dirLinks: dirLinks,
     marketList: marketList, marketPublish: marketPublish, marketRemove: marketRemove,
+    walletState: walletState,
     /* redeem a StudYear bonus/promo code server-side (validated window/limits/
        audience, ledgered once per user, ACUs credited on the server). Resolves
        to { ok, bonusAcus, discountPct, label } or throws with the reason. */

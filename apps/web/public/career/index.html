@@ -444,7 +444,7 @@ function renderTechPathways(intr,bestRouteKey){
   }).join(''):'';
   $('tech-path').innerHTML='<div class="pw-chips">'+chips+'</div>'+detail+oppHtml;
   [].slice.call($('tech-path').querySelectorAll('.pw-chip')).forEach(function(b){
-    b.onclick=function(){SYPathways.setFocus(b.getAttribute('data-s'),(SYPathways.sector(b.getAttribute('data-s'))||{}).routes[0]);renderTechPathways(intr,bestRouteKey);renderPassport();toast('Technical pathway updated');};
+    b.onclick=function(){SYPathways.setFocus(b.getAttribute('data-s'),((SYPathways.sector(b.getAttribute('data-s'))||{}).routes||[])[0]);renderTechPathways(intr,bestRouteKey);renderPassport();toast('Technical pathway updated');};
   });
   $('tech-path-card').style.display='block';
   try{CAREER_SUMMARY.sectorFocus=s.name;SY.set('careerSummary',CAREER_SUMMARY);}catch(e){}
