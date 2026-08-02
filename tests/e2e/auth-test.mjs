@@ -16,6 +16,7 @@ await p.check('#human-ck');
 const q=await p.locator('#chal-q').innerText();
 const m=q.match(/(\d+)\s*\+\s*(\d+)/);
 await p.fill('#chal-a',String(+m[1]+ +m[2]));
+await p.check('#agree-ck');   /* Terms + 18/guardian consent — required for signup */
 await p.waitForTimeout(1600);
 await p.click('#go');
 await p.waitForURL(u=>!/\/auth\//.test(u.pathname),{timeout:8000}).catch(()=>{});
