@@ -123,7 +123,7 @@ $('cf-send').onclick=function(){
     fetch('../firebase-config.json').then(function(r){return r.json()}).then(function(c){
       if(c&&c.apiBase)fetch(c.apiBase.replace(/\/$/,'')+'/contact',{method:'POST',keepalive:true,
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({from:name,email:email,type:typ,body:msg})});
+        body:JSON.stringify({from:name,email:email,type:typ,body:msg})}).catch(function(){});
     }).catch(function(){});
   }catch(e){}
   $('cf-name').value='';$('cf-email').value='';$('cf-msg').value='';$('cf-a').value='';
