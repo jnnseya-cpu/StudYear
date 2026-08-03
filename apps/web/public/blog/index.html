@@ -124,10 +124,17 @@
   var mdlite=md;   /* single renderer everywhere */
   var posts=[];
   var wrap=document.getElementById('ai-posts');
+  function slugOf(p){return p.slug||p.id;}
+  /* Published posts committed in posts.json are pre-rendered to a real,
+     crawlable page at /blog/<slug>/ by scripts/gen-blog.mjs — link straight
+     to it (max per-article indexing). Local-only drafts have no static page,
+     so they fall back to the in-page #slug reader. */
+  function readHref(p){return p._static?encodeURIComponent(slugOf(p))+'/':'#'+esc(slugOf(p));}
+  function postUrl(p){return 'https://www.studyear.com/blog/'+(p._static?encodeURIComponent(slugOf(p))+'/':'#'+encodeURIComponent(slugOf(p)));}
   function shareRow(p){
-    var url='https://www.studyear.com/blog/#'+encodeURIComponent(p.slug||p.id);
+    var url=postUrl(p);
     return '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">'+
-      '<a href="#'+esc(p.slug||p.id)+'" style="font-size:12.5px">Read →</a>'+
+      '<a href="'+readHref(p)+'" style="font-size:12.5px">Read →</a>'+
       '<a href="#" data-copy="'+esc(url)+'" style="font-size:12.5px">Copy share link</a>'+
       '<a target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(p.title+' — '+url)+'" style="font-size:12.5px">WhatsApp</a>'+
       '<a target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text='+encodeURIComponent(p.title)+'&url='+encodeURIComponent(url)+'" style="font-size:12.5px">X</a>'+
@@ -144,7 +151,7 @@
   function relatedBlock(p){
     var r=relatedFor(p);if(!r.length)return '';
     return '<div style="margin-top:18px;border-top:1px solid var(--line,rgba(255,255,255,.12));padding-top:12px"><b style="font-size:13px;letter-spacing:.04em">Related articles</b><ul style="margin:8px 0 0 18px">'+
-      r.map(function(q){return '<li style="margin:4px 0"><a href="#'+esc(q.slug||q.id)+'">'+esc(q.title)+'</a></li>';}).join('')+'</ul></div>';
+      r.map(function(q){return '<li style="margin:4px 0"><a href="'+readHref(q)+'">'+esc(q.title)+'</a></li>';}).join('')+'</ul></div>';
   }
   function breadcrumb(p){
     return '<nav aria-label="Breadcrumb" class="meta" style="margin:0 0 10px"><a href="../">Home</a> › <a href="./">Blog</a> › <span>'+esc(p.category||'Article')+'</span></nav>';
@@ -163,7 +170,7 @@
   function setMeta(name,val,attr){var sel=(attr||'name');var el=document.head.querySelector('meta['+sel+'="'+name+'"]');
     if(!el){el=document.createElement('meta');el.setAttribute(sel,name);document.head.appendChild(el);}el.setAttribute('content',val);}
   function seoHead(p){
-    var url=SITE+'/blog/#'+encodeURIComponent(p.slug||p.id);
+    var url=postUrl(p);
     try{document.title=(p.title||'StudYear Blog')+' — StudYear';}catch(e){}
     var can=document.querySelector('link[rel="canonical"]');if(can)can.setAttribute('href',url);
     var desc=p.metaDesc||p.excerpt||'';
@@ -217,15 +224,21 @@
   function blogLd(){
     var ld={"@context":"https://schema.org","@type":"Blog","name":"StudYear Blog","url":SITE+'/blog/',
       "publisher":{"@type":"Organization","name":"StudYear","logo":{"@type":"ImageObject","url":SITE+'/icon-512.png'}},
-      "blogPost":posts.slice(0,20).map(function(p){return {"@type":"BlogPosting","headline":p.title,"url":SITE+'/blog/#'+encodeURIComponent(p.slug||p.id),"description":p.metaDesc||p.excerpt||"","datePublished":p.date,"dateModified":p.reviewed||p.date,"keywords":(p.tags||[]).join(', '),"author":{"@type":"Organization","name":"StudYear"}}})};
+      "blogPost":posts.slice(0,20).map(function(p){return {"@type":"BlogPosting","headline":p.title,"url":postUrl(p),"description":p.metaDesc||p.excerpt||"","datePublished":p.date,"dateModified":p.reviewed||p.date,"keywords":(p.tags||[]).join(', '),"author":{"@type":"Organization","name":"StudYear"}}})};
     var s=document.createElement('script');s.type='application/ld+json';s.textContent=JSON.stringify(ld);document.head.appendChild(s);
   }
+  var hashBound=false;
   function init(){
     posts=posts.filter(function(p){return p.published;});
     posts.sort(function(a,b){return (b.date||'').localeCompare(a.date||'');});
+    /* legacy shared links used /blog/#slug — send them to the crawlable
+       static page /blog/<slug>/ when one exists (301-equivalent client hop) */
+    var hash=decodeURIComponent(location.hash.replace('#',''));
+    if(hash){var t=posts.find(function(p){return slugOf(p)===hash&&p._static;});
+      if(t){location.replace(encodeURIComponent(hash)+'/');return;}}
     var pc=document.getElementById('post-count');
     if(posts.length){
-      drawPosts();addEventListener('hashchange',drawPosts);
+      drawPosts();if(!hashBound){addEventListener('hashchange',drawPosts);hashBound=true;}
       if(pc)pc.textContent=posts.length+' AI-authored article'+(posts.length===1?'':'s')+' live.';
       blogLd();
     } else if(pc){ pc.textContent='New articles are on the way.'; }
@@ -235,10 +248,23 @@
      what makes the blog rank — posts must exist in the served bundle, not only
      in the author's browser. */
   var seen={};
-  function merge(arr){ (arr||[]).forEach(function(p){ if(p&&p.id&&!seen[p.id]){seen[p.id]=1;posts.push(p);} }); }
+  function merge(arr,isStatic){ (arr||[]).forEach(function(p){ if(p&&p.id&&!seen[p.id]){seen[p.id]=1;if(isStatic&&p.published)p._static=1;posts.push(p);} }); }
   var localPosts=[];try{localPosts=JSON.parse(localStorage.getItem('sy-blog'))||[];}catch(e){}
+  /* Live backend posts (one-click published from the AI Studio) have no
+     pre-rendered page yet, so they merge as NON-static — the in-page reader
+     renders them immediately. Committed posts.json posts merge first and keep
+     their crawlable /blog/<slug>/ page (seen-dedup lets the static one win). */
   fetch('posts.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():[];}).catch(function(){return [];})
-    .then(function(remote){ merge(localPosts); merge(remote); init(); });
+    .then(function(remote){
+      merge(localPosts,false); merge(remote,true); init();
+      /* augment with live backend posts once cloud.js (deferred) has loaded —
+         DOMContentLoaded fires after all deferred scripts, so SYCloud exists by
+         then. Failure/offline leaves the committed content untouched. */
+      function augment(){ try{ if(!(window.SYCloud&&SYCloud.blogList))return;
+        SYCloud.blogList().then(function(live){ if(!live||!live.length)return;
+          var before=posts.length; merge(live,false); if(posts.length!==before) init(); }).catch(function(){}); }catch(e){} }
+      if(window.SYCloud) augment(); else addEventListener('DOMContentLoaded',augment);
+    });
 })();
 </script>
 <footer>
@@ -247,6 +273,7 @@
   <span style="margin-left:auto">© StudYear — Serving the whole UK</span>
 </footer>
 </div>
+<script src="../cloud.js" defer></script>
 <script src="../pwa.js"></script>
 </body>
 </html>

@@ -13,4 +13,9 @@
   <url><loc>https://www.studyear.com/privacy/</loc><priority>0.3</priority></url>
   <url><loc>https://www.studyear.com/cookies/</loc><priority>0.3</priority></url>
   <url><loc>https://www.studyear.com/disclaimer/</loc><priority>0.3</priority></url>
+  <!-- BLOG:START -->
+  <url><loc>https://www.studyear.com/blog/evidence-gatsby-benchmarks-automatically/</loc><lastmod>2026-08-03</lastmod><priority>0.6</priority></url>
+  <url><loc>https://www.studyear.com/blog/choosing-gcse-options-year-9-parents-guide/</loc><lastmod>2026-08-03</lastmod><priority>0.6</priority></url>
+  <url><loc>https://www.studyear.com/blog/spaced-repetition-highest-roi-revision/</loc><lastmod>2026-08-03</lastmod><priority>0.6</priority></url>
+  <!-- BLOG:END -->
 </urlset>

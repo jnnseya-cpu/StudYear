@@ -448,6 +448,31 @@
     try { var j = await api('/walletState', 'GET', null, email); return j && j.ok ? { balance: j.balance, plan: j.plan } : null; }
     catch (e) { return null; }
   }
+  /* Live blog overlay — one-click publish from the AI Studio. list is PUBLIC
+     (no email needed) so the blog reader can merge live posts over the committed
+     posts.json; publish/remove are admin-only (enforced server-side). Returns
+     null/false on offline/error so callers fall back to the static content. */
+  async function blogList() {
+    await whenReady(); if (!CFG) return null;
+    var direct = CFG && CFG.apiBase ? CFG.apiBase.replace(/\/$/, '') : '';
+    async function get(base) { var r = await fetch(base + '/blog?op=list'); var j = await r.json().catch(function () { return {}; }); if (!r.ok) throw new Error(j.error || ('api ' + r.status)); return j; }
+    try {
+      var j;
+      try { j = await get(gbase('fn')); }
+      catch (e) { if (!direct) throw e; j = await get(direct); } // proxy dead → direct
+      return j && j.ok ? (j.items || []) : null;
+    } catch (e) { return null; }
+  }
+  async function blogPublish(post, email) {
+    await whenReady(); if (!CFG || !email) return null;
+    try { var j = await api('/blog', 'POST', { op: 'publish', post: post }, email); return j && j.ok ? j : null; }
+    catch (e) { return null; }
+  }
+  async function blogRemove(id, email) {
+    await whenReady(); if (!CFG || !email) return false;
+    try { var j = await api('/blog', 'POST', { op: 'remove', id: id }, email); return !!(j && j.ok); }
+    catch (e) { return false; }
+  }
 
   window.SYCloud = { ready: ready, whenReady: whenReady, signUp: signUp, signIn: signIn, reauth: reauth,
     restore: restore, push: push, schedulePush: schedulePush, upload: upload, token: token,
@@ -457,6 +482,7 @@
     dirDisconnect: dirDisconnect, dirLinks: dirLinks,
     marketList: marketList, marketPublish: marketPublish, marketRemove: marketRemove,
     walletState: walletState,
+    blogList: blogList, blogPublish: blogPublish, blogRemove: blogRemove,
     /* redeem a StudYear bonus/promo code server-side (validated window/limits/
        audience, ledgered once per user, ACUs credited on the server). Resolves
        to { ok, bonusAcus, discountPct, label } or throws with the reason. */

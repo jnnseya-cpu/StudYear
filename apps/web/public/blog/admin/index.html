@@ -233,18 +233,28 @@ function upsert(post){var all=load();var i=all.findIndex(function(p){return p.id
 $('publish').onclick=function(){if(!$('e-title').value.trim()){toast('Write a draft first');return}var p=collect(true);upsert(p);SY.log('blog','Post published',p.title+' · SEO '+p.seoScore);toast('Published — live on the blog');$('editor').style.display='none';$('seo-card').style.display='none';current=null};
 $('savedraft').onclick=function(){if(!$('e-title').value.trim()){toast('Write a draft first');return}var p=collect(false);upsert(p);toast('Draft saved');};
 
+/* one-click LIVE publishing: mirror a publish/unpublish to the backend blog
+   overlay so the post appears on studyear.com/blog immediately, on every
+   device — no redeploy. Silent no-op if the cloud isn't reachable (the local
+   copy + committed posts.json remain the source of truth). */
+function myEmail(){try{return (window.SY&&SY.session&&SY.session.email)||null}catch(e){return null}}
+function syncLive(p){
+  if(!window.SYCloud)return; var em=myEmail(); if(!em)return;
+  if(p.published){ SYCloud.blogPublish(p,em).then(function(r){ if(r&&r.ok)toast('Live → studyear.com/blog'); else toast('Saved locally (cloud offline)'); }); }
+  else { SYCloud.blogRemove(p.id,em); }
+}
 function draw(){
   var all=load();var pub=all.filter(function(p){return p.published});
   $('k-pub').textContent=pub.length;$('k-draft').textContent=all.length-pub.length;$('k-total').textContent=all.length;
   $('k-seo').textContent=all.length?Math.round(all.reduce(function(a,p){return a+(p.seoScore||0)},0)/all.length):0;
   $('list').innerHTML=all.length?all.map(function(p,i){return '<div class="row"><b>'+esc(p.title)+'</b> <span class="badge '+(p.published?'good':'warn')+'">'+(p.published?'live':'draft')+'</span> <span class="badge">SEO '+(p.seoScore||0)+'</span><span style="margin-left:auto;display:flex;gap:6px">'+(p.published?'<a class="btn sm ghost" style="text-decoration:none" target="_blank" href="../#'+encodeURIComponent(p.slug||p.id)+'">View live</a><button class="btn sm ghost" data-share="'+p.id+'">Copy share link</button>':'')+'<button class="btn sm ghost" data-toggle="'+p.id+'">'+(p.published?'Unpublish':'Publish')+'</button><button class="btn sm ghost" data-del="'+p.id+'">Delete</button></span></div>'}).join(''):'<div class="note">No posts yet — write your first with the AI Writer above.</div>';
-  $('list').querySelectorAll('[data-toggle]').forEach(function(b){b.onclick=function(){var all=load();var p=all.find(function(x){return x.id===b.dataset.toggle});if(p){p.published=!p.published;p.reviewed=new Date().toISOString();save(all);draw();toast(p.published?'Published':'Unpublished')}}});
+  $('list').querySelectorAll('[data-toggle]').forEach(function(b){b.onclick=function(){var all=load();var p=all.find(function(x){return x.id===b.dataset.toggle});if(p){p.published=!p.published;p.reviewed=new Date().toISOString();save(all);draw();toast(p.published?'Published':'Unpublished');syncLive(p)}}});
   $('list').querySelectorAll('[data-share]').forEach(function(btn){btn.onclick=function(){
     var p=load().find(function(x){return x.id===btn.dataset.share});if(!p)return;
     var url='https://www.studyear.com/blog/#'+encodeURIComponent(p.slug||p.id);
     try{navigator.clipboard.writeText(url);toast('Share link copied — '+url)}catch(e){prompt('Share link:',url)}
   }});
-  $('list').querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){if(!confirm('Delete this post?'))return;save(load().filter(function(x){return x.id!==b.dataset.del}));draw()}});
+  $('list').querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){if(!confirm('Delete this post?'))return;var em=myEmail();if(window.SYCloud&&em)SYCloud.blogRemove(b.dataset.del,em);save(load().filter(function(x){return x.id!==b.dataset.del}));draw()}});
 }
 /* seed a couple of AI posts on first run so the blog isn't empty */
 if(!load().length){

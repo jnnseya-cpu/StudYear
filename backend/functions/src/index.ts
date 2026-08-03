@@ -1189,6 +1189,84 @@ export const market = onRequest({ region: 'europe-west2', cors: true }, async (r
   }
 });
 
+// ---------------------------------------------------------------- blog ----
+/** The public-facing shape of a blog post — everything the blog reader and the
+    static generator need, and nothing internal. */
+function blogShape(d: FirebaseFirestore.QueryDocumentSnapshot | FirebaseFirestore.DocumentSnapshot) {
+  const x = d.data() ?? {};
+  return {
+    id: d.id, title: x.title ?? '', slug: x.slug ?? d.id, category: x.category ?? 'Article',
+    excerpt: x.excerpt ?? '', metaDesc: x.metaDesc ?? '', body: x.body ?? '',
+    tags: Array.isArray(x.tags) ? x.tags : [], keyword: x.keyword ?? '',
+    readTime: x.readTime ?? 3, seoScore: x.seoScore ?? 0, published: x.published === true,
+    date: x.date ?? null, reviewed: x.reviewed ?? null,
+  };
+}
+/**
+ * /blog — one-click live blog publishing from the AI Studio.
+ *  - GET  ?op=list           → PUBLIC: every published post, newest first
+ *                              (the blog reader merges these over its committed
+ *                              posts.json, so an admin post appears live with no
+ *                              redeploy).
+ *  - POST {op:'publish',post} → ADMIN: upsert a post (published flag honoured).
+ *  - POST {op:'remove',id}    → ADMIN: delete a post.
+ * The committed posts.json + static /blog/<slug>/ pages stay the crawlable
+ * source of truth for SEO; this endpoint is the instant-publish overlay.
+ */
+export const blog = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const op = String(req.query.op ?? req.body?.op ?? 'list');
+
+    if (op === 'list') {
+      const snap = await db.collection('blogPosts').where('published', '==', true).limit(300).get();
+      const items = snap.docs.map(blogShape).sort((a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')));
+      res.set('Cache-Control', 'public, max-age=120');
+      res.json({ ok: true, items });
+      return;
+    }
+
+    // everything past here mutates — admins only
+    const admin = await requireAdmin(req.headers.authorization);
+
+    if (op === 'publish') {
+      const p = req.body?.post ?? {};
+      const id = String(p.id ?? '').trim();
+      if (!/^[A-Za-z0-9_-]{3,64}$/.test(id)) throw httpError(400, 'invalid id');
+      const title = String(p.title ?? '').trim().slice(0, 200);
+      if (!title) throw httpError(400, 'title required');
+      const slug = String(p.slug ?? id).trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 80) || id;
+      await db.doc(`blogPosts/${id}`).set({
+        title, slug, category: String(p.category ?? 'Article').slice(0, 60),
+        excerpt: String(p.excerpt ?? '').slice(0, 400), metaDesc: String(p.metaDesc ?? '').slice(0, 320),
+        body: String(p.body ?? '').slice(0, 40000),
+        tags: Array.isArray(p.tags) ? p.tags.slice(0, 12).map((t: unknown) => String(t).slice(0, 40)) : [],
+        keyword: String(p.keyword ?? '').slice(0, 80),
+        readTime: Math.max(1, Math.min(60, Number(p.readTime) || 3)),
+        seoScore: Math.max(0, Math.min(100, Number(p.seoScore) || 0)),
+        published: p.published !== false,
+        date: p.date ? String(p.date).slice(0, 30) : new Date().toISOString(),
+        reviewed: new Date().toISOString(),
+        authorEmail: admin.email ?? null, updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+      res.json({ ok: true, id, slug });
+      return;
+    }
+
+    if (op === 'remove') {
+      const id = String(req.body?.id ?? '').trim();
+      if (!id) throw httpError(400, 'id required');
+      await db.doc(`blogPosts/${id}`).delete();
+      res.json({ ok: true });
+      return;
+    }
+
+    throw httpError(400, 'unknown op');
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
 // ------------------------------------------------------ E2E-encrypted sync ----
 /**
  * POST /sync — the end-to-end encryption boundary.

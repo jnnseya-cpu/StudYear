@@ -18,3 +18,6 @@ next-env.d.ts
 srv/
 backend/functions/.env
 apps/web/public/build.json
+# Static blog pages are build artifacts generated from blog/posts.json
+apps/web/public/blog/*/index.html
+!apps/web/public/blog/admin/index.html
