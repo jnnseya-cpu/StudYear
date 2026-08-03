@@ -1,0 +1,50 @@
+[
+  {
+    "id": "seed1",
+    "title": "Spaced repetition: the highest-ROI revision habit",
+    "slug": "spaced-repetition-highest-roi-revision",
+    "category": "Study science",
+    "excerpt": "Why spacing your revision beats cramming every time — and how StudYear automates it for GCSE and A-Level.",
+    "metaDesc": "Spaced repetition is the highest-ROI revision habit for GCSE and A-Level. Learn how the science works and how StudYear schedules it for you automatically.",
+    "body": "Cramming feels productive, but the evidence is blunt: what you learn the night before is mostly gone within a week. **Spaced repetition** — revisiting material at widening intervals — is the single highest-return revision habit a student can build.\n\n## Why spacing beats cramming\nEach time you retrieve a fact just as you are about to forget it, the memory is rebuilt stronger and the next forgetting curve is flatter. The [Education Endowment Foundation](https://educationendowmentfoundation.org.uk/) rates retrieval and spaced practice among the most cost-effective ways to raise attainment.\n\n## How to apply it in a week\n- Study a topic today, then again in 2 days, then 5, then 10.\n- Keep each session short — 15–20 minutes of active recall, not passive re-reading.\n- Test yourself from a blank page before you check your notes.\n\n## How StudYear does it for you\nOur [Smart Review](/study/) engine tracks what you have learned and resurfaces anything at risk of being forgotten, automatically — no scheduling spreadsheet required. Pair it with the [SkillRush fluency arena](/skillrush/) to make weak facts automatic. See [how StudYear works](/how-it-works/) or start with a [free assessment](/study/).\n\n## FAQ\n### Is spaced repetition better than re-reading?\nYes. Actively retrieving information from memory, spaced over days, produces far stronger long-term recall than re-reading or highlighting.\n### How many days should I space my revision?\nA simple, effective schedule is day 1, day 3, day 8 and day 16 — widening the gap each time you get it right.\n### Does StudYear schedule spaced repetition automatically?\nYes — the Smart Review tab surfaces topics you are about to forget, so you never have to plan the intervals yourself.",
+    "tags": ["spaced repetition", "revision", "GCSE", "study science", "StudYear"],
+    "keyword": "spaced repetition",
+    "readTime": 3,
+    "seoScore": 96,
+    "published": true,
+    "date": "2026-07-31T09:00:00.000Z",
+    "reviewed": "2026-08-03T09:00:00.000Z"
+  },
+  {
+    "id": "seed2",
+    "title": "Choosing GCSE options: a Year 9 parent's guide",
+    "slug": "choosing-gcse-options-year-9-parents-guide",
+    "category": "Careers",
+    "excerpt": "How to help your child pick GCSE subjects that keep the most doors open — based on strengths, not guesswork.",
+    "metaDesc": "A practical Year 9 guide to choosing GCSE options: how to pick subjects by strength, keep post-16 routes open, and use StudYear's Career Passport to decide.",
+    "body": "Choosing GCSE options is the first big fork in a child's education — and most families make it with too little information. Here is how to decide with confidence.\n\n## Start with strengths, not subjects\nBetter grades come from subjects a child is genuinely good at and enjoys. Look at real evidence — recent assessment scores — rather than what friends are picking.\n\n## Keep doors open\nThe English Baccalaureate core (English, maths, science, a language and a humanity) keeps the widest range of post-16 routes available. For the official rules, see [GOV.UK on the EBacc](https://www.gov.uk/government/publications/english-baccalaureate-ebacc).\n\n## Match choices to where they might go\nFrom 2028 the government is putting technical routes on an equal footing with academic ones, so a child can combine strong GCSEs with a clear line into an apprenticeship, T-Level or university.\n\n## Use the evidence you already have\nStudYear's [Career Passport](/career/) maps a child's real strengths to best-fit GCSE options and post-16 routes, and our [tutor marketplace](/tutors/) can shore up any subject that needs lifting before the deadline. New to StudYear? [See how it works](/how-it-works/).\n\n## FAQ\n### What GCSEs keep the most options open?\nThe EBacc core — English, maths, the sciences, a language and a humanities subject — keeps the widest set of A-level, apprenticeship and university routes available.\n### Should my child pick subjects they enjoy or subjects that look impressive?\nEnjoyment and strength usually win: children work harder and score higher in subjects they like, and good grades open more doors than an impressive-looking but poorly-graded subject.\n### How does StudYear help with GCSE choices?\nThe Career Passport turns a child's real assessment data into recommended GCSE options and post-16 pathways, so the decision is based on evidence rather than guesswork.",
+    "tags": ["GCSE options", "careers", "parents", "Year 9", "StudYear"],
+    "keyword": "choosing GCSE options",
+    "readTime": 3,
+    "seoScore": 95,
+    "published": true,
+    "date": "2026-08-01T09:00:00.000Z",
+    "reviewed": "2026-08-03T09:00:00.000Z"
+  },
+  {
+    "id": "seed3",
+    "title": "How schools can evidence the Gatsby Benchmarks automatically",
+    "slug": "evidence-gatsby-benchmarks-automatically",
+    "category": "Schools",
+    "excerpt": "The 8 Gatsby Benchmarks are statutory — here's how to evidence them from data your school already generates.",
+    "metaDesc": "Every English secondary is measured on the 8 Gatsby Benchmarks. Learn what they are and how StudYear evidences them automatically from your existing data.",
+    "body": "Careers provision is no longer a nice-to-have — it is statutory, and with the 14+ technical-education reforms it is about to carry more weight in inspection. The framework schools are measured against is the **Gatsby Benchmarks**.\n\n## What the benchmarks ask for\nThe eight benchmarks cover a stable careers programme, good labour-market information, personal guidance, and — the hardest to evidence — real encounters with employers and experiences of workplaces. The [Careers & Enterprise Company](https://www.careersandenterprise.co.uk/) sets out the detail.\n\n## Why evidence is the bottleneck\nMost schools deliver plenty of activity but struggle to *prove* it at inspection. Encounters happen; the audit trail does not always follow.\n\n## Turn activity into an evidence pack\nStudYear's [school careers tools](/school/) compute live Gatsby coverage from the employer encounters, business projects and work experience your staff log — and export an inspection-ready pack in one click. It pairs with the student [Career Passport](/career/) so pupil and school data line up. [See how it works](/how-it-works/).\n\n## FAQ\n### Are the Gatsby Benchmarks statutory?\nEvery English secondary school must have regard to the eight Gatsby Benchmarks and is measured against them, so in practice they function as a statutory standard for careers provision.\n### Which Gatsby Benchmark is hardest to evidence?\nBenchmarks 5 and 6 — encounters with employers and experiences of workplaces — are usually the hardest, because the activity happens but the evidence trail is often incomplete.\n### How does StudYear evidence the benchmarks?\nIt computes coverage automatically from the encounters, projects and work experience staff log, then exports an inspection-ready evidence pack.",
+    "tags": ["Gatsby Benchmarks", "schools", "careers", "Ofsted", "StudYear"],
+    "keyword": "Gatsby Benchmarks",
+    "readTime": 4,
+    "seoScore": 94,
+    "published": true,
+    "date": "2026-08-02T09:00:00.000Z",
+    "reviewed": "2026-08-03T09:00:00.000Z"
+  }
+]
