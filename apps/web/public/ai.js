@@ -46,12 +46,20 @@
      (default 1); opts.pool charges a school ACU pool instead of the personal
      wallet. Callers that used to debit their own wallet now rely on this. ---- */
   function _monthKey(){try{return new Date().toISOString().slice(0,7)}catch(e){return '0000-00'}}
+  /* free-tier grant cadence: 100 ACUs per QUARTER (every 3 months) — kept in a
+     dedicated field so it never clashes with w.month (which the plan-lapse
+     logic also writes). */
+  function _quarterKey(){try{var d=new Date();return d.getUTCFullYear()+'-Q'+(Math.floor(d.getUTCMonth()/3)+1)}catch(e){return '0-Q0'}}
+  function _mToQ(m){try{var p=String(m||'').split('-');if(p.length<2)return '';return p[0]+'-Q'+(Math.floor((parseInt(p[1],10)-1)/3)+1)}catch(e){return ''}}
   function _personal(){
     try{
       if(!(window.SY&&SY.get&&SY.set))return null;
       var w=SY.get('wallet',null);
-      if(!w||typeof w!=='object')w={acus:100,plan:'child_free',month:_monthKey()};
-      if(w.plan==='child_free'&&w.month!==_monthKey()){w.acus=(w.acus||0)+100;w.month=_monthKey();SY.set('wallet',w);}
+      if(!w||typeof w!=='object')w={acus:100,plan:'child_free',month:_monthKey(),freeQ:_quarterKey()};
+      if(w.plan==='child_free'){
+        if(!w.freeQ)w.freeQ=_mToQ(w.month)||_quarterKey();      // migrate without re-granting mid-quarter
+        if(w.freeQ!==_quarterKey()){w.acus=(w.acus||0)+100;w.freeQ=_quarterKey();SY.set('wallet',w);}
+      }
       return w;
     }catch(e){return null}
   }

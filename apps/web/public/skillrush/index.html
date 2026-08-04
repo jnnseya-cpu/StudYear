@@ -282,7 +282,7 @@ var PLAN_TIER=/max|premium_plus/.test(wallet.plan||'')?2:/premium|access/.test(w
 var MODE_TIER={focus:0,confidence:0,comeback:0,battle:0,exam:1,duel:1};    /* AI Coach = premium (2) */
 function gate(need,label){
   if(PLAN_TIER>=need)return true;
-  toast(label+' is on the '+(need===2?'Premium+':'paid')+' plans — 100 free ACUs still renew monthly');
+  toast(label+' is on the '+(need===2?'Premium+':'paid')+' plans — 100 free ACUs still renew every 3 months');
   setTimeout(function(){if(confirm(label+' unlocks with a plan upgrade. See plans & top-up?'))location.href='../account/topup/'},400);
   return false;
 }

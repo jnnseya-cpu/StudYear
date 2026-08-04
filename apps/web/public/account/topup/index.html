@@ -132,7 +132,7 @@
 <div class="walbar">Current balance: <b id="wal">–</b> ACUs · plan: <span id="cur-plan">–</span></div>
 
 <h2 class="sec">Student plans — monthly only</h2>
-<p class="sec-sub">Child Free is a separate student account — 100 ACUs every month, never added to paid plans.
+<p class="sec-sub">Child Free is a separate student account — 100 ACUs every 3 months, never added to paid plans.
   Paid plans add larger monthly allowances — from £5 Student Access through to £30 Student Max for daily heavy usage.</p>
 <div class="plans" id="plans"></div>
 
@@ -233,7 +233,7 @@ var PACKS=[
   {id:'power_boost',label:'Power Boost pack',acus:2600,pounds:30,pop:false}];
 var PLANS=[
   {id:'child_free',label:'Child Free',pounds:0,acus:100,flag:'No payment',cta:'Continue with Child Free',
-   feats:['100 ACUs every month (Child Free only)','AI homework help & explanations','Not combined with paid plans — upgrade via checkout for more']},
+   feats:['100 ACUs every 3 months (Child Free only)','AI homework help & explanations','Not combined with paid plans — upgrade via checkout for more']},
   {id:'student_access',label:'Student Access',pounds:5,acus:500,cta:'Subscribe with Stripe',
    feats:['500 ACUs added on each successful monthly payment','Full learning access — tutor, planner, diagnostics, predictions, interactive lessons','Premium creator toolkit and Assignment Review not included']},
   {id:'student_premium',label:'Student Premium',pounds:10,acus:700,flag:'Recommended',rec:true,cta:'Subscribe with Stripe',
@@ -351,7 +351,7 @@ document.body.addEventListener('click',function(e){
       if(pl.pounds>0)recordReferral(pl.pounds);
       drawPacks(); // the top-up allowance follows the plan price
       SY.log('billing',pl.pounds>0?('Started '+pl.label):'Switched to Child Free',
-        pl.pounds>0?(fmt(pl.acus)+' ACUs added · 30-day term, ends '+fmtDay(wallet.planExpires)+' with no auto-renewal.'):'Child Free — 100 ACUs every month.');
+        pl.pounds>0?(fmt(pl.acus)+' ACUs added · 30-day term, ends '+fmtDay(wallet.planExpires)+' with no auto-renewal.'):'Child Free — 100 ACUs every 3 months.');
       toast(pl.pounds===0?'You are on Child Free — 100 ACUs every month'
         :'Preview '+pl.label+(promo?' (code '+promo+')':'')+' — '+fmt(pl.acus)+' ACUs added. Runs 30 days then stops automatically (no auto-renewal).');};
     if(pl.pounds>0&&window.SYBill){SYBill.checkout(pl.id,{promo:promo,email:(SY.session&&SY.session.email),ref:(SY.session&&SY.session.email),activate:actS})}else actS();
