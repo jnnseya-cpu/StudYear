@@ -1298,13 +1298,12 @@ function getWallet(){
 function walletBalance(){return getWallet().acus}
 /** spend ACUs with a hard stop at zero (mirrors the ledger contract). returns true on success */
 function spendAcus(n,label){
-  /* admin accounts have forever-free AI usage — no debits, still logged */
-  if(SY.session&&SY.session.role==="admin"){logEvent("billing",label+" — admin (free)","Admin usage is never metered.");return true;}
+  /* Pre-flight gate ONLY. AI usage is metered centrally in SYAI.ask (debited on
+     a successful response, no free passes for any role — including admin). Here
+     we just block early with a clear message when the wallet can't cover it, so
+     the tool doesn't spin up before failing. No debit happens here. */
   const w=getWallet();
-  if(w.acus<n){ toast("Not enough ACUs — "+w.acus+"/"+n+" needed. Top up in My account → Plans & top-up."); return false; }
-  w.acus-=n; store.set("wallet",w);
-  logEvent("billing",label+" — "+n+" ACUs",(w.acus)+" ACUs remaining.");
-  if(typeof refreshBalances==="function")refreshBalances();
+  if((w.acus||0)<n){ toast("Not enough ACUs — "+(w.acus||0)+"/"+n+" needed. Top up in My account → Plans & top-up."); return false; }
   return true;
 }
 
@@ -3733,7 +3732,7 @@ document.getElementById("ar-go").onclick=()=>{
       : "You are a "+level+" "+(subj||"")+" examiner"+(board?" marking to "+board+" standards":"")+". Mark the student's work like a real examiner. Return markdown with: '## Predicted grade' (grade + %); '## Criterion breakdown' — Structure, Evidence, Analysis, Clarity, Development, each as '**Name** — NN% · one-line comment'; '## Strengths' — 3 bullets quoting their actual words; '## Targets' — 3 specific, fixable targets each with HOW to fix; '## Rewrite one sentence' — quote one weak sentence and give the improved version; '## Next steps' — 2 actions before the next assignment. Be specific to THIS work, never generic."+stage;
     SYAI.ask(sys+(arImage?" The work is in the attached document or photo — read it carefully first (it may be handwritten).":""),
       "Type of work: "+artype+"\n"+(title?"Title: "+title+"\n":"")+(text?"Work:\n"+text:"The work is in the attached file."),
-      {maxTokens:1600,image:arImage||undefined}).then(t=>{
+      {maxTokens:1600,image:arImage||undefined,acus:AR_PRICE,label:"Assignment review: "+(title||"untitled")}).then(t=>{
       addPoints(10);touchStreak();
       logEvent("review","Assignment reviewed: "+(title||subj),level+(subj?" · "+subj:"")+(arPrimary?" — teacher feedback.":" — live AI examiner review."));
       document.getElementById("ar-sub").textContent=(title||"Your assignment")+" · "+level+(subj?" · "+subj:"")+(arPrimary?" · teacher feedback":" · live AI examiner");
@@ -3886,6 +3885,8 @@ function refreshBalances(){
   if(cgb)cgb.textContent="Your balance: "+b+" ACUs.";
 }
 refreshBalances();
+/* keep the on-screen balance current after a central ACU debit (SYAI.ask) */
+try{window.addEventListener("sy-acus",refreshBalances)}catch(e){}
 
 /* ============ Interactive lesson engine ============
    Genuinely interactive on-device teaching: step navigation, worked examples with
@@ -4177,7 +4178,7 @@ document.getElementById("il-go").onclick=()=>{
     SYAI.ask(lessonSys+
       (LEARN.style?" The student's learning style is "+LEARN.style+" — shape explanations accordingly (diagrams described in words for visual learners, spoken-rhythm mnemonics for auditory, do-it steps for kinaesthetic).":"")+
       (LEARN.pace==="gentle"?" The student prefers a gentle pace: smaller steps, more recaps.":LEARN.pace==="fast"?" The student moves fast: denser content, fewer recaps.":""),
-      "Topic: "+topic,{maxTokens:3000}).then(t=>{
+      "Topic: "+topic,{maxTokens:3000,acus:IL_PRICE,label:"Interactive lesson: "+topic}).then(t=>{
       const parts=String(t).split(/\n-{3,}\n?/);
       let quiz=_L.steps.find(s=>s.type==="quiz");
       /* real, content-specific end-of-lesson quiz from the AI's section 7 —
@@ -4243,7 +4244,7 @@ document.getElementById("cg-go").onclick=()=>{
     document.getElementById("cg-out").innerHTML='<div class="note">Writing your course with '+SYAI.provider()+'…</div>';
     const grounding=(function(){const f=curricFor(subject,level);return f?"\nGround the course on this REAL "+f.tier+" specification structure — keep to it and refine/expand the bullets with concrete, exam-relevant detail:\n"+f.modules.map((m,i)=>"Module "+(i+1)+": "+m.t+" — "+m.topics.join("; ")).join("\n"):""})();
     const sys="You are StudYear's course designer. Write a structured "+level+" "+subject+" course"+(board?" aligned to the "+board+" exam board":"")+(focus?" focused on: "+focus+" (go deep on this topic; only include other modules where they directly support it)":"")+". Produce 4–6 modules. For each module use a '## Module N — <title>' heading, then 3–5 specific subtopics as bullets, then a line '▸ ends with a check quiz'. Be concrete and appropriate to the level — real curriculum content, never generic filler."+((window.SY&&SY.stageStyle)?SY.stageStyle(level):"")+" End with a short 'How to study this course' note."+grounding;
-    SYAI.ask(sys,"Subject: "+subject+(focus?"\nFocus topic: "+focus:"")+"\nLevel: "+level+(board?"\nExam board: "+board:""),{maxTokens:1500}).then(txt=>{
+    SYAI.ask(sys,"Subject: "+subject+(focus?"\nFocus topic: "+focus:"")+"\nLevel: "+level+(board?"\nExam board: "+board:""),{maxTokens:1500,acus:CG_PRICE,label:"AI course: "+subject}).then(txt=>{
       addPoints(10);touchStreak();logEvent("course","AI course: "+cap,head+" — live AI course generated.");
       document.getElementById("cg-sub").textContent=head+" · live AI course — every module opens into a real lesson, tutor session and quiz";
       /* split the AI text into modules so each one becomes a LEARNABLE unit */

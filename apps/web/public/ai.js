@@ -35,6 +35,42 @@
      the provider's vision or document input so models can read uploads.
      PDFs (mime application/pdf) route to each provider's document channel. */
   function splitDataUrl(u){var m=String(u).match(/^data:([^;]+);base64,(.*)$/);return m?{mime:m[1],data:m[2]}:null}
+  /* ---------------------------------------------------------------------------
+     ACU METERING — single source of truth (owner policy 2026-08):
+     EVERY live AI action is metered and gated by available ACUs. There are NO
+     free passes — admin and every role are charged; demo sessions never reach a
+     live provider so they simply use on-device fallbacks (nothing to meter).
+     Charge is taken ONLY on a successful response (a failed/timed-out call costs
+     nothing), and the balance is checked BEFORE the provider is called so an
+     empty wallet never runs up provider cost. opts.acus sets the price
+     (default 1); opts.pool charges a school ACU pool instead of the personal
+     wallet. Callers that used to debit their own wallet now rely on this. ---- */
+  function _monthKey(){try{return new Date().toISOString().slice(0,7)}catch(e){return '0000-00'}}
+  function _personal(){
+    try{
+      if(!(window.SY&&SY.get&&SY.set))return null;
+      var w=SY.get('wallet',null);
+      if(!w||typeof w!=='object')w={acus:100,plan:'child_free',month:_monthKey()};
+      if(w.plan==='child_free'&&w.month!==_monthKey()){w.acus=(w.acus||0)+100;w.month=_monthKey();SY.set('wallet',w);}
+      return w;
+    }catch(e){return null}
+  }
+  function acuBalance(pool){
+    try{
+      if(pool&&window.SY&&SY.schoolGet){var p=SY.schoolGet(pool,'acu',{balance:0,burn:[]});return p.balance||0;}
+      var w=_personal();return w?(w.acus||0):0;
+    }catch(e){return 0}
+  }
+  function canAfford(cost,pool){return acuBalance(pool)>=Math.max(1,cost||1);}
+  function chargeAcus(cost,pool,label){
+    cost=Math.max(1,cost||1);
+    try{
+      if(pool&&window.SY&&SY.schoolGet){var p=SY.schoolGet(pool,'acu',{balance:0,burn:[]});p.balance=Math.max(0,(p.balance||0)-cost);p.burn=(p.burn||[]).concat(cost);SY.schoolSet(pool,'acu',p);}
+      else{var w=_personal();if(w&&window.SY&&SY.set){w.acus=Math.max(0,(w.acus||0)-cost);SY.set('wallet',w);}}
+      try{if(window.SY&&SY.log)SY.log('billing',(label||'AI action')+' — '+cost+' ACU'+(cost>1?'s':''),acuBalance(pool)+' ACUs remaining.');}catch(e){}
+      try{window.dispatchEvent(new CustomEvent('sy-acus',{detail:{balance:acuBalance(pool),pool:pool||null}}));}catch(e){}
+    }catch(e){}
+  }
   /* usage log for the admin console (production reads Firestore aiUsageLogs):
      every live call records provider, model, latency, outcome and a rough GBP
      cost hint (chars→tokens estimate × list price × USD→GBP 0.79). */
@@ -54,6 +90,13 @@
     /* house style for every tool: natural student-readable text, never raw markup */
     system=String(system||'')+' STYLE RULE: write in plain natural language for a student. NEVER use LaTeX or math markup — no \\( \\), \\frac, ^{ } or $ delimiters. Write maths as readable text symbols: x², 3x² + 12x + 12 = 0, ½, √9, ±, ×, ≤.';
     opts=opts||{};var model=modelFor(c);var maxTokens=opts.maxTokens||1024;
+    /* meter FIRST: gate on available ACUs before spending any provider cost.
+       No free passes for any role. Charged on success only (see below).
+       opts.metered:true means the CALLER debits once for a multi-call action
+       (e.g. an exam paper built from several batches) — we still GATE on the
+       balance so an empty wallet is blocked, but skip the per-call debit. */
+    var acuCost=Math.max(1,opts.acus||1),acuPool=opts.pool||null,acuSelf=!!opts.metered;
+    if(!canAfford(acuCost,acuPool))throw new Error('Not enough ACUs — top up to keep using AI.');
     var img=opts.image?splitDataUrl(opts.image):null;
     var t0=Date.now(),inChars=String(system||'').length+String(user||'').length;
     var rawAsk=async function(){
@@ -137,6 +180,7 @@
     try{
       var out=await withTimeout(rawAsk());
       logUsage(c,model,t0,true,inChars,String(out||'').length);
+      if(!acuSelf)chargeAcus(acuCost,acuPool,opts.label||'AI action');   // debit on success only
       return out;
     }catch(e){
       logUsage(c,model,t0,false,inChars,0);
@@ -287,6 +331,9 @@
     return html;
   }
   window.SYAI={ready:ready,provider:provider,config:cfg,ask:ask,render:render,diagramHint:DIAGRAM_HINT,
+    canAfford:canAfford,balance:acuBalance,charge:chargeAcus,
+    /* label for the "insufficient ACUs" case so callers can show a top-up hint */
+    NO_ACUS:'Not enough ACUs — top up to keep using AI.',
     setConfig:function(o){try{localStorage.setItem('sy-ai-live',JSON.stringify(o))}catch(e){}},
     clear:function(){localStorage.removeItem('sy-ai-live')}};
 })();

@@ -86,13 +86,13 @@
       if(!topic){ $('mk-status').textContent='Add a topic first.'; return; }
       if(cur.text && !textIn){ $('mk-status').textContent='Paste some text to summarise.'; return; }
       if(!(window.SYAI && SYAI.ready())){ $('mk-status').textContent='Live AI is warming up — try again in a moment.'; return; }
-      if(opts.spend && !opts.spend(COST, cur.name+': '+topic)) return;
+      if(window.SYAI.canAfford && !window.SYAI.canAfford(COST)){ $('mk-status').textContent='Not enough ACUs — top up to generate ('+COST+' needed).'; return; }
       $('mk-go').disabled=true; $('mk-status').textContent='Writing your '+cur.name.toLowerCase()+' with '+SYAI.provider()+'…';
       try{
         var a = { forWhom: audience.forWhom || 'for a student' };
         var sys = cur.sys(a) + ((window.SY&&SY.stageStyle)?SY.stageStyle(level):'');
         var user = cur.user({ subj:subj, level:level, topic:topic, textIn:textIn });
-        var txt = await SYAI.ask(sys, user, { maxTokens: 1100 });
+        var txt = await SYAI.ask(sys, user, { maxTokens: 1100, acus: COST, label: cur.name+': '+topic });
         var html = cur.render ? cur.render(txt) : SYAI.render(txt);
         state = { type:cur.name, title:cur.name+' · '+topic, subj:subj, level:level, body:txt, html:html };
         $('mk-out').innerHTML = html;

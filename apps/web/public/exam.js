@@ -159,7 +159,9 @@
       var user='Write questions '+(start+1)+' to '+(start+count)+' of a '+n+'-question '+subject+' exam paper for '+level+
         (topics.length?' covering these topics: '+topics.join('; ')+'.':'.')+
         ' Continue numbering from Q'+(start+1)+'.';
-      var text=await window.SYAI.ask(sys,user,{maxTokens:2400,temperature:0.7,noRecover:true,timeoutMs:30000});
+      /* metered:true — the whole paper is charged ONCE by the caller (below),
+         not per question-batch; ask() still gates on the ACU balance */
+      var text=await window.SYAI.ask(sys,user,{maxTokens:2400,temperature:0.7,noRecover:true,timeoutMs:30000,metered:true});
       var re=/Q(\d+)\s*\[(\d+)\s*marks?\]\s*([^\n]+)\n+A\1:\s*([\s\S]*?)(?=\nQ\d+\s*\[|\s*$)/g,m;
       while((m=re.exec(text)))out.push({q:m[3].trim(),marks:parseInt(m[2],10)||2,a:m[4].trim()});
     }
@@ -295,15 +297,20 @@
       var diff=$('sx-diff').value;
       if(!subject){$('sx-status').textContent='Select a subject first.';return}
       var cost=Math.max(10,n);
-      if(opts.spend&&!opts.spend(cost,'Exam paper: '+title+' ('+n+' questions)'))return;
+      /* ACU-gated when built with live AI (no free AI). Fallback questions use
+         no model, so they are not gated or charged. The whole paper is charged
+         ONCE below, only when the AI actually produced it. */
+      var useAI=!!(window.SYAI&&window.SYAI.ready());
+      if(useAI&&window.SYAI.canAfford&&!window.SYAI.canAfford(cost)){$('sx-status').textContent='Not enough ACUs — top up to build the paper with AI ('+cost+' needed).';return}
       var btn=$(goId);btn.disabled=true;
       try{
         var qs;
-        if(window.SYAI&&window.SYAI.ready()){
+        if(useAI){
           $('sx-status').textContent='Writing your paper with '+window.SYAI.provider()+'…';
           try{qs=await liveQuestions(n,subject,level,board,topics,diff,function(done,total){$('sx-status').textContent='Writing questions '+(done+1)+'–'+Math.min(done+10,total)+' of '+total+'…'});}
           catch(e){qs=null}
           if(qs&&qs.length>n)qs=qs.slice(0,n);
+          if(qs&&qs.length){try{window.SYAI.charge&&window.SYAI.charge(cost,null,'Exam paper: '+title+' ('+n+' questions)')}catch(e){}}
         }
         if(!qs||!qs.length)qs=fallbackQuestions(n,subject,level,topics);
         var total=qs.reduce(function(a,x){return a+(x.marks||0)},0);

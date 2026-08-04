@@ -53,24 +53,13 @@
   }
   function myName() { try { return (window.SY && SY.session && SY.session.name) || ''; } catch (e) { return ''; } }
 
-  /* ---- ACU metering via the canonical account wallet (admin/demo free) ---- */
-  function monthKey() { try { return new Date().toISOString().slice(0, 7); } catch (e) { return '0000-00'; } }
-  function isFree() { try { return !!(window.SY && SY.session && (SY.session.role === 'admin' || SY.session.demo)); } catch (e) { return false; } }
-  function wallet() {
-    var w = null; try { w = window.SY && SY.get('wallet', null); } catch (e) {}
-    if (!w || typeof w !== 'object') w = { acus: 100, plan: 'child_free', month: monthKey() };
-    if (w.plan === 'child_free' && w.month !== monthKey()) { w.acus = (w.acus || 0) + 100; w.month = monthKey(); try { SY.set('wallet', w); } catch (e) {} }
-    return w;
-  }
-  function spend(n, label) {
-    if (isFree()) return true;
-    var w = wallet();
-    if ((w.acus || 0) < n) { toast('Not enough ACUs — ' + (w.acus || 0) + '/' + n + ' needed. Top up in Account → Plans.'); return false; }
-    w.acus -= n; try { SY.set('wallet', w); SY.log && SY.log('billing', label + ' — ' + n + ' ACUs', (w.acus) + ' ACUs remaining.'); } catch (e) {}
-    updateBalance();
-    return true;
-  }
-  function balanceText() { return isFree() ? 'Unlimited (included)' : (wallet().acus + ' ACUs'); }
+  /* ---- ACU metering ----
+     Every tool is metered and gated by available ACUs — no free passes for any
+     role. The actual debit happens centrally in SYAI.ask (charged on success),
+     so here we only PRE-CHECK the balance for a clean early message; askAI()
+     passes the tool's cost through so ask() debits the right amount. */
+  function canAfford(n) { try { return !window.SYAI || !SYAI.canAfford || SYAI.canAfford(n); } catch (e) { return true; } }
+  function balanceText() { try { return (window.SYAI && SYAI.balance ? SYAI.balance() : 0) + ' ACUs'; } catch (e) { return '—'; } }
 
   /* ---- SYAI loader (partner consoles may not include ai.js) ---- */
   var aiPromise = null;
@@ -84,10 +73,11 @@
     });
     return aiPromise;
   }
-  function askAI(system, user, maxTokens) {
+  function askAI(system, user, opts) {
+    opts = opts || {};
     return ensureAI().then(function (ok) {
       if (!ok || !window.SYAI) throw new Error('offline');
-      return SYAI.ask(system, user, { maxTokens: maxTokens || 900, temperature: 0.7 });
+      return SYAI.ask(system, user, { maxTokens: opts.maxTokens || 900, temperature: 0.7, acus: opts.acus || 1, label: opts.label || 'AI Growth' });
     });
   }
 
@@ -294,7 +284,11 @@
 
   function injectStyle() { if (document.getElementById('sy-g-style')) return; var s = document.createElement('style'); s.id = 'sy-g-style'; s.textContent = STYLE; document.head.appendChild(s); }
 
-  function updateBalance() { var b = document.getElementById('sy-g-bal'); if (b) b.textContent = 'AI Growth credits: ' + balanceText(); }
+  function updateBalance() {
+    var b = document.getElementById('sy-g-bal'); if (b) b.textContent = 'AI Growth credits: ' + balanceText();
+    var b2 = document.getElementById('sy-g-bal2'); if (b2) b2.textContent = balanceText();
+  }
+  try { window.addEventListener('sy-acus', updateBalance); } catch (e) {}
 
   function field(f) {
     var full = (f.type === 'area') ? ' class="full"' : '';
@@ -311,7 +305,7 @@
     panel.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span class="sy-g-ic">' + tool.icon + '</span><b style="font-size:16px">' + esc(tool.name) + '</b>' +
       '<button class="sy-g-close" style="margin-left:auto;background:none;border:0;color:var(--ink-3,#8795AE);cursor:pointer;font-size:20px" title="Close">×</button></div>' +
       '<div class="sy-g-form">' + tool.fields.map(field).join('') + '</div>' +
-      '<div class="sy-g-actions"><button class="btn solid sy-g-run">Generate' + (tool.cost && !isFree() ? ' · ' + tool.cost + ' ACU' + (tool.cost > 1 ? 's' : '') : '') + '</button>' +
+      '<div class="sy-g-actions"><button class="btn solid sy-g-run">Generate · ' + (tool.cost || 1) + ' ACU' + ((tool.cost || 1) > 1 ? 's' : '') + '</button>' +
       '<span class="sy-g-bal" id="sy-g-bal2" style="align-self:center"></span></div>' +
       '<div class="sy-g-out" id="sy-g-out" hidden></div>';
     try { panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
@@ -331,7 +325,7 @@
     /* light validation: need at least one meaningful input */
     var filled = Object.keys(v).some(function (k) { return v[k]; });
     if (!filled && !tool.analytics && !tool.timing) { toast('Fill in the fields first'); return; }
-    if (!spend(tool.cost || 1, 'Growth: ' + tool.name)) return;
+    if (!canAfford(tool.cost || 1)) { toast((window.SYAI && SYAI.NO_ACUS) || 'Not enough ACUs — top up in Account → Plans.'); return; }
     out.hidden = false; btn.disabled = true; var old = btn.textContent; btn.textContent = 'Generating…';
     out.innerHTML = '<span style="color:var(--ink-3,#8795AE)">Working…</span>';
 
@@ -354,14 +348,14 @@
       var k = computeKPIs(v), tbl = kpiTable(k);
       var sys = 'You are a paid-media analyst for a UK ' + R.noun + '. Interpret the metrics plainly for a non-expert. Benchmark against typical UK small-business results and give clear next actions.';
       var user = 'Campaign metrics — impressions ' + k.impr + ', clicks ' + k.clicks + ', spend £' + k.spend + ', conversions ' + k.conv + (k.rev ? ', revenue £' + k.rev : '') + '.\nComputed: CTR ' + k.ctr.toFixed(2) + '%, CPC £' + k.cpc.toFixed(2) + ', conversion rate ' + k.cr.toFixed(2) + '%' + (k.conv ? ', CPA £' + k.cpa.toFixed(2) : '') + (k.rev ? ', ROAS ' + k.roas.toFixed(2) + '×' : '') + '.\nGive: a 2-line verdict (is this good?), what stands out, the single biggest lever to pull next, and 3 concrete optimisations.';
-      askAI(sys, user, 700).then(function (t) { show(t, '<b style="display:block;margin-bottom:4px">Your KPIs</b>' + tbl); })
+      askAI(sys, user, { maxTokens: 700, acus: tool.cost, label: 'Growth: ' + tool.name }).then(function (t) { show(t, '<b style="display:block;margin-bottom:4px">Your KPIs</b>' + tbl); })
         .catch(function () { show('These KPIs are computed from your inputs. Reconnect to StudYear for the AI reading.\n\nRule of thumb: a CTR above ~1–2% and a conversion rate above ~2–5% are healthy for most UK small-business campaigns. Watch your CPA against the value of one customer.', '<b style="display:block;margin-bottom:4px">Your KPIs</b>' + tbl); });
       return;
     }
 
     /* ---- standard AI tools ---- */
     var p = tool.prompt(v, R);
-    askAI(p.sys, p.user, tool.landing ? 1500 : 950).then(function (t) {
+    askAI(p.sys, p.user, { maxTokens: tool.landing ? 1500 : 950, acus: tool.cost, label: 'Growth: ' + tool.name }).then(function (t) {
       if (tool.landing) {
         var title = (v.offer || 'Landing page') + (myName() ? ' · ' + myName() : '');
         show(t, '', function () { return landingHTML(title, md(t)); });

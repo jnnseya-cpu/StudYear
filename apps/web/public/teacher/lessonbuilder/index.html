@@ -44,12 +44,15 @@ $('gen').onclick=function(){
   var topic=$('topic').value.trim();if(!topic){toast('Enter a topic');return}
   var level=$('level').value.trim()||'this level';var board=$('board').value.trim();
   var pool=schoolAcu();
-  if(TW.schoolCode){if(pool<15){$('out').innerHTML='<div class="empty">Your school pool has '+pool+' ACUs — 15 needed. Ask your admin to top up in ACU command.</div>';return}
-    var p=SY.schoolGet(TW.schoolCode,'acu',{balance:0,burn:[]});p.balance=Math.max(0,(p.balance||0)-15);p.burn=(p.burn||[]).concat(15);SY.schoolSet(TW.schoolCode,'acu',p);$('acu-note').textContent='Uses 15 ACUs per course. School pool: '+p.balance.toLocaleString()+' ACUs.';}
+  /* ACU-gated. The debit (15) is taken centrally by SYAI.ask on success —
+     from the school pool when the teacher is linked to a school, otherwise the
+     teacher's own wallet. No free AI. */
+  if(TW.schoolCode&&pool<15){$('out').innerHTML='<div class="empty">Your school pool has '+pool+' ACUs — 15 needed. Ask your admin to top up in ACU command.</div>';return}
   if(window.SYAI&&SYAI.ready()){
+    if(SYAI.canAfford&&!SYAI.canAfford(15,TW.schoolCode||null)){$('out').innerHTML='<div class="empty">Not enough ACUs — 15 needed to build a course. Top up in ACU command.</div>';return}
     $('out').innerHTML='<div class="empty">Writing the course with '+SYAI.provider()+'…</div>';
-    SYAI.ask("You are a "+level+" course designer for teachers"+(board?" aligned to the "+board+" exam board":"")+". Produce a 4–6 module course: for each module a '## Module N — <title>' heading, 3–5 concrete subtopics as bullets, and a line '✔ End-of-module quiz: 5 questions'. Real, exam-relevant content. End with a one-line teaching sequence note.","Course topic: "+topic,{maxTokens:1400})
-      .then(function(t){$('out').innerHTML='<div class="module">'+SYAI.render(t)+'</div>';SY.log('course','Live AI course generated',topic+' · '+level);toast('Live AI course generated')})
+    SYAI.ask("You are a "+level+" course designer for teachers"+(board?" aligned to the "+board+" exam board":"")+". Produce a 4–6 module course: for each module a '## Module N — <title>' heading, 3–5 concrete subtopics as bullets, and a line '✔ End-of-module quiz: 5 questions'. Real, exam-relevant content. End with a one-line teaching sequence note.","Course topic: "+topic,{maxTokens:1400,pool:TW.schoolCode||undefined,acus:15,label:'AI course: '+topic})
+      .then(function(t){$('out').innerHTML='<div class="module">'+SYAI.render(t)+'</div>';SY.log('course','Live AI course generated',topic+' · '+level);if($('acu-note'))$('acu-note').textContent='Uses 15 ACUs per course. School pool: '+schoolAcu().toLocaleString()+' ACUs.';toast('Live AI course generated')})
       .catch(function(){lbStatic(topic,level,board)});
     return;
   }
