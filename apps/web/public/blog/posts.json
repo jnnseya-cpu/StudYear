@@ -46,5 +46,21 @@
     "published": true,
     "date": "2026-08-02T09:00:00.000Z",
     "reviewed": "2026-08-03T09:00:00.000Z"
+  },
+  {
+    "id": "seed4",
+    "title": "Spotting NEET risk from primary — without labelling a single child",
+    "slug": "neet-risk-early-identification-primary-schools",
+    "category": "Policy",
+    "excerpt": "A government review wants primary schools to identify children at risk of becoming NEET at 16. Here's how to do it as early support, not a label — from the data schools already hold.",
+    "metaDesc": "The 2026 NEET review asks primary schools to identify children at risk of leaving education jobless at 16. Learn how to do it ethically — as strengths-and-needs early support, not a label — using data schools already generate.",
+    "body": "A government review into the NEET crisis — young people <strong>not in education, employment or training</strong> — is set to recommend that primary schools in England identify, early, the children most likely to leave education jobless at 16. It is the right instinct: by Year 11 the trajectory is often set. But it raises an obvious worry — how do you flag a seven-year-old's future without labelling them?\n\n## Early identification is only useful if it triggers support\nSpotting risk is not the goal; acting on it is. The evidence from area-based approaches — the kind of cross-agency model the review is studying in Dublin — is that early, sustained mentoring and real encounters with the world of work change destinations. Identification without a response is just a label.\n\n## The signals are already in the building\nSchools don't need a new assessment to see risk early. The most predictive signals are ones every primary already generates: **attendance patterns**, **reading and number fluency**, engagement and behaviour. The [Education Endowment Foundation](https://educationendowmentfoundation.org.uk/) is clear that attendance and early literacy and numeracy are among the strongest levers for later outcomes.\n\n## Do it as strengths-and-needs, never a verdict\nThe safe way to run this matters as much as the maths:\n- Frame every child as *on track*, *keep watch*, or *priority for support* — never a prediction they will be unemployed, and never something the child sees.\n- Let context — Pupil Premium, SEND, EAL, attendance — **unlock extra help**, never lower a child's score. Otherwise identification just entrenches disadvantage.\n- Show the drivers, keep a teacher in the loop, monitor for any group being over-represented, and keep records permissioned and audit-logged.\n\n## How StudYear does this\nStudYear's [primary Future-Readiness view](/school/primary/) computes a strengths-and-needs status from the data your school already holds, and attaches the response automatically — fluency catch-up through [SkillRush](/skillrush/), early aspiration encounters and mentoring through [Pathways](/career/), and family partnership through Parent Action Cards. It exports an inspection-ready evidence pack, and rolls up — anonymised — into a combined-authority view so an area can commission mentoring and track outcomes per pound. See [how StudYear works](/how-it-works/).\n\n## FAQ\n### What does NEET mean?\nNEET stands for \"not in education, employment or training\" — used for young people, typically 16–24, who are not in any of those. The review's aim is to reduce it by acting far earlier, in primary school.\n### Isn't it wrong to label a young child as a future NEET?\nYes — which is why it should never be done as a label. Done properly it is a strengths-and-needs view that widens support: the child is never told a prediction, and context only unlocks help rather than lowering their score.\n### How can primary schools identify risk without extra workload?\nBy computing it from data the school already generates — attendance, reading and number fluency, engagement and behaviour — and surfacing it inside tools staff already use, so spotting risk is a glance, not a new form.",
+    "tags": ["NEET", "early identification", "primary schools", "careers", "attendance", "StudYear"],
+    "keyword": "NEET early identification primary schools",
+    "readTime": 5,
+    "seoScore": 96,
+    "published": true,
+    "date": "2026-08-07T09:00:00.000Z",
+    "reviewed": "2026-08-07T09:00:00.000Z"
   }
 ]

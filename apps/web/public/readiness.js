@@ -55,14 +55,20 @@
   };
   var FLAG_ADD = { pp: 'Pupil-Premium-funded support eligible', send: 'SEND support review', eal: 'EAL language support', absence: 'Escalate to attendance lead', carer: 'Young-carer support + flexible plan' };
 
-  /** assess(signals, flags, age) → readiness assessment. Higher score = more on
-      track. Context flags never reduce the score. */
-  function assess(sig, flags, age) {
+  /* primary phase leans harder on the earliest, most predictive signals —
+     attendance and reading/number fluency — because at KS1/KS2 those are the
+     levers that keep a child on track long before "attainment" means much. */
+  var W_PRIMARY = { attendance: 0.32, attainment: 0.16, fluency: 0.24, engagement: 0.14, behaviour: 0.14 };
+
+  /** assess(signals, flags, age, phase) → readiness assessment. Higher score =
+      more on track. Context flags never reduce the score. */
+  function assess(sig, flags, age, phase) {
     sig = sig || {}; flags = flags || {};
+    var weights = (phase === 'primary' || (phase == null && isPrimary(age))) ? W_PRIMARY : W;
     var num = 0, den = 0, drivers = [], strengths = [];
-    Object.keys(W).forEach(function (k) {
+    Object.keys(weights).forEach(function (k) {
       var v = sig[k]; if (v == null || isNaN(v)) return;
-      num += v * W[k]; den += W[k];
+      num += v * weights[k]; den += weights[k];
       if (v < 55) drivers.push({ k: k, label: NEED[k], v: Math.round(v) });
       else if (v >= 78) strengths.push({ k: k, label: STRENGTH[k], v: Math.round(v) });
     });
@@ -120,13 +126,14 @@
     var flags = { pp: !!(m.pp || r.pp), send: !!(m.send || r.send), eal: !!(m.eal || r.eal), absence: (att != null && att < 90), carer: !!(m.carer) };
     return { key: r.email || r.name || ('p' + hash(JSON.stringify(r))), name: r.name || (r.email || '').split('@')[0], year: r.year || (m.profile && m.profile.level) || '—', signals: sig, flags: flags };
   }
-  function gatherSchool() {
+  function gatherSchool(phase) {
     try {
       var code = schoolCode(); var roster = code ? (SY.schoolGet(code, 'roster', []) || []) : [];
       roster = roster.filter(function (r) { return r && (r.email || r.name); });
+      if (phase === 'primary') roster = roster.filter(function (r) { return isPrimary(r.year || (r.m && r.m.profile && r.m.profile.level)); });
       if (roster.length) return { list: roster.map(fromRoster), sample: false };
     } catch (e) {}
-    return { list: sampleCohort(24, 'school-primary'), sample: true };
+    return { list: sampleCohort(24, 'school-' + (phase === 'primary' ? 'primary' : 'secondary')), sample: true };
   }
   function gatherParent() {
     try {
@@ -259,9 +266,12 @@
 
   /* ---------------- role renderers ---------------- */
   var CTX = {};
-  function drawStaff(host, live) {
+  function drawStaff(host, live, phase) {
     var list = live.list, s = summarise(list), eq = equity(list);
-    var h = '<div class="sy-r">' + ETHICS +
+    var intro = phase === 'primary'
+      ? '<div class="ethics" style="border-color:rgba(92,187,123,.4)"><b>Primary (EYFS–KS2) early support.</b> At this age the strongest levers are <b>attendance</b> and <b>reading &amp; number fluency</b> — this view weights them accordingly. The aim is early help and aspiration, never a label a child ever sees.</div>'
+      : '';
+    var h = '<div class="sy-r">' + intro + ETHICS +
       '<div class="tiles">' +
         tile(s.priority, 'Priority for support', 'crit') +
         tile(s.watch, 'Keep watch', 'warn') +
@@ -269,7 +279,8 @@
         tile(list.length, 'Cohort', '') +
       '</div>';
     if (eq.alerts.length) h += '<div class="alert"><b>Equity check:</b> ' + eq.alerts.map(function (x) { return FLAGS[x.g] + ' pupils are over-represented in “priority” (' + Math.round(x.rate * 100) + '% vs ' + Math.round(x.base * 100) + '% cohort)'; }).join('; ') + '. Review for bias and direct targeted resource.</div>';
-    h += '<div class="act" style="margin-bottom:6px"><button class="rb solid" id="sy-r-export">Download evidence pack (Word)</button><button class="rb" id="sy-r-filter">Show priority only</button></div>';
+    var primaryLink = (role() === 'school' && phase !== 'primary') ? '<a class="rb" href="' + BASE + 'school/primary/" style="text-decoration:none">Open primary (EYFS–KS2) view →</a>' : '';
+    h += '<div class="act" style="margin-bottom:6px"><button class="rb solid" id="sy-r-export">Download evidence pack (Word)</button><button class="rb" id="sy-r-filter">Show priority only</button>' + primaryLink + '</div>';
     h += '<div id="sy-r-list">' + list.map(function (c) { return pupilRow(c, { canLog: true }); }).join('') + '</div></div>';
     host.innerHTML = h;
     proBanner(host, live.sample);
@@ -336,17 +347,19 @@
     var r = role();
     if (r === 'authority') return drawAuthority(host);
     if (r === 'parent') return drawParent(host, gatherParent());
-    return drawStaff(host, gatherSchool()); // school + teacher
+    return drawStaff(host, gatherSchool(CTX.phase), CTX.phase); // school + teacher (+ primary phase)
   }
-  function mount(target) {
+  function mount(target, opts) {
     injectStyle();
     var host = target || document.getElementById('readiness-root'); if (!host) return null;
+    opts = opts || {};
+    CTX.phase = opts.phase || host.getAttribute('data-phase') || null;
     if (host.getAttribute('data-sy-ready') === '1' && !target) return host;
     host.setAttribute('data-sy-ready', '1');
     if (!/\bcard\b/.test(host.className)) host.className = (host.className ? host.className + ' ' : '') + 'card';
-    host.innerHTML = '<h3>Future-Readiness — early identification &amp; support</h3><div class="sub" style="color:var(--ink-3,#8795AE);font-size:12.5px;margin-bottom:2px">Spot the children who need extra support to stay in education, employment or training — early, and turn it into action and evidence.</div><div class="sy-r-body"></div>';
+    var title = CTX.phase === 'primary' ? 'Primary Future-Readiness — early identification &amp; support' : 'Future-Readiness — early identification &amp; support';
+    host.innerHTML = '<h3>' + title + '</h3><div class="sub" style="color:var(--ink-3,#8795AE);font-size:12.5px;margin-bottom:2px">Spot the children who need extra support to stay in education, employment or training — early, and turn it into action and evidence.</div><div class="sy-r-body"></div>';
     _host = host.querySelector('.sy-r-body'); draw(_host);
-    try { window.addEventListener('sy-acus', function () {}); } catch (e) {}
     return host;
   }
 
