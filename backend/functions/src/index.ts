@@ -796,6 +796,22 @@ const PUBLIC_ROLES = ['student', 'parent', 'teacher', 'school', 'tutor', 'author
 export const register = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
   try {
     const user = await requireUser(req.headers.authorization);
+    // human-only: cap registrations per account and reject browsers that
+    // self-report as automated in the Sentinel attestation. Defence-in-depth
+    // atop Firebase Auth's own abuse controls and the client-side gate.
+    await enforceRate(user.uid, 'register', 20);
+    try {
+      const raw = String(req.body?.human ?? '');
+      if (raw) {
+        const att = JSON.parse(Buffer.from(raw, 'base64').toString('utf8')) as { auto?: boolean; h?: boolean };
+        if (att && att.auto === true) {
+          await audit('REGISTER_BLOCKED_AUTOMATION', user.uid, { reason: 'sentinel:auto' });
+          throw httpError(403, 'Automated sign-up blocked — this platform is for humans.');
+        }
+      }
+    } catch (e) {
+      if ((e as { status?: number }).status === 403) throw e; // re-throw the block; ignore parse errors
+    }
     const name = String(req.body?.name ?? '').trim().slice(0, 120);
     const role = String(req.body?.role ?? '');
     if (!PUBLIC_ROLES.includes(role)) throw httpError(400, 'invalid role');

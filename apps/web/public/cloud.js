@@ -243,7 +243,7 @@
       catch (e2) { return false; }
     }
     saveTok(email, t);
-    try { await race(api('/register', 'POST', { name: name, role: role }, email)); } catch (e) {}
+    try { await race(api('/register', 'POST', { name: name, role: role, human: (window.SYSentinel && SYSentinel.token) ? SYSentinel.token() : null }, email)); } catch (e) {}
     /* welcome + verify email via Firebase's own delivery (no SMTP needed) */
     try { if (t && t.idToken) await race(idp('sendOobCode', { requestType: 'VERIFY_EMAIL', idToken: t.idToken })); } catch (e) {}
     schedulePush(email);

@@ -7,6 +7,7 @@
 <link rel="manifest" href="../manifest.json">
 <link rel="icon" href="../icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="../theme.css">
+<script src="../sentinel.js"></script>
 <script src="../vendor/nacl-fast.min.js"></script>
 <script src="../e2e.js"></script>
 <script src="../cloud.js"></script>
@@ -67,7 +68,7 @@
     <button id="t-in" class="on">Sign in</button>
     <button id="t-up">Create account</button>
   </div>
-  <form id="f" novalidate>
+  <form id="f" novalidate data-sy-human>
     <div id="row-name" style="display:none">
       <label for="name">Full name</label>
       <input id="name" type="text" autocomplete="name" placeholder="e.g. Amara Okafor">
@@ -194,11 +195,13 @@ function _setThr(t){try{localStorage.setItem('sy-auth-throttle',JSON.stringify(t
 function _fail(){var t=_thr();t.n=(t.n||0)+1;if(t.n>=5)t.until=Date.now()+Math.min(300000,15000*Math.pow(2,t.n-5));_setThr(t)}
 function _pass(){_setThr({n:0,until:0})}
 function _resetHuman(){newChallenge();var a=$('chal-a');if(a)a.value='';$('human-ck').checked=false;$('human-challenge').style.display='none'}
-function botGuard(){
+function botGuard(evt){
   var t=_thr(),now=Date.now();
   if(t.until&&now<t.until){say('Too many attempts detected. Please wait '+Math.ceil((t.until-now)/1000)+' seconds before trying again.','err');return false}
   if($('hp').value){_fail();say('Automated request blocked. Reload the page and try again.','err');return false}      /* honeypot */
   if(now-_formLoaded<1200){_fail();say('That was too fast — please take a moment and try again.','err');return false}  /* time-trap */
+  /* Sentinel: human-only gate — blocks automated browsers and synthetic submits */
+  if(window.SYSentinel){var g=SYSentinel.humanGate({event:evt});if(!g.ok){_fail();say(g.reason,'err');return false}}
   if(!$('human-ck').checked){say('Please confirm you are a human to continue.','err');$('human-ck').focus();return false}
   if(parseInt($('chal-a').value,10)!==_chalA){_fail();_resetHuman();say('Human check failed — please answer the new question.','err');return false}
   return true;
@@ -206,7 +209,7 @@ function botGuard(){
 
 $('f').addEventListener('submit',async function(e){
   e.preventDefault();
-  if(!botGuard())return;
+  if(!botGuard(e))return;
   var email=$('email').value.trim().toLowerCase(), pw=$('pw').value;
   if(!/^\S+@\S+\.\S+$/.test(email)){say('Enter a valid email address.','err');return}
   if(pw.length<8){say('Password must be at least 8 characters.','err');return}

@@ -76,6 +76,17 @@
     (document.head || document.documentElement).appendChild(mj);
   } catch (e) {}
 
+  // Sentinel: the anti-hacking / human-only security agent. Loaded on EVERY
+  // page (every section + part of the OS) and early (not deferred) so it captures
+  // input and guards synthetic events from the first moment.
+  try {
+    if (!window.__SY_SENTINEL) {
+      var sj = document.createElement('script');
+      sj.src = base + 'sentinel.js';
+      (document.head || document.documentElement).appendChild(sj);
+    }
+  } catch (e) {}
+
   // cloud bridge: Firebase Auth mirror + end-to-end-encrypted sync + Storage.
   // A silent no-op until firebase-config.json carries real values (go-live).
   try {
