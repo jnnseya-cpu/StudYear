@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node ../../scripts/build-stamp.mjs && node ../../scripts/gen-blog.mjs && next build",
+    "build": "node ../../scripts/build-stamp.mjs && node ../../scripts/gen-blog.mjs && node ../../scripts/gen-free.mjs && next build",
     "start": "next start",
     "typecheck": "tsc --noEmit"
   },
