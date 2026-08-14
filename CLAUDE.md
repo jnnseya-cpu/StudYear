@@ -1,5 +1,16 @@
 # Claude working notes — StudYear
 
+## Operating directive (binding — read first)
+
+Work to **`docs/ENGINEERING-DIRECTIVE.md`** — the owner's Senior Full-Stack
+Engineering Operating Directive (60 rules). It governs how every change is
+made. In short: **read before you write, reuse existing work, never repeat
+completed work, make the smallest correct change, fix root causes, don't break
+stable functionality, verify before claiming success, keep one source of truth,
+and leave the platform more stable after every change.** Before touching the
+customer-acquisition surface, read **`docs/GROWTH-STACK.md`** (the growth
+inventory) so nothing is rebuilt under a new name.
+
 ## Deployment (owner's current decision, 2026-07-15 — LIVE)
 
 - **Production is https://www.studyear.com/** — the Vercel project
