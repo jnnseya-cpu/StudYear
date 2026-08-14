@@ -30,9 +30,12 @@
     try { var s = (document.currentScript && document.currentScript.src) || ''; return s ? s.replace(/growth\.js.*$/, '') : '../'; }
     catch (e) { return '../'; }
   })();
+  var FREE = 'studyear.com/free';
 
   /* ---- role framing: how each partner talks and who they reach ---- */
   var ROLES = {
+    admin: { noun: 'StudYear platform', who: 'students, parents and schools across the UK',
+      goal: 'drive sign-ups to the free tools at ' + FREE, voice: 'warm, credible, student-first' },
     tutor: { noun: 'tutoring service', who: 'parents and students looking for a tutor',
       goal: 'win new tutoring enquiries and bookings', voice: 'warm, expert, reassuring to parents' },
     school: { noun: 'school', who: 'local families, prospective pupils and the school community',
@@ -222,6 +225,179 @@
     }
   ];
 
+  /* ============ OWNER-ONLY TOOLS (admin mount) ============================
+     These two absorb the former standalone social.js + nurture.js: a ready
+     acquisition content calendar, and the captured free-tool lead feed with
+     CSV export + mark-contacted. Both are platform-owner tools, so they only
+     appear when the signed-in session is a StudYear admin. Copy generation
+     itself still routes through the same 10 tools above. */
+  function isAdmin() { try { return (window.SY && SY.session && SY.session.role) === 'admin'; } catch (e) { return false; } }
+  function sessionEmail() { try { return (window.SY && SY.session && SY.session.email) || ''; } catch (e) { return ''; } }
+  function maskEmail(e) { e = String(e || ''); var at = e.indexOf('@'); if (at < 1) return '•••'; var u = e.slice(0, at), d = e.slice(at + 1); return (u.length <= 2 ? u[0] + '•' : u.slice(0, 2) + '•••') + '@' + d; }
+  function csvEsc(v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+
+  /* rolling acquisition content calendar — every angle points at the free tool */
+  var CAL = [
+    { t: 'How to predict your GCSE grade in 60 seconds (free, no sign-up)', a: 'the free predicted-grade tool', fmt: 'Reel 15–20s', hook: 'Surprising stat' },
+    { t: 'POV: your exam is in 8 weeks and you have no plan', a: 'free revision plan tool', fmt: 'TikTok 20–30s', hook: 'Relatable problem' },
+    { t: '3 revision mistakes that quietly cost you grades', a: 'study science (retrieval, spacing, past papers)', fmt: 'Reel 25–35s', hook: 'Quick tip' },
+    { t: 'The AI tutor that refuses to do your homework for you', a: 'AI tutor teaches the method', fmt: 'Reel 15–25s', hook: 'Bold question' },
+    { t: 'Stop re-reading your notes. Do this instead.', a: 'active recall / flashcards + quiz', fmt: 'TikTok 20–30s', hook: 'Quick tip' },
+    { t: 'Free GCSE Maths revision plan in one minute', a: '/free/gcse-maths/ subject tool', fmt: '15s short', hook: 'Surprising stat' },
+    { t: 'Parents: report cards are autopsies. You want a heartbeat.', a: 'parent dashboard + early alerts', fmt: 'Reel 25–35s', hook: 'Relatable problem' },
+    { t: 'What grade are you ACTUALLY on track for? (be honest)', a: 'predicted grade tool', fmt: 'TikTok 20–30s', hook: 'Bold question' },
+    { t: 'A tutor is £40/hour. This is free.', a: 'free AI tutor vs private tuition cost', fmt: 'Reel 15–25s', hook: 'Surprising stat' },
+    { t: 'Turn any topic into flashcards in 5 seconds', a: 'AI flashcard maker', fmt: '15s short', hook: 'Quick tip' },
+    { t: 'The 4-week revision plan that actually works', a: 'free revision plan tool', fmt: 'Reel 25–35s', hook: 'Quick tip' },
+    { t: 'How to choose GCSE options without wrecking your future', a: 'Career Passport', fmt: 'TikTok 25–35s', hook: 'Bold question' },
+    { t: 'Mark my essay: instant examiner feedback with targets', a: 'AI essay marking', fmt: 'Reel 20–30s', hook: 'Behind the scenes' },
+    { t: 'Free A-Level Biology predicted grade + plan', a: '/free/alevel-biology/ subject tool', fmt: '15s short', hook: 'Surprising stat' },
+    { t: 'Times tables still shaky? Fix it in a week.', a: 'SkillRush / Maths Heroes fluency', fmt: 'Reel 20–30s', hook: 'Relatable problem' },
+    { t: 'The night-before-the-exam plan (if you left it late)', a: 'revision plan tool, exam mode', fmt: 'TikTok 25–35s', hook: 'Relatable problem' },
+    { t: 'Why past papers early = higher grades', a: 'exam practice + predicted grades', fmt: 'Reel 20–30s', hook: 'Surprising stat' },
+    { t: 'Parents: the one thing to do this week to help', a: 'Parent Action Cards', fmt: 'Reel 20–30s', hook: 'Quick tip' },
+    { t: 'Get your revision plan emailed to you (free)', a: 'free tool + email plan', fmt: '15s short', hook: 'Quick tip' },
+    { t: 'How spaced repetition beats cramming (proof)', a: 'Smart Review / spaced repetition', fmt: 'TikTok 25–35s', hook: 'Surprising stat' },
+    { t: 'Free GCSE English Literature plan + predicted grade', a: '/free/gcse-english-literature/', fmt: '15s short', hook: 'Surprising stat' },
+    { t: 'Struggling in one subject? Start here (free).', a: 'free tool → AI tutor', fmt: 'Reel 15–25s', hook: 'Relatable problem' },
+    { t: 'The revision timetable maker that adapts to your mood', a: 'study planner + energy check-in', fmt: 'Reel 20–30s', hook: 'Behind the scenes' },
+    { t: 'Quiz yourself on any topic in seconds', a: 'AI quiz generator', fmt: '15s short', hook: 'Quick tip' },
+    { t: 'How to actually learn a topic (interactive lesson demo)', a: 'interactive AI lessons', fmt: 'TikTok 25–35s', hook: 'Behind the scenes' },
+    { t: 'Free predicted grade for every GCSE subject', a: '/free/ subject hub', fmt: 'Reel 15–25s', hook: 'Surprising stat' },
+    { t: 'Invite a friend, you both get free credits', a: 'referral loop', fmt: '15s short', hook: 'Quick tip' },
+    { t: 'From "no idea where to start" to a plan, free, in 60s', a: 'free tool end-to-end', fmt: 'Reel 20–30s', hook: 'Relatable problem' }
+  ];
+  function calIdx() { try { return Math.floor(new Date().getTime() / 86400000) % CAL.length; } catch (e) { return 0; } }
+  function calUpcoming(n) { var out = [], b = calIdx(); for (var i = 0; i < n; i++) out.push(CAL[(b + i) % CAL.length]); return out; }
+  function calScript(idea) {
+    return {
+      sys: 'You are StudYear\'s short-form video producer, growing a UK edtech brand organically on TikTok, Reels and Shorts. Native, punchy, honest, never cringe or salesy. Every post ends with a clear call to action to the free tool at ' + FREE + ' (predicted grade + personalised revision plan, no sign-up).',
+      user: 'Create a ready-to-film ' + idea.fmt + ' about: "' + idea.t + '" (angle: ' + idea.a + '). Hook style: ' + idea.hook + '.\nReturn labelled sections: HOOK (first 3s spoken + on-screen), SCRIPT (3–5 scenes as [visual]/[on-screen text]/[voiceover]), CAPTION (1–2 lines + CTA to ' + FREE + '), HASHTAGS (8–12 UK study tags), BEST TIME (one line).'
+    };
+  }
+
+  /* lifecycle segments for the captured-lead nurture drafts */
+  var SEG = [
+    { id: 'new-lead', name: 'New lead → account', who: 'Used a free tool and left an email but has no account.', goal: 'Give more value, then convert to a free account.' },
+    { id: 'parent-lead', name: 'Parent lead', who: 'A parent who wants to help their child but may not afford tuition.', goal: 'Reassure, show the parent dashboard, convert to a free family account.' },
+    { id: 'dormant', name: 'Dormant win-back', who: 'An existing user who has gone quiet for 30+ days.', goal: 'A timely, relevant reason to return.' },
+    { id: 'school', name: 'School contact', who: 'A school staff contact who can pass free StudYear to families.', goal: 'Equip them to forward it + show the school platform (NEET early-warning).' }
+  ];
+
+  function loadLeads() {
+    try { if (!(window.SYCloud && SYCloud.leadsList)) return Promise.resolve(null); return SYCloud.leadsList(sessionEmail()).catch(function () { return null; }); }
+    catch (e) { return Promise.resolve(null); }
+  }
+  function leadsCsv(items) {
+    var head = 'email,first_name,source,subject,grade,ref,captured,contacted\n';
+    return head + (items || []).map(function (l) {
+      var fn = String(l.email || '').split('@')[0].replace(/[._-].*$/, '');
+      return [l.email, fn, l.source, l.subject, l.grade, l.ref, l.createdAt, l.contacted ? 'yes' : 'no'].map(csvEsc).join(',');
+    }).join('\n');
+  }
+
+  /* --- custom render: content calendar --- */
+  function renderCalendar(panel) {
+    panel.hidden = false;
+    var t = CAL[calIdx()];
+    panel.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span class="sy-g-ic">📅</span><b style="font-size:16px">Content calendar</b>' +
+      '<button class="sy-g-close" style="margin-left:auto;background:none;border:0;color:var(--ink-3,#8795AE);cursor:pointer;font-size:20px" title="Close">×</button></div>' +
+      '<p class="sub" style="color:var(--ink-3,#8795AE);margin:0 0 8px">A ready-to-film short-video idea for today — every post drives traffic to the free tool. Generate, copy, post.</p>' +
+      '<div style="border:1px solid var(--line,rgba(120,140,190,.28));border-radius:12px;padding:12px 14px;background:rgba(6,11,24,.28)"><div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#4FA6E0">' + esc(t.fmt) + ' · today</div><b style="display:block;font-size:14px;margin:3px 0">' + esc(t.t) + '</b><span style="font-size:12px;color:var(--ink-3,#8795AE)">Angle: ' + esc(t.a) + ' → ' + FREE + '</span></div>' +
+      '<div class="sy-g-actions"><button class="btn solid sy-g-run">Generate today’s post · 2 ACUs</button><button class="btn sm sy-g-batch">Batch next 7 days</button></div>' +
+      '<div class="sy-g-out" id="sy-g-out" hidden></div>';
+    panel.querySelector('.sy-g-close').onclick = function () { panel.hidden = true; panel.innerHTML = ''; };
+    var out = panel.querySelector('#sy-g-out');
+    function runOne(idea, btn) {
+      if (!canAfford(2)) { toast((window.SYAI && SYAI.NO_ACUS) || 'Not enough ACUs.'); return; }
+      out.hidden = false; if (btn) btn.disabled = true; out.innerHTML = '<span style="color:var(--ink-3,#8795AE)">Writing your ' + esc(idea.fmt) + '…</span>';
+      var p = calScript(idea);
+      askAI(p.sys, p.user, { maxTokens: 950, temperature: 0.85, acus: 2, label: 'Growth: content calendar' }).then(function (txt) {
+        out.innerHTML = md(txt) + '<div class="sy-g-actions"><button class="btn sm sy-g-copy">Copy</button><button class="btn sm sy-g-dl">Download</button></div>';
+        out.querySelector('.sy-g-copy').onclick = function () { try { navigator.clipboard.writeText(txt); toast('Copied'); } catch (e) {} };
+        out.querySelector('.sy-g-dl').onclick = function () { download('studyear-content-' + new Date().toISOString().slice(0, 10) + '.txt', txt, 'text/plain'); };
+        if (btn) btn.disabled = false;
+      }).catch(function () { out.innerHTML = md('HOOK\n“' + idea.t + '”\n\nSCRIPT\n[Talk to camera] Hook line.\n[Screen-record the free tool] Enter a mark + exam date → a grade appears.\n[Screen-record the plan] Scroll the week-by-week plan.\n[You] “Free, no sign-up. Link in bio.”\n\nCAPTION\n' + idea.t + ' Try it free: ' + FREE + '\n\nHASHTAGS\n#gcse #revision #alevels #studytok #gcse2026 #studytips #examseason #ukschool\n\n_(Offline draft — reconnect for an AI-tailored script.)_'); if (btn) btn.disabled = false; });
+    }
+    panel.querySelector('.sy-g-run').onclick = function () { runOne(CAL[calIdx()], this); };
+    panel.querySelector('.sy-g-batch').onclick = function () {
+      if (!canAfford(2)) { toast((window.SYAI && SYAI.NO_ACUS) || 'Not enough ACUs.'); return; }
+      out.hidden = false; out.innerHTML = '<span style="color:var(--ink-3,#8795AE)">Generating 7 days…</span>';
+      var days = calUpcoming(7), acc = [];
+      (function next(k) {
+        if (k >= days.length) { var all = acc.join('\n\n' + '─'.repeat(40) + '\n\n'); out.innerHTML = md(all) + '<div class="sy-g-actions"><button class="btn sm sy-g-dl">Download 7-day plan</button></div>'; out.querySelector('.sy-g-dl').onclick = function () { download('studyear-content-7day.txt', all, 'text/plain'); }; return; }
+        var p = calScript(days[k]);
+        askAI(p.sys, p.user, { maxTokens: 950, temperature: 0.85, acus: 2, label: 'Growth: content calendar' }).then(function (t) { acc.push('DAY ' + (k + 1) + ' · ' + days[k].t + '\n\n' + t); out.innerHTML = '<span style="color:var(--ink-3,#8795AE)">Generated ' + (k + 1) + '/7…</span>'; next(k + 1); })
+          .catch(function () { acc.push('DAY ' + (k + 1) + ' · ' + days[k].t + '\n\n(offline draft)'); next(k + 1); });
+      })(0);
+    };
+  }
+
+  /* --- custom render: captured leads + nurture --- */
+  function renderLeadsTool(panel) {
+    panel.hidden = false;
+    var state = { leads: null };
+    panel.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span class="sy-g-ic">✉️</span><b style="font-size:16px">Captured leads &amp; nurture</b>' +
+      '<button class="sy-g-close" style="margin-left:auto;background:none;border:0;color:var(--ink-3,#8795AE);cursor:pointer;font-size:20px" title="Close">×</button></div>' +
+      '<p class="sub" style="color:var(--ink-3,#8795AE);margin:0 0 8px">Emails captured by the free tools. Addresses are masked here; export the full list as a mail-merge CSV to send from your provider. Draft a lifecycle sequence with AI, then mark contacted.</p>' +
+      '<div id="sy-g-leads" style="font-size:12.5px"></div>' +
+      '<label class="fl" style="margin-top:10px">Lifecycle segment for the draft</label><select id="sy-g-seg">' + SEG.map(function (s) { return '<option value="' + s.id + '">' + esc(s.name) + '</option>'; }).join('') + '</select>' +
+      '<div class="sy-g-actions"><button class="btn solid sy-g-draft">Draft nurture sequence · 3 ACUs</button><button class="btn sm sy-g-refresh">Load captured leads</button></div>' +
+      '<div class="sy-g-out" id="sy-g-out" hidden></div>';
+    panel.querySelector('.sy-g-close').onclick = function () { panel.hidden = true; panel.innerHTML = ''; };
+    var box = panel.querySelector('#sy-g-leads'), out = panel.querySelector('#sy-g-out');
+
+    function paintLeads() {
+      if (state.leads === null) { box.innerHTML = '<span style="color:var(--ink-3,#8795AE)">Loading captured leads…</span>'; return; }
+      if (state.leads === false) { box.innerHTML = '<span style="color:var(--ink-3,#8795AE)">Backend not reachable — you can still draft sequences. Deploy the backend to load and export real leads.</span>'; return; }
+      var items = state.leads.items || [], c = state.leads.counts || {};
+      if (!items.length) { box.innerHTML = '<span style="color:var(--ink-3,#8795AE)">No captured leads yet. Emails left on a /free/ tool appear here.</span>'; return; }
+      var sources = c.bySource || {};
+      var pills = Object.keys(sources).map(function (k) { return '<span style="display:inline-block;font-size:11px;border:1px solid var(--line,rgba(120,140,190,.24));border-radius:999px;padding:2px 9px;margin:3px 5px 0 0;color:var(--ink-3,#8795AE)">' + esc(k) + ': ' + sources[k] + '</span>'; }).join('');
+      var sample = items.slice(0, 6).map(function (l) { return esc(maskEmail(l.email)) + (l.subject ? ' · ' + esc(l.subject) : '') + (l.contacted ? ' ✓' : ''); }).join('<br>');
+      box.innerHTML = '<b style="color:var(--ink-2,#c3ccdf)">' + items.length + ' captured lead' + (items.length === 1 ? '' : 's') + '</b>' + (c.notContacted != null ? ' <span style="color:var(--ink-3,#8795AE)">· ' + c.notContacted + ' not yet contacted</span>' : '') +
+        '<div style="margin-top:5px">' + pills + '</div><div style="margin-top:7px;color:var(--ink-3,#8795AE)">' + sample + (items.length > 6 ? '<br>…and ' + (items.length - 6) + ' more' : '') + '</div>' +
+        '<div class="sy-g-actions"><button class="btn sm sy-g-csv">Export mail-merge CSV</button><button class="btn sm sy-g-mark">Mark all contacted</button></div>';
+      box.querySelector('.sy-g-csv').onclick = function () { download('studyear-leads-' + new Date().toISOString().slice(0, 10) + '.csv', leadsCsv(items), 'text/csv'); };
+      box.querySelector('.sy-g-mark').onclick = function () {
+        var ids = items.filter(function (l) { return !l.contacted; }).map(function (l) { return l.id; });
+        if (!ids.length) { this.textContent = 'All contacted ✓'; return; }
+        var b = this; b.textContent = 'Marking…'; b.disabled = true;
+        (window.SYCloud && SYCloud.leadMark ? SYCloud.leadMark(ids, sessionEmail()) : Promise.resolve(false)).then(function (ok) {
+          if (ok) { items.forEach(function (l) { l.contacted = true; }); if (state.leads.counts) state.leads.counts.notContacted = 0; paintLeads(); }
+          else { b.textContent = 'Mark failed — retry'; b.disabled = false; }
+        });
+      };
+    }
+    function fetchLeads() { paintLeads(); loadLeads().then(function (r) { state.leads = r && r.ok ? { items: r.items || [], counts: r.counts || {} } : false; paintLeads(); }); }
+    panel.querySelector('.sy-g-refresh').onclick = function () { state.leads = null; fetchLeads(); };
+
+    panel.querySelector('.sy-g-draft').onclick = function () {
+      if (!canAfford(3)) { toast((window.SYAI && SYAI.NO_ACUS) || 'Not enough ACUs.'); return; }
+      var s = SEG.filter(function (x) { return x.id === panel.querySelector('#sy-g-seg').value; })[0] || SEG[0];
+      var n = (state.leads && state.leads.items) ? state.leads.items.length : 0;
+      out.hidden = false; var btn = this; btn.disabled = true; out.innerHTML = '<span style="color:var(--ink-3,#8795AE)">Writing the sequence for “' + esc(s.name) + '”…</span>';
+      var sys = 'You are StudYear\'s lifecycle-email copywriter for a UK edtech brand with a genuinely free tier (100 ACUs every 3 months). Warm, human, concise British English; value before any ask; one clear CTA per email; free entry point is the tool at ' + FREE + '.';
+      var user = 'Write a 3-email lifecycle sequence.\nSEGMENT: ' + s.name + '\nWHO: ' + s.who + '\nGOAL: ' + s.goal + (n ? '\nAUDIENCE SIZE: ~' + n + ' contacts.' : '') + '\nFor each email return: === EMAIL n (day X) ===, SUBJECT, PREVIEW, BODY (90–140 words, {{first_name}} merge field, one CTA), CTA (button text + where it goes). Paste-ready.';
+      askAI(sys, user, { maxTokens: 1200, temperature: 0.7, acus: 3, label: 'Growth: lifecycle nurture' }).then(function (txt) {
+        out.innerHTML = md(txt) + '<div class="sy-g-actions"><button class="btn sm sy-g-copy">Copy</button><button class="btn sm sy-g-dl">Download</button></div>';
+        out.querySelector('.sy-g-copy').onclick = function () { try { navigator.clipboard.writeText(txt); toast('Copied'); } catch (e) {} };
+        out.querySelector('.sy-g-dl').onclick = function () { download('studyear-nurture-' + s.id + '.txt', txt, 'text/plain'); };
+        btn.disabled = false;
+      }).catch(function () {
+        out.innerHTML = md('=== EMAIL 1 (day 0) ===\nSUBJECT: Your StudYear plan — one quick win inside\nBODY: Hi {{first_name}}, ' + s.goal.charAt(0).toLowerCase() + s.goal.slice(1) + ' Start free in 60 seconds — no sign-up for the tool.\nCTA: Open my free plan → ' + FREE + '\n\n_(Offline draft — reconnect for an AI-tailored sequence.)_'); btn.disabled = false;
+      });
+    };
+    fetchLeads();
+  }
+
+  var ADMIN_TOOLS = [
+    { id: 'calendar', icon: '📅', name: 'Content calendar', desc: 'A daily short-video idea + AI script driving traffic to the free tool.', custom: renderCalendar },
+    { id: 'leads', icon: '✉️', name: 'Captured leads & nurture', desc: 'Your free-tool leads: export a mail-merge CSV and AI-draft a lifecycle sequence.', custom: renderLeadsTool }
+  ];
+  function allTools() { return isAdmin() ? TOOLS.concat(ADMIN_TOOLS) : TOOLS; }
+  function findTool(id) { return allTools().filter(function (t) { return t.id === id; })[0]; }
+
   /* deterministic drafts so a tool never dead-ends when the model is unreachable */
   function fallback(tool, v, R) {
     var name = myName();
@@ -300,6 +476,7 @@
   }
 
   function openTool(panel, tool) {
+    if (tool.custom) { tool.custom(panel); try { panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {} return; }
     var R = roleInfo();
     panel.hidden = false;
     panel.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span class="sy-g-ic">' + tool.icon + '</span><b style="font-size:16px">' + esc(tool.name) + '</b>' +
@@ -364,11 +541,13 @@
   }
 
   function sectionHTML(R) {
+    var tools = allTools();
+    var count = tools.length;
     return '<div class="k" style="letter-spacing:.22em;text-transform:uppercase;font-size:11px;color:#4FA6E0">AI Growth Engine</div>' +
-      '<h3 style="margin:4px 0 2px">Maximise your reach — 10 built-in AI marketing tools</h3>' +
+      '<h3 style="margin:4px 0 2px">Maximise your reach — ' + count + ' built-in AI marketing tools</h3>' +
       '<p class="sub" style="color:var(--ink-3,#8795AE);margin:0 0 2px">Purpose-built for your ' + esc(R.noun) + ' to ' + esc(R.goal) + '. Pick a tool, add a few details, and get publish-ready output in seconds.</p>' +
       '<div class="sy-g-bal" id="sy-g-bal"></div>' +
-      '<div class="sy-g-grid">' + TOOLS.map(function (t) {
+      '<div class="sy-g-grid">' + tools.map(function (t) {
         return '<button class="sy-g-tile" data-tool="' + t.id + '"><span class="sy-g-ic">' + t.icon + '</span><b>' + esc(t.name) + '</b><span>' + esc(t.desc) + '</span></button>';
       }).join('') + '</div><div class="sy-g-panel" hidden></div>';
   }
@@ -387,7 +566,7 @@
     var panel = host.querySelector('.sy-g-panel');
     host.querySelectorAll('.sy-g-tile').forEach(function (tile) {
       tile.onclick = function () {
-        var tool = TOOLS.filter(function (t) { return t.id === tile.getAttribute('data-tool'); })[0];
+        var tool = findTool(tile.getAttribute('data-tool'));
         if (tool) openTool(panel, tool);
       };
     });
