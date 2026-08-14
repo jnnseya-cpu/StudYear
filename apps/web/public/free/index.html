@@ -102,6 +102,12 @@
     <div class="save">
       <h3>Keep this plan — and watch your grade move.</h3>
       <p>Create a free StudYear account to save your plan, get a 24/7 AI tutor that teaches the method (not just the answer), real exam practice, and early alerts when a topic slips. Still free — 100 credits, no card.</p>
+      <form id="lead-form" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <input type="text" id="lead-hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px">
+        <input type="email" id="lead-email" placeholder="Your email — I'll send this plan + revision reminders" style="flex:1;min-width:230px">
+        <button class="btn" type="submit" style="width:auto;margin-top:0">Email me my plan</button>
+      </form>
+      <div id="lead-msg" style="font-size:12.5px;color:var(--good);display:none;margin-bottom:10px"></div>
       <a class="btn" style="display:inline-block;width:auto;text-decoration:none;text-align:center" href="../app/">Create my free account →</a>
     </div>
   </div>
@@ -186,6 +192,45 @@
     if(b.dataset.sh==='copy'){try{navigator.clipboard.writeText('https://www.studyear.com/free/');b.textContent='✓ Copied'}catch(e){}}
     else if(b.dataset.sh==='print'){window.print()}
   })});
+
+  /* ---- referral attribution + lead capture + exit-intent (convert the traffic) ---- */
+  try{var _rp=new URLSearchParams(location.search).get('ref');if(_rp)localStorage.setItem('sy-ref',String(_rp).slice(0,32));}catch(e){}
+  var _base=null;
+  function apiBase(){ if(_base!=null)return Promise.resolve(_base);
+    return fetch('/firebase-config.json',{cache:'force-cache'}).then(function(r){return r.json()}).then(function(c){_base=(c.apiBase||'').replace(/\/$/,'');return _base}).catch(function(){_base='';return ''}); }
+  function postLead(email,src,hp){
+    try{var l=JSON.parse(localStorage.getItem('sy-leads')||'[]');l.push({e:email,at:Date.now()});localStorage.setItem('sy-leads',JSON.stringify(l.slice(-20)))}catch(e){}
+    var ref='';try{ref=localStorage.getItem('sy-ref')||''}catch(e){}
+    var sub=($('subject')&&$('subject').value)||'';var gr=($('g-grade')&&$('g-grade').textContent)||'';
+    return apiBase().then(function(b){ if(!b)return false;
+      return fetch(b+'/lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,source:src||'free',subject:sub,grade:gr,ref:ref,hp:hp||''})}).then(function(r){return r.ok}).catch(function(){return false}); });
+  }
+  var EMAIL=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  var lf=$('lead-form');
+  if(lf)lf.addEventListener('submit',function(e){e.preventDefault();
+    var em=($('lead-email').value||'').trim().toLowerCase();
+    if(!EMAIL.test(em)){$('lead-email').focus();return;}
+    postLead(em,'free-form',($('lead-hp')&&$('lead-hp').value)).then(function(ok){
+      var m=$('lead-msg');if(m){m.textContent=ok?'✓ Sent — check your inbox. Create your free account to save it.':'✓ Saved. Create your free account to keep it.';m.style.display='block';}
+      $('lead-email').value='';});
+  });
+  /* exit-intent (desktop): one gentle email prompt per session */
+  var exitDone=false;
+  function exitModal(){ if(exitDone)return; try{if(sessionStorage.getItem('sy-exit'))return;sessionStorage.setItem('sy-exit','1')}catch(e){} exitDone=true;
+    var o=document.createElement('div');o.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(4,8,18,.86);display:flex;align-items:center;justify-content:center;padding:22px';
+    o.innerHTML='<div style="max-width:410px;background:#0E1626;border:1px solid rgba(120,140,190,.3);border-radius:16px;padding:24px 26px;color:#EDF1F8;text-align:center;font-family:inherit">'+
+      '<div style="font-family:Georgia,serif;font-size:21px;margin-bottom:6px">Before you go —</div>'+
+      '<div style="font-size:13.5px;color:#AAB6CC;margin-bottom:14px">Get your predicted grade &amp; revision plan by email. Free, no spam, unsubscribe anytime.</div>'+
+      '<form id="x-form" style="display:flex;gap:8px"><input type="email" id="x-email" placeholder="Your email" style="flex:1;background:rgba(6,11,24,.6);border:1px solid rgba(170,182,204,.22);border-radius:10px;color:#EDF1F8;padding:11px 12px;font:inherit"><button class="btn" style="width:auto;margin:0" type="submit">Send it</button></form>'+
+      '<div id="x-msg" style="font-size:12px;color:#5CBB7B;margin-top:8px;display:none"></div>'+
+      '<button id="x-close" style="background:none;border:0;color:#8795AE;margin-top:12px;cursor:pointer;font-size:12px">No thanks</button></div>';
+    document.body.appendChild(o);
+    o.querySelector('#x-close').onclick=function(){o.remove()};
+    o.addEventListener('click',function(e){if(e.target===o)o.remove()});
+    o.querySelector('#x-form').addEventListener('submit',function(e){e.preventDefault();var em=(o.querySelector('#x-email').value||'').trim().toLowerCase();if(!EMAIL.test(em)){o.querySelector('#x-email').focus();return;}
+      postLead(em,'free-exit','').then(function(){var m=o.querySelector('#x-msg');m.textContent='✓ Sent — check your inbox.';m.style.display='block';setTimeout(function(){o.remove()},1300);});});
+  }
+  document.addEventListener('mouseout',function(e){ if(e.clientY<=0 && !e.relatedTarget) exitModal(); });
 })();
 </script>
 </body></html>

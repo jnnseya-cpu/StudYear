@@ -14,7 +14,7 @@ import { onRequest } from 'firebase-functions/v2/https';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHmac, timingSafeEqual, createHash, randomBytes } from 'crypto';
 import { ACU_TARIFF, FREE_TIER, MARGIN, ACU_PER_POUND,
   STUDENT_PLANS, PARENT_PLANS, SCHOOL_PLANS, TOPUPS, type MeteredActivity } from '../../../packages/shared/src';
 
@@ -793,6 +793,52 @@ export const contact = onRequest({ region: 'europe-west2', cors: true }, async (
  * clients can never self-assign admin or change plan through this path.
  */
 const PUBLIC_ROLES = ['student', 'parent', 'teacher', 'school', 'tutor', 'authority', 'employer', 'college'];
+// ------------------------------------------------------- growth: leads + refer ----
+const REF_BONUS = 50;   // ACUs to each side when a referred user joins
+const REF_CAP = 25;     // max credited referrals per referrer (anti-abuse)
+
+/** POST /lead — capture an email from the public free tools (no auth). Bot-
+    guarded (honeypot + email check), de-duplicated by email. Feeds the nurture
+    list so a visitor who isn't ready to sign up isn't lost. */
+export const lead = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const b = req.body ?? {};
+    if (b.hp) throw httpError(400, 'rejected');                    // honeypot
+    const email = String(b.email ?? '').trim().toLowerCase().slice(0, 160);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw httpError(400, 'invalid email');
+    const id = createHash('sha1').update(email).digest('hex').slice(0, 24);
+    await db.doc(`leads/${id}`).set({
+      email,
+      source: String(b.source ?? 'free').slice(0, 40),
+      subject: String(b.subject ?? '').slice(0, 60),
+      grade: String(b.grade ?? '').slice(0, 12),
+      ref: String(b.ref ?? '').slice(0, 32) || null,
+      updatedAt: FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    res.json({ ok: true });
+  } catch (e) { const err = e as Error & { status?: number }; res.status(err.status ?? 500).json({ ok: false, error: err.message }); }
+});
+
+/** GET /refcode — the signed-in user's personal invite code (created on first
+    call) plus how many people have joined through it and the bonus earned.
+    Powers the in-app "invite a friend" card. */
+export const refcode = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const user = await requireUser(req.headers.authorization);
+    const uref = db.doc(`users/${user.uid}`);
+    const u = await uref.get();
+    let code = (u.exists && (u.data()!.refCode as string)) || '';
+    if (!code) {
+      code = randomBytes(4).toString('hex'); // 8-char
+      await db.doc(`refCodes/${code}`).set({ uid: user.uid, at: FieldValue.serverTimestamp() });
+      await uref.set({ refCode: code }, { merge: true });
+    }
+    const joined = (await db.doc(`refCounters/${user.uid}`).get()).data()?.credited as number ?? 0;
+    res.json({ ok: true, code, joined, bonus: joined * REF_BONUS });
+  } catch (e) { const err = e as Error & { status?: number }; res.status(err.status ?? 500).json({ ok: false, error: err.message }); }
+});
+
 export const register = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
   try {
     const user = await requireUser(req.headers.authorization);
@@ -826,6 +872,32 @@ export const register = onRequest({ region: 'europe-west2', cors: true }, async 
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
     await audit(existing.exists ? 'USER_ROLE_ADDED' : 'USER_REGISTERED', user.uid, { role });
+    // referral loop: on a NEW registration carrying a valid invite code, credit
+    // BOTH the new user and the referrer bonus ACUs — once per referee, capped
+    // per referrer, idempotent via creditAcus dedupe. Best-effort: never blocks.
+    try {
+      if (!existing.exists) {
+        const refCode = String(req.body?.ref ?? '').trim().slice(0, 32);
+        if (refCode) {
+          const map = await db.doc(`refCodes/${refCode}`).get();
+          const referrerUid = map.exists ? String(map.data()!.uid) : '';
+          if (referrerUid && referrerUid !== user.uid) {
+            const seen = db.doc(`referrals/${user.uid}`);
+            if (!(await seen.get()).exists) {
+              await seen.set({ referrerUid, at: FieldValue.serverTimestamp() });
+              await creditAcus(user.uid, REF_BONUS, 'referral:joined', { referrerUid }, `refjoin_${user.uid}`);
+              const cntRef = db.doc(`refCounters/${referrerUid}`);
+              const credited = (await cntRef.get()).data()?.credited as number ?? 0;
+              if (credited < REF_CAP) {
+                await creditAcus(referrerUid, REF_BONUS, 'referral:invitee', { referee: user.uid }, `refinv_${user.uid}`);
+                await cntRef.set({ credited: credited + 1, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+              }
+              await audit('REFERRAL_CREDITED', user.uid, { referrerUid });
+            }
+          }
+        }
+      }
+    } catch (e) { /* referral is best-effort */ }
     res.json({ ok: true });
   } catch (e) {
     const err = e as Error & { status?: number };

@@ -28,6 +28,10 @@
     } catch (e) { return ''; }
   })();
 
+  /* referral attribution: remember an invite code from ?ref=… across the whole
+     visit, so a signup that happens later is still credited to the referrer */
+  try { var _rp = new URLSearchParams(location.search).get('ref'); if (_rp) localStorage.setItem('sy-ref', String(_rp).slice(0, 32)); } catch (e) {}
+
   var CFG = null;                       // {apiKey, projectId, storageBucket, apiBase}
 
   /* Same-origin proxy: on the production domain (Vercel), all Google/Firebase
@@ -243,7 +247,8 @@
       catch (e2) { return false; }
     }
     saveTok(email, t);
-    try { await race(api('/register', 'POST', { name: name, role: role, human: (window.SYSentinel && SYSentinel.token) ? SYSentinel.token() : null }, email)); } catch (e) {}
+    var _ref = ''; try { _ref = localStorage.getItem('sy-ref') || ''; } catch (e) {}
+    try { await race(api('/register', 'POST', { name: name, role: role, ref: _ref, human: (window.SYSentinel && SYSentinel.token) ? SYSentinel.token() : null }, email)); } catch (e) {}
     /* welcome + verify email via Firebase's own delivery (no SMTP needed) */
     try { if (t && t.idToken) await race(idp('sendOobCode', { requestType: 'VERIFY_EMAIL', idToken: t.idToken })); } catch (e) {}
     schedulePush(email);
@@ -448,6 +453,22 @@
     try { var j = await api('/walletState', 'GET', null, email); return j && j.ok ? { balance: j.balance, plan: j.plan } : null; }
     catch (e) { return null; }
   }
+  /* PUBLIC lead capture (no auth) — email from the free tools. Resilient: also
+     kept locally so a lead is never lost even if the network hiccups. */
+  async function lead(payload) {
+    payload = payload || {};
+    try { var l = JSON.parse(localStorage.getItem('sy-leads') || '[]'); l.push({ e: payload.email, at: Date.now() }); localStorage.setItem('sy-leads', JSON.stringify(l.slice(-20))); } catch (e) {}
+    await whenReady(); if (!CFG) return false;
+    var direct = CFG && CFG.apiBase ? CFG.apiBase.replace(/\/$/, '') : '';
+    async function post(base) { var r = await fetch(base + '/lead', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); var j = await r.json().catch(function () { return {}; }); return !!(r.ok && j.ok); }
+    try { return await post(gbase('fn')); } catch (e) { try { return direct ? await post(direct) : false; } catch (e2) { return false; } }
+  }
+  /* the signed-in user's invite code + join stats (for the invite card) */
+  async function refCode(email) {
+    await whenReady(); if (!CFG || !email) return null;
+    try { var j = await api('/refcode', 'GET', null, email); return j && j.ok ? { code: j.code, joined: j.joined, bonus: j.bonus } : null; }
+    catch (e) { return null; }
+  }
   /* Live blog overlay — one-click publish from the AI Studio. list is PUBLIC
      (no email needed) so the blog reader can merge live posts over the committed
      posts.json; publish/remove are admin-only (enforced server-side). Returns
@@ -483,6 +504,7 @@
     marketList: marketList, marketPublish: marketPublish, marketRemove: marketRemove,
     walletState: walletState,
     blogList: blogList, blogPublish: blogPublish, blogRemove: blogRemove,
+    lead: lead, refCode: refCode,
     /* redeem a StudYear bonus/promo code server-side (validated window/limits/
        audience, ledgered once per user, ACUs credited on the server). Resolves
        to { ok, bonusAcus, discountPct, label } or throws with the reason. */
