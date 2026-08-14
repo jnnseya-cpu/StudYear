@@ -1037,6 +1037,62 @@ export const adminUserOp = onRequest({ region: 'europe-west2', cors: true }, asy
   }
 });
 
+/**
+ * GET /adminLeads — the captured free-tool leads for the Lifecycle & Nurture
+ * agent (admin-only). Returns full addresses (the authenticated admin needs
+ * them to email), plus segment counts by source/subject and how many are not
+ * yet contacted. The static console masks these on-screen; full PII only ever
+ * leaves via the admin's own CSV export.
+ */
+export const adminLeads = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const admin = await requireAdmin(req.headers.authorization);
+    const snap = await db.collection('leads').orderBy('createdAt', 'desc').limit(1000).get();
+    const iso = (v: { toDate?: () => Date } | undefined) => v?.toDate?.()?.toISOString() ?? null;
+    const bySource: Record<string, number> = {};
+    const bySubject: Record<string, number> = {};
+    let notContacted = 0;
+    const items = snap.docs.map((d) => {
+      const x = d.data();
+      const source = String(x.source ?? 'free');
+      const subject = String(x.subject ?? '');
+      bySource[source] = (bySource[source] ?? 0) + 1;
+      if (subject) bySubject[subject] = (bySubject[subject] ?? 0) + 1;
+      if (!x.contacted) notContacted += 1;
+      return {
+        id: d.id, email: x.email ?? null, source, subject,
+        grade: String(x.grade ?? ''), ref: x.ref ?? null,
+        contacted: !!x.contacted, createdAt: iso(x.createdAt),
+      };
+    });
+    await audit('ADMIN_LEADS_READ', admin.uid, { count: items.length });
+    res.json({ ok: true, items, counts: { total: items.length, notContacted, bySource, bySubject } });
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
+/**
+ * POST /adminLeadMark { ids: string[] } — flag captured leads as contacted so
+ * the nurture agent doesn't re-target them (admin-only, audited).
+ */
+export const adminLeadMark = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const admin = await requireAdmin(req.headers.authorization);
+    const ids = Array.isArray(req.body?.ids) ? (req.body.ids as unknown[]).map((x) => String(x)).slice(0, 500) : [];
+    if (!ids.length) throw httpError(400, 'ids required');
+    const batch = db.batch();
+    ids.forEach((id) => batch.set(db.doc(`leads/${id}`), { contacted: true, contactedAt: FieldValue.serverTimestamp() }, { merge: true }));
+    await batch.commit();
+    await audit('ADMIN_LEADS_MARK', admin.uid, { count: ids.length });
+    res.json({ ok: true, marked: ids.length });
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
 // -------------------------------------------------------------- notify (email) ----
 /**
  * POST /notify { subject, text } — sends an email to the CALLER's own

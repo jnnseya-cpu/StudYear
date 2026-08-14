@@ -469,6 +469,20 @@
     try { var j = await api('/refcode', 'GET', null, email); return j && j.ok ? { code: j.code, joined: j.joined, bonus: j.bonus } : null; }
     catch (e) { return null; }
   }
+  /* ADMIN — the Lifecycle & Nurture agent's captured-lead feed. leadsList
+     returns full addresses (the authed admin needs them to email; the console
+     masks them on screen and only exports full via CSV). Returns null on
+     offline/not-admin so the agent degrades to draft-only. */
+  async function leadsList(email) {
+    await whenReady(); if (!CFG || !email) return null;
+    try { return await api('/adminLeads', 'GET', null, email); }
+    catch (e) { return null; }
+  }
+  async function leadMark(ids, email) {
+    await whenReady(); if (!CFG || !email || !(ids && ids.length)) return false;
+    try { var j = await api('/adminLeadMark', 'POST', { ids: ids }, email); return !!(j && j.ok); }
+    catch (e) { return false; }
+  }
   /* Live blog overlay — one-click publish from the AI Studio. list is PUBLIC
      (no email needed) so the blog reader can merge live posts over the committed
      posts.json; publish/remove are admin-only (enforced server-side). Returns
@@ -504,7 +518,7 @@
     marketList: marketList, marketPublish: marketPublish, marketRemove: marketRemove,
     walletState: walletState,
     blogList: blogList, blogPublish: blogPublish, blogRemove: blogRemove,
-    lead: lead, refCode: refCode,
+    lead: lead, refCode: refCode, leadsList: leadsList, leadMark: leadMark,
     /* redeem a StudYear bonus/promo code server-side (validated window/limits/
        audience, ledgered once per user, ACUs credited on the server). Resolves
        to { ok, bonusAcus, discountPct, label } or throws with the reason. */
