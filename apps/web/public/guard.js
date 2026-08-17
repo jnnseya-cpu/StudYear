@@ -58,6 +58,17 @@
     }
   } catch (e) {}
 
+  // PWA splash: a branded launch screen when opened as an installed app (no-op
+  // in the browser). Injected early and NOT deferred so it paints fast; the
+  // module is idempotent, so a page may also include it directly.
+  try {
+    if (!window.__SY_SPLASH) {
+      var sp = document.createElement('script');
+      sp.src = base + 'splash.js';
+      (document.head || document.documentElement).appendChild(sp);
+    }
+  } catch (e) {}
+
   // premium colour theme: one shared enhancement layer across every console
   try {
     var th = document.createElement('link');
