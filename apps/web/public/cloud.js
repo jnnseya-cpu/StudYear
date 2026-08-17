@@ -483,6 +483,14 @@
     try { var j = await api('/adminLeadMark', 'POST', { ids: ids }, email); return !!(j && j.ok); }
     catch (e) { return false; }
   }
+  /* ADMIN — weekly newsletter controls (preview | test | send | status). The
+     automatic send is a scheduled backend function; this is the owner's manual
+     preview/test/trigger + run status. Returns null on offline/not-admin. */
+  async function newsletter(op, email) {
+    await whenReady(); if (!CFG || !email) return null;
+    try { return await api('/adminNewsletter', 'POST', { op: op }, email); }
+    catch (e) { return null; }
+  }
   /* Live blog overlay — one-click publish from the AI Studio. list is PUBLIC
      (no email needed) so the blog reader can merge live posts over the committed
      posts.json; publish/remove are admin-only (enforced server-side). Returns
@@ -518,7 +526,7 @@
     marketList: marketList, marketPublish: marketPublish, marketRemove: marketRemove,
     walletState: walletState,
     blogList: blogList, blogPublish: blogPublish, blogRemove: blogRemove,
-    lead: lead, refCode: refCode, leadsList: leadsList, leadMark: leadMark,
+    lead: lead, refCode: refCode, leadsList: leadsList, leadMark: leadMark, newsletter: newsletter,
     /* redeem a StudYear bonus/promo code server-side (validated window/limits/
        audience, ledgered once per user, ACUs credited on the server). Resolves
        to { ok, bonusAcus, discountPct, label } or throws with the reason. */

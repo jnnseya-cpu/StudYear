@@ -11,12 +11,14 @@
 // build marker: bump to force firebase-tools to redeploy (env-only .env changes
 // like a rotated STRIPE_WEBHOOK_SECRET don't re-trigger it on their own) — sw-secret-sync-2
 import { onRequest } from 'firebase-functions/v2/https';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { createHmac, timingSafeEqual, createHash, randomBytes } from 'crypto';
 import { ACU_TARIFF, FREE_TIER, MARGIN, ACU_PER_POUND,
   STUDENT_PLANS, PARENT_PLANS, SCHOOL_PLANS, TOPUPS, type MeteredActivity } from '../../../packages/shared/src';
+import { SITE, isoWeekKey, verifyUnsub, nlRender } from './newsletter';
 
 initializeApp();
 const db = getFirestore();
@@ -67,6 +69,31 @@ async function enforceRate(uid: string, name: string, cap: number): Promise<void
   const used = await ref.get().then((d) => (d.exists ? Number(d.data()!.count) || 0 : 0));
   if (used >= cap) throw httpError(429, 'too many requests — please slow down and try again later');
   await ref.set({ count: FieldValue.increment(1), day, uid, name, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+}
+
+// -------------------------------------------------------------------- mail ----
+/** Single source of truth for outbound SMTP. Returns a nodemailer transport, or
+    null when MAIL_* is not configured (callers degrade gracefully). */
+async function mailTransport(): Promise<import('nodemailer').Transporter | null> {
+  if (!process.env.MAIL_HOST) return null;
+  const nodemailer = await import('nodemailer');
+  return nodemailer.createTransport({
+    host: process.env.MAIL_HOST,
+    port: Number(process.env.MAIL_PORT ?? 465),
+    secure: (process.env.MAIL_SECURE ?? 'true') !== 'false',
+    auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
+  });
+}
+/** Send one email through the shared transport. Throws if mail isn't configured
+    so marketing/transactional callers can decide how to handle it. */
+async function sendMail(opts: { to: string; subject: string; text?: string; html?: string; replyTo?: string; listUnsubscribe?: string }): Promise<void> {
+  const transport = await mailTransport();
+  if (!transport) throw httpError(503, 'mail not configured');
+  const headers = opts.listUnsubscribe ? { 'List-Unsubscribe': `<${opts.listUnsubscribe}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } : undefined;
+  await transport.sendMail({
+    from: process.env.MAIL_FROM ?? process.env.MAIL_USER,
+    to: opts.to, subject: opts.subject, text: opts.text, html: opts.html, replyTo: opts.replyTo, headers,
+  });
 }
 
 // ------------------------------------------------------------------ health ----
@@ -760,24 +787,14 @@ export const contact = onRequest({ region: 'europe-west2', cors: true }, async (
     // in contactInbox (Admin console) even if SMTP is not configured yet.
     // Configure via backend/functions/.env or secrets: MAIL_HOST, MAIL_PORT,
     // MAIL_USER, MAIL_PASS (and optionally MAIL_FROM / MAIL_TO).
-    if (process.env.MAIL_HOST) {
-      try {
-        const nodemailer = await import('nodemailer');
-        const transport = nodemailer.createTransport({
-          host: process.env.MAIL_HOST,
-          port: Number(process.env.MAIL_PORT ?? 465),
-          secure: (process.env.MAIL_SECURE ?? 'true') !== 'false',
-          auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
-        });
-        await transport.sendMail({
-          from: process.env.MAIL_FROM ?? process.env.MAIL_USER,
-          to: process.env.MAIL_TO ?? 'contact@studyear.com',
-          replyTo: email,
-          subject: `[StudYear contact] ${String(b.type ?? 'support')} — ${from}`,
-          text: `${msg}\n\n— ${from} <${email}>`,
-        });
-      } catch { /* never fail the submission over email delivery */ }
-    }
+    try {
+      await sendMail({
+        to: process.env.MAIL_TO ?? 'contact@studyear.com',
+        replyTo: email,
+        subject: `[StudYear contact] ${String(b.type ?? 'support')} — ${from}`,
+        text: `${msg}\n\n— ${from} <${email}>`,
+      });
+    } catch { /* never fail the submission over email delivery (incl. mail not configured) */ }
     res.json({ ok: true });
   } catch (e) {
     const err = e as Error & { status?: number };
@@ -1108,16 +1125,134 @@ export const notify = onRequest({ region: 'europe-west2', cors: true }, async (r
     if (!process.env.MAIL_HOST) { res.json({ ok: false, reason: 'mail not configured' }); return; }
     const subject = String(req.body?.subject ?? 'StudYear notification').slice(0, 200);
     const text = String(req.body?.text ?? '').slice(0, 5000);
-    const nodemailer = await import('nodemailer');
-    const transport = nodemailer.createTransport({
-      host: process.env.MAIL_HOST,
-      port: Number(process.env.MAIL_PORT ?? 465),
-      secure: (process.env.MAIL_SECURE ?? 'true') !== 'false',
-      auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
-    });
-    await transport.sendMail({ from: process.env.MAIL_FROM ?? process.env.MAIL_USER, to: user.email, subject, text });
+    await sendMail({ to: user.email, subject, text });
     await audit('NOTIFY_SENT', user.uid, { subject });
     res.json({ ok: true });
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
+// --------------------------------------------------------- weekly newsletter ----
+/**
+ * Automatic weekly newsletter to every registered user — sells the platform's
+ * features with plenty of hyperlinks back to the live site. Compliance:
+ *  - one-click unsubscribe on every send (List-Unsubscribe header + footer link),
+ *    honoured via the public /unsubscribe endpoint (UK PECR / GDPR);
+ *  - registered users are subscribed unless they opt out (soft opt-in for a
+ *    platform's own account holders);
+ *  - idempotent per ISO week (a run doc + per-user lastNewsletter stamp) so a
+ *    retry or manual re-trigger never double-sends the same issue.
+ * Content is a curated, weekly-rotating catalogue (single source of truth) — no
+ * per-send AI cost, and it never dead-ends on a provider outage.
+ */
+/** Send the issue to a set of recipients. onlyTo restricts to one address (test);
+    otherwise every registered user who hasn't opted out and hasn't already had
+    this week's issue. Idempotent + resilient (per-user failures are tallied). */
+async function sendNewsletter(weekKey: string, opts: { onlyTo?: { uid: string; email: string }; by: string }): Promise<{ sent: number; failed: number; skipped: number; total: number }> {
+  const transport = await mailTransport();
+  if (!transport) throw httpError(503, 'mail not configured');
+  let recipients: Array<{ uid: string; email: string; already: boolean; optedOut: boolean }> = [];
+  if (opts.onlyTo) {
+    recipients = [{ uid: opts.onlyTo.uid, email: opts.onlyTo.email, already: false, optedOut: false }];
+  } else {
+    const prefs: Record<string, FirebaseFirestore.DocumentData> = {};
+    (await db.collection('users').get()).forEach((d) => { prefs[d.id] = d.data(); });
+    let pageToken: string | undefined;
+    do {
+      const page = await getAuth().listUsers(1000, pageToken);
+      page.users.forEach((u) => {
+        if (!u.email) return;
+        const p = (prefs[u.uid]?.emailPrefs ?? {}) as { newsletter?: boolean; lastNewsletter?: string };
+        recipients.push({ uid: u.uid, email: u.email, already: p.lastNewsletter === weekKey, optedOut: p.newsletter === false || u.disabled });
+      });
+      pageToken = page.pageToken;
+    } while (pageToken);
+  }
+  let sent = 0, failed = 0, skipped = 0;
+  const total = recipients.length;
+  // small batches to stay within SMTP limits; per-user errors never abort the run
+  for (let i = 0; i < recipients.length; i += 20) {
+    const batch = recipients.slice(i, i + 20);
+    await Promise.all(batch.map(async (r) => {
+      if (r.optedOut || r.already) { skipped++; return; }
+      try {
+        const m = nlRender(weekKey, r.uid);
+        await transport.sendMail({ from: process.env.MAIL_FROM ?? process.env.MAIL_USER, to: r.email, subject: m.subject, text: m.text, html: m.html, headers: { 'List-Unsubscribe': `<${m.unsubUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } });
+        if (!opts.onlyTo) await db.doc(`users/${r.uid}`).set({ emailPrefs: { lastNewsletter: weekKey } }, { merge: true });
+        sent++;
+      } catch { failed++; }
+    }));
+  }
+  return { sent, failed, skipped, total };
+}
+
+/** The scheduled weekly send. Idempotent: a completed run for the ISO week is a
+    no-op, so retries and overlaps never double-send. */
+export const weeklyNewsletter = onSchedule({ schedule: '0 9 * * 1', timeZone: 'Europe/London', region: 'europe-west2' }, async () => {
+  const weekKey = isoWeekKey(new Date());
+  const runRef = db.doc(`newsletterRuns/${weekKey}`);
+  const run = await runRef.get();
+  if (run.exists && run.data()?.finishedAt) return; // already sent this week
+  await runRef.set({ weekKey, by: 'schedule', startedAt: FieldValue.serverTimestamp() }, { merge: true });
+  try {
+    if (!process.env.MAIL_HOST) { await runRef.set({ finishedAt: FieldValue.serverTimestamp(), error: 'mail not configured' }, { merge: true }); return; }
+    const r = await sendNewsletter(weekKey, { by: 'schedule' });
+    await runRef.set({ ...r, finishedAt: FieldValue.serverTimestamp() }, { merge: true });
+    await audit('NEWSLETTER_SENT', 'system', { weekKey, ...r });
+  } catch (e) {
+    await runRef.set({ finishedAt: FieldValue.serverTimestamp(), error: (e as Error).message }, { merge: true });
+  }
+});
+
+/** GET /unsubscribe?u=&t= — one-click opt-out (no login). Only ever sets the
+    newsletter preference to false, so a forged link can't do harm. */
+export const unsubscribe = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  const uid = String(req.query.u ?? '');
+  const token = String(req.query.t ?? '');
+  const ok = uid && verifyUnsub(uid, token);
+  if (ok) {
+    try { await db.doc(`users/${uid}`).set({ emailPrefs: { newsletter: false } }, { merge: true }); await audit('NEWSLETTER_UNSUBSCRIBE', uid, {}); } catch { /* ignore */ }
+  }
+  res.set('Content-Type', 'text/html; charset=utf-8').status(ok ? 200 : 400).send(
+    `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>StudYear — ${ok ? 'Unsubscribed' : 'Link expired'}</title></head>` +
+    `<body style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#f4f7fb;color:#0f172a"><div style="max-width:520px;margin:8vh auto;background:#fff;border:1px solid #e6ecf5;border-radius:14px;padding:30px 28px;text-align:center">` +
+    `<div style="font-size:20px;font-weight:800;color:#0b3a66">StudYear</div>` +
+    (ok ? `<h1 style="font-size:22px;margin:16px 0 8px">You’ve been unsubscribed</h1><p style="color:#42506a;line-height:1.6">You won’t receive the weekly newsletter any more. You’ll still get essential account emails. Changed your mind? Manage email preferences in <a href="${SITE}/account/" style="color:#2E6BC4">your account</a>.</p>`
+       : `<h1 style="font-size:22px;margin:16px 0 8px">This link isn’t valid</h1><p style="color:#42506a;line-height:1.6">The unsubscribe link is incomplete or has expired. You can manage email preferences in <a href="${SITE}/account/" style="color:#2E6BC4">your account</a>.</p>`) +
+    `</div></body></html>`);
+});
+
+/** POST /adminNewsletter { op } — owner controls (admin-only, audited):
+    preview (this week's HTML), test (send to the admin only), send (send now to
+    everyone, idempotent), status (recent runs). */
+export const adminNewsletter = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const admin = await requireAdmin(req.headers.authorization);
+    const op = String(req.body?.op ?? 'preview');
+    const weekKey = isoWeekKey(new Date());
+    if (op === 'preview') {
+      const m = nlRender(weekKey, admin.uid);
+      res.json({ ok: true, weekKey, subject: m.subject, html: m.html });
+    } else if (op === 'test') {
+      if (!admin.email) throw httpError(400, 'admin has no email');
+      const r = await sendNewsletter(weekKey, { onlyTo: { uid: admin.uid, email: admin.email }, by: 'admin-test' });
+      await audit('NEWSLETTER_TEST', admin.uid, { weekKey, ...r });
+      res.json({ ok: true, weekKey, ...r, to: admin.email });
+    } else if (op === 'send') {
+      const runRef = db.doc(`newsletterRuns/${weekKey}`);
+      if ((await runRef.get()).data()?.finishedAt) { res.json({ ok: true, weekKey, alreadySent: true }); return; }
+      await runRef.set({ weekKey, by: 'admin', startedAt: FieldValue.serverTimestamp() }, { merge: true });
+      const r = await sendNewsletter(weekKey, { by: 'admin' });
+      await runRef.set({ ...r, finishedAt: FieldValue.serverTimestamp() }, { merge: true });
+      await audit('NEWSLETTER_SENT', admin.uid, { weekKey, ...r });
+      res.json({ ok: true, weekKey, ...r });
+    } else if (op === 'status') {
+      const runs = await db.collection('newsletterRuns').orderBy('startedAt', 'desc').limit(8).get();
+      const iso = (v: { toDate?: () => Date } | undefined) => v?.toDate?.()?.toISOString() ?? null;
+      res.json({ ok: true, mailConfigured: !!process.env.MAIL_HOST, runs: runs.docs.map((d) => ({ id: d.id, ...d.data(), startedAt: iso(d.data().startedAt), finishedAt: iso(d.data().finishedAt) })) });
+    } else throw httpError(400, 'unknown op');
   } catch (e) {
     const err = e as Error & { status?: number };
     res.status(err.status ?? 500).json({ ok: false, error: err.message });

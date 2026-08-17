@@ -40,6 +40,10 @@ then AI reads) · 10. Best posting time.
   mandate), exports a **mail-merge CSV** (full addresses, admin's machine
   only), marks leads contacted, and AI-drafts a lifecycle email sequence for a
   chosen segment. *(Absorbed the former `nurture.js`.)*
+- **📰 Weekly newsletter** — the owner control panel for the automatic weekly
+  newsletter (see below): preview this week's issue, send a test to the admin,
+  send now to all, and see last-run status. The send itself is a scheduled
+  backend function, not client-side.
 
 Every tool routes through `SYAI.ask` and is **metered in ACUs** (gated on
 balance, charged on success only — no free passes). Costs: most 1–2 ACUs;
@@ -54,9 +58,19 @@ landing page 3; content calendar 2; nurture draft 3.
 | `register` (ref path) | user | On a referred join, credits both sides 50 ACUs (idempotent, capped). |
 | `adminLeads` | admin | The captured-lead feed + segment counts for the leads tool. |
 | `adminLeadMark` | admin | Flag leads contacted. |
+| `weeklyNewsletter` | scheduled (Mon 09:00 Europe/London) | Automatic weekly newsletter to all registered users. Idempotent per ISO week (`newsletterRuns/{weekKey}` + per-user `emailPrefs.lastNewsletter`). Reuses the shared `nodemailer`/`MAIL_*` transport. |
+| `unsubscribe` | public (HMAC token) | One-click opt-out → `users/{uid}.emailPrefs.newsletter=false`. Mandatory for marketing email (UK PECR/GDPR). |
+| `adminNewsletter` | admin | `preview` / `test` / `send` / `status` controls for the newsletter tool. |
+
+Newsletter content + tokens live in `backend/functions/src/newsletter.ts`
+(pure, unit-tested via `npm test` in `backend/functions`). The catalogue there
+is the single source of truth for what the newsletter links to. Set
+`NEWSLETTER_SECRET` (falls back to `STRIPE_WEBHOOK_SECRET`) for unsubscribe
+tokens, and `MAIL_*` for delivery.
 
 Client bridge (`cloud.js` → `SYCloud`): `lead`, `refCode`, `leadsList`,
-`leadMark`. All degrade to `null`/`false` offline so the UI never dead-ends.
+`leadMark`, `newsletter`. All degrade to `null`/`false` offline so the UI
+never dead-ends.
 
 ## Off-code growth assets
 

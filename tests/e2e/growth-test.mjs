@@ -20,7 +20,12 @@ async function fresh(role) {
         { id: 'a1', email: 'jane.smith@example.com', source: 'free-gcse-maths', subject: 'GCSE Maths', grade: '5', ref: null, contacted: false, createdAt: '2026-08-10T09:00:00.000Z' },
         { id: 'b2', email: 'tom@example.co.uk', source: 'free', subject: 'A-Level Biology', grade: 'B', ref: 'X1', contacted: true, createdAt: '2026-08-11T09:00:00.000Z' }
       ], counts: { total: 2, notContacted: 1, bySource: { 'free-gcse-maths': 1, 'free': 1 }, bySubject: {} } }),
-      leadMark: (ids) => { window.__marked = ids; return Promise.resolve(true); }
+      leadMark: (ids) => { window.__marked = ids; return Promise.resolve(true); },
+      newsletter: (op) => { window.__nlops = (window.__nlops || []).concat(op); return Promise.resolve(
+        op === 'status' ? { ok: true, mailConfigured: true, runs: [{ id: '2026-W34', by: 'schedule', sent: 5, skipped: 1, finishedAt: '2026-08-17T08:00:00Z' }] }
+        : op === 'preview' ? { ok: true, weekKey: '2026-W34', subject: 'StudYear weekly: Free predicted grade in 60 seconds', html: '<!DOCTYPE html><html><body>Preview <a href="https://www.studyear.com/free/">free</a></body></html>' }
+        : op === 'test' ? { ok: true, weekKey: '2026-W34', to: 'admin@studyear.test', sent: 1 }
+        : { ok: true, weekKey: '2026-W34', sent: 5, skipped: 1, failed: 0 }); }
     };
   }, role);
   await page.evaluate(growthJs);
@@ -53,10 +58,11 @@ page = await fresh('admin');
 let admin = await page.evaluate(() => ({
   tiles: document.querySelectorAll('.sy-g-tile').length,
   hasCalendar: !!document.querySelector('.sy-g-tile[data-tool="calendar"]'),
-  hasLeads: !!document.querySelector('.sy-g-tile[data-tool="leads"]')
+  hasLeads: !!document.querySelector('.sy-g-tile[data-tool="leads"]'),
+  hasNewsletter: !!document.querySelector('.sy-g-tile[data-tool="newsletter"]')
 }));
-if (admin.tiles !== 12) fails.push('admin should see 12 tools, saw ' + admin.tiles);
-if (!admin.hasCalendar || !admin.hasLeads) fails.push('owner-only tools missing in admin');
+if (admin.tiles !== 13) fails.push('admin should see 13 tools, saw ' + admin.tiles);
+if (!admin.hasCalendar || !admin.hasLeads || !admin.hasNewsletter) fails.push('owner-only tools missing in admin');
 
 // Calendar tool: metered acus:2 + label
 await page.evaluate(() => { window.SYAI = { canAfford: () => true, balance: () => 100, ask: (s, u, o) => { window.__opts = o; return Promise.resolve('HOOK: x\nSCRIPT: film\nCAPTION: studyear.com/free'); }, render: (t) => '<p>' + t + '</p>' }; });
@@ -89,8 +95,22 @@ await page.click('.sy-g-panel .sy-g-mark');
 await page.waitForTimeout(150);
 let marked = await page.evaluate(() => window.__marked);
 if (!Array.isArray(marked) || marked.join(',') !== 'a1') fails.push('mark-contacted sent wrong ids: ' + JSON.stringify(marked));
+
+// Newsletter tool: loads status, previews (iframe), and can trigger test/send
+await page.click('.sy-g-tile[data-tool="newsletter"]');
+await page.waitForTimeout(250);
+let nlStatus = await page.evaluate(() => document.querySelector('#sy-g-nlstatus').textContent);
+if (!/Mail configured/i.test(nlStatus) || !/2026-W34/.test(nlStatus)) fails.push('newsletter status not rendered: ' + nlStatus);
+await page.click('.sy-g-panel .sy-g-nlprev');
+await page.waitForTimeout(200);
+let hasIframe = await page.evaluate(() => !!document.querySelector('#sy-g-out iframe'));
+if (!hasIframe) fails.push('newsletter preview iframe missing');
+await page.click('.sy-g-panel .sy-g-nltest');
+await page.waitForTimeout(150);
+let nlops = await page.evaluate(() => window.__nlops || []);
+if (!nlops.includes('status') || !nlops.includes('preview') || !nlops.includes('test')) fails.push('newsletter ops not called: ' + JSON.stringify(nlops));
 await page.close();
 
 await browser.close();
 if (fails.length) { console.error('FAIL growth-test:\n - ' + fails.join('\n - ')); process.exit(1); }
-console.log('GROWTH TEST PASS — partner 10 tools (metered), admin 12 incl. calendar (acus:2) + leads (masked, nurture acus:3, mark ids), no PII leak.');
+console.log('GROWTH TEST PASS — partner 10 tools (metered), admin 13 incl. calendar (acus:2) + leads (masked, nurture acus:3, mark ids) + newsletter (status/preview/test), no PII leak.');

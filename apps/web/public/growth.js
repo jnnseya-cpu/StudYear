@@ -391,9 +391,57 @@
     fetchLeads();
   }
 
+  /* --- custom render: weekly newsletter (automatic send + owner controls) --- */
+  function renderNewsletter(panel) {
+    panel.hidden = false;
+    panel.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span class="sy-g-ic">📰</span><b style="font-size:16px">Weekly newsletter</b>' +
+      '<button class="sy-g-close" style="margin-left:auto;background:none;border:0;color:var(--ink-3,#8795AE);cursor:pointer;font-size:20px" title="Close">×</button></div>' +
+      '<p class="sub" style="color:var(--ink-3,#8795AE);margin:0 0 8px">Sent automatically to every registered user every Monday 09:00 (UK), selling the platform’s features with links back to the site. One-click unsubscribe is included on every email. Preview this week, send yourself a test, or send now.</p>' +
+      '<div id="sy-g-nlstatus" style="font-size:12.5px;color:var(--ink-3,#8795AE)">Checking status…</div>' +
+      '<div class="sy-g-actions"><button class="btn solid sy-g-nlprev">Preview this week</button><button class="btn sm sy-g-nltest">Send test to me</button><button class="btn sm sy-g-nlsend">Send now to all</button></div>' +
+      '<div class="sy-g-out" id="sy-g-out" hidden></div>';
+    panel.querySelector('.sy-g-close').onclick = function () { panel.hidden = true; panel.innerHTML = ''; };
+    var out = panel.querySelector('#sy-g-out'), statusEl = panel.querySelector('#sy-g-nlstatus');
+    function api(op) { return (window.SYCloud && SYCloud.newsletter) ? SYCloud.newsletter(op, sessionEmail()) : Promise.resolve(null); }
+    function loadStatus() {
+      api('status').then(function (r) {
+        if (!r || !r.ok) { statusEl.textContent = 'Backend not reachable — deploy the backend to enable sending. You can still preview.'; return; }
+        var last = (r.runs && r.runs[0]) || null;
+        statusEl.innerHTML = (r.mailConfigured ? '<span style="color:#5CBB7B">✓ Mail configured</span>' : '<span style="color:#E0AE5A">⚠ Mail not configured (set MAIL_* env)</span>') +
+          (last ? ' · last issue <b>' + esc(last.id) + '</b>' + (last.finishedAt ? ' — sent ' + (last.sent || 0) + ', skipped ' + (last.skipped || 0) + (last.failed ? ', failed ' + last.failed : '') : ' — in progress') + (last.by ? ' (' + esc(last.by) + ')' : '') : ' · no issue sent yet');
+      });
+    }
+    panel.querySelector('.sy-g-nlprev').onclick = function () {
+      out.hidden = false; out.innerHTML = '<span style="color:var(--ink-3,#8795AE)">Building this week’s issue…</span>';
+      api('preview').then(function (r) {
+        if (!r || !r.ok) { out.innerHTML = '<span style="color:var(--ink-3,#8795AE)">Preview needs the backend. Deploy it to preview and send.</span>'; return; }
+        out.innerHTML = '<div style="font-size:12.5px;color:var(--ink-3,#8795AE);margin-bottom:6px">Week ' + esc(r.weekKey) + ' · subject: <b style="color:var(--ink-2,#c3ccdf)">' + esc(r.subject) + '</b></div>' +
+          '<iframe title="Newsletter preview" style="width:100%;height:520px;border:1px solid var(--line,rgba(120,140,190,.28));border-radius:10px;background:#fff"></iframe>';
+        var f = out.querySelector('iframe'); try { f.srcdoc = r.html; } catch (e) { f.contentDocument.write(r.html); }
+      });
+    };
+    panel.querySelector('.sy-g-nltest').onclick = function () {
+      var btn = this; btn.disabled = true; out.hidden = false; out.innerHTML = '<span style="color:var(--ink-3,#8795AE)">Sending a test to your admin email…</span>';
+      api('test').then(function (r) {
+        btn.disabled = false;
+        out.innerHTML = (r && r.ok) ? '<span style="color:#5CBB7B">✓ Test sent to ' + esc(r.to || 'your email') + ' (week ' + esc(r.weekKey) + ').</span>' : '<span style="color:var(--ink-3,#8795AE)">Could not send — check the backend is deployed and MAIL_* is configured.</span>';
+      });
+    };
+    panel.querySelector('.sy-g-nlsend').onclick = function () {
+      if (!confirm('Send this week’s newsletter to ALL registered users now?\n\nThis is idempotent — if this week’s issue was already sent, it won’t send again.')) return;
+      var btn = this; btn.disabled = true; out.hidden = false; out.innerHTML = '<span style="color:var(--ink-3,#8795AE)">Sending to all registered users…</span>';
+      api('send').then(function (r) {
+        btn.disabled = false; loadStatus();
+        out.innerHTML = (r && r.ok) ? (r.alreadySent ? '<span style="color:#5CBB7B">✓ This week’s issue was already sent — nothing to resend.</span>' : '<span style="color:#5CBB7B">✓ Sent ' + (r.sent || 0) + ', skipped ' + (r.skipped || 0) + (r.failed ? ', failed ' + r.failed : '') + ' (week ' + esc(r.weekKey) + ').</span>') : '<span style="color:var(--ink-3,#8795AE)">Could not send — check the backend is deployed and MAIL_* is configured.</span>';
+      });
+    };
+    loadStatus();
+  }
+
   var ADMIN_TOOLS = [
     { id: 'calendar', icon: '📅', name: 'Content calendar', desc: 'A daily short-video idea + AI script driving traffic to the free tool.', custom: renderCalendar },
-    { id: 'leads', icon: '✉️', name: 'Captured leads & nurture', desc: 'Your free-tool leads: export a mail-merge CSV and AI-draft a lifecycle sequence.', custom: renderLeadsTool }
+    { id: 'leads', icon: '✉️', name: 'Captured leads & nurture', desc: 'Your free-tool leads: export a mail-merge CSV and AI-draft a lifecycle sequence.', custom: renderLeadsTool },
+    { id: 'newsletter', icon: '📰', name: 'Weekly newsletter', desc: 'Automatic weekly email to all users selling features. Preview, test or send now.', custom: renderNewsletter }
   ];
   function allTools() { return isAdmin() ? TOOLS.concat(ADMIN_TOOLS) : TOOLS; }
   function findTool(id) { return allTools().filter(function (t) { return t.id === id; })[0]; }
