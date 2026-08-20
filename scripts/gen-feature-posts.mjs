@@ -1,5 +1,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
-const POSTS = '/home/user/StudYear/apps/web/public/blog/posts.json';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+// Resolve relative to this script so it runs on CI / any machine (matches gen-blog.mjs).
+const POSTS = join(dirname(fileURLToPath(import.meta.url)), '..', 'apps/web/public/blog/posts.json');
 const existing = JSON.parse(readFileSync(POSTS, 'utf8'));
 const keepIds = new Set(['seed1','seed2','seed3','seed4']); // preserve curated posts
 const base = existing.filter(p => keepIds.has(p.id));

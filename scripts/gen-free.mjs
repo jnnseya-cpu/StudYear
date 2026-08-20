@@ -98,7 +98,7 @@ function page(x, all) {
 <meta name="robots" content="index,follow,max-image-preview:large">
 <meta property="og:type" content="website"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(desc)}"><meta property="og:url" content="${url}"><meta property="og:image" content="${SITE}/icon-512.png"><meta property="og:site_name" content="StudYear">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(desc)}"><meta name="twitter:image" content="${SITE}/icon-512.png">
-<link rel="manifest" href="/manifest.json"><link rel="icon" href="/icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
 ${ld.map((b) => `<script type="application/ld+json">${JSON.stringify(b)}</script>`).join('\n')}
 <style>${style}
 .rel{margin-top:26px;border-top:1px solid var(--line);padding-top:14px}.rel b{font-size:13px;color:var(--ink2);display:block;margin-bottom:8px}.rel a{display:inline-block;color:var(--blue4);text-decoration:none;font-size:13px;margin:0 14px 8px 0}</style>

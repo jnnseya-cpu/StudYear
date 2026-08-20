@@ -40,7 +40,7 @@ if (!r.html.includes('/unsubscribe?u=' + uid + '&t=' + t)) fails.push('personal 
 if (!r.unsubUrl.includes('/unsubscribe?u=' + uid)) fails.push('unsubUrl missing');
 if (r.html.includes('${') || r.html.includes('undefined')) fails.push('template leftover/undefined in html');
 if (!r.html.includes('https://www.studyear.com/free/')) fails.push('free tool absolute link missing');
-if (!r.text.includes('Unsubscribe: https://www.studyear.com/unsubscribe')) fails.push('text unsubscribe missing');
+if (!r.text.includes('Unsubscribe: https://www.studyear.com/gapi/fn/unsubscribe')) fails.push('text unsubscribe missing/incorrect');
 for (const f of m.NL_FEATURES) if (!/^\/(free|app|blog|account)\//.test(f.href) && f.href !== '/') fails.push('suspicious href: ' + f.href);
 
 if (fails.length) { console.error('FAIL newsletter.test:\n - ' + fails.join('\n - ')); process.exit(1); }

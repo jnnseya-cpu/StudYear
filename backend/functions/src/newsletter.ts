@@ -69,7 +69,11 @@ function esc(s: string) { return String(s == null ? '' : s).replace(/[&<>"]/g, (
 /** Render the per-recipient email (the unsubscribe link is personal). */
 export function nlRender(weekKey: string, uid: string): { subject: string; html: string; text: string; unsubUrl: string } {
   const issue = nlIssue(weekKey);
-  const unsub = `${SITE}/unsubscribe?u=${encodeURIComponent(uid)}&t=${unsubToken(uid)}`;
+  // Route through the Vercel /gapi/fn proxy (vercel.json) so the link stays on
+  // studyear.com AND actually reaches the `unsubscribe` Cloud Function — the
+  // static site has no /unsubscribe page, so ${SITE}/unsubscribe would 404 and
+  // silently break one-click opt-out (PECR/GDPR). Also used for List-Unsubscribe.
+  const unsub = `${SITE}/gapi/fn/unsubscribe?u=${encodeURIComponent(uid)}&t=${unsubToken(uid)}`;
   const B = '#2E6BC4', L = '#4FA6E0';
   const cards = issue.picks.map((f) => {
     const url = SITE + f.href;

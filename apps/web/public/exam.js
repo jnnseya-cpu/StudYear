@@ -297,11 +297,13 @@
       var diff=$('sx-diff').value;
       if(!subject){$('sx-status').textContent='Select a subject first.';return}
       var cost=Math.max(10,n);
-      /* ACU-gated when built with live AI (no free AI). Fallback questions use
-         no model, so they are not gated or charged. The whole paper is charged
-         ONCE below, only when the AI actually produced it. */
+      /* Charge ONCE via the host's spend() callback — it routes to the correct
+         wallet (student / tutor personal) or the SCHOOL POOL (teacher) AND gates:
+         a false return means the balance can't cover the paper, so we abort
+         before building. Per-batch asks below are metered:true, so ai.js never
+         double-charges. A host with no spend() (preview mode) builds for free. */
+      if(opts.spend&&!opts.spend(cost,'Exam paper: '+title+' ('+n+' questions)')){$('sx-status').textContent='Not enough ACUs — top up to build the paper ('+cost+' needed).';return}
       var useAI=!!(window.SYAI&&window.SYAI.ready());
-      if(useAI&&window.SYAI.canAfford&&!window.SYAI.canAfford(cost)){$('sx-status').textContent='Not enough ACUs — top up to build the paper with AI ('+cost+' needed).';return}
       var btn=$(goId);btn.disabled=true;
       try{
         var qs;
@@ -310,7 +312,6 @@
           try{qs=await liveQuestions(n,subject,level,board,topics,diff,function(done,total){$('sx-status').textContent='Writing questions '+(done+1)+'–'+Math.min(done+10,total)+' of '+total+'…'});}
           catch(e){qs=null}
           if(qs&&qs.length>n)qs=qs.slice(0,n);
-          if(qs&&qs.length){try{window.SYAI.charge&&window.SYAI.charge(cost,null,'Exam paper: '+title+' ('+n+' questions)')}catch(e){}}
         }
         if(!qs||!qs.length)qs=fallbackQuestions(n,subject,level,topics);
         var total=qs.reduce(function(a,x){return a+(x.marks||0)},0);

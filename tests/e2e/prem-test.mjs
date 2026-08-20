@@ -14,10 +14,16 @@ async function newPage(plan,acus){
 }
 function mockAI(page,reply){
   return page.evaluate((reply)=>{
-    const render=window.SYAI?window.SYAI.render:(t=>t);
+    // Preserve the REAL ACU meter (ai.js chargeAcus) so the mock still debits
+    // exactly like production — central metering charges inside SYAI.ask, which
+    // this mock replaces, so it must delegate the charge itself.
+    const R=window.SYAI||{};const render=R.render||(t=>t);const realCharge=R.charge;
     window.__asks=[];
     window.SYAI={ready:()=>true,provider:()=>'mock',render,
-      ask:async(sys,user,opts)=>{window.__asks.push({sys,user,opts});return reply},
+      charge:realCharge||function(){},
+      ask:async(sys,user,opts)=>{window.__asks.push({sys,user,opts});opts=opts||{};
+        if(realCharge&&!opts.metered&&opts.acus!==0)realCharge(opts.acus||1,opts.pool,opts.label||'AI action');
+        return reply},
       config:()=>({provider:'mock',key:'x'})};
   },reply);
 }

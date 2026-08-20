@@ -97,7 +97,7 @@ async function sendMail(opts: { to: string; subject: string; text?: string; html
 }
 
 // ------------------------------------------------------------------ health ----
-export const health = onRequest({ region: 'europe-west2' }, (_req, res) => {
+export const health = onRequest({ region: 'europe-west2', cors: true }, (_req, res) => {
   res.json({ ok: true, service: 'studyear-api', marginFloor: MARGIN.FLOOR });
 });
 
@@ -106,7 +106,15 @@ export const health = onRequest({ region: 'europe-west2' }, (_req, res) => {
  * POST /acuAuthorize { activity }
  * Pre-authorises a metered activity: checks tariff, plan gates, free-tier rules,
  * and balance. On success writes the debit (at initiation, per §A3) and returns
- * the remaining balance. The AI Gateway is called only after this returns ok.
+ * the remaining balance.
+ *
+ * KNOWN GAP (owner decision needed): this is the server-authoritative ACU meter,
+ * but no client currently calls it — AI spend is metered client-side in ai.js,
+ * and aiProxy enforces only a call-count ceiling. So a client that clears its
+ * local wallet or hits aiProxy directly is bounded only by that ceiling, not by
+ * ACU balance. To make "no free AI action" server-enforced, wire aiProxy to
+ * debit through this logic before calling the provider. Left intact (not
+ * deleted) because that wiring is the intended direction.
  */
 export const acuAuthorize = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
   try {
@@ -499,9 +507,12 @@ export const redeemGift = onRequest({ region: 'europe-west2', cors: true }, asyn
 // ---------------------------------------------------------------- AI proxy ----
 /**
  * POST /aiProxy { system, user, maxTokens?, temperature?, image? }
- * Server-side model gateway: provider keys live in env (never in browsers),
- * calls are metered through acuAuthorize first, and usage lands in
- * aiUsageLogs (the Admin console's AI usage & costs panel reads it).
+ * Server-side model gateway: provider keys live in env (never in browsers).
+ * NOTE ON METERING: ACU balances are currently metered CLIENT-SIDE (ai.js
+ * chargeAcus); this endpoint enforces only a per-day call-count abuse ceiling,
+ * it does NOT debit ACUs. `acuAuthorize` is the server-authoritative meter but
+ * is not yet wired into this path — see the KNOWN-GAP note on acuAuthorize.
+ * Usage lands in aiUsageLogs (the Admin console's AI usage & costs panel).
  * The browser SYAI client swaps its direct-provider path for this endpoint
  * by setting sy-ai-live = { provider:'proxy', key:'session' }.
  */

@@ -3621,7 +3621,11 @@ if(window.SYExam&&document.getElementById("exam-mount")){
       subject:(PROFILE.subjects&&PROFILE.subjects[0]&&PROFILE.subjects[0].s)||"",
       board:(PROFILE.board&&PROFILE.board!=="—")?PROFILE.board:""},
     goId:"exam-go",
-    spend:(cost,label)=>spendAcus(cost,label),
+    /* The exam builder charges the whole paper ONCE here (its per-batch asks are
+       metered:true, so SYAI.ask does not also charge). spendAcus is only a
+       pre-flight gate, so debit the wallet here on success — matching the
+       tutor/teacher hosts whose spend() actually debits. */
+    spend:(cost,label)=>{if(!spendAcus(cost,label))return false;var w=getWallet();w.acus=Math.max(0,(w.acus||0)-cost);store.set("wallet",w);try{window.dispatchEvent(new CustomEvent("sy-acus",{detail:{balance:w.acus}}));}catch(e){}return true;},
     onBuilt:st=>{addPoints(15);touchStreak();
       logEvent("create","Exam paper built: "+st.meta.title,st.meta.n+" questions · "+st.meta.total+" marks · mark-scheme answer sheet included.");}
   });
