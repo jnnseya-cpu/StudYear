@@ -1503,6 +1503,33 @@ function blogShape(d: FirebaseFirestore.QueryDocumentSnapshot | FirebaseFirestor
  * The committed posts.json + static /blog/<slug>/ pages stay the crawlable
  * source of truth for SEO; this endpoint is the instant-publish overlay.
  */
+/**
+ * /blogView — public blog view counter. GET ?slug= returns the count; POST
+ * ?slug= increments then returns it (the static post pages POST once per
+ * browser session, so it counts real reads without inflating on refresh).
+ * GET ?all=1 returns every slug's count for the blog index/admin.
+ */
+export const blogView = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    if (req.query.all) {
+      const snap = await db.collection('blogViews').get();
+      const views: Record<string, number> = {};
+      snap.forEach((d) => { views[d.id] = Number(d.data().count) || 0; });
+      res.json({ ok: true, views });
+      return;
+    }
+    const slug = String(req.query.slug ?? req.body?.slug ?? '').trim().slice(0, 80).replace(/[^a-z0-9-]/gi, '');
+    if (!slug) throw httpError(400, 'slug required');
+    const ref = db.doc(`blogViews/${slug}`);
+    if (req.method === 'POST') await ref.set({ count: FieldValue.increment(1), slug, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    const snap = await ref.get();
+    res.json({ ok: true, slug, count: Number(snap.data()?.count) || 0 });
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
 export const blog = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
   try {
     const op = String(req.query.op ?? req.body?.op ?? 'list');

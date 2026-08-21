@@ -506,6 +506,23 @@
       return j && j.ok ? (j.items || []) : null;
     } catch (e) { return null; }
   }
+  /* Blog view counter (public). blogView(slug,true) increments + returns the
+     count; blogView(slug) just reads it; blogViews() returns every slug's
+     count for the index/admin. Null on offline so the UI simply omits it. */
+  async function blogView(slug, inc) {
+    await whenReady(); if (!CFG || !slug) return null;
+    var direct = CFG && CFG.apiBase ? CFG.apiBase.replace(/\/$/, '') : '';
+    var base = (window.__SYGAPI && window.__SYGAPI.fn) || direct; if (!base) return null;
+    try { var r = await fetch(base + '/blogView?slug=' + encodeURIComponent(slug), inc ? { method: 'POST' } : {}); var j = await r.json().catch(function () { return {}; }); return j && j.ok ? (j.count || 0) : null; }
+    catch (e) { return null; }
+  }
+  async function blogViews() {
+    await whenReady(); if (!CFG) return null;
+    var direct = CFG && CFG.apiBase ? CFG.apiBase.replace(/\/$/, '') : '';
+    var base = (window.__SYGAPI && window.__SYGAPI.fn) || direct; if (!base) return null;
+    try { var r = await fetch(base + '/blogView?all=1'); var j = await r.json().catch(function () { return {}; }); return j && j.ok ? (j.views || {}) : null; }
+    catch (e) { return null; }
+  }
   async function blogPublish(post, email) {
     await whenReady(); if (!CFG || !email) return null;
     try { var j = await api('/blog', 'POST', { op: 'publish', post: post }, email); return j && j.ok ? j : null; }
@@ -526,6 +543,7 @@
     marketList: marketList, marketPublish: marketPublish, marketRemove: marketRemove,
     walletState: walletState,
     blogList: blogList, blogPublish: blogPublish, blogRemove: blogRemove,
+    blogView: blogView, blogViews: blogViews,
     lead: lead, refCode: refCode, leadsList: leadsList, leadMark: leadMark, newsletter: newsletter,
     /* redeem a StudYear bonus/promo code server-side (validated window/limits/
        audience, ledgered once per user, ACUs credited on the server). Resolves

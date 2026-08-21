@@ -195,6 +195,13 @@
       return {"@type":"Question","name":f.question,"acceptedAnswer":{"@type":"Answer","text":f.answer}};})});
     blocks.forEach(function(b){var s=document.createElement('script');s.type='application/ld+json';s.setAttribute('data-sy-ld','1');s.textContent=JSON.stringify(b);document.head.appendChild(s);});
   }
+  function paintViews(){
+    try{ if(!(window.SYCloud&&SYCloud.blogViews))return;
+      SYCloud.blogViews().then(function(v){ if(!v)return;
+        document.querySelectorAll('[data-bvslug]').forEach(function(el){ var c=v[el.getAttribute('data-bvslug')]||0; if(c>0)el.textContent=' · '+c.toLocaleString()+' view'+(c===1?'':'s'); });
+      });
+    }catch(e){}
+  }
   function drawPosts(){
     var open=decodeURIComponent(location.hash.replace('#',''));
     var featured=posts.find(function(p){return (p.slug||p.id)===open});
@@ -213,8 +220,9 @@
         '<p>'+esc(p.excerpt||p.metaDesc||'')+'</p>'+
         (p.tags&&p.tags.length?'<p class="meta" style="letter-spacing:.06em">'+p.tags.map(function(t){return '#'+esc(t)}).join(' ')+'</p>':'')+
         shareRow(p)+
-        '<div class="updated">Published '+esc((p.date||'').slice(0,10))+(p.reviewed?' · SEO-reviewed '+esc(p.reviewed.slice(0,10)):'')+'</div></div>';
+        '<div class="updated">Published '+esc((p.date||'').slice(0,10))+(p.reviewed?' · Updated '+esc(p.reviewed.slice(0,10)):'')+'<span class="bv" data-bvslug="'+esc(slugOf(p))+'"></span></div></div>';
     }).join('');
+    paintViews();
     wrap.querySelectorAll('[data-copy]').forEach(function(a){a.onclick=function(e){e.preventDefault();
       try{navigator.clipboard.writeText(a.dataset.copy);a.textContent='✓ Copied'}catch(err){}}});
     var back=document.getElementById('back-all');
@@ -239,7 +247,7 @@
     var pc=document.getElementById('post-count');
     if(posts.length){
       drawPosts();if(!hashBound){addEventListener('hashchange',drawPosts);hashBound=true;}
-      if(pc)pc.textContent=posts.length+' AI-authored article'+(posts.length===1?'':'s')+' live.';
+      if(pc)pc.textContent='Evidence-based study guides, revision science and results-day help.';
       blogLd();
     } else if(pc){ pc.textContent='New articles are on the way.'; }
   }

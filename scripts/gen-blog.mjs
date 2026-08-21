@@ -116,7 +116,7 @@ ${ld.map((b) => `<script type="application/ld+json">${JSON.stringify(b)}</script
   <nav class="bc" aria-label="Breadcrumb"><a href="../../">Home</a> › <a href="../">Blog</a> › <span>${esc(p.category || 'Article')}</span></nav>
   <div class="k">${esc(p.category || 'Article')}</div>
   <h1>${esc(p.title)}</h1>
-  <div class="meta">${(p.readTime || 3)} min read · Published ${esc(String(p.date || '').slice(0, 10))}${p.reviewed ? ' · Updated ' + esc(String(p.reviewed).slice(0, 10)) : ''}</div>
+  <div class="meta">${(p.readTime || 3)} min read · Published ${esc(String(p.date || '').slice(0, 10))}${p.reviewed ? ' · Updated ' + esc(String(p.reviewed).slice(0, 10)) : ''}<span id="bviews"></span></div>
   <article>${md(p.body)}</article>
   ${p.tags && p.tags.length ? `<div class="tags">${p.tags.map((t) => '#' + esc(t)).join(' ')}</div>` : ''}
   <a class="cta" href="../../study/">Start a free assessment →</a>
@@ -126,6 +126,16 @@ ${ld.map((b) => `<script type="application/ld+json">${JSON.stringify(b)}</script
   <a href="../../">Home</a><a href="../">Blog</a><a href="../../about/">About</a><a href="../../how-it-works/">How it works</a>
   <a href="../../tutors/">Tutors</a><a href="../../contact/">Contact</a><a href="../../privacy/">Privacy</a>
 </footer>
+<script>(function(){var s=${JSON.stringify(slug)},el=document.getElementById('bviews');
+  fetch('../../firebase-config.json',{cache:'no-store'}).then(function(r){return r.json()}).then(function(c){
+    var b=(c&&c.apiBase||'').replace(/\\/$/,'');if(!b)return;
+    var once=false;try{once=sessionStorage.getItem('bv:'+s)==='1'}catch(e){}
+    if(!once){try{sessionStorage.setItem('bv:'+s,'1')}catch(e){}}
+    fetch(b+'/blogView?slug='+encodeURIComponent(s),once?{}:{method:'POST'}).then(function(r){return r.json()}).then(function(j){
+      if(j&&j.ok&&el&&j.count>0)el.textContent=' · '+j.count.toLocaleString()+' view'+(j.count===1?'':'s');
+    }).catch(function(){});
+  }).catch(function(){});
+})();</script>
 </body></html>`;
 }
 
