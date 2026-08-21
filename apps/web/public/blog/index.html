@@ -215,7 +215,7 @@
       (featured.tags&&featured.tags.length?'<p class="meta" style="letter-spacing:.06em">'+featured.tags.map(function(t){return '#'+esc(t)}).join(' ')+'</p>':'')+
       shareRow(featured)+relatedBlock(featured)+'</div>')
     :posts.map(function(p){
-      return '<div class="card" id="'+esc(p.slug||p.id)+'"><div class="meta">'+esc(p.category||'Article')+' · '+(p.readTime||3)+' min read'+(p.seoScore?' · SEO '+p.seoScore:'')+'</div>'+
+      return '<div class="card" id="'+esc(p.slug||p.id)+'"><div class="meta">'+esc(p.category||'Article')+' · '+(p.readTime||3)+' min read</div>'+
         '<h2 style="margin-top:8px">'+esc(p.title)+'</h2>'+
         '<p>'+esc(p.excerpt||p.metaDesc||'')+'</p>'+
         (p.tags&&p.tags.length?'<p class="meta" style="letter-spacing:.06em">'+p.tags.map(function(t){return '#'+esc(t)}).join(' ')+'</p>':'')+
