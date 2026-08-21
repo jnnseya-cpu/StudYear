@@ -107,6 +107,7 @@
     <a href="../../career/">Career Passport</a>
     <a href="../../account/achievements/">Achievements</a>
     <a href="../../write/">Handwriting practice</a>
+    <a href="../../study/#smartreview">Smart Review</a>
     <a href="../../study/#review">Assignment Review</a>
     <a href="../../account/library/">Saved Resources</a>
     <a href="../../study/#create">Create Resource</a>
@@ -127,6 +128,19 @@
 </header>
 
 <div class="grid">
+  <div class="card c12" id="revise-spine" style="border:1px solid rgba(79,166,224,.45);background:linear-gradient(180deg,rgba(79,166,224,.12),rgba(11,18,32,.55))">
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:230px">
+        <h3 style="margin:0">🔁 Revise now</h3>
+        <div class="sub" id="revise-sub">Retrieval practice beats re-reading. Jump straight into your revision loop.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn" href="../../study/#smartreview" style="text-decoration:none">Smart review →</a>
+        <a class="btn ghost" href="../../study/#today" style="text-decoration:none">Today's plan</a>
+        <a class="btn ghost" href="../../study/#diag" style="text-decoration:none">Diagnostic</a>
+      </div>
+    </div>
+  </div>
   <div class="card c12" id="parent-link">
     <h3>Connect a parent</h3>
     <div class="sub">Works on Free and Premium — your plan does not affect linking. Share this code so a parent can
@@ -267,6 +281,10 @@ $('copy-code').onclick=function(){
 
 /* ---------- tiles ---------- */
 var quizzes=SY.get('quizzes',[]), diag=SY.get('diagnostics',[])[0]||null, activity=SY.get('activity',[]);
+/* Revise-now spine: surface how many missed items are due for spaced review. */
+try{var _ri=SY.get('reviewItems',{})||{},_now=Date.now(),_due=0;for(var _k in _ri){var _it=_ri[_k];if(_it&&(_it.due||0)<=_now&&((_it.kind==='card'&&_it.front)||(_it.q&&_it.o)))_due++;}
+  var _rs=document.getElementById('revise-sub');if(_rs){_rs.innerHTML=_due?('<b style="color:#f0a0a0">'+_due+' question'+(_due>1?'s':'')+'</b> you missed '+(_due>1?'are':'is')+' due — a 2-minute retrieval locks '+(_due>1?'them':'it')+' back in.'):'Retrieval practice beats re-reading. Take a quiz or run the diagnostic — your misses come back here right before you forget them.';}
+}catch(e){}
 function gradeFor(m){return Math.max(1,Math.min(9,Math.round(1+8*m/100)))}
 /* subject mastery blend */
 var by={};quizzes.forEach(function(q){(by[q.subj]=by[q.subj]||[]).push(q.pct)});

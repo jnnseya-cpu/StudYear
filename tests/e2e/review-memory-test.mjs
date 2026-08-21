@@ -29,6 +29,11 @@ await page.evaluate(() => { window.noteReviewItem({ q: 'Capital of France?', o: 
 let total = await page.evaluate(() => { try { return Object.keys(JSON.parse(localStorage.getItem('sy-u:t@t.test:reviewItems') || '{}')).length; } catch (e) { return -1; } });
 ok('a correct-first item is NOT tracked (deck stays weakness-only)', total === 1);
 
+// Flashcard misses feed the SAME deck as recall cards
+await page.evaluate(() => { window.noteReviewCard('Define: ionic bond', 'Electrostatic attraction between oppositely charged ions', 'Chemistry', false); });
+let card = await page.evaluate(() => window.dueReviewItems().some(x => x.kind === 'card' && /ionic bond/.test(x.front || '')));
+ok('flashcard miss enters the deck as a recall card', card);
+
 // Miss two questions -> Smart review tab shows the missed-items deck CTA
 await page.evaluate(() => {
   window.noteReviewItem({ q: 'What is 2+2?', o: ['4', '5', '3'], a: 0, exp: 'It is four.' }, 'Maths', false);
@@ -49,8 +54,8 @@ if (!diag.hasBtn) results.push('FAIL — #rv-items missing (due=' + diag.due + '
 if (diag.hasBtn) {
   await page.evaluate(() => window.startItemReview());
   await page.waitForTimeout(150);
-  let modalHasQ = await page.evaluate(() => { const b = document.getElementById('modal-body'); return document.getElementById('modal').classList.contains('on') && (/2\+2/.test(b.innerText) || /H2O/.test(b.innerText)); });
-  ok('Review serves the actual missed question (not a fresh one)', modalHasQ);
+  let modalHasQ = await page.evaluate(() => { const b = document.getElementById('modal-body'); return document.getElementById('modal').classList.contains('on') && (/2\+2/.test(b.innerText) || /H2O/.test(b.innerText) || /ionic bond/.test(b.innerText)); });
+  ok('Review serves an actual missed item (question or card), not a fresh one', modalHasQ);
 }
 
 await browser.close();

@@ -1316,8 +1316,11 @@ function spendAcus(n,label){
 }
 
 /* ---------- Premium plan gate (owner policy 2026-07) ----------
-   The creator toolkit and Assignment Review are Premium: Student Premium,
-   Premium+ and Max unlock them (Child Free and Student Access do not).
+   The AI creator toolkit and Assignment Review are Premium: Student Premium,
+   Premium+ and Max unlock them (Child Free and Student Access do not) — because
+   they generate personalised content and cost ACUs. FREE accounts still get
+   full access to already-published materials (the community library / saved
+   resources open without a plan check); only AI generation is gated here.
    Usage stays metered — Premium unlocks tools, ACUs still pay per use. */
 const PREMIUM_PLANS={student_premium:1,student_premium_plus:1,student_max:1};
 function hasPremium(){return !!PREMIUM_PLANS[getWallet().plan]}
@@ -1753,20 +1756,28 @@ function viewCross(r,head){
 }
 
 function viewFlash(r,head){
-  let i=0,flipped=false;
+  let i=0,flipped=false;const subj=r.subj||"";
   const draw=()=>{ mbody.innerHTML=head+`
     <div class="flash ${flipped?"flip":""}" id="fl"><div class="inner">
       <div class="face">${esc(r.cards[i][0])}</div><div class="face back">${esc(r.cards[i][1])}</div>
     </div></div>
-    <div class="note" style="text-align:center;margin-top:0">tap the card to flip</div>
+    <div class="note" style="text-align:center;margin-top:0">tap the card to flip, then grade yourself</div>
+    <div class="fnav" id="fgrade" style="justify-content:center;display:${flipped?"flex":"none"}">
+      <button class="btn ghost sm" id="fmiss">Missed it</button><button class="btn sm solid" id="fgot">Got it ✓</button>
+    </div>
     <div class="fnav">
       <button class="btn ghost sm" id="fprev">← prev</button>
       <span class="cnt">${i+1} / ${r.cards.length}</span>
       <button class="btn ghost sm" id="fnext">next →</button>
     </div>`;
-    document.getElementById("fl").onclick=()=>{flipped=!flipped;document.getElementById("fl").classList.toggle("flip",flipped)};
+    document.getElementById("fl").onclick=()=>{flipped=!flipped;document.getElementById("fl").classList.toggle("flip",flipped);document.getElementById("fgrade").style.display=flipped?"flex":"none"};
     document.getElementById("fprev").onclick=()=>{i=(i-1+r.cards.length)%r.cards.length;flipped=false;draw()};
     document.getElementById("fnext").onclick=()=>{i=(i+1)%r.cards.length;flipped=false;addPoints(1);draw()};
+    /* self-grading feeds the spaced-review deck: a missed card comes back, a known
+       card graduates — so flashcards finally contribute to what you revise next. */
+    const adv=(ok)=>{try{noteReviewCard(r.cards[i][0],r.cards[i][1],subj,ok);}catch(e){}addPoints(ok?2:0);if(i+1<r.cards.length){i++;flipped=false;draw();}else{toast(ok?"Deck done — nicely recalled.":"Logged — the ones you missed will come back in Smart review.");}};
+    document.getElementById("fgot").onclick=()=>adv(true);
+    document.getElementById("fmiss").onclick=()=>adv(false);
   }; draw();
 }
 
@@ -2507,7 +2518,7 @@ document.getElementById("gen-plan").onclick=()=>{
     ? "Final push: consolidate the highest-priority topics, drill exam questions, and review your weakest areas first."
     : "Phase 1 — establish a strong foundation in your core subjects, review fundamental concepts, and identify areas that need the most attention.";
 
-  store.set("plan",{made:isoOf(today),hours,target,style,summary,phase,plan,done:store.get("plan",{done:{}}).done||{}});
+  store.set("plan",{made:isoOf(today),hours,target,style,summary,phase,plan,masterySnap:masterySnap(),done:store.get("plan",{done:{}}).done||{}});
   savePlanForm();
   renderPlan(); addPoints(20); touchStreak();
   logEvent("plan","Study plan generated",subs.length+" subject"+(subs.length>1?"s":"")+" · "+hours+" hrs/week"+(target?" · target "+target:"")+" — "+studyDates.length+" study days scheduled by date.");
@@ -2518,6 +2529,15 @@ document.getElementById("gen-plan").onclick=()=>{
 function fmtDate(iso){const d=new Date(iso+"T00:00:00");return d.getDate()+" "+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]}
 function longDay(iso){const d=new Date(iso+"T00:00:00");return d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
 const SLOT_NAMES=["Morning","Afternoon","Evening"];
+/* a coarse fingerprint of current subject mastery, stored with the plan so we
+   can tell when the student's results have moved enough to re-prioritise. */
+function masterySnap(){var o={};try{(myMasteryRows().rows||[]).forEach(function(r){o[r.subj]=Math.round((r.mastery||0)/15);});}catch(e){}return o;}
+function planStale(saved){
+  if(!saved||!saved.masterySnap)return false;
+  var now=masterySnap(),snap=saved.masterySnap;
+  for(var s in now){if(snap[s]!=null&&now[s]!==snap[s])return true;}
+  return false;
+}
 function renderPlan(){
   const saved=store.get("plan",null); const out=document.getElementById("plan-out");
   if(!saved||!saved.plan||!saved.plan.length){out.innerHTML='<div class="empty">Fill out the form to generate your personalized study plan!</div>';return}
@@ -2530,6 +2550,7 @@ function renderPlan(){
   flat.forEach(s=>{const d=s.date||"undated";if(!byDate[d]){byDate[d]=[];order.push(d)}byDate[d].push(s)});
 
   let html="";
+  if(planStale(saved)){html+='<div class="card" style="border-color:rgba(242,206,123,.55);background:rgba(242,206,123,.08);margin-bottom:12px"><b>📈 Your results have moved since this plan was made.</b><div class="note" style="font-style:normal;margin:6px 0 10px">Refresh it to re-prioritise your weakest subjects from your latest scores.</div><button class="btn sm solid" id="plan-refresh">Refresh my plan →</button></div>';}
   if(saved.summary){
     html+=`<div class="plan-summary"><h4>Plan Summary</h4><p>${esc(saved.summary)}</p>`+
       (saved.phase?`<div class="phase">${esc(saved.phase)}</div>`:"")+`</div>`;
@@ -2556,6 +2577,7 @@ function renderPlan(){
       }).join("")+`</div>`;
   });
   out.innerHTML=html;
+  var _pr=document.getElementById("plan-refresh");if(_pr)_pr.onclick=function(){var g=document.getElementById("gen-plan");if(g)g.click();};
   out.querySelectorAll("[data-lesson-topic]").forEach(b=>b.onclick=()=>
     openLessonFor(b.dataset.lessonTopic,b.dataset.lessonSubj,b.dataset.lessonLevel));
   out.querySelectorAll("[data-find-subj]").forEach(b=>b.onclick=()=>{
@@ -5275,7 +5297,7 @@ function explainGo(strat){
   var q=($v("ex-q")||"").trim(),mine=($v("ex-mine")||"").trim(),correct=($v("ex-correct")||"").trim();
   var subj=$v("ex-subj")||"General",lvl=$v("ex-level")||dgLevelStr(),out=document.getElementById("ex-out");
   if(!q||!mine){out.innerHTML='<div class="note">Add the question and what you wrote, then pick how you\'d like it explained.</div>';return;}
-  if(!(window.SYAI&&SYAI.ready())){out.innerHTML='<div class="note">Live AI is warming up — try again in a moment.</div>';return;}
+  if(!(window.SYAI&&SYAI.ready())){out.innerHTML=explainFallback(strat,q,mine,correct,subj,lvl);try{logEvent("explain","Explain my mistake (offline) — "+subj,strat);}catch(e){}return;}
   var modeMap={simple:"Explain simply, in plain age-appropriate language.",firststep:"Show ONLY the first step to take — do not solve the whole thing.",worked:"Give a fully worked example of a SIMILAR problem (not this exact one).",compare:"Compare the student's answer with the correct approach and pinpoint exactly where it went wrong.",guide:"Do NOT give the answer. Ask 2–3 short guiding questions that lead the student to find their own mistake.",similar:"Give ONE similar practice question (no answer) for them to try.",examlevel:"Explain how an examiner marks this and the exact technique or phrase needed to earn the marks."};
   out.innerHTML='<div class="note">Thinking…</div>';
   var sys="You are a supportive "+subj+" tutor for a "+lvl+" student."+((window.SY&&SY.stageStyle)?SY.stageStyle(lvl):"")+" On line 1 output exactly 'MISCONCEPTION: <one of: knowledge gap, missing prerequisite, calculation error, method error, misread question, vocabulary gap, weak recall, incomplete reasoning, time-pressure error, careless mistake, overconfidence>'. Then "+(modeMap[strat]||modeMap.simple)+" Never shame the student; be warm and brief.";
@@ -5285,7 +5307,27 @@ function explainGo(strat){
     var body=(window.SYAI&&SYAI.render)?SYAI.render(t):esc(t).replace(/\n/g,"<br>");
     out.innerHTML=(mis?'<div style="margin-bottom:8px"><span class="badge" style="background:rgba(230,103,103,.14);color:#f0a0a0;border:1px solid rgba(230,103,103,.4)">Likely slip: '+esc(mis)+'</span></div>':'')+'<div class="notes-body">'+body+'</div>';
     try{logEvent("explain","Explain my mistake — "+subj,(mis||"")+" · "+strat);addPoints(2);}catch(e){}
-  }).catch(function(){out.innerHTML='<div class="note">Live AI hiccup — try again in a moment.</div>';});
+  }).catch(function(){out.innerHTML=explainFallback(strat,q,mine,correct,subj,lvl);});
+}
+/* Offline fallback for Explain my mistake — no model, but genuinely useful:
+   a heuristic "likely slip" plus method-appropriate guidance that never just
+   hands over the answer, so the tool works with zero backend. */
+function explainFallback(strat,q,mine,correct,subj,lvl){
+  var isNum=/[0-9]/.test(mine)&&/[0-9]/.test(q);
+  var mis=correct&&mine&&correct.toLowerCase()!==mine.toLowerCase()?"method error":isNum?"calculation error":"weak recall";
+  var body;
+  switch(strat){
+    case "firststep": body="Start here: underline exactly what the question asks for, and write down the one fact or formula it's testing. Do just that first line — don't rush to the answer."; break;
+    case "worked": body="Take a <b>similar</b> problem to "+esc(q)+" and work it through slowly, step by step, saying why each step follows. Then come back and apply the same steps to this one."; break;
+    case "compare": body="Put your answer and the correct answer side by side"+(correct?(" — you wrote <span style=\"color:var(--crit)\">"+esc(mine)+"</span>, the answer is <b style=\"color:var(--good)\">"+esc(correct)+"</b>"):"")+". Find the FIRST line where they diverge — that's the exact step to fix, not the whole thing."; break;
+    case "guide": body="Ask yourself: (1) What is the question really testing? (2) Which fact/formula/keyword does it want? (3) Where in my working did I first go off track? Answer those three and the slip usually reveals itself."; break;
+    case "similar": body="Try a similar one yourself: rewrite "+esc(q)+" with different numbers or a different example, and solve that. If you can do the twin, you've got it; if not, the twin shows you where it breaks."; break;
+    case "examlevel": body="Examiner lens: they mark for the <b>method and the key term</b>, not just the final line. Write the full-marks sentence — name the concept explicitly and show each step — so you bank every available mark."; break;
+    default: body="Read the question aloud and name the one idea it's testing. You likely "+(isNum?"slipped on a calculation or a sign — redo it one line at a time and check each step":"reached for the wrong method or a half-remembered fact — go back to the definition and rebuild the answer from it")+". Understanding the <i>why</i> is what stops it happening again.";
+  }
+  return '<div style="margin-bottom:8px"><span class="badge" style="background:rgba(230,103,103,.14);color:#f0a0a0;border:1px solid rgba(230,103,103,.4)">Likely slip: '+esc(mis)+'</span></div>'+
+    '<div class="notes-body">'+body+'</div>'+
+    '<div class="note" style="font-style:normal;margin-top:8px">Add this question to <b>🔁 Smart review</b> by taking a quick quiz on the topic — miss it there and it comes back until it sticks. <span style="opacity:.7">(Offline explanation — reconnect for one tailored to your exact answer.)</span></div>';
 }
 
 /* ============================ FAIR ACADEMIC LEAGUES (PRD Module 16) ============================
@@ -5429,7 +5471,7 @@ function examRun(mt){
 }
 function examFinish(auto){
   var st=examState;if(!st||st.submitted)return;st.submitted=true;examClearTimer();
-  var correct=0;st.qs.forEach(function(q,i){if(st.answers[i]===q.a)correct++;});
+  var correct=0;st.qs.forEach(function(q,i){var ok=st.answers[i]===q.a;if(ok)correct++;try{noteReviewItem(q,st.subj,ok);}catch(e){}}); // feed the review deck: misses come back
   var pct=Math.round(100*correct/st.qs.length);
   var kind=st.review?"Smart review":"Exam mock";
   try{var h=store.get("quizzes",[]);h.push({t:todayKey(),when:new Date().toISOString(),subj:st.subj,title:kind,pct:pct,mock:!st.review,review:!!st.review});store.set("quizzes",h);}catch(e){}
@@ -5466,7 +5508,7 @@ function examResult(auto,correct,pct){
      '<button class="btn ghost" onclick="showTab(\'mastery\')">See Mastery</button></div>';
   mount.innerHTML=h;
   var _rev=st.review;
-  var ag=document.getElementById("xm-again");if(ag)ag.onclick=function(){examState=null;if(_rev){try{showTab("review");return;}catch(e){}}renderExamSim();};
+  var ag=document.getElementById("xm-again");if(ag)ag.onclick=function(){examState=null;if(_rev){try{showTab("smartreview");return;}catch(e){}}renderExamSim();};
   var pr=document.getElementById("xm-practise");if(pr)pr.onclick=function(){var s=st.subj;examState=null;try{pathGo(s,s);}catch(e){tdGo("lesson");}};
 }
 
@@ -5482,9 +5524,11 @@ function examResult(auto,correct,pct){
    you can recall it, then it graduates out of the deck. Fed by every quiz via
    viewQuiz(), stored per-student through the same encrypted store as everything. */
 function riKey(subj,q){var s=(subj||"")+"|"+(q||"");var h=0;for(var i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))|0;}return "i"+(h>>>0).toString(36);}
-function noteReviewItem(q,subj,correct){
-  if(!q||!q.q||!q.o)return;
-  var m=store.get("reviewItems",{})||{},k=riKey(subj,q.q),it=m[k],now=Date.now(),DAY=864e5;
+/* shared SM-2-lite scheduler: on recall push the interval out (and graduate when
+   well learned); on a miss reset it and make it due immediately so you can drill
+   it this session. `build` supplies the item's content on first miss. */
+function _schedItem(k,build,correct){
+  var m=store.get("reviewItems",{})||{},it=m[k],now=Date.now(),DAY=864e5;
   if(correct){
     if(!it)return;                                   // only ever track things you've missed
     it.ease=Math.min(2.8,(it.ease||2.3)+0.1);
@@ -5493,25 +5537,69 @@ function noteReviewItem(q,subj,correct){
     if(it.interval>=21||it.reps>=4){delete m[k];}     // recalled enough times → learned
     else m[k]=it;
   }else{
-    it=it||{q:q.q,o:q.o,a:q.a,exp:q.exp||"",subj:subj||"",reps:0,wrong:0,ease:2.3};
-    it.q=q.q;it.o=q.o;it.a=q.a;it.exp=q.exp||it.exp||"";it.subj=subj||it.subj;
-    it.ease=Math.max(1.3,(it.ease||2.3)-0.2);it.interval=1;it.wrong=(it.wrong||0)+1;it.due=now;it.last=now;  // due immediately: review your misses this session
+    var fresh=build();it=it||fresh;
+    for(var p in fresh){if(["ease","interval","reps","wrong","due","last"].indexOf(p)<0)it[p]=fresh[p];} // refresh content, keep schedule
+    it.ease=Math.max(1.3,(it.ease||2.3)-0.2);it.interval=1;it.wrong=(it.wrong||0)+1;it.due=now;it.last=now;
     m[k]=it;
   }
   store.set("reviewItems",m);
 }
+/* MCQ items (quizzes, exam simulator, lessons) */
+function noteReviewItem(q,subj,correct){
+  if(!q||!q.q||!q.o)return;
+  _schedItem(riKey(subj,q.q),function(){return {kind:"mcq",q:q.q,o:q.o,a:q.a,exp:q.exp||"",subj:subj||"",reps:0,wrong:0,ease:2.3};},correct);
+}
+/* flashcard items (front/back recall, self-graded) */
+function noteReviewCard(front,back,subj,correct){
+  if(!front)return;
+  _schedItem(riKey(subj,"card:"+front),function(){return {kind:"card",front:front,back:back||"",subj:subj||"",reps:0,wrong:0,ease:2.3};},correct);
+}
 function dueReviewItems(limit){
   var m=store.get("reviewItems",{})||{},now=Date.now(),out=[];
-  for(var k in m){if(m[k]&&m[k].q&&m[k].o&&(m[k].due||0)<=now)out.push(m[k]);}
+  for(var k in m){var it=m[k];if(it&&(it.due||0)<=now&&((it.kind==="card"&&it.front)||(it.q&&it.o)))out.push(it);}
   out.sort(function(a,b){return (a.due||0)-(b.due||0);});
   return limit?out.slice(0,limit):out;
 }
-function startItemReview(){
-  var items=dueReviewItems(12);
-  if(!items.length){toast("Nothing due to review right now — nicely kept up!");return;}
+function startItemReview(){runItemReview(dueReviewItems(12));}
+/* one player for a mixed queue of weak items — MCQ questions AND recall cards —
+   each graded back into the schedule so it either returns or graduates. */
+function runItemReview(items){
+  if(!items||!items.length){toast("Nothing due to review right now — nicely kept up!");return;}
   modal.classList.add("on");
-  var head='<h2>🎯 Smart review</h2><div class="mmeta">Your missed questions · '+items.length+' due · retrieval practice</div>';
-  viewQuiz({id:"smart-review",title:"Smart review",subj:"Mixed",qs:items.map(function(x){return {q:x.q,o:x.o,a:x.a,exp:x.exp};})},head);
+  var i=0,right=0;
+  function head(){return '<h2>🎯 Smart review</h2><div class="mmeta">Your weak spots · '+(i+1)+' of '+items.length+' · score '+right+'</div>';}
+  function nextItem(){ if(++i>=items.length){done();} else draw(); }
+  function draw(){
+    var it=items[i];
+    if(it.kind==="card"){
+      mbody.innerHTML=head()+'<div style="font-family:var(--serif);font-size:20px;margin:12px 0 6px">'+esc(it.front)+'</div>'+
+        '<div id="ir-back" class="note" style="display:none;font-style:normal;font-size:15px;color:var(--ink)">'+esc(it.back)+'</div>'+
+        '<div id="ir-b1" style="margin-top:12px"><button class="btn sm" id="ir-show">Show answer</button></div>'+
+        '<div id="ir-b2" style="display:none;gap:8px;margin-top:12px"><button class="btn sm" id="ir-miss">Missed it</button><button class="btn sm solid" id="ir-got">Got it ✓</button></div>';
+      document.getElementById("ir-show").onclick=function(){document.getElementById("ir-back").style.display="block";document.getElementById("ir-b1").style.display="none";document.getElementById("ir-b2").style.display="flex";};
+      document.getElementById("ir-got").onclick=function(){right++;noteReviewCard(it.front,it.back,it.subj,true);nextItem();};
+      document.getElementById("ir-miss").onclick=function(){noteReviewCard(it.front,it.back,it.subj,false);nextItem();};
+    }else{
+      mbody.innerHTML=head()+'<div style="font-size:17px;font-family:var(--serif);margin-bottom:8px">'+esc(it.q)+'</div>'+
+        it.o.map(function(o,j){return '<button class="q-opt" data-j="'+j+'">'+esc(o)+'</button>';}).join("")+
+        '<div class="q-exp" id="ir-exp" style="display:none">'+esc(it.exp||"")+'</div>'+
+        '<div style="text-align:right;margin-top:12px"><button class="btn sm" id="ir-next" style="visibility:hidden">'+(i+1<items.length?"Next →":"Finish")+'</button></div>';
+      var locked=false;
+      mbody.querySelectorAll(".q-opt").forEach(function(b){b.onclick=function(){
+        if(locked)return;locked=true;var j=+b.dataset.j,okk=j===it.a;
+        if(okk){b.classList.add("right");right++;}else{b.classList.add("wrong");mbody.querySelectorAll(".q-opt")[it.a].classList.add("right");}
+        try{noteReviewItem(it,it.subj,okk);}catch(e){}
+        document.getElementById("ir-exp").style.display="block";document.getElementById("ir-next").style.visibility="visible";
+      };});
+      document.getElementById("ir-next").onclick=nextItem;
+    }
+  }
+  function done(){
+    var pct=Math.round(100*right/items.length);try{addPoints(8+right*4);logEvent("review","Smart review — "+items.length+" weak items","Recalled "+right+"/"+items.length+" ("+pct+"%).");}catch(e){}
+    mbody.innerHTML='<h2>🎯 Smart review</h2><div style="text-align:center;padding:22px 0"><div style="font-family:var(--serif);font-size:48px;color:var(--gold-300)">'+right+'/'+items.length+'</div><div class="note" style="font-style:normal">recalled — items you missed come back on a spaced schedule; the ones you nailed move further out.</div><div style="margin-top:16px"><button class="btn" id="ir-done">Done</button></div></div>';
+    var d=document.getElementById("ir-done");if(d)d.onclick=function(){closeModal();try{renderReview();}catch(e){}};
+  }
+  draw();
 }
 function reviewInterval(mastery){return mastery<40?1:mastery<55?2:mastery<70?4:mastery<85?7:14;}
 function reviewQueue(){
