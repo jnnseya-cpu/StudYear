@@ -299,7 +299,7 @@
   <button data-t="explain">💡 Explain my mistake</button>
   <button data-t="leagues">🏆 Leagues</button>
   <button data-t="examsim">⏱ Exam simulator</button>
-  <button data-t="review">🔁 Smart review</button>
+  <button data-t="smartreview">🔁 Smart review</button>
   <button data-t="wins">🏅 Achievements</button>
   <button data-t="search">🔎 Find resources</button>
   <button data-t="homework">📥 Homework</button>
@@ -343,7 +343,7 @@
 <section id="tab-examsim"><div id="examsim-mount"></div></section>
 
 <!-- ============================ SMART REVIEW / SPACED REPETITION (PRD Module 6) ============================ -->
-<section id="tab-review"><div id="review-mount"></div></section>
+<section id="tab-smartreview"><div id="review-mount"></div></section>
 
 <!-- ============================ ACHIEVEMENTS / MILESTONES (PRD Module 15) ============================ -->
 <section id="tab-wins"><div id="wins-mount"></div></section>
@@ -1359,7 +1359,7 @@ function showTab(t){
   if(t==="explain"){try{renderExplain();}catch(e){}}
   if(t==="leagues"){try{renderLeagues();}catch(e){}}
   if(t==="examsim"){try{renderExamSim();}catch(e){}}
-  if(t==="review"){try{renderReview();}catch(e){}}
+  if(t==="smartreview"){try{renderReview();}catch(e){}}
   if(t==="wins"){try{renderAchievements();}catch(e){}}
   if(t==="progress") renderProgress();
   if(t==="homework"&&window.SYHomework){try{SYHomework.mountStudent(document.getElementById("hw-mount"),{email:(SY&&SY.session&&SY.session.email)||""});}catch(e){}}
@@ -1783,6 +1783,7 @@ function viewQuiz(r,head){
       if(locked)return; locked=true;
       const j=+b.dataset.j;
       if(j===q.a){b.classList.add("right");score++} else {b.classList.add("wrong");mbody.querySelectorAll(".q-opt")[q.a].classList.add("right")}
+      try{noteReviewItem(q,r.subj,j===q.a);}catch(e){}   // remember misses; graduate on recall
       document.getElementById("qexp").style.display="block";
       document.getElementById("qnext").style.visibility="visible";
     });
@@ -5475,6 +5476,43 @@ function examResult(auto,correct,pct){
    passes that interval the topic is DUE. A one-tap retrieval quiz refreshes it — and,
    because the result records as a real quiz, mastery + the decay clock reset on the spot.
    Everything is computed from the student's own quiz history — nothing fabricated. */
+/* ---- item-level memory: the OS remembers the exact questions you get wrong and
+   resurfaces THEM (not fresh ones) on a real per-item spaced schedule (SM-2-lite).
+   This is the spine of retrieval practice — miss it once and it comes back until
+   you can recall it, then it graduates out of the deck. Fed by every quiz via
+   viewQuiz(), stored per-student through the same encrypted store as everything. */
+function riKey(subj,q){var s=(subj||"")+"|"+(q||"");var h=0;for(var i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))|0;}return "i"+(h>>>0).toString(36);}
+function noteReviewItem(q,subj,correct){
+  if(!q||!q.q||!q.o)return;
+  var m=store.get("reviewItems",{})||{},k=riKey(subj,q.q),it=m[k],now=Date.now(),DAY=864e5;
+  if(correct){
+    if(!it)return;                                   // only ever track things you've missed
+    it.ease=Math.min(2.8,(it.ease||2.3)+0.1);
+    it.interval=Math.max(1,Math.round((it.interval||1)*it.ease));
+    it.reps=(it.reps||0)+1;it.due=now+it.interval*DAY;it.last=now;
+    if(it.interval>=21||it.reps>=4){delete m[k];}     // recalled enough times → learned
+    else m[k]=it;
+  }else{
+    it=it||{q:q.q,o:q.o,a:q.a,exp:q.exp||"",subj:subj||"",reps:0,wrong:0,ease:2.3};
+    it.q=q.q;it.o=q.o;it.a=q.a;it.exp=q.exp||it.exp||"";it.subj=subj||it.subj;
+    it.ease=Math.max(1.3,(it.ease||2.3)-0.2);it.interval=1;it.wrong=(it.wrong||0)+1;it.due=now;it.last=now;  // due immediately: review your misses this session
+    m[k]=it;
+  }
+  store.set("reviewItems",m);
+}
+function dueReviewItems(limit){
+  var m=store.get("reviewItems",{})||{},now=Date.now(),out=[];
+  for(var k in m){if(m[k]&&m[k].q&&m[k].o&&(m[k].due||0)<=now)out.push(m[k]);}
+  out.sort(function(a,b){return (a.due||0)-(b.due||0);});
+  return limit?out.slice(0,limit):out;
+}
+function startItemReview(){
+  var items=dueReviewItems(12);
+  if(!items.length){toast("Nothing due to review right now — nicely kept up!");return;}
+  modal.classList.add("on");
+  var head='<h2>🎯 Smart review</h2><div class="mmeta">Your missed questions · '+items.length+' due · retrieval practice</div>';
+  viewQuiz({id:"smart-review",title:"Smart review",subj:"Mixed",qs:items.map(function(x){return {q:x.q,o:x.o,a:x.a,exp:x.exp};})},head);
+}
 function reviewInterval(mastery){return mastery<40?1:mastery<55?2:mastery<70?4:mastery<85?7:14;}
 function reviewQueue(){
   var rows=(myMasteryRows().rows)||[];
@@ -5484,18 +5522,26 @@ function reviewQueue(){
   }).sort(function(a,b){return b.over-a.over;});
 }
 function reviewGo(subj){
-  try{showTab("review");}catch(e){}
   try{showTab("examsim");}catch(e){}
   examStartWith(subj,PROFILE.level||dgLevelStr(),6,0,{review:true});
 }
 function renderReview(){
   var mt=document.getElementById("review-mount");if(!mt)return;
   var q=reviewQueue();
+  var mi=dueReviewItems();
   var h=secHead("🔁 Smart review","practise what you're about to forget");
+  if(mi.length){
+    h+='<div class="card" style="border-color:rgba(230,103,103,.4);margin-bottom:14px"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b style="flex:1;font-size:16px">🎯 '+mi.length+' question'+(mi.length>1?"s":"")+' you missed '+(mi.length>1?"are":"is")+' due</b><button class="btn" id="rv-items">Review them now →</button></div><div class="note" style="font-style:normal;margin-top:8px">The exact questions you got wrong, brought back on a spaced schedule — recall one and it returns later; recall it enough and it graduates for good.</div></div>';
+  }
   if(!q.length){
-    h+='<div class="card"><div class="note" style="font-style:normal">Smart review works from what you\'ve actually been tested on. Take a quiz or run the diagnostic, and each subject will reappear here right before you\'re due to forget it — so a quick retrieval keeps it locked in.</div>'+
-       '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-rv="diag">Run a diagnostic →</button><button class="btn ghost" data-rv="create">Take a quiz →</button></div></div>';
-    mt.innerHTML=h;mt.querySelectorAll("[data-rv]").forEach(function(b){b.onclick=function(){tdGo(b.getAttribute("data-rv"));};});return;
+    if(!mi.length){
+      h+='<div class="card"><div class="note" style="font-style:normal">Smart review works from what you\'ve actually been tested on. Take a quiz or run the diagnostic, and each subject — and each question you slip on — will reappear here right before you\'re due to forget it, so a quick retrieval keeps it locked in.</div>'+
+         '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-rv="diag">Run a diagnostic →</button><button class="btn ghost" data-rv="create">Take a quiz →</button></div></div>';
+    }
+    mt.innerHTML=h;
+    mt.querySelectorAll("[data-rv]").forEach(function(b){b.onclick=function(){tdGo(b.getAttribute("data-rv"));};});
+    var rvi0=document.getElementById("rv-items");if(rvi0)rvi0.onclick=startItemReview;
+    return;
   }
   var due=q.filter(function(x){return x.due;}),soon=q.filter(function(x){return !x.due&&x.inDays<=2;}),fresh=q.filter(function(x){return !x.due&&x.inDays>2;});
   h+='<div class="note" style="font-style:normal;margin-bottom:14px">Retrieval beats re-reading. Each subject has a review window scaled to how well you hold it — the moment it\'s <b>due</b>, a 6-question retrieval refreshes your memory and resets the decay clock.</div>';
@@ -5518,6 +5564,7 @@ function renderReview(){
   if(soon.length){h+='<h3 style="font-family:var(--serif);margin:14px 0 8px">Coming up</h3>'+soon.map(card).join("");}
   if(fresh.length){h+='<h3 style="font-family:var(--serif);margin:14px 0 8px">Still fresh</h3>'+fresh.map(card).join("");}
   mt.innerHTML=h;
+  var rvi=document.getElementById("rv-items");if(rvi)rvi.onclick=startItemReview;
   var all=document.getElementById("rv-all");if(all&&due[0])all.onclick=function(){reviewGo(due[0].subj);};
   mt.querySelectorAll("[data-rvsubj]").forEach(function(b){b.onclick=function(){reviewGo(b.getAttribute("data-rvsubj"));};});
   mt.querySelectorAll("[data-rvlearn]").forEach(function(b){b.onclick=function(){var s=b.getAttribute("data-rvlearn");try{pathGo(s,s);}catch(e){tdGo("lesson");}};});
