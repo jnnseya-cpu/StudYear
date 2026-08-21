@@ -23,3 +23,5 @@ apps/web/public/blog/*/index.html
 !apps/web/public/blog/admin/index.html
 # Programmatic-SEO free tool pages (generated from free/index.html by gen-free.mjs)
 apps/web/public/free/*/index.html
+# ...but /free/next-steps/ is a hand-authored source page, not generated — keep it
+!apps/web/public/free/next-steps/index.html
