@@ -64,6 +64,28 @@ await page.waitForTimeout(500);
 let fb = await page.evaluate(() => document.getElementById('ns-out').textContent);
 if (!/NEXT 7 DAYS/i.test(fb) || !/0800 100 900/.test(fb)) fails.push('fallback plan missing/incomplete: ' + fb.slice(0, 80));
 
+// Public wedge mode: routes free, but the plan button is a sign-up CTA (no AI)
+const pub = await browser.newPage();
+await pub.goto('about:blank');
+await pub.setContent('<!doctype html><html><head></head><body><div id="nextsteps-root" data-public-wedge="1" data-signup="/auth/?next=x"></div></body></html>');
+await pub.evaluate(js);
+await pub.waitForTimeout(120);
+let pw = await pub.evaluate(() => {
+  const planEl = document.getElementById('ns-plan');
+  return { planIsLink: planEl && planEl.tagName === 'A' && /\/auth\//.test(planEl.getAttribute('href') || ''), go: !!document.getElementById('ns-go') };
+});
+if (!pw.planIsLink) fails.push('public wedge: plan button is not a sign-up link');
+await pub.evaluate(() => { document.querySelector('#ns-sit input').checked = true; });
+await pub.click('#ns-go');
+await pub.waitForTimeout(120);
+let pw2 = await pub.evaluate(() => {
+  const box = document.getElementById('ns-results');
+  return { routes: /Do first:/i.test(box.innerHTML), cta: /Create your free account/i.test(box.innerHTML) };
+});
+if (!pw2.routes) fails.push('public wedge: routes not shown (should be free)');
+if (!pw2.cta) fails.push('public wedge: sign-up conversion CTA missing');
+await pub.close();
+
 await browser.close();
 if (fails.length) { console.error('FAIL nextsteps-test:\n - ' + fails.join('\n - ')); process.exit(1); }
 console.log('NEXTSTEPS TEST PASS — GCSE+A-Level routes with official links + helpline, primary ordering, metered AI plan (acus:2), deterministic fallback.');

@@ -150,13 +150,17 @@
     '#nextsteps-root .ns-act{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}';
   function injectStyle() { if (document.getElementById('ns-style')) return; var s = document.createElement('style'); s.id = 'ns-style'; s.textContent = STYLE; document.head.appendChild(s); }
 
-  function render(host) {
+  function render(host, opts) {
+    opts = opts || {};
+    var pub = !!opts.publicWedge, signup = opts.signupUrl || '../auth/';
     var stage = 'gcse';
     host.innerHTML = '<div class="ns-reassure">📌 <b>First, breathe.</b> Results that aren\'t what you hoped for are a fork in the road, not the end of it. Tens of thousands take the routes below every year. Pick your situation and see your options.</div>' +
       '<div class="ns-seg" id="ns-seg"><span class="ns-tab" data-stage="gcse">GCSE results</span><span class="ns-tab" data-stage="alevel">A-Level / Level 3 results</span></div>' +
       '<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3,#8795AE);margin-top:4px">What happened? (pick any)</div>' +
       '<div class="ns-sit" id="ns-sit"></div>' +
-      '<div class="ns-act"><button class="btn sm solid" id="ns-go">Show my options</button><button class="btn sm" id="ns-plan">Make my 7-day plan</button></div>' +
+      '<div class="ns-act"><button class="btn sm solid" id="ns-go">Show my options</button>' +
+      (pub ? '<a class="btn sm" id="ns-plan" href="' + esc(signup) + '" style="text-decoration:none">Get my personal 7-day plan (free) →</a>' : '<button class="btn sm" id="ns-plan">Make my 7-day plan</button>') +
+      '</div>' +
       '<div id="ns-results"></div><div class="ns-out" id="ns-out" hidden></div>';
     var seg = host.querySelector('#ns-seg'), sit = host.querySelector('#ns-sit'), out = host.querySelector('#ns-out');
     function paintSit() {
@@ -191,10 +195,11 @@
       var box = host.querySelector('#ns-results');
       box.innerHTML = '<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3,#8795AE);margin-top:16px">Your routes forward · ' + rs.length + '</div>' +
         rs.map(card).join('') +
-        SUPPORT.map(function (s) { return '<div class="ns-card support"><span class="ns-pill">Free help · anytime</span><h4>' + esc(s.title) + '</h4><p>' + esc(s.what) + '</p><div class="ns-do"><b>Do first:</b> ' + esc(s.action) + '</div><a class="ns-link" href="' + esc(s.link) + '" target="_blank" rel="noopener noreferrer">' + esc(s.linkLabel) + ' ↗</a></div>'; }).join('');
+        SUPPORT.map(function (s) { return '<div class="ns-card support"><span class="ns-pill">Free help · anytime</span><h4>' + esc(s.title) + '</h4><p>' + esc(s.what) + '</p><div class="ns-do"><b>Do first:</b> ' + esc(s.action) + '</div><a class="ns-link" href="' + esc(s.link) + '" target="_blank" rel="noopener noreferrer">' + esc(s.linkLabel) + ' ↗</a></div>'; }).join('') +
+        (pub ? '<div class="ns-card primary" style="text-align:center"><h4>Want this as a personal plan you can act on?</h4><p style="margin:6px auto 12px;max-width:52ch">Create a free StudYear account to get a tailored 7-day action plan, an AI tutor to talk any route through, and — if you\'re resitting — a full revision plan to actually lift your grade.</p><a class="btn solid" href="' + esc(signup) + '" style="text-decoration:none">Create your free account →</a></div>' : '');
       box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     };
-    host.querySelector('#ns-plan').onclick = function () {
+    if (!pub) host.querySelector('#ns-plan').onclick = function () {
       var chosen = matching().slice(0, 5).map(function (r) { return r.title; });
       out.hidden = false; out.textContent = 'Writing your personal 7-day plan…';
       planAI(stage, pickLabels(), chosen).then(function (txt) { showPlan(txt); }).catch(function () { showPlan(planFallback(stage, pickLabels())); });
@@ -210,12 +215,16 @@
     };
   }
 
-  function mount(target) {
+  function mount(target, opts) {
     injectStyle();
     var host = target || document.getElementById('nextsteps-root'); if (!host) return null;
     if (host.getAttribute('data-sy-next') === '1') return host;
     host.setAttribute('data-sy-next', '1');
-    render(host); ensureAI();
+    opts = opts || {};
+    // A public page opts into wedge mode via data attributes, so auto-mount works.
+    if (host.getAttribute('data-public-wedge') === '1') { opts.publicWedge = true; opts.signupUrl = host.getAttribute('data-signup') || opts.signupUrl; }
+    render(host, opts);
+    if (!opts.publicWedge) ensureAI(); // no AI on the public wedge (routes are static)
     return host;
   }
   window.SYNext = { mount: mount, routes: ROUTES };
