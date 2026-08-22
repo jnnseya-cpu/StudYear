@@ -249,6 +249,7 @@ $('f').addEventListener('submit',async function(e){
       }
     }catch(err){}
     save('sy-session',{name:name,email:email,role:role,ts:new Date().toISOString()});
+    try{if(window.SYTrack)SYTrack.signup({method:role});}catch(e){}
     // new students onboard by building their personalised profile first
     if(role==='student'&&!next){location.replace('../account/profile/?welcome=1');return}
     location.replace(destination(role));
@@ -352,6 +353,7 @@ $('f').addEventListener('submit',async function(e){
       return;
     }
     save('sy-session',{name:authed.name,email:authed.email,role:authed.role,ts:new Date().toISOString()});
+    try{if(window.SYTrack)SYTrack.login({method:authed.role});}catch(e){}
     location.replace(destination(authed.role));
   }
 });
@@ -379,5 +381,6 @@ if(fg)fg.onclick=async function(e){
 };
 })();
 </script>
+<script src="../consent.js" defer></script>
 </body>
 </html>

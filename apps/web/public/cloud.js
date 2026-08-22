@@ -458,6 +458,7 @@
   async function lead(payload) {
     payload = payload || {};
     try { var l = JSON.parse(localStorage.getItem('sy-leads') || '[]'); l.push({ e: payload.email, at: Date.now() }); localStorage.setItem('sy-leads', JSON.stringify(l.slice(-20))); } catch (e) {}
+    try { if (window.SYTrack) SYTrack.lead({ content_name: payload.kind || payload.source || 'lead' }); } catch (e) {}
     await whenReady(); if (!CFG) return false;
     var direct = CFG && CFG.apiBase ? CFG.apiBase.replace(/\/$/, '') : '';
     async function post(base) { var r = await fetch(base + '/lead', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); var j = await r.json().catch(function () { return {}; }); return !!(r.ok && j.ok); }

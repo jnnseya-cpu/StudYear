@@ -137,6 +137,7 @@ ${ld.map((b) => `<script type="application/ld+json">${JSON.stringify(b)}</script
     }).catch(function(){});
   }).catch(function(){});
 })();</script>
+<script src="../../consent.js" defer></script>
 </body></html>`;
 }
 

@@ -81,6 +81,18 @@
     (document.head || document.documentElement).appendChild(th);
   } catch (e) {}
 
+  // consent-gated analytics/marketing (Meta Pixel + GTM). consent.js hard-blocks
+  // the student learning areas + child consoles itself, and only tracks the
+  // account/billing + auth surfaces here — so purchase/registration conversions
+  // are measurable without ever tracking children.
+  try {
+    if (!window.__syConsentInit && !document.querySelector('script[src$="consent.js"]')) {
+      var cj = document.createElement('script');
+      cj.src = base + 'consent.js'; cj.defer = true;
+      (document.head || document.documentElement).appendChild(cj);
+    }
+  } catch (e) {}
+
   // mobile / PWA shell: installed-app and phone sessions get a drawer, app
   // bar and bottom tab bar; the desktop look is untouched
   try {

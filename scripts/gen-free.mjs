@@ -121,6 +121,7 @@ ${tool}
 </div>
 <script>${toolJs.replace(/^<script>|<\/script>$/g, '')}</script>
 <script>(function(){try{var s=document.getElementById('subject');if(s)s.value=${JSON.stringify(x.s)};var l=document.getElementById('level');if(l)l.value=${JSON.stringify(x.l)};}catch(e){}})();</script>
+<script src="../../consent.js" defer></script>
 </body></html>`;
 }
 

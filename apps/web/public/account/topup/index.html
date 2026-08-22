@@ -335,6 +335,7 @@ document.body.addEventListener('click',function(e){
       SY.log('billing',pk.label+' purchased',fmt(pk.acus)+' ACUs added to your wallet · £'+(planPounds()-topupRemaining())+' of £'+planPounds()+' monthly top-up allowance used.');
       recordReferral(pk.pounds);
       toast('Preview purchase'+(promo?' (code '+promo+')':'')+' — '+fmt(pk.acus)+' ACUs credited. Stripe checkout takes over when billing goes live.');};
+    try{if(window.SYTrack)SYTrack.checkoutStart({value:pk.pounds,currency:'GBP',content_ids:[pk.id],content_name:pk.label});}catch(e){}
     if(window.SYBill){SYBill.checkout(pk.id,{promo:promo,email:(SY.session&&SY.session.email),ref:(SY.session&&SY.session.email),activate:actP})}else actP();
   }
   if(b.dataset.plan){
@@ -354,6 +355,7 @@ document.body.addEventListener('click',function(e){
         pl.pounds>0?(fmt(pl.acus)+' ACUs added · 30-day term, ends '+fmtDay(wallet.planExpires)+' with no auto-renewal.'):'Child Free — 100 ACUs every 3 months.');
       toast(pl.pounds===0?'You are on Child Free — 100 ACUs every month'
         :'Preview '+pl.label+(promo?' (code '+promo+')':'')+' — '+fmt(pl.acus)+' ACUs added. Runs 30 days then stops automatically (no auto-renewal).');};
+    try{if(pl.pounds>0&&window.SYTrack)SYTrack.checkoutStart({value:pl.pounds,currency:'GBP',content_ids:[pl.id],content_name:pl.label});}catch(e){}
     if(pl.pounds>0&&window.SYBill){SYBill.checkout(pl.id,{promo:promo,email:(SY.session&&SY.session.email),ref:(SY.session&&SY.session.email),activate:actS})}else actS();
   }
 });
@@ -364,9 +366,9 @@ drawWallet();
 (function(){ if(!(window.SYBill&&SYBill.consumeReturn))return; var id=SYBill.consumeReturn(); if(!id)return;
   var pk=PACKS.find(function(x){return x.id===id}), pl=PLANS.find(function(x){return x.id===id});
   if(pk){ wallet.acus+=pk.acus; wallet.topupSpent=(wallet.topupSpent||0)+pk.pounds; SY.set('wallet',wallet); drawWallet(); drawPacks();
-    try{recordReferral(pk.pounds)}catch(e){} SY.log('billing',pk.label+' purchased',fmt(pk.acus)+' ACUs added to your wallet.'); toast('Payment received — '+fmt(pk.acus)+' ACUs added to your wallet.'); }
+    try{recordReferral(pk.pounds)}catch(e){} try{if(window.SYTrack)SYTrack.purchase(pk.pounds,'GBP',{content_ids:[pk.id],content_name:pk.label});}catch(e){} SY.log('billing',pk.label+' purchased',fmt(pk.acus)+' ACUs added to your wallet.'); toast('Payment received — '+fmt(pk.acus)+' ACUs added to your wallet.'); }
   else if(pl&&pl.pounds>0){ wallet.plan=pl.id; wallet.month=monthKey(); wallet.acus+=pl.acus; wallet.planStart=new Date().toISOString(); wallet.planExpires=new Date(Date.now()+30*DAY).toISOString(); SY.set('wallet',wallet); drawWallet(); drawPacks();
-    try{recordReferral(pl.pounds)}catch(e){} SY.log('billing','Started '+pl.label,fmt(pl.acus)+' ACUs added · 30-day term.'); toast('Payment received — '+pl.label+' active, '+fmt(pl.acus)+' ACUs added.'); }
+    try{recordReferral(pl.pounds)}catch(e){} try{if(window.SYTrack)SYTrack.purchase(pl.pounds,'GBP',{content_ids:[pl.id],content_name:pl.label});}catch(e){} SY.log('billing','Started '+pl.label,fmt(pl.acus)+' ACUs added · 30-day term.'); toast('Payment received — '+pl.label+' active, '+fmt(pl.acus)+' ACUs added.'); }
 })();
 
 /* ---- Fund a student from anywhere: gift codes ----

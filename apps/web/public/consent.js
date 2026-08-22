@@ -1,20 +1,66 @@
-/* StudYear cookie-consent gate (PECR reg.6 / UK GDPR).
+/* StudYear cookie-consent gate + unified event tracking (PECR reg.6 / UK GDPR).
    Non-essential trackers (Meta Pixel, Google Tag Manager) load ONLY after the
    visitor opts in. Default is NO tracking. Choice is remembered in localStorage
-   (sy-consent = 'granted' | 'denied'). Trackers never load on a signed-in or
-   child-facing area regardless of choice (marketing pages only). This preserves
-   the marketing tags the owner added — it just makes them consent-gated. */
+   (sy-consent = 'granted' | 'denied').
+
+   SCOPE (owner decision, 2026-08-22): tracking runs on public/marketing pages
+   AND on the account/billing + auth surfaces (so signup and purchase conversions
+   can be measured for ad ROAS). It is HARD-BLOCKED on the student learning areas
+   and every child-facing console (study, app, parent, teacher, school, tutor,
+   authority, admin, myschool) — children's activity never leaves to Meta/Google.
+
+   Event API: window.SYTrack.event(name, params) fires to BOTH Meta Pixel and the
+   GTM dataLayer, once, after consent. Events raised before the trackers finish
+   loading are queued and flushed on load; on blocked pages they are dropped and
+   nothing is transmitted. Standard Meta event names are sent via fbq('track'),
+   anything else via fbq('trackCustom'). */
 (function () {
   'use strict';
+  if (window.__syConsentInit) return;            // idempotent: pages may include + inject it
+  window.__syConsentInit = 1;
+
   var PIXEL = '3470955229736707';
   var GTM = 'GTM-5GNC8F6G';
+
   function get() { try { return localStorage.getItem('sy-consent'); } catch (e) { return null; } }
   function set(v) { try { localStorage.setItem('sy-consent', v); } catch (e) {} }
-  /* never track a signed-in session or any child-facing surface */
+
+  /* HARD block: student learning areas + every child-facing console. Note the
+     word-boundary — /tutor/ (the tutor console) is blocked but /tutors/ (the
+     public tutor-finder) is not; /account/ and /auth/ are intentionally allowed
+     so purchase + registration conversions can fire. */
   function blocked() {
-    try { if (JSON.parse(localStorage.getItem('sy-session'))) return true; } catch (e) {}
-    return /\/(study|app|account|parent|teacher|school|tutor|authority|admin|myschool)(\/|$)/.test(location.pathname);
+    return /\/(study|app|parent|teacher|school|tutor|authority|admin|myschool)(\/|$)/.test(location.pathname);
   }
+  var allowed = !blocked();
+
+  /* ---- unified event dispatch (Meta Pixel + GTM dataLayer) ---- */
+  var META_STD = { PageView: 1, ViewContent: 1, Lead: 1, CompleteRegistration: 1, Purchase: 1,
+    InitiateCheckout: 1, AddToCart: 1, Search: 1, Contact: 1, Subscribe: 1, StartTrial: 1, Schedule: 1 };
+  var queue = [];
+  function dispatch(name, params) {
+    params = params || {};
+    try { (window.dataLayer = window.dataLayer || []).push(assign({ event: name }, params)); } catch (e) {}
+    try { if (window.fbq) { if (META_STD[name]) window.fbq('track', name, params); else window.fbq('trackCustom', name, params); } } catch (e) {}
+  }
+  function emit(name, params) {
+    if (!allowed || !name) return;               // never queue or send on blocked pages
+    if (!window.__syTrackersLoaded) { if (queue.length < 100) queue.push([name, params]); return; }
+    dispatch(name, params);
+  }
+  function assign(a, b) { if (b) for (var k in b) if (Object.prototype.hasOwnProperty.call(b, k)) a[k] = b[k]; return a; }
+  /* public API — defined on every page so callers in any surface are safe to call
+     (they simply no-op where tracking is blocked or consent is withheld) */
+  window.SYTrack = {
+    event: emit,
+    view: function (params) { emit('ViewContent', params || {}); },
+    lead: function (params) { emit('Lead', params || {}); },
+    signup: function (params) { emit('CompleteRegistration', params || {}); },
+    login: function (params) { emit('Login', params || {}); },
+    checkoutStart: function (params) { emit('InitiateCheckout', params || {}); },
+    purchase: function (value, currency, params) { emit('Purchase', assign({ value: value, currency: currency || 'GBP' }, params || {})); }
+  };
+
   function loadTrackers() {
     if (window.__syTrackersLoaded) return; window.__syTrackersLoaded = true;
     /* Meta Pixel */
@@ -26,7 +72,39 @@
     try {
       (function (w, d, s, l, i) { w[l] = w[l] || []; w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' }); var f = d.getElementsByTagName(s)[0], j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f); })(window, document, 'script', 'dataLayer', GTM);
     } catch (e) {}
+    /* flush anything raised before load, then the automatic content event */
+    var pending = queue.splice(0, queue.length);
+    for (var k = 0; k < pending.length; k++) dispatch(pending[k][0], pending[k][1]);
+    autoView();
+    bindDeclarative();
   }
+
+  /* content pages get a ViewContent (stronger signal than a bare PageView) */
+  function autoView() {
+    try {
+      var p = location.pathname;
+      if (/\/blog\/[^/]+\/(index\.html)?$/.test(p) && !/\/blog\/(index\.html)?$/.test(p)) dispatch('ViewContent', { content_type: 'article', content_name: document.title });
+      else if (/\/free\//.test(p)) dispatch('ViewContent', { content_type: 'free_tool', content_name: document.title });
+    } catch (e) {}
+  }
+
+  /* declarative tracking: any element with data-sy-track="EventName" fires on
+     click; data-sy-value / data-sy-currency ride along. Lets CTAs across the site
+     be tagged in HTML with no extra JS. */
+  function bindDeclarative() {
+    if (window.__syDeclBound) return; window.__syDeclBound = 1;
+    document.addEventListener('click', function (ev) {
+      var el = ev.target && ev.target.closest ? ev.target.closest('[data-sy-track]') : null;
+      if (!el) return;
+      var name = el.getAttribute('data-sy-track'); if (!name) return;
+      var params = {};
+      var v = el.getAttribute('data-sy-value'); if (v) params.value = parseFloat(v) || v;
+      var c = el.getAttribute('data-sy-currency'); if (c) params.currency = c;
+      var lbl = el.getAttribute('data-sy-label') || (el.textContent || '').trim().slice(0, 80); if (lbl) params.label = lbl;
+      emit(name, params);
+    }, true);
+  }
+
   function removeBanner() { var b = document.getElementById('sy-consent-bar'); if (b && b.parentNode) b.parentNode.removeChild(b); }
   function banner() {
     if (document.getElementById('sy-consent-bar')) return;
@@ -46,14 +124,11 @@
   }
   /* resolve a root-relative path that works on both / (Vercel) and /StudYear/ (Pages) */
   function rel(p) {
-    var m = location.pathname.match(/^(.*\/)(?:[^\/]*)$/);
-    var dir = m ? m[1] : '/';
-    // climb to site root by counting depth below a known base
     var base = /\/StudYear\//.test(location.pathname) ? '/StudYear/' : '/';
     return base + p;
   }
   function start() {
-    if (blocked()) return;                 // never track child/signed-in areas
+    if (!allowed) return;                  // never track child/learning areas
     var c = get();
     if (c === 'granted') { loadTrackers(); return; }
     if (c === 'denied') return;
