@@ -264,16 +264,15 @@ function draw(){
    pulled in, local-only drafts are kept, and when both exist the newer version
    (by reviewed/date) wins so an unexported local edit isn't clobbered. */
 function keyOf(p){return String(p&&(p.slug||p.id)||'').toLowerCase()}
-function ts(p){return new Date((p&&(p.reviewed||p.date))||0).getTime()||0}
 function reconcile(committed){
   var byKey={},order=[];
   function put(p){var k=keyOf(p);if(!k)return;if(!byKey[k])order.push(k);byKey[k]=p;}
   load().forEach(put);
-  (committed||[]).forEach(function(c){
-    var k=keyOf(c);if(!k)return;var ex=byKey[k];
-    if(!ex){put(c);return;}
-    if(ts(c)>=ts(ex)){byKey[k]=Object.assign({},ex,c);}   // source of truth wins ties
-  });
+  /* posts.json is the single source of truth: a post that exists there always
+     wins (its committed body/SEO/date replace any local copy — this is what
+     retires the old thin seed stubs). Local-only entries with no committed
+     twin are kept as the owner's unpublished drafts. */
+  (committed||[]).forEach(function(c){var k=keyOf(c);if(k)byKey[k]=c;});
   var merged=order.map(function(k){return byKey[k];})
     .sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);});
   save(merged);return merged;
