@@ -38,8 +38,13 @@
   if (!s || !s.role) {
     location.replace(base + 'auth/?role=' + (role === 'any' ? 'student' : role) + '&next=' + here);
     return;
-  } else if (role !== 'any' && s.role !== role) {
-    // data-role="any" admits every signed-in account (e.g. the universal profile page)
+  } else if (role !== 'any' && s.role !== role && s.role !== 'admin') {
+    // data-role="any" admits every signed-in account (e.g. the universal profile page).
+    // admin is a superuser: the owner streams/reviews every console (student,
+    // parent, teacher, school, tutor, employer, college, authority) from the
+    // admin surface, so admin passes every role gate here. Real customer data is
+    // still governed server-side (the same guard contract is verified in the
+    // backend); this only unblocks the client-side preview.
     location.replace(base + 'auth/?role=' + role + '&mismatch=' + encodeURIComponent(s.role) + '&next=' + here);
     return;
   }

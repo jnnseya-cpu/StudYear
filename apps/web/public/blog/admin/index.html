@@ -257,12 +257,32 @@ function draw(){
   }});
   $('list').querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){if(!confirm('Delete this post?'))return;var em=myEmail();if(window.SYCloud&&em)SYCloud.blogRemove(b.dataset.del,em);save(load().filter(function(x){return x.id!==b.dataset.del}));draw()}});
 }
-/* seed a couple of AI posts on first run so the blog isn't empty */
-if(!load().length){
-  save([
-    {id:'seed1',title:'Spaced repetition: the highest-ROI revision habit',slug:'spaced-repetition-highest-roi-revision',category:'Study science',excerpt:'Why spacing your revision beats cramming every time — and how StudYear automates it.',metaDesc:'Spaced repetition is the highest-ROI revision habit for GCSE and A-Level. Learn how it works and how StudYear schedules it for you automatically.',body:'## Why it works\nSpacing beats cramming.\n## How to apply it\nShort sessions, spaced out.\n## StudYear\nWe automate it in every plan.',tags:['spaced repetition','revision','GCSE','StudYear'],keyword:'spaced repetition',readTime:3,seoScore:88,published:true,date:new Date(Date.now()-3*86400000).toISOString(),reviewed:new Date().toISOString()},
-    {id:'seed2',title:'How the AI School Brain predicts results months early',slug:'ai-school-brain-predicts-results',category:'Schools',excerpt:'Inside the intelligence layer that spots risk before it becomes a grade shock.',metaDesc:'The StudYear AI School Brain analyses attendance, homework and assessments every minute to predict outcomes months before exams. Here is how.',body:'## The intelligence layer\nIt never sleeps.\n## What it predicts\nRisk, months early.\n## Act early\nInterventions before failure.',tags:['AI School Brain','school improvement','analytics','StudYear'],keyword:'AI School Brain',readTime:4,seoScore:82,published:true,date:new Date(Date.now()-86400000).toISOString(),reviewed:new Date().toISOString()}
-  ]);
+/* Reconcile with the committed source of truth (apps/web/public/blog/posts.json).
+   The public blog renders every post in posts.json, so the admin MUST see them
+   all too — otherwise the list here (and the "Export posts.json" it produces)
+   silently omits the live catalogue. We merge by slug/id: committed posts are
+   pulled in, local-only drafts are kept, and when both exist the newer version
+   (by reviewed/date) wins so an unexported local edit isn't clobbered. */
+function keyOf(p){return String(p&&(p.slug||p.id)||'').toLowerCase()}
+function ts(p){return new Date((p&&(p.reviewed||p.date))||0).getTime()||0}
+function reconcile(committed){
+  var byKey={},order=[];
+  function put(p){var k=keyOf(p);if(!k)return;if(!byKey[k])order.push(k);byKey[k]=p;}
+  load().forEach(put);
+  (committed||[]).forEach(function(c){
+    var k=keyOf(c);if(!k)return;var ex=byKey[k];
+    if(!ex){put(c);return;}
+    if(ts(c)>=ts(ex)){byKey[k]=Object.assign({},ex,c);}   // source of truth wins ties
+  });
+  var merged=order.map(function(k){return byKey[k];})
+    .sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);});
+  save(merged);return merged;
+}
+function boot(){
+  fetch('../posts.json',{cache:'no-cache'})
+    .then(function(r){return r.ok?r.json():[]})
+    .catch(function(){return []})
+    .then(function(committed){reconcile(committed);draw();});
 }
 /* ---- SEO autopilot: batch-optimise every post ---- */
 function scoreOf(body,title,meta,tags){
@@ -293,7 +313,7 @@ $('export-json').onclick=function(){
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='posts.json';document.body.appendChild(a);a.click();document.body.removeChild(a);
   toast('posts.json downloaded ('+pub.length+' posts) — commit it to apps/web/public/blog/');
 };
-draw();
+boot();
 })();
 </script>
 </body></html>
