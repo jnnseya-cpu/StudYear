@@ -49,12 +49,13 @@ function md(src) {
   });
   flush(); return out.join('\n');
 }
+const deMd = (t) => String(t || '').replace(/\[([^\]]+)\]\((?:https?:\/\/[^\s)]+|\/[^\s)]*)\)/g, '$1').replace(/\*\*([^*]+)\*\*/g, '$1').replace(/(^|[^*])\*([^*]+)\*/g, '$1$2');
 function faqFromBody(body) {
   const out = [], lines = String(body || '').split(/\n/); let q = null;
   lines.forEach((l) => {
     const m = l.match(/^###?\s*(?:Q[:.]?\s*)?(.+\?)\s*$/);
     if (m) { q = { question: m[1].trim(), answer: '' }; out.push(q); }
-    else if (q && l.trim() && !/^#{1,3}\s/.test(l)) { q.answer = (q.answer ? q.answer + ' ' : '') + l.trim(); }
+    else if (q && l.trim() && !/^#{1,3}\s/.test(l)) { q.answer = (q.answer ? q.answer + ' ' : '') + deMd(l.trim()); }
     else if (/^#{1,3}\s/.test(l)) { q = null; }
   });
   return out.filter((x) => x.answer).slice(0, 8);
