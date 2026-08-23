@@ -271,8 +271,10 @@ function reconcile(committed){
   /* posts.json is the single source of truth: a post that exists there always
      wins (its committed body/SEO/date replace any local copy — this is what
      retires the old thin seed stubs). Local-only entries with no committed
-     twin are kept as the owner's unpublished drafts. */
-  (committed||[]).forEach(function(c){var k=keyOf(c);if(k)byKey[k]=c;});
+     twin are kept as the owner's unpublished drafts. put() overwrites byKey AND
+     registers the key in `order`, so committed-only posts (no local twin) are
+     included in the rendered list — not just the ones already in localStorage. */
+  (committed||[]).forEach(put);
   var merged=order.map(function(k){return byKey[k];})
     .sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);});
   save(merged);return merged;
