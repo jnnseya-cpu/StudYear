@@ -829,6 +829,16 @@ export const tts = onRequest({ region: 'europe-west2', cors: true, maxInstances:
     const used = await rateRef.get().then((d) => (d.exists ? Number(d.data()!.count) || 0 : 0));
     if (used >= CAP) throw httpError(429, 'daily speech limit reached — please try again tomorrow');
     await rateRef.set({ count: FieldValue.increment(1), day: dayKey, uid: user.uid, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    // server-side ACU meter (same contract as aiProxy): 1 ACU per synthesis,
+    // free grant seeded, hard-stop at 402, fail-open on infra error, kill-switch.
+    const TTS_ENFORCE = (process.env.AI_ENFORCE_ACUS ?? '1') !== '0';
+    const ttsPlan = ((await db.doc(`users/${user.uid}`).get().catch(() => null))?.data()?.plan as string) ?? 'child_free';
+    if (TTS_ENFORCE) {
+      let bal: number | null = null;
+      try { await ensureFreeGrant(user.uid, ttsPlan); bal = await walletBalance(user.uid); }
+      catch (e) { void audit('ACU_ENFORCE_ERROR', user.uid, { at: 'tts', err: (e as Error).message }); bal = null; }
+      if (bal !== null && bal < 1) { res.status(402).json({ ok: false, reason: 'insufficient_acus', balance: bal, required: 1 }); return; }
+    }
     const allowed = ['nova', 'shimmer', 'alloy', 'echo', 'fable', 'onyx'];
     const voice = allowed.includes(String(req.body?.voice)) ? String(req.body?.voice) : 'nova';
     const speed = Math.max(0.5, Math.min(1.5, Number(req.body?.speed) || 1)); // slower for single-word dictation
@@ -839,6 +849,10 @@ export const tts = onRequest({ region: 'europe-west2', cors: true, maxInstances:
     });
     if (!r.ok) throw httpError(502, `tts ${r.status}`);
     const buf = Buffer.from(await r.arrayBuffer());
+    if (TTS_ENFORCE) {
+      try { await db.collection('acuTransactions').add({ ownerId: user.uid, delta: -1, activity: 'tts', source: 'tts', createdAt: FieldValue.serverTimestamp() }); }
+      catch (e) { void audit('ACU_DEBIT_ERROR', user.uid, { at: 'tts', err: (e as Error).message }); }
+    }
     res.set('Content-Type', 'audio/mpeg');
     res.set('Cache-Control', 'private, max-age=86400');
     res.send(buf);
