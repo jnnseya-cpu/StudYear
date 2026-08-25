@@ -146,6 +146,10 @@
          clear message as the client pre-check (a forged local balance no longer
          buys real AI). */
       if(rp.status===402||jp.reason==='insufficient_acus')throw new Error('Not enough ACUs — top up to keep using AI.');
+      if(rp.status===403&&jp.reason==='email_unverified'){
+        try{if(window.SYCloud&&SYCloud.sendVerify)SYCloud.sendVerify(email);}catch(e){}
+        throw new Error('Please verify your email to use AI — we’ve just sent you a verification link.');
+      }
       if(!rp.ok||!jp.ok)throw new Error('Gateway '+rp.status+': '+(jp.error||''));
       return jp.text||'';
     }

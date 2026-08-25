@@ -357,7 +357,12 @@ export const stripeWebhook = onRequest({ region: 'europe-west2' }, async (req, r
       // nothing (the previous behaviour whenever any discount code was used).
       const trustedPlan = !!((s.metadata as Record<string, string> | undefined)?.planId);
       const priceOk = trustedPlan || amt == null || !item ? true : amt >= item.pence;
-      const applied = !!(paid && item && buyer.ownerKey && priceOk);
+      // A one-off top-up that collected £0 (e.g. a 100%-off promo code) must NOT
+      // mint its full ACU pack for free — that is a direct giveaway with no floor.
+      // Subscriptions are exempt: a discounted first cycle still grants the plan,
+      // which renews at full price. (amt==null = unknown → treated as > 0.)
+      const zeroPaidTopup = !!(item && item.kind === 'topup' && amt != null && amt <= 0);
+      const applied = !!(paid && item && buyer.ownerKey && priceOk && !zeroPaidTopup);
       await db.collection('stripePayments').add({
         eventId: event.id, sessionId: s.id ?? null, paymentIntent: s.payment_intent ?? null, planId: planId || null, ref: ref || null,
         acus: item?.acus ?? 0, kind: item?.kind ?? null, ownerKey: buyer.ownerKey || null,
@@ -504,9 +509,64 @@ export const redeemCode = onRequest({ region: 'europe-west2', cors: true }, asyn
       tx.set(redemptionRef, { code, uid: user.uid, count: myCount + 1, bonusAcus, at: FieldValue.serverTimestamp() }, { merge: true });
       return { bonusAcus, discountPct, label: String(c.label ?? code) };
     });
-    // grant the benefit once the redemption is committed (append-only ACU ledger)
-    if (grant.bonusAcus > 0) await creditAcus(user.uid, grant.bonusAcus, `redeemCode:${code}`, { code, kind: 'code-redemption' });
+    // grant the benefit once the redemption is committed (append-only ACU ledger).
+    // Deterministic dedupe id so a retry after the redemption commit can't double-credit.
+    if (grant.bonusAcus > 0) await creditAcus(user.uid, grant.bonusAcus, `redeemCode:${code}`, { code, kind: 'code-redemption' }, `redeem_${code}_${user.uid}`);
     res.json({ ok: true, code, bonusAcus: grant.bonusAcus, discountPct: grant.discountPct, label: grant.label });
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
+/**
+ * POST /adminDiscount { op, ... } — admin-only authoring of discount/credit codes
+ * in the server-authoritative `discountCodes` collection (firestore.rules keeps it
+ * client-unwritable). This replaces the old localStorage-only authoring so the
+ * usage caps that /redeemCode enforces (window, maxRedemptions, perUserLimit,
+ * audience) actually exist server-side and cannot be forged. ops: list | create |
+ * toggle | delete.
+ */
+export const adminDiscount = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const admin = await requireAdmin(req.headers.authorization);
+    const op = String(req.body?.op ?? 'list');
+    if (op === 'list') {
+      const snap = await db.collection('discountCodes').get();
+      res.json({ ok: true, codes: snap.docs.map((d) => ({ code: d.id, ...d.data() })) });
+      return;
+    }
+    const code = String(req.body?.code ?? '').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 32);
+    if (!code) throw httpError(400, 'code required');
+    if (op === 'create') {
+      const doc = {
+        bonusAcus: Math.max(0, Math.min(100000, Math.round(Number(req.body?.bonusAcus) || 0))),
+        discountPct: Math.max(0, Math.min(100, Math.round(Number(req.body?.discountPct) || 0))),
+        maxRedemptions: Math.max(0, Math.round(Number(req.body?.maxRedemptions) || 0)), // 0 = unlimited
+        perUserLimit: Math.max(1, Math.round(Number(req.body?.perUserLimit) || 1)),
+        audience: String(req.body?.audience ?? 'all').slice(0, 32),
+        label: String(req.body?.label ?? code).slice(0, 80),
+        startsAt: req.body?.startsAt ?? null, endsAt: req.body?.endsAt ?? null,
+        active: req.body?.active !== false,
+        createdBy: admin.email ?? null, updatedAt: FieldValue.serverTimestamp(),
+      };
+      await db.doc(`discountCodes/${code}`).set(doc, { merge: true });
+      await audit('DISCOUNT_CODE_UPSERT', admin.uid, { code, bonusAcus: doc.bonusAcus, discountPct: doc.discountPct });
+      res.json({ ok: true, code });
+      return;
+    }
+    if (op === 'toggle') {
+      await db.doc(`discountCodes/${code}`).set({ active: req.body?.active !== false, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      res.json({ ok: true });
+      return;
+    }
+    if (op === 'delete') {
+      await db.doc(`discountCodes/${code}`).delete();
+      await audit('DISCOUNT_CODE_DELETED', admin.uid, { code });
+      res.json({ ok: true });
+      return;
+    }
+    throw httpError(400, 'unknown op');
   } catch (e) {
     const err = e as Error & { status?: number };
     res.status(err.status ?? 500).json({ ok: false, error: err.message });
@@ -734,6 +794,13 @@ export const aiProxy = onRequest({ region: 'europe-west2', cors: true, maxInstan
     // generous ceiling. Worst-case free-tier provider cost falls from ~500 to a few
     // dozen calls/day (pennies). Both caps are env-tunable. This protects the
     // ~95% margin with no wallet migration and no risk to paid users.
+    // Disposable-email farming defence: optionally require a verified email
+    // before any metered AI. OFF by default (AI_REQUIRE_VERIFIED=1 to enable)
+    // so it is never switched on until the owner has confirmed the verification
+    // email flow works — turning it on with a broken flow would lock users out.
+    if ((process.env.AI_REQUIRE_VERIFIED ?? '0') === '1' && user.email && user.email_verified === false) {
+      res.status(403).json({ ok: false, reason: 'email_unverified', error: 'Please verify your email to use AI.' }); return;
+    }
     const dayKey = new Date().toISOString().slice(0, 10);
     const rateRef = db.doc(`aiRateLimits/${user.uid}_${dayKey}`);
     let plan = 'child_free';
@@ -821,6 +888,9 @@ export const tts = onRequest({ region: 'europe-west2', cors: true, maxInstances:
     const user = await requireUser(req.headers.authorization);
     const text = String(req.body?.text ?? '').trim().slice(0, 300);
     if (!text) throw httpError(400, 'text required');
+    if ((process.env.AI_REQUIRE_VERIFIED ?? '0') === '1' && user.email && user.email_verified === false) {
+      res.status(403).json({ ok: false, reason: 'email_unverified', error: 'Please verify your email to use AI.' }); return;
+    }
     const key = process.env.OPENAI_API_KEY;
     if (!key) throw httpError(503, 'speech not configured');
     const dayKey = new Date().toISOString().slice(0, 10);

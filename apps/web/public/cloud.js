@@ -550,6 +550,10 @@
        audience, ledgered once per user, ACUs credited on the server). Resolves
        to { ok, bonusAcus, discountPct, label } or throws with the reason. */
     redeemCode: function (code, email) { return api('/redeemCode', 'POST', { code: String(code || '').trim() }, email); },
+    /* admin-only, server-authoritative discount/credit-code authoring (replaces
+       the old localStorage-only authoring so usage caps are enforced server-side).
+       op: 'list' | 'create' | 'toggle' | 'delete'. */
+    adminDiscount: function (op, payload, email) { return api('/adminDiscount', 'POST', Object.assign({ op: op }, payload || {}), email); },
     /* redeem a gift code ("Fund a student from anywhere"): the server claims it
        exactly once and credits this account's wallet. Resolves to { ok, acus,
        from } or throws (not found / unpaid / already redeemed / wrong email). */
