@@ -60,6 +60,55 @@ async function walletBalance(ownerId: string): Promise<number> {
   return snap.docs.reduce((sum, d) => sum + (d.data().delta as number), 0);
 }
 
+/** Server-side free-tier grant: credit the free ACUs ONCE per (uid, quarter) into
+    the append-only ledger, so the server balance reflects the free tier and
+    aiProxy can enforce balance without blocking legitimate free users. Idempotent
+    via a marker doc created atomically — clearing localStorage, re-calling, or
+    racing never re-grants. Only child_free is granted (paid plans are funded by
+    their purchase). This closes the "clear localStorage / new device = fresh 100
+    ACUs" farm because the grant is now tracked per-uid on the server, not in the
+    browser. */
+const FREE_GRANT_ACUS = 100;
+function quarterKey(d = new Date()): string {
+  return `${d.getUTCFullYear()}-Q${Math.floor(d.getUTCMonth() / 3) + 1}`;
+}
+async function ensureFreeGrant(uid: string, plan: string): Promise<void> {
+  if (plan !== 'child_free') return;
+  const q = quarterKey();
+  const marker = db.doc(`acuFreeGrants/${uid}_${q}`);
+  try {
+    await marker.create({ uid, quarter: q, at: FieldValue.serverTimestamp() }); // throws if already granted this quarter
+  } catch {
+    return; // already granted (or a concurrent grant won) — never double-grant
+  }
+  await db.collection('acuTransactions').add({
+    ownerId: uid, delta: FREE_GRANT_ACUS, activity: 'free_grant', source: 'free_tier',
+    quarter: q, createdAt: FieldValue.serverTimestamp(),
+  });
+}
+
+/** Pay out a recorded referral ONCE, triggered by the referee's first CLEARED
+    payment (called from the Stripe webhook). Credits both sides via the
+    idempotent ledger (dedupe ids) and caps the referrer, then marks the referral
+    rewarded. Farm-proof: throwaway sign-ups never pay, so they never pay out. */
+async function redeemReferralOnPayment(refereeUid: string): Promise<void> {
+  const ref = db.doc(`referrals/${refereeUid}`);
+  const snap = await ref.get();
+  const data = snap.data();
+  if (!snap.exists || !data || data.rewarded) return;
+  const referrerUid = String(data.referrerUid || '');
+  if (!referrerUid || referrerUid === refereeUid) return;
+  await creditAcus(refereeUid, REF_BONUS, 'referral:joined', { referrerUid }, `refjoin_${refereeUid}`);
+  const cntRef = db.doc(`refCounters/${referrerUid}`);
+  const credited = (await cntRef.get()).data()?.credited as number ?? 0;
+  if (credited < REF_CAP) {
+    await creditAcus(referrerUid, REF_BONUS, 'referral:invitee', { referee: refereeUid }, `refinv_${refereeUid}`);
+    await cntRef.set({ credited: credited + 1, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  }
+  await ref.set({ rewarded: true, rewardedAt: FieldValue.serverTimestamp() }, { merge: true });
+  await audit('REFERRAL_CREDITED_ON_PAYMENT', refereeUid, { referrerUid });
+}
+
 /** Per-caller daily rate limit — bounds share-code enumeration and gift/discount
     brute-force. Throws 429 when the cap is hit. Buckets are function-only
     (default-deny in firestore.rules), keyed by uid + name + UTC day. */
@@ -346,6 +395,8 @@ export const stripeWebhook = onRequest({ region: 'europe-west2' }, async (req, r
               { merge: true });
         }
         await audit('STRIPE_PURCHASE', buyer.uid ?? buyer.ownerKey, { planId, acus: item.acus, kind: item.kind });
+        // a real cleared payment is what unlocks the referral reward (farm-proof)
+        if (buyer.kind === 'user' && buyer.uid) { try { await redeemReferralOnPayment(buyer.uid); } catch { /* best-effort */ } }
       }
     } else if (event.type === 'invoice.payment_succeeded') {
       const inv = event.data.object;
@@ -697,6 +748,28 @@ export const aiProxy = onRequest({ region: 'europe-west2', cors: true, maxInstan
     if (!chain.length) throw httpError(503, 'AI provider key not configured on the server');
     const t0 = Date.now();
     const body = (req.body ?? {}) as AiBody;
+    // ---- server-authoritative ACU meter (the real "no free AI" gate) ----
+    // The client wallet is only a display cache; THIS is what actually enforces
+    // ACUs. Cost is resolved from the SERVER tariff by activity (client-sent cost
+    // is never trusted), defaulting to 1 so nothing is ever free. Free-tier ACUs
+    // are granted server-side first so legitimate free users are never blocked.
+    // Enforcement fails OPEN on any infra error (a bug must never black-hole AI)
+    // and can be disabled instantly with AI_ENFORCE_ACUS=0. A genuine empty
+    // wallet returns 402; the daily call cap above remains a secondary ceiling.
+    const ENFORCE = (process.env.AI_ENFORCE_ACUS ?? '1') !== '0';
+    const activity = String((body as { activity?: string }).activity ?? '');
+    const cost = Math.max(1, (ACU_TARIFF as Record<string, number>)[activity] || 1);
+    if (ENFORCE) {
+      if (plan === 'child_free' && activity === 'assignment_review') {
+        res.status(403).json({ ok: false, error: 'Assignment Review requires a paid plan' }); return;
+      }
+      let balance: number | null = null;
+      try { await ensureFreeGrant(user.uid, plan); balance = await walletBalance(user.uid); }
+      catch (e) { void audit('ACU_ENFORCE_ERROR', user.uid, { err: (e as Error).message }); balance = null; } // fail-open
+      if (balance !== null && balance < cost) {
+        res.status(402).json({ ok: false, reason: 'insufficient_acus', balance, required: cost }); return;
+      }
+    }
     let lastErr: Error | null = null;
     for (const { provider, key } of chain) {
       try {
@@ -707,6 +780,16 @@ export const aiProxy = onRequest({ region: 'europe-west2', cors: true, maxInstan
           inChars: String(body.system ?? '').length + String(body.user ?? '').length,
           outChars: text.length, createdAt: FieldValue.serverTimestamp(),
         });
+        // charge on SUCCESS only (a failed/timed-out call costs nothing). Best-
+        // effort: a ledger-write hiccup must not deny the user the answer they got.
+        if (ENFORCE) {
+          try {
+            await db.collection('acuTransactions').add({
+              ownerId: user.uid, delta: -cost, activity: activity || 'ai_call',
+              source: 'aiProxy', createdAt: FieldValue.serverTimestamp(),
+            });
+          } catch (e) { void audit('ACU_DEBIT_ERROR', user.uid, { err: (e as Error).message }); }
+        }
         res.json({ ok: true, text, provider });
         return;
       } catch (e) {
@@ -900,9 +983,13 @@ export const register = onRequest({ region: 'europe-west2', cors: true }, async 
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
     await audit(existing.exists ? 'USER_ROLE_ADDED' : 'USER_REGISTERED', user.uid, { role });
-    // referral loop: on a NEW registration carrying a valid invite code, credit
-    // BOTH the new user and the referrer bonus ACUs — once per referee, capped
-    // per referrer, idempotent via creditAcus dedupe. Best-effort: never blocks.
+    // referral loop: on a NEW registration carrying a valid invite code, RECORD
+    // the pending referral link only. ACUs are NOT credited at signup — doing so
+    // let one person farm real, spendable ACUs by registering throwaway accounts
+    // against their own code (the per-uid rate limit and the client "human"
+    // attestation are no defence across fresh uids). The reward is credited later,
+    // gated on the referee's first CLEARED Stripe payment (redeemReferralOnPayment,
+    // called from the webhook), so a referral only pays out for a real paying user.
     try {
       if (!existing.exists) {
         const refCode = String(req.body?.ref ?? '').trim().slice(0, 32);
@@ -912,15 +999,8 @@ export const register = onRequest({ region: 'europe-west2', cors: true }, async 
           if (referrerUid && referrerUid !== user.uid) {
             const seen = db.doc(`referrals/${user.uid}`);
             if (!(await seen.get()).exists) {
-              await seen.set({ referrerUid, at: FieldValue.serverTimestamp() });
-              await creditAcus(user.uid, REF_BONUS, 'referral:joined', { referrerUid }, `refjoin_${user.uid}`);
-              const cntRef = db.doc(`refCounters/${referrerUid}`);
-              const credited = (await cntRef.get()).data()?.credited as number ?? 0;
-              if (credited < REF_CAP) {
-                await creditAcus(referrerUid, REF_BONUS, 'referral:invitee', { referee: user.uid }, `refinv_${user.uid}`);
-                await cntRef.set({ credited: credited + 1, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-              }
-              await audit('REFERRAL_CREDITED', user.uid, { referrerUid });
+              await seen.set({ referrerUid, at: FieldValue.serverTimestamp(), rewarded: false });
+              await audit('REFERRAL_RECORDED', user.uid, { referrerUid });
             }
           }
         }
@@ -942,11 +1022,12 @@ export const register = onRequest({ region: 'europe-west2', cors: true }, async 
 export const walletState = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
   try {
     const user = await requireUser(req.headers.authorization);
-    const [balance, udoc] = await Promise.all([
-      walletBalance(user.uid),
-      db.doc(`users/${user.uid}`).get(),
-    ]);
+    const udoc = await db.doc(`users/${user.uid}`).get();
     const plan = (udoc.exists && (udoc.data()!.plan as string)) || 'child_free';
+    // seed the server-side free grant before reading, so the authoritative
+    // balance the client syncs to already includes this quarter's free ACUs
+    try { await ensureFreeGrant(user.uid, plan); } catch { /* best-effort */ }
+    const balance = await walletBalance(user.uid);
     res.json({ ok: true, balance, plan });
   } catch (e) {
     const err = e as Error & { status?: number };

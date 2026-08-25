@@ -442,11 +442,10 @@ $('gift-redeem').onclick=function(){
       else{toast((r&&r.error)||'That gift could not be redeemed.');}
     }).catch(function(e){
       btn.disabled=false;btn.textContent='Redeem into my wallet';
-      /* server said no (not found / unpaid / used / wrong email) — surface it,
-         then try a local preview code as a courtesy. */
-      var msg=(e&&e.message)||'';
-      if(/not found/i.test(msg)){if(localRedeem())return;}
-      toast(msg||'That gift could not be redeemed.');
+      /* server is authoritative for real accounts — do NOT fall back to the local
+         preview store here (that let a real user seed a fake sy-gifts entry and
+         self-credit when the server replied "not found"). */
+      toast((e&&e.message)||'That gift could not be redeemed.');
     });
     return;
   }

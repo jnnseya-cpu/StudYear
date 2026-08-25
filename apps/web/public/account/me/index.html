@@ -207,30 +207,20 @@ $('del').onclick=function(){
   $('ref-link').value=link;
   $('ref-copy').onclick=function(){try{navigator.clipboard.writeText(link);toast('Share link copied')}catch(e){}};
   $('ref-wa').href='https://wa.me/?text='+encodeURIComponent('Join me on StudYear — the AI study platform 🎓 Sign up with my link: '+link);
-  /* referral stats + 250-ACU crediting once qualified (14 days + £10 cleared) */
+  /* Referral stats — DISPLAY ONLY, from the authoritative server. Rewards are NOT
+     credited in the browser: doing so let anyone mint ACUs by hand-editing
+     localStorage. The reward is credited server-side on the referee's first
+     CLEARED payment (farm-proof) and appears in your balance via the wallet sync. */
   try{
-    var refs=(JSON.parse(localStorage.getItem('sy-partner-refs'))||[]).filter(function(r){return r.code===profile.refCode&&r.email!==S.email});
-    var byUser={};refs.forEach(function(r){(byUser[r.email]=byUser[r.email]||[]).push(r)});
-    var qualified=0,pending=0,credited=0;
-    Object.keys(byUser).forEach(function(em){
-      var rs=byUser[em];var spend=rs.reduce(function(n,r){return n+(+r.gbp||0)},0);
-      var first=Math.min.apply(null,rs.map(function(r){return new Date(r.when).getTime()||Date.now()}));
-      var ok=spend>=10&&(Date.now()-first)>=14*86400000;
-      if(!ok){pending++;return}
-      qualified++;
-      if(!rs.some(function(r){return r.credited})){
-        rs[0].credited=true;
-        var w=SY.get('wallet',{acus:0,plan:'child_free'});w.acus=(w.acus||0)+250;SY.set('wallet',w);
-        SY.log('billing','Referral reward','250 ACUs — '+em.replace(/(.{3}).*(@.*)/,'$1***$2')+' qualified.');
-        credited++;
-      }
-    });
-    if(credited){
-      var all=JSON.parse(localStorage.getItem('sy-partner-refs'))||[];
-      refs.forEach(function(r){var i=all.findIndex(function(x){return x.code===r.code&&x.email===r.email&&x.when===r.when});if(i>-1)all[i]=r});
-      localStorage.setItem('sy-partner-refs',JSON.stringify(all));
-    }
-    $('ref-stats').textContent=refs.length?('Referrals: '+Object.keys(byUser).length+' · qualified: '+qualified+' · pending (14-day / £10 rule): '+pending+(credited?' · 🎉 '+credited*250+' ACUs just credited!':'')):'No referrals yet — share your link to start earning.';
+    var el=$('ref-stats'); if(el)el.textContent='Loading your referrals…';
+    var done=function(txt){ if(el)el.textContent=txt; };
+    var fallback='Share your link to start earning — rewards credit when a referral first subscribes.';
+    if(window.SYCloud&&SYCloud.refCode){
+      SYCloud.refCode(S.email).then(function(r){
+        if(r&&typeof r.joined==='number')done('Referrals joined: '+r.joined+(r.bonus?(' · '+r.bonus+' ACUs earned'):'')+' · rewards credit when a referral first subscribes.');
+        else done(fallback);
+      }).catch(function(){done(fallback);});
+    } else done(fallback);
   }catch(e){}
 })();
 

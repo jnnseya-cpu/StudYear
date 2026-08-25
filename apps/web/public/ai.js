@@ -125,8 +125,12 @@
         if(!opts.noRecover){ try{ if(window.SY&&SY.ensureCloud){ var done=await SY.ensureCloud(); if(done) tk=await SYCloud.token(email); } }catch(e){} }
         if(!tk)throw new Error('Reconnect to StudYear to use the AI tutor.');
       }
+      /* activity lets the SERVER charge the correct ACU tariff (tamper-proof —
+         the server ignores any client-sent cost and looks it up by activity,
+         defaulting to 1 so nothing is ever free). */
       var body=JSON.stringify({system:system,user:user,maxTokens:maxTokens,
-        temperature:opts.temperature!=null?opts.temperature:0.6,image:opts.image||undefined});
+        temperature:opts.temperature!=null?opts.temperature:0.6,image:opts.image||undefined,
+        activity:opts.activity||undefined});
       var hdr={'Content-Type':'application/json','Authorization':'Bearer '+tk};
       /* Same-origin proxy when available (studyear.com/gapi/*) so the gateway
          works even where cloudfunctions.net is blocked; if that proxy THROWS at
@@ -138,6 +142,10 @@
       try{ rp=await fetch(gp+'/aiProxy',{method:'POST',headers:hdr,body:body}); }
       catch(e){ if(gp===direct)throw e; rp=await fetch(direct+'/aiProxy',{method:'POST',headers:hdr,body:body}); }
       var jp=await rp.json().catch(function(){return{}});
+      /* server-side ACU meter said the wallet can't cover this — surface the same
+         clear message as the client pre-check (a forged local balance no longer
+         buys real AI). */
+      if(rp.status===402||jp.reason==='insufficient_acus')throw new Error('Not enough ACUs — top up to keep using AI.');
       if(!rp.ok||!jp.ok)throw new Error('Gateway '+rp.status+': '+(jp.error||''));
       return jp.text||'';
     }

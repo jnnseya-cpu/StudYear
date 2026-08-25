@@ -128,27 +128,35 @@
       return id||'';
     }catch(e){return null;}
   }
-  /* Reconcile the local wallet UP from the authoritative server ledger so a
-     buyer who completed payment but lost the redirect (closed the tab, paid on
-     another device) still gets their plan on the next upgrade-page load.
-     UPGRADE-ONLY — it never downgrades, so it can never harm a legitimate user
-     (full server-authoritative gating, incl. clawback downgrades, is the first
-     post-launch hardening). Runs only for real, signed-in, non-demo accounts. */
+  /* Reconcile the local wallet against the AUTHORITATIVE server ledger, in BOTH
+     directions. The browser wallet is only a display cache: the server (walletState
+     → append-only ACU ledger + the plan set by the Stripe webhook) is the source
+     of truth, and aiProxy enforces it on every AI call. So here we simply mirror
+     the server: a confirmed paid plan is applied, and a forged local plan/balance
+     (e.g. from a hand-edited wallet or a fake ?paid=1 return) is corrected back
+     down. Offline-safe: if walletState returns nothing we keep the local copy
+     untouched (never wipe a wallet just because the network hiccupped). Skipped
+     for demo sessions (no server wallet). */
   function reconcile(){
     try{
       if(isDemo()||!window.SY||!window.SYCloud||typeof SYCloud.walletState!=='function')return;
       var s=null;try{s=JSON.parse(localStorage.getItem('sy-session'));}catch(e){}
       if(!s||!s.email)return;
       SYCloud.walletState(s.email).then(function(st){
-        if(!st||!st.plan||st.plan==='child_free')return;   // never downgrade
-        var w=(window.SY.get('wallet',{}))||{};
-        if(w.plan===st.plan)return;                         // already in sync
-        w.plan=st.plan;
-        w.planExpires=new Date(Date.now()+31*864e5).toISOString();
-        w.month=new Date().toISOString().slice(0,7);
-        window.SY.set('wallet',w);
-        try{window.SY.log('billing','Plan confirmed from your account','Your '+st.plan+' plan is active on this device.');}catch(e){}
-        try{toast('Your plan is active.');}catch(e){}
+        if(!st||typeof st.plan!=='string')return;           // no authoritative answer → keep local
+        var w=(window.SY.get('wallet',{}))||{}, changed=false;
+        if(w.plan!==st.plan){                                // plan: server wins both ways
+          w.plan=st.plan;
+          if(st.plan==='child_free')delete w.planExpires;
+          else if(!w.planExpires)w.planExpires=new Date(Date.now()+31*864e5).toISOString();
+          w.month=new Date().toISOString().slice(0,7);
+          changed=true;
+        }
+        if(typeof st.balance==='number'&&w.acus!==st.balance){ w.acus=st.balance; changed=true; } // balance: server wins
+        if(changed){
+          window.SY.set('wallet',w);
+          try{window.dispatchEvent(new CustomEvent('sy-acus',{detail:{balance:w.acus,pool:null}}));}catch(e){}
+        }
       }).catch(function(){});
     }catch(e){}
   }
