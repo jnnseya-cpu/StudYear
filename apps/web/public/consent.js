@@ -30,6 +30,9 @@
      public tutor-finder) is not; /account/ and /auth/ are intentionally allowed
      so purchase + registration conversions can fire. */
   function blocked() {
+    // never track a signed-in STUDENT (a child) on ANY surface, including the
+    // account/auth pages a minor can reach — UK Children's Code data-minimisation.
+    try { var s = JSON.parse(localStorage.getItem('sy-session')); if (s && s.role === 'student') return true; } catch (e) {}
     return /\/(study|app|parent|teacher|school|tutor|authority|admin|myschool)(\/|$)/.test(location.pathname);
   }
   var allowed = !blocked();

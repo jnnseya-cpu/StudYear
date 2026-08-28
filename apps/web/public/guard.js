@@ -230,7 +230,19 @@
       return out;
     },
     signOut: function () {
-      localStorage.removeItem('sy-session');
+      /* Clear ALL account credentials on sign-out, not just the session marker.
+         Leaving sy-cloud-tok behind meant the Firebase refresh/ID token kept
+         minting valid API calls after "logout" (shared-device takeover), and
+         the E2E keys left personal blobs decryptable. */
+      var em = '';
+      try { em = (JSON.parse(localStorage.getItem('sy-session')) || {}).email || ''; } catch (e) {}
+      try { if (window.SYCloud && SYCloud.signOut) SYCloud.signOut(em); } catch (e) {} // best-effort server token revoke
+      try {
+        localStorage.removeItem('sy-session');
+        localStorage.removeItem('sy-cloud-tok');
+        if (em) { localStorage.removeItem('sy-dk:' + em); localStorage.removeItem('sy-e2e:' + em); }
+        Object.keys(localStorage).forEach(function (k) { if (/^sy-device-/.test(k)) localStorage.removeItem(k); });
+      } catch (e) {}
       location.href = base;
     },
     /** append to this account's activity feed (dashboard renders it) */

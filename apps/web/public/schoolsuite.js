@@ -18,6 +18,9 @@
   'use strict';
   var SY = window.SY;
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  /* only allow http(s) or same-origin relative URLs into an href — blocks
+     javascript:/data: scheme injection (esc alone does not stop those). */
+  function safeUrl(u){u=String(u==null?'':u).trim();return (/^https?:\/\//i.test(u)||/^\//.test(u))?u:'#';}
   function uid(p){return (p||'x')+Math.abs((Date.now()%1e7)).toString(36)+Math.floor(Math.random()*1e6).toString(36);}
   function now(){return new Date().toISOString();}
   function fmtDate(iso){try{var d=new Date(iso);return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});}catch(e){return '';}}
@@ -189,7 +192,7 @@
     forViewer:function(code,role){ return DOC.all(code).filter(function(d){return d.audience==='all'||d.audience===role;}); }
   };
   var CATS=['General','Policies','Letters','Curriculum','Revision','Forms','Safeguarding'];
-  function docLine(d,canDel){ var link=d.url?('<a href="'+esc(d.url)+'" target="_blank" rel="noopener" style="color:var(--gold-300);text-decoration:underline">Open</a>'):'';
+  function docLine(d,canDel){ var link=d.url?('<a href="'+esc(safeUrl(d.url))+'" target="_blank" rel="noopener" style="color:var(--gold-300);text-decoration:underline">Open</a>'):'';
     return '<div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);padding:8px 0"><span style="flex:1;font-size:13px"><b>'+esc(d.title)+'</b>'+
       '<span class="note"> · '+esc(d.category)+' · '+esc(d.byName)+' · '+fmtDate(d.at)+'</span>'+(d.note?'<div class="note" style="margin:2px 0 0">'+esc(d.note)+'</div>':'')+'</span>'+
       link+(canDel?' <button class="btn ghost sm doc-del" data-id="'+d.id+'">✕</button>':'')+'</div>'; }

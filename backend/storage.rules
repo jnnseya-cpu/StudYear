@@ -11,7 +11,9 @@ service firebase.storage {
       allow read: if signedIn() && request.auth.uid == userId;
       // request.resource only exists on writes — checking it on reads would deny them
       allow write: if signedIn() && request.auth.uid == userId
-        && request.resource.size < 25 * 1024 * 1024; // 25MB cap per file
+        && request.resource.size < 25 * 1024 * 1024 // 25MB cap per file
+        // restrict to the intended media types (blocks stored HTML/executables/SVG)
+        && request.resource.contentType.matches('image/(png|jpe?g|gif|webp|heic|heif)|application/pdf');
     }
 
     match /public/{allPaths=**} {

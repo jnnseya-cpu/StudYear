@@ -84,8 +84,9 @@
 
   <section class="card" aria-labelledby="h-danger" style="border-color:rgba(230,103,103,.35)">
     <h2 id="h-danger" style="color:#e59b9b">Delete account</h2>
-    <p class="note">Deleting removes this account and all of its data from this device and, once connected, queues
-      cloud deletion (completed server-side with retention checks). This cannot be undone.</p>
+    <p class="note">Deleting permanently erases your account and personal data — your sign-in, profile, encrypted
+      content and AI history — from our servers and this device. Financial records required by law (e.g. payment
+      receipts) are retained for the statutory period, unlinked from a live account. This cannot be undone.</p>
     <div style="margin-top:10px"><button class="btn danger" id="del">Delete my account permanently</button></div>
   </section>
 </main>
@@ -173,17 +174,26 @@ $('links').innerHTML='<a class="btn" href="'+(HOME[S.role]||'../../')+'">My cons
   '<a class="btn" href="#" id="signout">Sign out</a>';
 document.getElementById('signout').onclick=function(e){e.preventDefault();SY.signOut()};
 
-$('del').onclick=function(){
+$('del').onclick=async function(){
   if(!confirm('Delete this account and ALL of its data? This cannot be undone.'))return;
   if(prompt('Type DELETE to confirm')!=='DELETE'){toast('Deletion cancelled');return}
+  /* Erase server-side FIRST (UK GDPR Art.17): the Auth account, profile, E2E
+     data, AI logs and lead row. Only wipe the local device once that succeeds,
+     so we never tell the user it's deleted while their cloud record survives. */
+  try{
+    if(window.SYCloud&&SYCloud.selfDelete&&SYCloud.ready&&SYCloud.ready()){
+      toast('Deleting your account…');
+      var r=await SYCloud.selfDelete(S.email);
+      if(!r||!r.ok){toast('Could not delete your account right now — please try again or email contact@studyear.com.');return;}
+    }
+  }catch(e){ toast('Could not reach the server to delete your account — please try again shortly.'); return; }
   try{
     var us=JSON.parse(localStorage.getItem('sy-users'))||[];
     localStorage.setItem('sy-users',JSON.stringify(us.filter(function(u){return !(u.email===S.email&&u.role===S.role)})));
     var kill=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);
-      if(k&&(k.indexOf('sy-u:'+S.email+':')===0||k==='sy-e2e:'+S.email))kill.push(k)}
+      if(k&&(k.indexOf('sy-u:'+S.email+':')===0||k==='sy-e2e:'+S.email||k==='sy-dk:'+S.email))kill.push(k)}
     kill.forEach(function(k){localStorage.removeItem(k)});
-    localStorage.removeItem('sy-session');
-    SY.log&&SY.log('account','Account deleted','All local data removed.');
+    localStorage.removeItem('sy-session');localStorage.removeItem('sy-cloud-tok');
   }catch(e){}
   location.href='../../?deleted=1';
 };

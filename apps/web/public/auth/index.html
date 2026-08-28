@@ -141,7 +141,18 @@ async function hash(salt,pw){
 }
 var CONSOLE={student:'../study/',parent:'../parent/',teacher:'../teacher/',school:'../school/',tutor:'../tutor/',authority:'../authority/',employer:'../employer/',college:'../college/',admin:'../admin/'};
 function destination(role){
-  if(next){var n=decodeURIComponent(next);if(n.indexOf('/'+role+'/')>-1||n.indexOf('/study/')>-1||n.indexOf('/myschool/')>-1||n.indexOf('/account/')>-1)return n}
+  /* Only ever redirect to a SAME-ORIGIN console path. The previous substring
+     test let ?next=javascript:...//account/ through (executed same-origin =
+     token theft) and ?next=//evil.com/account/ (open redirect). Resolve the
+     value against our origin and require a known console path prefix; reject
+     anything with a scheme or protocol-relative host. */
+  if(next){
+    try{
+      var u=new URL(decodeURIComponent(next),location.origin);
+      if(u.origin===location.origin && /\/(study|account|myschool|parent|teacher|school|tutor|authority|employer|college)\//.test(u.pathname))
+        return u.pathname+u.search+u.hash;
+    }catch(e){}
+  }
   return CONSOLE[role]||'../study/';
 }
 
@@ -179,7 +190,7 @@ if(mismatch&&wantRole){
   else{$('title').textContent='Sign in — '+LABELS[wantRole]+' console';
        $('subtitle').textContent='This area is for '+LABELS[wantRole].toLowerCase()+' accounts. Sign in, or create a '+LABELS[wantRole].toLowerCase()+' account.'}
 }else if(session){
-  say('Signed in as <b>'+session.name+'</b> ('+(LABELS[session.role]||session.role)+'). <a href="'+(CONSOLE[session.role]||'../study/')+'">Open my console</a> or switch accounts below.','ok');
+  say('Signed in as <b>'+String(session.name||'').replace(/[<>&]/g,function(c){return{'<':'&lt;','>':'&gt;','&':'&amp;'}[c]})+'</b> ('+(LABELS[session.role]||session.role)+'). <a href="'+(CONSOLE[session.role]||'../study/')+'">Open my console</a> or switch accounts below.','ok');
 }
 
 /* ---- human verification / anti-bot (preview-grade; the backend swaps in a
@@ -369,14 +380,15 @@ if(fg)fg.onclick=async function(e){
   say('Sending your reset link…','info');
   try{
     if(window.SYCloud){await SYCloud.whenReady();
-      if(SYCloud.ready()){await SYCloud.resetPassword(email);
-        say('Password reset link sent to <b>'+email.replace(/[<>]/g,'')+'</b> — check your inbox (and spam). It expires in 1 hour.','ok');return;}
+      if(SYCloud.ready()){
+        /* Neutral response whether or not the email exists (no account-existence
+           oracle). Fire the reset best-effort and always show the same message. */
+        try{await SYCloud.resetPassword(email);}catch(e){}
+        say('If an account exists for <b>'+email.replace(/[<>&]/g,'')+'</b>, a password reset link is on its way — check your inbox and spam. It expires in 1 hour.','ok');return;}
     }
     say('Cloud sign-in is offline right now — try again shortly, or contact contact@studyear.com.','err');
   }catch(err){
-    var m=String(err&&err.message||'');
-    if(/EMAIL_NOT_FOUND/.test(m))say('No account found for that email. Use “Create account” above.','err');
-    else say('Could not send the reset link ('+m.slice(0,60)+'). Try again shortly.','err');
+    say('If an account exists for that email, a password reset link is on its way — check your inbox and spam.','ok');
   }
 };
 })();

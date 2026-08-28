@@ -554,6 +554,8 @@
        the old localStorage-only authoring so usage caps are enforced server-side).
        op: 'list' | 'create' | 'toggle' | 'delete'. */
     adminDiscount: function (op, payload, email) { return api('/adminDiscount', 'POST', Object.assign({ op: op }, payload || {}), email); },
+    /* UK GDPR Art.17: erase the signed-in user's own server-side account + data. */
+    selfDelete: function (email) { return api('/selfDelete', 'POST', {}, email); },
     /* redeem a gift code ("Fund a student from anywhere"): the server claims it
        exactly once and credits this account's wallet. Resolves to { ok, acus,
        from } or throws (not found / unpaid / already redeemed / wrong email). */
