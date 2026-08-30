@@ -1497,6 +1497,34 @@ export const weeklyNewsletter = onSchedule({ schedule: '0 9 * * 1', timeZone: 'E
   }
 });
 
+/** Daily automated Firestore backup — a managed export to a GCS bucket, run in
+    code (not console-only), so backups are actually happening. Bucket via the
+    BACKUP_BUCKET env, else the project's default bucket. Alerts the owner on
+    failure. Restore is one command:
+      gcloud firestore import gs://<bucket>/firestore-backups/<YYYY-MM-DD>
+    (The deploy robot SA needs roles/datastore.importExportAdmin + object write
+    on the bucket; set a bucket lifecycle rule for retention.) */
+export const dailyBackup = onSchedule({ schedule: '0 2 * * *', timeZone: 'Europe/London', region: 'europe-west2' }, async () => {
+  const project = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'revision-rocket-4nuir';
+  const bucket = (process.env.BACKUP_BUCKET || `${project}.appspot.com`).replace(/^gs:\/\//, '');
+  const date = new Date().toISOString().slice(0, 10);
+  try {
+    const { GoogleAuth } = await import('google-auth-library');
+    const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
+    const token = await auth.getAccessToken();
+    if (!token) throw new Error('no access token for backup export');
+    const r = await fetch(`https://firestore.googleapis.com/v1/projects/${project}/databases/(default):exportDocuments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ outputUriPrefix: `gs://${bucket}/firestore-backups/${date}` }),
+    });
+    if (!r.ok) throw new Error(`export ${r.status}: ${(await r.text()).slice(0, 200)}`);
+    await audit('BACKUP_STARTED', 'system', { bucket, date });
+  } catch (e) {
+    await alertOwner('backup_failed', 'Daily Firestore backup failed', { err: (e as Error).message, bucket, date });
+  }
+});
+
 /** GET /unsubscribe?u=&t= — one-click opt-out (no login). Only ever sets the
     newsletter preference to false, so a forged link can't do harm. */
 export const unsubscribe = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
