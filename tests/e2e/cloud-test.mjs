@@ -40,6 +40,7 @@ p.on('pageerror',e=>results.push('JSERR — '+e.message));
 await p.goto(B+'/auth/?role=student',{waitUntil:'networkidle'});
 await p.click('#t-up');
 await p.fill('#name','Cloud Tester');
+await p.fill('#dob','2000-01-01');
 await p.fill('#email','cloud@e2e.test');
 await p.fill('#pw','CloudPass!77');
 await p.check('#human-ck');

@@ -145,6 +145,30 @@ async function sendMail(opts: { to: string; subject: string; text?: string; html
   });
 }
 
+/** Short random id for correlating a request across logs + the client response. */
+function reqId(): string { return randomBytes(6).toString('hex'); }
+
+/** ACTIVE incident alerting (no third-party service): email the owner when a
+    critical failure happens, throttled to once per (key, hour) so a storm can't
+    spam. Always records the event to `opsAlerts` for the admin console even when
+    mail isn't configured. Best-effort — never throws into the caller. */
+async function alertOwner(key: string, subject: string, detail: Record<string, unknown>): Promise<void> {
+  try {
+    await db.collection('opsAlerts').add({ key, subject, detail, createdAt: FieldValue.serverTimestamp() });
+    const hour = new Date().toISOString().slice(0, 13); // yyyy-mm-ddThh
+    const throttle = db.doc(`opsAlertThrottle/${key}_${hour}`);
+    try { await throttle.create({ at: FieldValue.serverTimestamp() }); } // throws if already alerted this hour
+    catch { return; }
+    const to = process.env.ALERT_TO ?? process.env.MAIL_TO ?? (process.env.ADMIN_EMAILS ?? '').split(',')[0].trim();
+    if (!to) return;
+    await sendMail({
+      to,
+      subject: `⚠️ StudYear alert: ${subject}`,
+      text: `A critical event fired on the StudYear backend.\n\nEvent: ${subject}\nKey: ${key}\nTime: ${new Date().toISOString()}\n\nDetail:\n${JSON.stringify(detail, null, 2)}\n\n(Throttled to once per hour per event type.)`,
+    });
+  } catch { /* alerting must never break the request */ }
+}
+
 // ------------------------------------------------------------------ health ----
 export const health = onRequest({ region: 'europe-west2', cors: true }, (_req, res) => {
   res.json({ ok: true, service: 'studyear-api', marginFloor: MARGIN.FLOOR });
@@ -459,7 +483,8 @@ export const stripeWebhook = onRequest({ region: 'europe-west2' }, async (req, r
     // Stripe's automatic retry gets a clean second attempt.
     await evRef.delete().catch(() => null);
     const err = e as Error;
-    res.status(500).json({ ok: false, error: err.message });
+    void alertOwner('stripe_webhook_fail', 'Stripe webhook processing failed', { error: err.message });
+    res.status(500).json({ ok: false, error: 'payment processing error' }); // no internal detail to the caller
   }
 });
 
@@ -651,6 +676,15 @@ function aiProviderChain(): { provider: AiProvider; key: string }[] {
   const order = legacyP && keys[legacyP] ? [legacyP, ...all.filter((p) => p !== legacyP)] : all;
   return order.filter((p) => keys[p]).map((p) => ({ provider: p, key: keys[p] as string }));
 }
+/** fetch with a hard timeout (AbortController) so a hung/slow provider can't
+    hold the Cloud Function open to its platform ceiling — a stall now throws and
+    the aiProxy failover loop moves to the next provider. */
+async function fetchT(url: string, opts: RequestInit, ms = Number(process.env.AI_FETCH_TIMEOUT_MS) || 30000): Promise<Response> {
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(), ms);
+  try { return await fetch(url, { ...opts, signal: ac.signal }); }
+  finally { clearTimeout(t); }
+}
 async function aiCall(provider: AiProvider, key: string, body: AiBody): Promise<{ text: string; model: string }> {
   const model = (process.env.AI_MODEL && (process.env.AI_PROVIDER ?? 'openai') === provider)
     ? process.env.AI_MODEL : AI_DEFAULT_MODEL[provider];
@@ -662,7 +696,7 @@ async function aiCall(provider: AiProvider, key: string, body: AiBody): Promise<
   if (provider === 'gemini') {
     const parts: unknown[] = [{ text: String(body.user ?? '') }];
     if (img) parts.push({ inlineData: { mimeType: img[1], data: img[2] } });
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+    const r = await fetchT(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         systemInstruction: body.system ? { parts: [{ text: body.system }] } : undefined,
@@ -680,7 +714,7 @@ async function aiCall(provider: AiProvider, key: string, body: AiBody): Promise<
       ? { type: 'document', source: { type: 'base64', media_type: img[1], data: img[2] } }
       : { type: 'image', source: { type: 'base64', media_type: img[1], data: img[2] } });
     content.push({ type: 'text', text: String(body.user ?? '') });
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
+    const r = await fetchT('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
@@ -700,7 +734,7 @@ async function aiCall(provider: AiProvider, key: string, body: AiBody): Promise<
          ? { type: 'file', file: { filename: 'upload.pdf', file_data: body.image } }
          : { type: 'image_url', image_url: { url: body.image } }]
     : String(body.user ?? '');
-  const r = await fetch('https://api.openai.com/v1/chat/completions', {
+  const r = await fetchT('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
     body: JSON.stringify({
@@ -787,6 +821,8 @@ export const createCheckout = onRequest({ region: 'europe-west2', cors: true }, 
 });
 
 export const aiProxy = onRequest({ region: 'europe-west2', cors: true, maxInstances: 20 }, async (req, res) => {
+  const rid = reqId();
+  res.set('X-Request-Id', rid); // correlate a user report to the exact log line
   try {
     const user = await requireUser(req.headers.authorization);
     // Denial-of-wallet backstop: cap calls per account per day. This is an abuse
@@ -854,7 +890,7 @@ export const aiProxy = onRequest({ region: 'europe-west2', cors: true, maxInstan
       }
       let balance: number | null = null;
       try { await ensureFreeGrant(user.uid, plan); balance = await walletBalance(user.uid); }
-      catch (e) { void audit('ACU_ENFORCE_ERROR', user.uid, { err: (e as Error).message }); balance = null; } // fail-open
+      catch (e) { void audit('ACU_ENFORCE_ERROR', user.uid, { err: (e as Error).message }); void alertOwner('acu_enforce_error', 'ACU enforcement failed open (free AI served)', { uid: user.uid, err: (e as Error).message }); balance = null; } // fail-open
       if (balance !== null && balance < cost) {
         res.status(402).json({ ok: false, reason: 'insufficient_acus', balance, required: cost }); return;
       }
@@ -864,7 +900,7 @@ export const aiProxy = onRequest({ region: 'europe-west2', cors: true, maxInstan
       try {
         const { text, model } = await aiCall(provider, key, body);
         await db.collection('aiUsageLogs').add({
-          ownerId: user.uid, provider, model, ms: Date.now() - t0, ok: true,
+          ownerId: user.uid, rid, provider, model, ms: Date.now() - t0, ok: true,
           failover: chain[0].provider !== provider,
           inChars: String(body.system ?? '').length + String(body.user ?? '').length,
           outChars: text.length, createdAt: FieldValue.serverTimestamp(),
@@ -879,7 +915,7 @@ export const aiProxy = onRequest({ region: 'europe-west2', cors: true, maxInstan
             });
           } catch (e) { void audit('ACU_DEBIT_ERROR', user.uid, { err: (e as Error).message }); }
         }
-        res.json({ ok: true, text, provider });
+        res.json({ ok: true, text, provider, rid });
         return;
       } catch (e) {
         lastErr = e as Error; // provider down/limited — fail over to the next key
@@ -890,7 +926,8 @@ export const aiProxy = onRequest({ region: 'europe-west2', cors: true, maxInstan
       inChars: String(body.system ?? '').length + String(body.user ?? '').length,
       outChars: 0, createdAt: FieldValue.serverTimestamp(),
     });
-    throw httpError(502, `all providers failed: ${lastErr?.message ?? 'unknown'}`);
+    void alertOwner('ai_all_providers_failed', 'All AI providers failed', { err: lastErr?.message ?? 'unknown' });
+    throw httpError(502, 'the AI service is temporarily unavailable — please try again shortly');
   } catch (e) {
     const err = e as Error & { status?: number };
     res.status(err.status ?? 500).json({ ok: false, error: err.message });
@@ -934,7 +971,7 @@ export const tts = onRequest({ region: 'europe-west2', cors: true, maxInstances:
     const allowed = ['nova', 'shimmer', 'alloy', 'echo', 'fable', 'onyx'];
     const voice = allowed.includes(String(req.body?.voice)) ? String(req.body?.voice) : 'nova';
     const speed = Math.max(0.5, Math.min(1.5, Number(req.body?.speed) || 1)); // slower for single-word dictation
-    const r = await fetch('https://api.openai.com/v1/audio/speech', {
+    const r = await fetchT('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
       body: JSON.stringify({ model: 'tts-1', voice, input: text, response_format: 'mp3', speed }),
@@ -1081,17 +1118,39 @@ export const register = onRequest({ region: 'europe-west2', cors: true }, async 
     const name = String(req.body?.name ?? '').trim().slice(0, 120);
     const role = String(req.body?.role ?? '');
     if (!PUBLIC_ROLES.includes(role)) throw httpError(400, 'invalid role');
+    // Age-appropriate application (UK Children's Code / GDPR-K): record the age
+    // band + parental-consent attestation server-side, and require consent for an
+    // under-13. Age is bucketed (not the raw DOB) to minimise stored data.
+    const dob = String(req.body?.dob ?? '').slice(0, 10);
+    const parentalConsent = req.body?.parentalConsent === true;
+    let ageBand: string | null = null, ageYears: number | null = null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
+      const b = new Date(dob), t = new Date();
+      if (!isNaN(b.getTime())) {
+        let a = t.getUTCFullYear() - b.getUTCFullYear();
+        const mm = t.getUTCMonth() - b.getUTCMonth();
+        if (mm < 0 || (mm === 0 && t.getUTCDate() < b.getUTCDate())) a--;
+        ageYears = a;
+        ageBand = a < 13 ? 'under13' : a < 16 ? '13-15' : a < 18 ? '16-17' : 'adult';
+      }
+    }
+    const existingUser = (await db.doc(`users/${user.uid}`).get());
+    const alreadyAged = !!existingUser.data()?.ageBand;
+    if (!existingUser.exists && !alreadyAged && ageYears !== null && ageYears < 13 && !parentalConsent) {
+      throw httpError(403, 'An under-13 account must be created with a parent or guardian’s consent.');
+    }
     const ref = db.doc(`users/${user.uid}`);
-    const existing = await ref.get();
+    const existing = existingUser;
     await ref.set({
       email: user.email ?? null,
       name: name || existing.data()?.name || null,
       roles: FieldValue.arrayUnion(role),
       plan: existing.data()?.plan ?? 'child_free', // never downgraded by re-registration
+      ...(ageBand && !alreadyAged ? { ageBand, parentalConsent, consentAt: FieldValue.serverTimestamp() } : {}),
       createdAt: existing.data()?.createdAt ?? FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
-    await audit(existing.exists ? 'USER_ROLE_ADDED' : 'USER_REGISTERED', user.uid, { role });
+    await audit(existing.exists ? 'USER_ROLE_ADDED' : 'USER_REGISTERED', user.uid, { role, ageBand });
     // referral loop: on a NEW registration carrying a valid invite code, RECORD
     // the pending referral link only. ACUs are NOT credited at signup — doing so
     // let one person farm real, spendable ACUs by registering throwaway accounts

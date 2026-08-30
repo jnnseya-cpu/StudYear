@@ -37,6 +37,25 @@ const nextConfig = {
             {
               source: '/(.*)',
               headers: [
+                // Content-Security-Policy: strict on the high-value directives
+                // (no external script injection, no <base>/<object> abuse, not
+                // framable), permissive on connect/img/media so the many first-
+                // and third-party API/asset hosts aren't broken. Inline scripts
+                // exist throughout the static bundle, hence 'unsafe-inline'.
+                { key: 'Content-Security-Policy', value: [
+                  "default-src 'self'",
+                  "base-uri 'none'",
+                  "object-src 'none'",
+                  "frame-ancestors 'none'",
+                  "form-action 'self' https://buy.stripe.com https://checkout.stripe.com",
+                  "script-src 'self' 'unsafe-inline' https://connect.facebook.net https://www.googletagmanager.com https://www.google-analytics.com",
+                  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+                  "font-src 'self' data: https://fonts.gstatic.com",
+                  "img-src 'self' data: blob: https:",
+                  "media-src 'self' data: blob: https:",
+                  "connect-src 'self' https:",
+                  "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://meet.jit.si https://www.googletagmanager.com",
+                ].join('; ') },
                 { key: 'X-Frame-Options', value: 'DENY' },
                 { key: 'X-Content-Type-Options', value: 'nosniff' },
                 { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },

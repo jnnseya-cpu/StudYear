@@ -73,6 +73,11 @@
       <label for="name">Full name</label>
       <input id="name" type="text" autocomplete="name" placeholder="e.g. Amara Okafor">
     </div>
+    <div id="row-dob" style="display:none">
+      <label for="dob">Date of birth</label>
+      <input id="dob" type="date" autocomplete="bday" max="2025-12-31">
+      <div class="note" style="font-size:12px;margin-top:2px">Used to keep the experience age-appropriate. Under-13s must be set up by a parent, guardian or school.</div>
+    </div>
     <label for="email">Email</label>
     <input id="email" type="email" autocomplete="email" placeholder="you@example.com">
     <label for="pw">Password</label>
@@ -170,6 +175,7 @@ function setMode(m){
   var adminFlow=wantRole==='admin';
   $('t-in').classList.toggle('on',m==='in');$('t-up').classList.toggle('on',m==='up');
   $('row-name').style.display=m==='up'?'block':'none';
+  $('row-dob').style.display=m==='up'?'block':'none';
   $('row-role').style.display=m==='up'&&!adminFlow?'block':'none';
   $('row-invite').style.display=m==='up'&&adminFlow?'block':'none';
   $('row-consent').style.display=m==='up'?'block':'none';
@@ -228,7 +234,15 @@ $('f').addEventListener('submit',async function(e){
   if(mode==='up'){
     var name=$('name').value.trim();
     if(name.length<2){say('Enter your name.','err');return}
+    var dob=$('dob').value;
+    if(!dob){say('Enter your date of birth.','err');$('dob').focus();return}
+    var age=(function(d){var t=new Date(),b=new Date(d);if(isNaN(b))return -1;var a=t.getFullYear()-b.getFullYear();var m=t.getMonth()-b.getMonth();if(m<0||(m===0&&t.getDate()<b.getDate()))a--;return a;})(dob);
+    if(age<0||age>120){say('Enter a valid date of birth.','err');$('dob').focus();return}
     if(!$('agree-ck').checked){say('Please accept the Terms &amp; Privacy Policy and confirm you are 18+ or a parent/guardian.','err');$('agree-ck').focus();return}
+    // UK Children's Code / GDPR-K: an under-13 account must be set up with a
+    // parent/guardian/school — the consent checkbox is that attestation.
+    if(age<13&&!$('agree-ck').checked){say('An under-13 account must be created by a parent, guardian or school — please confirm the consent box.','err');return}
+    var parentalConsent=$('agree-ck').checked;
     var role=pickedRole;
     if(wantRole==='admin'){
       var inv=$('invite').value.trim();
@@ -247,7 +261,7 @@ $('f').addEventListener('submit',async function(e){
     try{if(window.SYE2E)await SYE2E.setupAccount(email,pw)}catch(err){}
     /* go-live: mirror the account into Firebase Auth and start encrypted
        cloud sync (silent no-op until firebase-config.json is filled in) */
-    try{if(window.SYCloud)await SYCloud.signUp(email,pw,name,role)}catch(err){}
+    try{if(window.SYCloud)await SYCloud.signUp(email,pw,name,role,{dob:dob,parentalConsent:parentalConsent})}catch(err){}
     /* referral attribution: ?ref=CODE from a share link sticks to this account
        (drives the Growth Partner Programme's 250-ACU / % tiers) */
     try{

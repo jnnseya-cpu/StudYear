@@ -10,6 +10,7 @@ p.on('pageerror',e=>results.push('JSERR — '+e.message));
 await p.goto(B+'/auth/?role=student',{waitUntil:'networkidle'});
 await p.click('#t-up');
 await p.fill('#name','Enc Rypted');
+await p.fill('#dob','2000-01-01');
 await p.fill('#email','enc@e2e.test');
 await p.fill('#pw','S3cretPass!x');
 await p.check('#human-ck');

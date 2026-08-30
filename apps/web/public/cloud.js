@@ -237,7 +237,7 @@
   /* --------------------------------------------------- auth -------------- */
   /** Mirror a local signup into Firebase Auth + the users collection.
       Same email, second role → the existing cloud account gains the role. */
-  async function signUp(email, pw, name, role) {
+  async function signUp(email, pw, name, role, extra) {
     await whenReady(); if (!CFG) return false;
     var t;
     try { t = await race(idp('signUp', { email: email, password: pw, returnSecureToken: true })); }
@@ -248,7 +248,7 @@
     }
     saveTok(email, t);
     var _ref = ''; try { _ref = localStorage.getItem('sy-ref') || ''; } catch (e) {}
-    try { await race(api('/register', 'POST', { name: name, role: role, ref: _ref, human: (window.SYSentinel && SYSentinel.token) ? SYSentinel.token() : null }, email)); } catch (e) {}
+    try { await race(api('/register', 'POST', { name: name, role: role, ref: _ref, dob: (extra && extra.dob) || null, parentalConsent: !!(extra && extra.parentalConsent), human: (window.SYSentinel && SYSentinel.token) ? SYSentinel.token() : null }, email)); } catch (e) {}
     /* welcome + verify email via Firebase's own delivery (no SMTP needed) */
     try { if (t && t.idToken) await race(idp('sendOobCode', { requestType: 'VERIFY_EMAIL', idToken: t.idToken })); } catch (e) {}
     schedulePush(email);
