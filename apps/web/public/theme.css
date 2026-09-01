@@ -3,9 +3,10 @@
    "real product" look: a premium serif display face, restrained single-accent
    depth (no rainbow), realistic layered shadows and a fine grain so surfaces
    read as material, not flat template. Pure CSS on shared classes — nothing
-   breaks if a class is absent. */
-
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;450;500;600;700&display=swap');
+   breaks if a class is absent. Fonts (Fraunces + Inter) are injected
+   NON-BLOCKING by guard.js/pwa.js — not @import'd here — so a slow/firewalled
+   fonts host never delays first paint; the stacks below fall back to
+   Georgia/system until they load. */
 
 :root{
   --sy-serif:'Fraunces','Hoefler Text',Georgia,'Times New Roman',serif;

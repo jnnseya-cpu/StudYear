@@ -29,6 +29,17 @@ const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'
 const problems=[];let visited=0;
 for(const [role,urls] of Object.entries(byRole)){
   const ctx=await browser.newContext({serviceWorkers:'block'});
+  /* external hosts (webfonts, GTM/Pixel analytics, the live Firebase backend)
+     are unreachable from the sandbox and the proxy can HANG rather than fail
+     fast — which would hold networkidle open for the full timeout on every
+     page. Abort them so navigation settles on same-origin idle. Their failure
+     is already out of scope below (only localhost:8137 requests count). */
+  await ctx.route('**/*',route=>{
+    try{const h=new URL(route.request().url()).host;
+      if(h==='localhost:8137'||h==='localhost')return route.continue();
+      return route.abort();
+    }catch(e){return route.continue();}
+  });
   const p=await ctx.newPage();
   if(role!=='public'){
     await p.addInitScript(r=>{try{
