@@ -1,80 +1,94 @@
-/* StudYear public-page colour lift — additive enhancement layer for the
-   marketing / legal / directory pages (the signed-in consoles get theme.css
-   from guard.js instead). Linked at the END of <head> so it wins the cascade
-   over each page's inline <style>. Pure CSS on shared classes: nothing breaks
-   if a class is absent on a page. */
+/* StudYear public-page premium finish — the shared look for marketing / legal /
+   directory pages (consoles get theme.css from guard.js). Linked at the END of
+   <head> so it wins over each page's inline <style>. Additive on shared classes:
+   nothing breaks if a class is absent. Goal: editorial, "real product" — a
+   premium serif display, one restrained accent, realistic depth and a fine
+   grain, instead of rainbow accents and multi-hue gradient soup. */
 
-/* layered multi-hue backdrop — replaces the flat navy on every template
-   family (pages with a fixed .stage backdrop and pages that paint body) */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;450;500;600;700&display=swap');
+
+:root{
+  --sy-serif:'Fraunces','Hoefler Text',Georgia,'Times New Roman',serif;
+  --sy-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --sy-gold:#E7C67A; --sy-blue:#5FA8E0; --sy-line:rgba(150,170,214,.15);
+}
+
+/* quiet, deep ground — one cool glow + a low warm glow, not four hues */
 body{
   background:
-    radial-gradient(1150px 700px at 82% -12%, rgba(99,102,241,.30), transparent 60%),
-    radial-gradient(950px 650px at -12% 22%, rgba(20,184,166,.20), transparent 55%),
-    radial-gradient(1000px 780px at 55% 112%, rgba(168,85,247,.22), transparent 62%),
-    radial-gradient(700px 500px at 30% -8%, rgba(242,206,123,.12), transparent 55%),
-    linear-gradient(180deg,#0A1330 0%,#081026 48%,#070D20 100%) !important;
+    radial-gradient(1200px 760px at 82% -16%, rgba(69,120,196,.16), transparent 62%),
+    radial-gradient(1000px 720px at -8% 108%, rgba(120,96,180,.11), transparent 60%),
+    linear-gradient(180deg,#0A1026 0%,#080D1F 52%,#070B1A 100%) !important;
+  font-family:var(--sy-sans);
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
 }
 .stage{
   background:
-    radial-gradient(1150px 700px at 82% -12%, rgba(99,102,241,.32), transparent 60%),
-    radial-gradient(950px 650px at -12% 22%, rgba(20,184,166,.22), transparent 55%),
-    radial-gradient(1000px 780px at 55% 112%, rgba(168,85,247,.22), transparent 62%),
-    radial-gradient(700px 500px at 30% -8%, rgba(242,206,123,.12), transparent 55%),
-    linear-gradient(180deg,#0A1330 0%,#081026 48%,#070D20 100%) !important;
+    radial-gradient(1200px 760px at 82% -16%, rgba(69,120,196,.16), transparent 62%),
+    radial-gradient(1000px 720px at -8% 108%, rgba(120,96,180,.11), transparent 60%),
+    linear-gradient(180deg,#0A1026 0%,#080D1F 52%,#070B1A 100%) !important;
 }
+/* fine grain so the dark reads as a real surface, not flat fill */
+body::after{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.03;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.wrap,header,nav,main,footer,section,.box{position:relative;z-index:1}
 
-/* rotating accent hairlines on every card-like surface */
+/* premium display type on headings + existing serif hooks */
+h1,h2,h3,.serif,.hl,.display{ font-family:var(--sy-serif) !important; font-weight:500; letter-spacing:-.012em; }
+h1{ letter-spacing:-.02em; }
+
+/* card surfaces: real material — soft gradient face, hairline border, ONE
+   restrained centred gold accent (no rainbow), layered shadow + inner top light */
 .card,.step,.tool,.role,.loop-card,.sys,.aud,.price,.pick,.tele,.tut,.box{
   position:relative;
-  border-color:rgba(126,148,198,.30) !important;
+  border:1px solid var(--sy-line) !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 24px 48px -30px rgba(0,0,0,.85) !important;
 }
 .card::before,.step::before,.tool::before,.role::before,.loop-card::before,
 .sys::before,.aud::before,.price::before,.pick::before,.tele::before,
 .tut::before,.box::before{
-  content:"";position:absolute;left:0;right:0;top:0;height:2px;
-  border-radius:inherit;border-bottom-left-radius:0;border-bottom-right-radius:0;
-  background:linear-gradient(90deg,var(--sy-acc1,#4FA6E0),var(--sy-acc2,#8B5CF6));
-  opacity:.9;pointer-events:none;
+  content:"";position:absolute;left:16px;right:16px;top:0;height:1.5px;border-radius:2px;
+  background:linear-gradient(90deg,transparent,var(--sy-gold),transparent) !important;
+  opacity:.5;pointer-events:none;
 }
-.card:nth-of-type(6n+1),.step:nth-of-type(6n+1),.tool:nth-of-type(6n+1),.role:nth-of-type(6n+1),.loop-card:nth-of-type(6n+1),.sys:nth-of-type(6n+1),.aud:nth-of-type(6n+1),.price:nth-of-type(6n+1),.pick:nth-of-type(6n+1),.tele:nth-of-type(6n+1),.tut:nth-of-type(6n+1),.box:nth-of-type(6n+1){--sy-acc1:#4FA6E0;--sy-acc2:#8B5CF6}
-.card:nth-of-type(6n+2),.step:nth-of-type(6n+2),.tool:nth-of-type(6n+2),.role:nth-of-type(6n+2),.loop-card:nth-of-type(6n+2),.sys:nth-of-type(6n+2),.aud:nth-of-type(6n+2),.price:nth-of-type(6n+2),.pick:nth-of-type(6n+2),.tele:nth-of-type(6n+2),.tut:nth-of-type(6n+2),.box:nth-of-type(6n+2){--sy-acc1:#F2CE7B;--sy-acc2:#F97362}
-.card:nth-of-type(6n+3),.step:nth-of-type(6n+3),.tool:nth-of-type(6n+3),.role:nth-of-type(6n+3),.loop-card:nth-of-type(6n+3),.sys:nth-of-type(6n+3),.aud:nth-of-type(6n+3),.price:nth-of-type(6n+3),.pick:nth-of-type(6n+3),.tele:nth-of-type(6n+3),.tut:nth-of-type(6n+3),.box:nth-of-type(6n+3){--sy-acc1:#34D399;--sy-acc2:#22D3EE}
-.card:nth-of-type(6n+4),.step:nth-of-type(6n+4),.tool:nth-of-type(6n+4),.role:nth-of-type(6n+4),.loop-card:nth-of-type(6n+4),.sys:nth-of-type(6n+4),.aud:nth-of-type(6n+4),.price:nth-of-type(6n+4),.pick:nth-of-type(6n+4),.tele:nth-of-type(6n+4),.tut:nth-of-type(6n+4),.box:nth-of-type(6n+4){--sy-acc1:#F472B6;--sy-acc2:#A78BFA}
-.card:nth-of-type(6n+5),.step:nth-of-type(6n+5),.tool:nth-of-type(6n+5),.role:nth-of-type(6n+5),.loop-card:nth-of-type(6n+5),.sys:nth-of-type(6n+5),.aud:nth-of-type(6n+5),.price:nth-of-type(6n+5),.pick:nth-of-type(6n+5),.tele:nth-of-type(6n+5),.tut:nth-of-type(6n+5),.box:nth-of-type(6n+5){--sy-acc1:#F59E0B;--sy-acc2:#F2CE7B}
-.card:nth-of-type(6n),.step:nth-of-type(6n),.tool:nth-of-type(6n),.role:nth-of-type(6n),.loop-card:nth-of-type(6n),.sys:nth-of-type(6n),.aud:nth-of-type(6n),.price:nth-of-type(6n),.pick:nth-of-type(6n),.tele:nth-of-type(6n),.tut:nth-of-type(6n),.box:nth-of-type(6n){--sy-acc1:#22D3EE;--sy-acc2:#34D399}
 .card:hover,.step:hover,.tool:hover,.role:hover,.loop-card:hover,.sys:hover,
 .aud:hover,.price:hover,.pick:hover,.tut:hover,.box:hover{
-  border-color:rgba(150,175,230,.45) !important;
+  border-color:rgba(170,192,235,.32) !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 30px 60px -28px rgba(0,0,0,.9) !important;
 }
-/* the highlighted pricing tier keeps its gold frame */
-.price.hot{border-color:var(--gold-500,#3D8FD1) !important}
+/* the highlighted pricing tier keeps a warm gold frame */
+.price.hot{border-color:rgba(231,198,122,.5) !important}
 
-/* big numbers glow gold→sky */
+/* big numbers: quiet warm→cool, set in the serif */
 .tele .num,.tile .v,.agent-band .big-num,.role .g{
-  background:linear-gradient(92deg,#F6D992 10%,#8FC2EC 90%);
+  font-family:var(--sy-serif);
+  background:linear-gradient(92deg,#F0D79B 8%,#9CC8EE 92%);
   -webkit-background-clip:text;background-clip:text;color:transparent !important;
 }
 
-/* chips & tags pick up rotating soft tints instead of flat blue */
-.chip:nth-child(5n+1),.tag:nth-child(5n+1){border-color:rgba(79,166,224,.4);color:#A9CFF2;background:rgba(79,166,224,.09)}
-.chip:nth-child(5n+2),.tag:nth-child(5n+2){border-color:rgba(52,211,153,.4);color:#8FE3C0;background:rgba(52,211,153,.09)}
-.chip:nth-child(5n+3),.tag:nth-child(5n+3){border-color:rgba(242,206,123,.4);color:#F2CE7B;background:rgba(242,206,123,.09)}
-.chip:nth-child(5n+4),.tag:nth-child(5n+4){border-color:rgba(167,139,250,.4);color:#C9BBF7;background:rgba(167,139,250,.09)}
-.chip:nth-child(5n),.tag:nth-child(5n){border-color:rgba(244,114,182,.4);color:#F8B8D8;background:rgba(244,114,182,.09)}
+/* chips & tags: one restrained tint (no rotating rainbow) */
+.chip,.tag{border-color:rgba(150,170,214,.28) !important;color:#B9CBEA !important;background:rgba(95,168,224,.07) !important}
 
-/* section kickers get a warm gradient underline feel (page kickers only —
-   never .tile .k data labels) */
-.sec-kicker,header .k,header.page .k,.wrap>.k{color:#F2CE7B !important}
-.sec-kicker::after{content:"";display:block;width:56px;height:2px;margin-top:8px;
-  background:linear-gradient(90deg,#F2CE7B,#8B5CF6,transparent)}
+/* section kickers: restrained gold with a short underline */
+.sec-kicker,header .k,header.page .k,.wrap>.k{color:var(--sy-gold) !important;letter-spacing:.22em}
+.sec-kicker::after{content:"";display:block;width:52px;height:1.5px;margin-top:8px;
+  background:linear-gradient(90deg,var(--sy-gold),transparent)}
 
-/* dividers become colourful */
-.divider{background:linear-gradient(90deg,transparent,rgba(79,166,224,.35),rgba(139,92,246,.4),rgba(52,211,153,.35),transparent) !important}
+/* primary buttons: tactile fill with inner top light + real shadow */
+.btn:not(.ghost):not(.sm),.cta,button.primary,.btn-primary,.hero-cta{
+  background:linear-gradient(180deg,#5AA6E6,#2E63BC) !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.28) inset, 0 10px 22px -10px rgba(46,99,188,.7) !important;
+  border:0 !important;
+}
 
-/* livelier focus states, themed scrollbar */
+/* dividers: a single quiet hairline */
+.divider{background:linear-gradient(90deg,transparent,rgba(150,170,214,.35),transparent) !important}
+
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
-  outline:2px solid #8B5CF6;outline-offset:2px;
+  outline:2px solid var(--sy-blue);outline-offset:2px;
 }
 ::-webkit-scrollbar{width:11px;height:11px}
-::-webkit-scrollbar-track{background:rgba(10,18,40,.6)}
-::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#3D6BB0,#6D5CC9);border-radius:8px;border:2px solid rgba(10,18,40,.6)}
+::-webkit-scrollbar-track{background:rgba(9,14,32,.6)}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#3A5C93,#2E63BC);border-radius:8px;border:2px solid rgba(9,14,32,.6)}

@@ -1,48 +1,83 @@
-/* StudYear premium colour lift — additive enhancement layer, injected by
-   guard.js on every signed-in console (and included on auth/demo). Lifts the
-   near-black base with layered colour glows, gives cards rotating accent
-   hairlines and KPI numbers a gold→sky gradient. Pure CSS on shared classes:
-   no page markup changes, nothing breaks if a class is absent. */
+/* StudYear — premium finish layer (additive, injected on every console by
+   guard.js and on public pages by pwa.js). Elevates the base into an editorial,
+   "real product" look: a premium serif display face, restrained single-accent
+   depth (no rainbow), realistic layered shadows and a fine grain so surfaces
+   read as material, not flat template. Pure CSS on shared classes — nothing
+   breaks if a class is absent. */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;450;500;600;700&display=swap');
+
+:root{
+  --sy-serif:'Fraunces','Hoefler Text',Georgia,'Times New Roman',serif;
+  --sy-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --sy-gold:#E7C67A; --sy-blue:#5FA8E0; --sy-line:rgba(150,170,214,.16);
+}
+
+/* refined body ground: deep, quiet, with one restrained cool glow + a warm low
+   glow, plus a barely-there grain so the dark reads as a real surface */
 body{
   background:
-    radial-gradient(1100px 700px at 88% -12%, rgba(99,102,241,.20), transparent 60%),
-    radial-gradient(950px 650px at -12% 18%, rgba(20,184,166,.14), transparent 55%),
-    radial-gradient(1000px 800px at 55% 112%, rgba(168,85,247,.13), transparent 62%),
-    radial-gradient(700px 500px at 30% -8%, rgba(242,206,123,.07), transparent 55%),
-    linear-gradient(180deg,#0A1330 0%,#081026 45%,#070D20 100%) !important;
+    radial-gradient(1200px 760px at 82% -16%, rgba(69,120,196,.16), transparent 62%),
+    radial-gradient(1000px 720px at -8% 108%, rgba(120,96,180,.12), transparent 60%),
+    linear-gradient(180deg,#0A1026 0%,#080D1F 52%,#070B1A 100%) !important;
+  font-family:var(--sy-sans);
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
 }
-.card,.res,.snap,.pcard{
+body::after{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.035;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* premium display type on headings + the existing serif hooks */
+h1,h2,h3,.serif,.hl,.display{ font-family:var(--sy-serif) !important; font-weight:500; letter-spacing:-.012em; }
+h1{ letter-spacing:-.02em; }
+
+/* cards: real material — soft gradient face, hairline, a single restrained gold
+   accent, and a layered shadow with an inner top light. No rainbow rotation. */
+.card,.res,.snap,.pcard,.mod{
   position:relative;
-  background:linear-gradient(180deg,rgba(32,44,80,.46),rgba(11,20,40,.82)) !important;
-  border-color:rgba(126,148,198,.30) !important;
+  background:linear-gradient(180deg,rgba(28,40,74,.52),rgba(10,17,35,.86)) !important;
+  border:1px solid var(--sy-line) !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 24px 48px -30px rgba(0,0,0,.85) !important;
+  border-radius:16px;
 }
 .card::before,.res::before,.snap::before,.pcard::before{
-  content:"";position:absolute;left:0;right:0;top:0;height:2px;
-  border-radius:inherit;border-bottom-left-radius:0;border-bottom-right-radius:0;
-  background:linear-gradient(90deg,var(--sy-acc1,#4FA6E0),var(--sy-acc2,#8B5CF6));
-  opacity:.9;pointer-events:none;
+  content:"";position:absolute;left:14px;right:14px;top:0;height:1.5px;border-radius:2px;
+  background:linear-gradient(90deg,transparent,var(--sy-gold),transparent);
+  opacity:.55;pointer-events:none;
 }
-.card:nth-of-type(6n+1),.res:nth-of-type(6n+1),.snap:nth-of-type(6n+1),.pcard:nth-of-type(6n+1){--sy-acc1:#4FA6E0;--sy-acc2:#8B5CF6}
-.card:nth-of-type(6n+2),.res:nth-of-type(6n+2),.snap:nth-of-type(6n+2),.pcard:nth-of-type(6n+2){--sy-acc1:#F2CE7B;--sy-acc2:#F97362}
-.card:nth-of-type(6n+3),.res:nth-of-type(6n+3),.snap:nth-of-type(6n+3),.pcard:nth-of-type(6n+3){--sy-acc1:#34D399;--sy-acc2:#22D3EE}
-.card:nth-of-type(6n+4),.res:nth-of-type(6n+4),.snap:nth-of-type(6n+4),.pcard:nth-of-type(6n+4){--sy-acc1:#F472B6;--sy-acc2:#A78BFA}
-.card:nth-of-type(6n+5),.res:nth-of-type(6n+5),.snap:nth-of-type(6n+5),.pcard:nth-of-type(6n+5){--sy-acc1:#F59E0B;--sy-acc2:#F2CE7B}
-.card:nth-of-type(6n),.res:nth-of-type(6n),.snap:nth-of-type(6n),.pcard:nth-of-type(6n)  {--sy-acc1:#22D3EE;--sy-acc2:#34D399}
-.card:hover,.res:hover,.snap:hover,.pcard:hover{border-color:rgba(150,175,230,.45) !important}
-/* KPI / stat numbers glow gold→sky */
+.card:hover,.res:hover,.snap:hover,.pcard:hover{
+  border-color:rgba(170,192,235,.34) !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 30px 60px -28px rgba(0,0,0,.9) !important;
+  transform:translateY(-1px); transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+/* KPI / stat numbers: quiet warm→cool gradient (kept, refined) */
 .tile .v,.tele .num,.kpi .v,.stat .v{
-  background:linear-gradient(92deg,#F6D992 10%,#8FC2EC 90%);
+  font-family:var(--sy-serif);
+  background:linear-gradient(92deg,#F0D79B 8%,#9CC8EE 92%);
   -webkit-background-clip:text;background-clip:text;color:transparent !important;
 }
-/* pills & badges pick up a soft tint instead of flat grey */
-.badge,.pill{background:rgba(79,166,224,.10)}
-.badge.prem{background:rgba(242,206,123,.12)}
-/* links & focus states are livelier */
+
+/* primary buttons: a deeper, more tactile fill with an inner top light + a real
+   drop shadow (reads as a physical control, not a flat swatch) */
+.btn:not(.ghost):not(.sm),.cta,button.primary,.btn-primary{
+  background:linear-gradient(180deg,#5AA6E6,#2E63BC) !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.28) inset, 0 10px 22px -10px rgba(46,99,188,.75) !important;
+  border:0 !important; letter-spacing:.005em;
+}
+.btn:not(.ghost):not(.sm):hover,.cta:hover{ filter:brightness(1.05); }
+
+/* pills, badges, focus, scrollbar — restrained, on-palette */
+.badge,.pill{background:rgba(95,168,224,.10)}
+.badge.prem{background:rgba(231,198,122,.14);color:#F0D79B}
 a{transition:color .15s}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
-  outline:2px solid #8B5CF6;outline-offset:2px;
+  outline:2px solid var(--sy-blue);outline-offset:2px;
 }
-/* scrollbar joins the theme */
 ::-webkit-scrollbar{width:11px;height:11px}
-::-webkit-scrollbar-track{background:rgba(10,18,40,.6)}
-::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#3D6BB0,#6D5CC9);border-radius:8px;border:2px solid rgba(10,18,40,.6)}
+::-webkit-scrollbar-track{background:rgba(9,14,32,.6)}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#3A5C93,#2E63BC);border-radius:8px;border:2px solid rgba(9,14,32,.6)}
+
+/* keep real content above the grain overlay */
+.wrap,header,nav,main,footer,.box,section{position:relative;z-index:1}
