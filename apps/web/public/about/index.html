@@ -17,6 +17,12 @@
 <meta name="twitter:title" content="About StudYear — the AI operating system for UK education">
 <meta name="twitter:description" content="Our mission: give every student the strategist, tutor and early-intervention support that used to belong only to those who could afford it.">
 <meta name="twitter:image" content="https://www.studyear.com/og-cover.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"EducationalOrganization","@id":"https://www.studyear.com/#org","name":"StudYear","url":"https://www.studyear.com/","logo":"https://www.studyear.com/icon-512.png","description":"The AI operating system for UK education.","email":"contact@studyear.com","areaServed":"GB","contactPoint":{"@type":"ContactPoint","contactType":"customer support","email":"contact@studyear.com","areaServed":"GB","availableLanguage":["en"]}},
+{"@type":"AboutPage","@id":"https://www.studyear.com/about/","url":"https://www.studyear.com/about/","name":"About StudYear","isPartOf":{"@id":"https://www.studyear.com/#org"},"inLanguage":"en-GB"}
+]}
+</script>
 <style>
   :root{--navy-950:#060B18;--gold-300:#A9CFF2;--gold-400:#5FA8E0;--gold-500:#3D8FD1;--gold-600:#2B6CB0;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#8795AE;--good:#5CBB7B;--line:rgba(77,157,224,.16);--serif:"Fraunces",Georgia,serif;--sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   *{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
@@ -106,7 +112,8 @@
 <footer><div class="wrap foot">
   <a href="../">Home</a><a href="../about/">About</a><a href="../contact/">Contact</a><a href="../blog/">Blog</a>
   <a href="../terms/">Terms</a><a href="../privacy/">Privacy</a><a href="../disclaimer/">Disclaimer</a><a href="../cookies/">Cookies</a>
-  <span style="margin-left:auto">© StudYear — Serving the whole UK</span>
+  <span style="margin-left:auto">© <span id="syYear">2026</span> StudYear · <a href="mailto:contact@studyear.com" style="color:inherit">contact@studyear.com</a></span>
 </div></footer>
+<script>(function(){var y=document.getElementById('syYear');if(y)y.textContent=new Date().getFullYear();})();</script>
 <script src="../pwa.js"></script>
 </body></html>

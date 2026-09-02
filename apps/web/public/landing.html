@@ -852,7 +852,7 @@
       </div>
     </div>
     <div class="foot" style="border-top:1px solid rgba(77,157,224,.08);padding-top:26px">
-      <span>© StudYear — The AI Academic Operating System</span>
+      <span>© <span id="syYear">2026</span> StudYear — The AI Academic Operating System</span>
       <span>Serving the whole UK · UK GDPR · <a href="mailto:contact@studyear.com" style="color:var(--gold-400);text-decoration:none">contact@studyear.com</a></span>
     </div>
   </div>
@@ -958,6 +958,9 @@
     d3.style.transform=`rotateX(${3-py*5}deg) rotateY(${px*6}deg)`;
   });
   ds.addEventListener('pointerleave',()=>{d3.style.transform='rotateX(3deg)'});
+
+  // keep the footer copyright year current without editing the file each year
+  (function(){var y=document.getElementById('syYear');if(y)y.textContent=new Date().getFullYear();})();
 
   // Proof section — social proof is built ONLY from real entries in proof.json
   // (outcomes, testimonials, logos, case studies). Nothing renders while those
