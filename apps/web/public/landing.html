@@ -111,6 +111,14 @@
   .tele .live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--good);
     box-shadow:0 0 8px var(--good);animation:pulse 2s infinite}
   @keyframes pulse{50%{opacity:.35}}
+  /* capability-fact tiles — shown until real adoption is meaningful (see JS),
+     so the hero never displays cold-start zeros. True regardless of user count. */
+  .tele .fv{font-family:var(--serif);font-size:23px;color:var(--ink);line-height:1.15}
+  .tele .fk{position:absolute;top:14px;right:16px;font-size:10px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--gold-300)}
+  .hero-trust{display:flex;flex-wrap:wrap;gap:9px 16px;margin-top:20px}
+  .hero-trust span{font-size:12px;color:var(--ink-3);display:inline-flex;align-items:center}
+  .hero-trust span::before{content:"✓";color:var(--gold-300);font-weight:700;margin-right:6px;font-size:11px}
 
   /* ---------- sections ---------- */
   section{position:relative;padding:110px 0}
@@ -310,25 +318,42 @@
   <div class="beam" style="width:640px;height:640px;top:-160px;right:-120px;background:rgba(77,157,224,.16)"></div>
   <div class="beam" style="width:520px;height:520px;bottom:-180px;left:-140px;background:rgba(22,37,74,.9);animation-delay:-8s"></div>
   <div class="beam" style="width:460px;height:460px;top:30%;left:55%;background:rgba(46,107,196,.22);animation-delay:-4s"></div>
-  <div class="beam" style="width:420px;height:420px;top:8%;left:22%;background:rgba(139,92,246,.16);animation-delay:-12s"></div>
-  <div class="beam" style="width:380px;height:380px;bottom:6%;right:24%;background:rgba(52,211,153,.13);animation-delay:-2s"></div>
+  <div class="beam" style="width:420px;height:420px;top:8%;left:22%;background:rgba(46,107,196,.14);animation-delay:-12s"></div>
+  <div class="beam" style="width:380px;height:380px;bottom:6%;right:24%;background:rgba(231,198,122,.08);animation-delay:-2s"></div>
   <img class="hero-mark" src="logo.svg" alt="" aria-hidden="true">
   <div class="wrap">
-    <div class="kicker">The World's First AI Education Command Operating System</div>
+    <div class="kicker">The AI operating system for UK education</div>
     <h1>One platform.<br>Every student, teacher, parent and school — <em>running on AI.</em></h1>
     <p class="lede">StudYear doesn't help students study. It <b>redesigns how education understands, supports and
       develops every child</b> — a personal examiner, tutor and strategist for every learner, a full AI teaching
       team for every teacher, and a live <b>AI School Brain</b> that turns a whole institution into a world-class
       one. <b>Every lesson. Every result. Every decision — powered by AI.</b></p>
     <div class="hero-cta">
-      <a class="btn btn-gold" href="free/">Free predicted grade &amp; revision plan →</a>
+      <a class="btn btn-gold" href="demo/">Try it yourself — no signup →</a>
+      <a class="btn btn-ghost" href="free/">Free predicted grade &amp; revision plan</a>
       <a class="btn btn-ghost" href="app/">Start free</a>
-      <a class="btn btn-ghost" href="demo/">Test our demo</a>
     </div>
     <p class="hero-note">One learner. One verified academic profile. One coordinated support system.
       <b>Zero child left invisible.</b></p>
+    <div class="hero-trust">
+      <span>UK GDPR &amp; DPA 2018</span>
+      <span>KCSIE-aligned safeguarding</span>
+      <span>AADC age-appropriate by design</span>
+      <span>End-to-end encrypted</span>
+      <span>AI never trains on your data</span>
+    </div>
 
-    <div class="telemetry rv">
+    <!-- Capability facts (true regardless of adoption) show by default so the
+         hero never displays cold-start zeros. The owner's LIVE counters below
+         are preserved and swapped in automatically once real adoption crosses
+         the threshold set in the counter script. -->
+    <div class="telemetry facts rv" id="teleFacts">
+      <div class="tele"><span class="fk">Coverage</span><div class="fv">Every UK exam board</div><div class="lbl">AQA · Edexcel · OCR · WJEC · CCEA · SQA · CIE</div></div>
+      <div class="tele"><span class="fk">Every stage</span><div class="fv">KS1 → University</div><div class="lbl">Reception to degree</div></div>
+      <div class="tele"><span class="fk">One record</span><div class="fv">8 roles, connected</div><div class="lbl">Student · parent · teacher · school · tutor · college · employer · authority</div></div>
+      <div class="tele"><span class="fk">Privacy</span><div class="fv">UK GDPR · KCSIE</div><div class="lbl">AADC by design · AI never trains on your data</div></div>
+    </div>
+    <div class="telemetry livestats rv" id="teleLive" hidden>
       <div class="tele"><span class="live">LIVE</span><div class="num" data-count="0" data-live="students">0</div><div class="lbl">Student accounts</div></div>
       <div class="tele" title="Schools, local authorities & private tutors"><span class="live">LIVE</span><div class="num" data-count="0" data-live="partners">0</div><div class="lbl">Partner organisations</div></div>
       <div class="tele"><span class="live">LIVE</span><div class="num" data-count="0" data-live="resources">0</div><div class="lbl">Resources shared</div></div>
@@ -731,11 +756,18 @@
   const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
   document.querySelectorAll('.rv').forEach(el=>io.observe(el));
 
+  // count-up animation (guarded so a tile never animates twice)
+  function animateCount(el){
+    if(el.dataset.animated)return;el.dataset.animated='1';
+    const t=+el.dataset.count||0,d=1400,s=performance.now();
+    (function f(n){const p=Math.min((n-s)/d,1);el.textContent=Math.round(t*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(s);
+  }
+
   // live platform counters — read the real numbers straight from the OS on
   // this device. Partner organisations = schools + local authorities +
-  // private tutors. Demo/test accounts never count. The data-count value in
-  // the markup is only the network-wide fallback for a browser that has no
-  // OS data yet (first visit).
+  // private tutors. Demo/test accounts never count. Until real adoption crosses
+  // the promote thresholds below, the hero shows capability facts instead of
+  // small/zero adoption numbers, then swaps in the LIVE counters automatically.
   (function(){
     function j(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}}
     const DEMO=/@(demo\.studyear|local\.test|t\.test|e2e\.test)$/i;
@@ -752,26 +784,37 @@
     }
     resources+=j('sy-blog',[]).length;                      // published articles are shared resources too
     const live={students,partners,resources,profiles};
-    const apply=(vals)=>document.querySelectorAll('[data-live]').forEach(el=>{
+    // Below these thresholds the hero keeps the capability facts visible rather
+    // than publishing small adoption numbers. Raise/lower as the platform grows.
+    const PROMOTE_STUDENTS=500, PROMOTE_PARTNERS=25;
+    let promoted=false;
+    function promote(v){
+      if(promoted)return;
+      if((v.students||0)<PROMOTE_STUDENTS && (v.partners||0)<PROMOTE_PARTNERS)return;
+      promoted=true;
+      const f=document.getElementById('teleFacts'),L=document.getElementById('teleLive');
+      if(f)f.hidden=true;
+      if(L){L.hidden=false;L.querySelectorAll('[data-count]').forEach(animateCount);}
+    }
+    const apply=(vals)=>document.querySelectorAll('#teleLive [data-live]').forEach(el=>{
       const v=vals[el.getAttribute('data-live')];
       if(typeof v==='number')el.dataset.count=v;
     });
-    apply(live); // this device's truth, immediately
+    apply(live);promote(live); // this device's truth, immediately
     // platform-wide truth from the backend (public, unauthenticated, cached)
     fetch('firebase-config.json').then(r=>r.json()).then(c=>{
       if(!c||!c.apiBase)return;
       return fetch(c.apiBase.replace(/\/$/,'')+'/publicStats').then(r=>r.json()).then(j=>{
-        if(j&&j.ok)apply({students:j.students,partners:j.partners,profiles:j.profiles,
-          resources:Math.max(resources,j.resources||0)});
+        if(j&&j.ok){const m={students:j.students,partners:j.partners,profiles:j.profiles,
+          resources:Math.max(resources,j.resources||0)};apply(m);promote(m);}
       });
     }).catch(()=>{});
   })();
 
-  // animated live counters
+  // animate any live counters that become visible (facts have no data-count;
+  // hidden live tiles animate via promote() the moment they are revealed)
   const cio=new IntersectionObserver(es=>es.forEach(e=>{
-    if(!e.isIntersecting)return;cio.unobserve(e.target);
-    const el=e.target,t=+el.dataset.count,d=1400,s=performance.now();
-    (function f(n){const p=Math.min((n-s)/d,1);el.textContent=Math.round(t*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(s);
+    if(!e.isIntersecting)return;cio.unobserve(e.target);animateCount(e.target);
   }),{threshold:.5});
   document.querySelectorAll('[data-count]').forEach(el=>cio.observe(el));
 
