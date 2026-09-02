@@ -19,8 +19,10 @@ async function launchDemo(p,role,mode){
 /* ---- 0. landing CTAs ---- */
 let {ctx,p}=await fresh();
 await p.goto(B+'/landing.html',{waitUntil:'domcontentloaded'});
-ok('Landing: "Test our demo" replaces "Talk to our team"',
-  await p.evaluate(()=>{const a=[...document.querySelectorAll('a')];return a.some(x=>/Test our demo/i.test(x.textContent)&&/demo\/$/.test(x.getAttribute('href')))&&!a.some(x=>/Talk to our team/i.test(x.textContent))}));
+ok('Landing: a try-the-demo CTA links to the demo (and no "Talk to our team")',
+  await p.evaluate(()=>{const a=[...document.querySelectorAll('a')];
+    return a.some(x=>/demo\/$/.test(x.getAttribute('href')||'')&&/try|demo/i.test(x.textContent))
+      && !a.some(x=>/Talk to our team/i.test(x.textContent))}));
 ok('Landing: "Book a school demo" links to the school demo',
   await p.evaluate(()=>[...document.querySelectorAll('a')].some(x=>/Book a school demo/i.test(x.textContent)&&/demo\/\?role=school/.test(x.getAttribute('href')))));
 
