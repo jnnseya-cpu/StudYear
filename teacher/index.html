@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — School Teacher Command Centre</title><link rel="manifest" href="../manifest.json"><link rel="icon" href="../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  .hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px}@media(max-width:640px){.mini{grid-template-columns:1fr}}
+  .mini .card{padding:14px 16px}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px;margin-top:12px}@media(max-width:1000px){.tiles{grid-template-columns:repeat(4,1fr)}}@media(max-width:560px){.tiles{grid-template-columns:repeat(2,1fr)}}
+  .qa{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+  .qa a{flex:1;min-width:170px;border:1px solid var(--line);border-radius:12px;padding:13px 14px;background:rgba(6,11,24,.32);text-decoration:none}.qa a b{color:var(--ink);font-size:13.5px}.qa a span{display:block;font-size:11.5px;color:var(--ink-3);margin-top:3px}
+</style></head><body>
+<script src="../guard.js" data-role="teacher" data-base="../"></script>
+<script src="../ai.js"></script>
+<script src="../homework.js"></script>
+<script src="../schoolsuite.js"></script>
+<script src="../reach.js"></script>
+<script src="../readiness.js"></script>
+<div class="shell"><main>
+  <div class="hd"><span class="live">● Live · synced &lt;1 min ago</span><span class="badge" id="school-badge">—</span></div>
+  <div class="k" style="margin-top:10px">Institutional staff · School Teacher Command Centre</div>
+  <h1 id="welcome">Your academic operations hub</h1>
+  <p class="lede" id="lede">Live cohort monitoring.</p>
+
+  <div id="getstarted"></div>
+
+  <div class="qa" style="margin-top:16px">
+    <a href="attendance/"><b>📋 Take the register</b><span>Mark present · late · absent for your class</span></a>
+    <a href="classroom/"><b>📹 Teach a live class</b><span>Start a live video lesson &amp; brief learners</span></a>
+    <a href="register/#sec-school"><b>🏫 Link your school</b><span>Connect your class roster &amp; leadership</span></a>
+  </div>
+
+  <div class="mini">
+    <div class="card stat"><div class="v" id="m-avg">0%</div><div class="k">Cohort average</div></div>
+    <div class="card stat"><div class="v" id="m-riskpct">0</div><div class="k">At risk</div></div>
+    <div class="card stat"><div class="v" id="m-hwdone">0%</div><div class="k">Homework done</div></div>
+  </div>
+  <div class="tiles">
+    <div class="card stat"><div class="v" id="t-students">0</div><div class="k">Students</div></div>
+    <div class="card stat"><div class="v" id="t-attention">0</div><div class="k">Need attention</div></div>
+    <div class="card stat"><div class="v" id="t-risk">0</div><div class="k">At risk</div></div>
+    <div class="card stat"><div class="v" id="t-hw">0%</div><div class="k">Homework %</div></div>
+    <div class="card stat"><div class="v" id="t-assess">0</div><div class="k">Assessments</div></div>
+    <div class="card stat"><div class="v" id="t-classes">1</div><div class="k">Classes today</div></div>
+    <div class="card stat"><div class="v" id="t-interv">0</div><div class="k">Interventions</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="card c12"><h3>📥 Homework</h3><div class="sub">Set work to your classes, track submissions and mark with AI — your students see it in their To-Do, parents see the status.</div><div id="hw-teach-mount" style="margin-top:10px"></div></div>
+    <div class="card c6"><h3>🎁 Behaviour points</h3><div class="sub">Reward effort and log concerns — students see their points &amp; badges, parents see the log.</div><div id="bh-teach-mount" style="margin-top:10px"></div></div>
+    <div class="card c6"><h3>📣 Announcements</h3><div class="sub">Post notices to your classes or the whole school; families acknowledge them.</div><div id="an-teach-mount" style="margin-top:10px"></div></div>
+    <div class="card c6"><h3>🗓 My teaching timetable</h3><div class="sub">Your weekly lessons, set by leadership in the School console.</div><div id="tt-teach-mount" style="margin-top:10px"></div></div>
+    <div class="card c6"><h3>📎 Documents &amp; resources</h3><div class="sub">Share checklists, letters and revision materials with students and parents.</div><div id="dc-teach-mount" style="margin-top:10px"></div></div>
+    <div class="card c12"><h3>👤 Student 360</h3><div class="sub">One connected profile per student — attainment, attendance, behaviour, homework, interventions and an AI briefing.</div><div id="s360-teach-mount" style="margin-top:10px"></div></div>
+    <div class="card c6"><h3>✉️ Message a parent</h3><div class="sub">A private message thread with each child's family.</div><div id="cm-teach-mount" style="margin-top:10px"></div></div>
+    <div class="card c6"><h3>🪑 Seating plan</h3><div class="sub">Arrange your class — click a seat to place the next student.</div><div id="se-teach-mount" style="margin-top:10px"></div></div>
+    <div class="card c8"><h3>Student intervention engine</h3><div class="sub">Live from dashboard states, homework &amp; quiz data</div><div id="interv-engine"></div></div>
+    <div class="card c4"><h3>AI alerts</h3><div class="sub">Cohort intelligence</div><div id="alerts"></div></div>
+    <div class="card c6"><h3>School assessments</h3><div class="sub">Set by leadership</div><div id="assessments"></div></div>
+    <div class="card c6"><h3>Active interventions</h3><div class="sub">Plans in progress for your students</div><div id="active-interv"></div></div>
+    <div class="card c12" id="tbrief-card"><h3>🌅 Tomorrow's Teaching Brief™</h3>
+      <div class="sub">Visibility converted into an executable classroom plan — computed from your students' live mastery.</div>
+      <div id="tbrief"></div></div>
+    <div class="card c12" id="readiness-root"></div>
+    <div class="card c12"><h3>Live AI teaching tools</h3>
+      <div class="qa">
+        <a href="lessonbuilder/"><b>🧠 AI lesson builder</b><span>Build a course with modules, topics &amp; quizzes</span></a>
+        <a href="assistant/"><b>🤖 AI Teaching Assistant</b><span>Explain, plan, quiz, mark</span></a>
+        <a href="classroom/"><b>📹 Classroom</b><span>Live video &amp; brief at-risk learners</span></a>
+        <a href="analytics/"><b>📊 Classroom analytics</b><span>Cohort progress &amp; risk</span></a>
+      </div>
+    </div>
+  </div>
+</main></div>
+<script src="nav.js" data-base="" data-cur=""></script>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;var TW=window.TW||{};
+function $(id){return document.getElementById(id)}function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var name=(TW.profile&&TW.profile.name)||SY.session.name||'Teacher';
+$('welcome').textContent=name.split(' ')[0]+', your academic operations hub';
+$('school-badge').textContent=TW.schoolName?(esc(TW.schoolName)+(TW.verified?'':' (Pending)')):'Not linked to a school';
+if(!TW.schoolCode)$('school-badge').className='badge warn';
+if(!TW.schoolCode){$('getstarted').innerHTML='<div class="card" style="border-color:rgba(201,133,0,.4);background:rgba(201,133,0,.07);margin-top:16px"><h3>Get started — link your school</h3><div class="sub">You\'re not linked to a school yet. Link it to pull your class roster, take the register and share data with leadership. You can still teach and take a register for students on your own profile.</div><a class="btn solid" href="register/#sec-school">Link my school →</a> <a class="btn ghost" href="attendance/">Take a register now →</a></div>'}
+else if(!TW.verified){$('getstarted').innerHTML='<div class="card" style="border-color:rgba(77,157,224,.35);margin-top:16px"><h3>School link pending approval</h3><div class="sub">'+esc(TW.schoolName)+' has your request. Once leadership approves, your full class roster appears here.</div></div>'}
+
+var students=(TW.myStudents&&TW.myStudents())||[];
+var M=students.map(function(s){return TW.metrics(s.email)});
+$('lede').textContent='Live cohort monitoring for '+M.length+' student'+(M.length===1?'':'s')+(TW.schoolName?' at '+TW.schoolName:'')+'.';
+function avg(a){return a.length?Math.round(a.reduce(function(x,y){return x+y},0)/a.length):0}
+var cohortAvg=avg(M.map(function(m){return m.overall}));
+var atRisk=M.filter(function(m){return m.risk==='HIGH'||m.risk==='CRITICAL'});
+var attention=M.filter(function(m){return m.risk!=='LOW'||m.hw<50});
+var hwAvg=avg(M.map(function(m){return m.hw}));
+$('m-avg').textContent=cohortAvg+'%';$('m-riskpct').textContent=atRisk.length;$('m-hwdone').textContent=hwAvg+'%';
+$('t-students').textContent=M.length;$('t-attention').textContent=attention.length;$('t-risk').textContent=atRisk.length;$('t-hw').textContent=hwAvg+'%';
+var interventions=TW.schoolCode?SY.schoolGet(TW.schoolCode,'interventions',[]):[];
+var myEmails=students.map(function(s){return (s.email||'').toLowerCase()});
+var myInterv=interventions.filter(function(i){return myEmails.indexOf((i.student||'').toLowerCase())>=0});
+var assessments=TW.schoolCode?SY.schoolGet(TW.schoolCode,'assessments',[]):[];
+$('t-assess').textContent=assessments.length;$('t-interv').textContent=myInterv.filter(function(i){return i.status!=='closed'}).length;
+
+/* intervention engine */
+$('interv-engine').innerHTML=M.length?(atRisk.length?atRisk.map(function(m){
+  return '<div class="row"><span class="badge '+(m.risk==='CRITICAL'?'crit':'warn')+'">'+m.risk.toLowerCase()+'</span> <b>'+esc(SY.accountName(m.email))+'</b> · '+m.overall+'% · homework '+m.hw+'%'+(m.weak?' · weak: '+esc(m.weak):'')+' <a href="interventions/" style="margin-left:auto;color:var(--gold-300)">→ plan</a></div>';
+}).join(''):'<div class="empty">All '+M.length+' students on track — no interventions needed right now.</div>'):'<div class="empty">No students linked to your school yet. School admins assign students via the school portal.</div>';
+
+/* alerts */
+var alerts=[];
+if(atRisk.length)alerts.push({t:'crit',m:atRisk.length+' student(s) at elevated risk — open the intervention engine.'});
+if(hwAvg<60&&M.length)alerts.push({t:'warn',m:'Homework completion at '+hwAvg+'% — set a reminder.'});
+if(!alerts.length)alerts.push({t:'good',m:'Cohort stable. Live data synced — no critical alerts across your cohort right now.'});
+$('alerts').innerHTML=alerts.map(function(a){return '<div class="row" style="border:0"><span class="badge '+(a.t==='crit'?'crit':a.t==='warn'?'warn':'good')+'">'+(a.t==='good'?'stable':'alert')+'</span> <span>'+esc(a.m)+'</span></div>'}).join('');
+
+/* assessments */
+$('assessments').innerHTML=assessments.length?assessments.slice(0,6).map(function(a){return '<div class="row"><b>'+esc(a.title||a.name)+'</b><span style="margin-left:auto;color:var(--ink-3)">'+esc(a.date||'')+'</span></div>'}).join(''):'<div class="empty">No assessments scheduled by leadership yet.</div>';
+/* active interventions */
+$('active-interv').innerHTML=myInterv.filter(function(i){return i.status!=='closed'}).length?myInterv.filter(function(i){return i.status!=='closed'}).map(function(i){return '<div class="row"><b>'+esc(SY.accountName(i.student)||i.name||i.student)+'</b> <span class="badge info">'+esc(i.status||'active')+'</span><span style="margin-left:auto;color:var(--ink-3);font-size:11.5px">'+esc(i.reason||'')+'</span></div>'}).join(''):'<div class="empty">No active intervention plans.</div>';
+})();
+</script>
+<script>
+(function(){
+  try{
+    var box=document.getElementById('tbrief');if(!box)return;
+    var students=(TW.myStudents&&TW.myStudents())||[];
+    if(!students.length){box.innerHTML='<div class="note">Link your school and cohorts — the brief builds itself from live mastery.</div>';return}
+    var esc=function(x){return String(x==null?'':x).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})};
+    var Ms=students.slice(0,40).map(function(st){var m=TW.metrics(st.email);m.name=st.name||SY.accountName(st.email);return m});
+    var ready=Ms.filter(function(m){return m.overall>=70}),risk=Ms.filter(function(m){return m.overall&&m.overall<50}),quiet=Ms.filter(function(m){return m.hw<40});
+    var weakSubs={};Ms.forEach(function(m){if(m.weak)weakSubs[m.weak]=(weakSubs[m.weak]||0)+1});
+    var topWeak=Object.keys(weakSubs).sort(function(a,b){return weakSubs[b]-weakSubs[a]})[0];
+    function names(arr){return arr.slice(0,4).map(function(m){return m.name.split(' ')[0]}).join(', ')||'—'}
+    var rows=[
+      ['✅ Prerequisite secure — ready to extend',names(ready)+(ready.length>4?' +'+(ready.length-4):''),'Give them the challenge task first; they coach a peer after.'],
+      ['⚠️ Likely to struggle tomorrow',names(risk)+(risk.length>4?' +'+(risk.length-4):''),'Front-row questioning + your worked example before independent work.'],
+      ['🔇 Quiet support needed',names(quiet),'Low homework completion — check in privately, not publicly.'],
+      ['🧠 Common misconception focus',topWeak?topWeak+' ('+weakSubs[topWeak]+' students weak)':'None dominant','Open with a 5-question retrieval starter on it; exit ticket re-tests the same skill.']];
+    box.innerHTML=rows.map(function(r){
+      return '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:12.5px;flex-wrap:wrap"><b style="color:#EDF1F8;min-width:250px">'+r[0]+'</b><span style="color:#8FC2EC;min-width:160px">'+esc(r[1])+'</span><span class="note" style="flex:1;margin:0">'+esc(r[2])+'</span></div>';
+    }).join('')+'<div style="margin-top:10px"><a class="btn sm" href="students/" style="text-decoration:none">Open student records →</a> <a class="btn ghost sm" href="assistant/#exam" style="text-decoration:none">Build the starter/exit ticket →</a></div>';
+  }catch(e){}
+})();
+</script>
+<script>
+/* Homework loop — teacher sets → students receive → mark with AI. Mounts on the
+   primary command centre so every teacher (and the demo) has it front and centre. */
+(function(){
+  try{
+    var el=document.getElementById('hw-teach-mount'); if(!el||!window.SYHomework||!window.SY)return;
+    var TW=window.TW||{}; var tp=(SY.get('teacherProfile',{})||{});
+    var code=TW.schoolCode||SY.get('schoolCode',null)||tp.schoolCode||null;
+    var email=(SY.session&&SY.session.email), nm=(SY.session&&SY.session.name)||tp.name||'Teacher';
+    SYHomework.mountTeacher(el,{ schoolCode:code, teacher:email, teacherName:nm,
+      subjects:tp.subjects||TW.subjects||[], levels:tp.levels||TW.levels||[] });
+    if(window.SYBehaviour) SYBehaviour.mountTeacher(document.getElementById('bh-teach-mount'),{code:code,by:email,byName:nm});
+    if(window.SYAnnounce) SYAnnounce.mountPoster(document.getElementById('an-teach-mount'),{code:code,by:email,byName:nm});
+    if(window.SYTimetable) SYTimetable.mountTeacher(document.getElementById('tt-teach-mount'),{code:code,email:email});
+    if(window.SYDocs) SYDocs.mountManage(document.getElementById('dc-teach-mount'),{code:code,by:email,byName:nm});
+    if(window.SYStudent360) SYStudent360.mount(document.getElementById('s360-teach-mount'),{code:code});
+    if(window.SYComms) SYComms.mountStaff(document.getElementById('cm-teach-mount'),{code:code,byName:nm});
+    if(window.SYSeating) SYSeating.mountEditor(document.getElementById('se-teach-mount'),{code:code});
+    if(window.SYReach) SYReach.mountMobileBar({base:''});
+  }catch(e){}
+})();
+</script>
+</body></html>

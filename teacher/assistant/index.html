@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — AI Teaching Assistant</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  .tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.tools .t{font-size:12.5px;color:var(--ink-2);border:1px solid var(--line);border-radius:20px;padding:7px 14px;cursor:pointer}.tools .t.on{color:var(--gold-300);border-color:var(--gold-500);background:rgba(77,157,224,.1)}
+  .out{border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin-top:14px;background:rgba(6,11,24,.32);white-space:pre-wrap;font-size:13.5px;color:var(--ink-2);line-height:1.7}.out h4{font-family:var(--serif);color:var(--ink);font-size:15px;margin:2px 0 8px}
+  .sugg{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.sugg button{font-size:12px;color:var(--ink-2);border:1px solid var(--line);background:rgba(6,11,24,.3);border-radius:20px;padding:7px 12px;cursor:pointer}
+</style></head><body>
+<script src="../../guard.js" data-role="teacher" data-base="../../"></script>
+<script src="../../ai.js"></script>
+<script src="../../export.js"></script>
+<script src="../../exam.js"></script>
+<script src="../../makers.js"></script>
+<script src="../../homework.js"></script>
+<div class="shell"><main>
+  <div class="k">Institutional staff</div><h1>AI Teaching Assistant</h1>
+  <p class="lede">Your AI teaching partner — lesson plans, differentiated work, homework, quizzes, marking, feedback, parent emails and more, in seconds.</p>
+  <div class="card">
+    <div class="two"><div><label class="f">Subject</label><span id="subj-wrap"></span></div><div><label class="f">Level</label><span id="level-wrap"></span></div></div>
+    <div class="note" id="ctx-note" style="margin-top:6px"></div>
+    <label class="f">Topic / question</label><input id="topic" placeholder="e.g. Quadratic equations">
+    <div class="sugg"><button data-s="Explain photosynthesis like I'm 10">Explain like I'm 10</button><button data-s="Give me a step-by-step plan to solve a quadratic equation">Step-by-step plan</button><button data-s="Ask me 3 warm-up questions about World War 2">3 warm-up questions</button></div>
+    <div class="tools" id="tools"><span class="t on" data-t="plan">Lesson plan</span><span class="t" data-t="diff">Differentiated work</span><span class="t" data-t="quiz">Quiz</span><span class="t" data-t="homework">Homework</span><span class="t" data-t="explain">Explain</span><span class="t" data-t="mark">Marking &amp; feedback</span><span class="t" data-t="parent">Parent email</span><span class="t" data-t="behaviour">Behaviour strategy</span></div>
+    <div style="margin-top:12px"><button class="btn solid" id="go">Generate</button></div>
+  </div>
+  <div class="out" id="out" style="display:none"></div>
+  <div class="note">Preview generates from structured templates on-device (no AI credits). Live models adapt to each student's Academic Twin with the backend.</div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="k">Set &amp; track</div><h2 style="font-family:var(--serif);margin:4px 0 2px">Homework</h2>
+    <p class="lede" style="margin:0 0 8px">Set homework to your class — students get it in their To-Do automatically, submit online,
+      and you mark it with AI-suggested feedback. Parents see it's done. Draft instructions with AI in one click.</p>
+    <div id="hw-teach-mount"></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="k">Assessment</div><h2 style="font-family:var(--serif);margin:4px 0 2px">Exam Paper Builder</h2>
+    <p class="lede" style="margin:0 0 6px">Build an exam-style paper in any subject — up to 50 questions with a mark-scheme
+      answer sheet for every question, branded to your school, exported as Word or PDF. Costs 1 ACU per question
+      (min. 10) from the school pool.</p>
+    <div class="note" id="exam-pool-note" style="margin:0 0 8px"></div>
+    <div id="exam-mount"></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="k">Create your own</div><h2 style="font-family:var(--serif);margin:4px 0 2px">Resource Makers</h2>
+    <p class="lede" style="margin:0 0 8px">The full maker suite — flashcards, quizzes, revision notes, mind maps, topic
+      summaries, essay plans, labelled diagrams and worksheets — written by the live model <b>for your class</b>,
+      pitched to the level, saved to your library and exported to Word or PDF. Costs a few ACUs from the school pool per generation.</p>
+    <div id="makers-mount"></div>
+  </div>
+</main></div>
+<script src="../nav.js" data-base="../" data-cur="assistant/"></script>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;var TW=window.TW||{};
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+/* Subject & Level come from the teacher's school-assigned sections. */
+var SEC=(TW.assignedSections&&TW.assignedSections())||{subjects:[],levels:[],boards:[]};
+function fieldFrom(wrapId,list,fallbackPh,defaults){
+  var wrap=$(wrapId);var opts=(list&&list.length)?list:(defaults||[]);
+  if(opts.length){
+    var sel='<select style="width:100%">'+opts.map(function(o){return '<option>'+esc(o)+'</option>'}).join('')+(list&&list.length?'':'')+'</select>';
+    wrap.innerHTML=sel;return wrap.firstChild;
+  }
+  wrap.innerHTML='<input placeholder="'+esc(fallbackPh)+'" style="width:100%">';return wrap.firstChild;
+}
+var subjEl=fieldFrom('subj-wrap',SEC.subjects,'Mathematics',[]);
+var levelEl=fieldFrom('level-wrap',SEC.levels,'GCSE',['Primary','KS3','GCSE','IGCSE','AS','A-level','BTEC','IB']);
+subjEl.id='subj';levelEl.id='level';
+$('ctx-note').innerHTML=(SEC.subjects.length||SEC.levels.length)
+  ? ('Subject &amp; level are drawn from your school-assigned sections'+(SEC.schoolName?' at <b style="color:var(--gold-300)">'+esc(SEC.schoolName)+'</b>':'')+'. Update them in your <a href="../register/#sec-school" style="color:var(--gold-300)">profile</a>.')
+  : ('No school-assigned sections yet — <a href="../register/#sec-school" style="color:var(--gold-300)">link your school</a> or add your subjects &amp; year groups in your profile to tailor these to your classes.');
+var mode='plan';
+$('tools').querySelectorAll('.t').forEach(function(el){el.onclick=function(){$('tools').querySelectorAll('.t').forEach(function(x){x.classList.remove('on')});el.classList.add('on');mode=el.dataset.t}});
+document.querySelectorAll('.sugg button').forEach(function(b){b.onclick=function(){$('topic').value=b.dataset.s;mode='explain';$('tools').querySelectorAll('.t').forEach(function(x){x.classList.toggle('on',x.dataset.t==='explain')});gen()}});
+var MODE_PROMPTS={
+  plan:"Write a complete, teach-ready lesson plan: objectives, 5-min starter (retrieval), main teaching (I do / we do / you do with concrete content), differentiation (support & stretch), a 4-question check for understanding WITH answers, plenary and homework.",
+  diff:"Produce differentiated tasks on the topic: Support (partially-worked example + sentence starters), Core (a real practice set of 4–5 questions), Stretch (a multi-step exam question + 'explain why'), and SEND/EAL scaffolds with key vocabulary defined.",
+  quiz:"Write a 5-question quiz rising in difficulty, each with 4 options, the correct answer marked, and a one-line explanation.",
+  homework:"Set a ~25-minute homework: 5 questions rising in difficulty plus one reasoning task, with a mark scheme.",
+  explain:"Explain the topic to the class: hook, plain-language core idea, one worked example, the most common misconception and its fix, and a prompt for students to explain it back.",
+  mark:"Write a marking & feedback frame: 3 specific strengths to look for, 3 specific targets, WWW/EBI comments a teacher can paste, and the one next-step action — all specific to the topic and exam-board style.",
+  parent:"Draft a warm, professional parent email about the student's work on this topic: what was studied, how they did, one specific way to help at home. Ready to send.",
+  behaviour:"Give a practical behaviour strategy for this class context: positive framing script, routine change, seating consideration, 2-minute check-in plan and a reward milestone."};
+function gen(){
+  var s=$('subj').value.trim()||'the subject',l=$('level').value.trim()||'this level',t=$('topic').value.trim()||'the topic';var o='';
+  if(window.SYAI&&SYAI.ready()){
+    $('out').style.display='block';$('out').innerHTML='<div class="note">Working with '+SYAI.provider()+'…</div>';
+    SYAI.ask("You are a "+l+" "+s+" teacher's AI assistant. "+(MODE_PROMPTS[mode]||MODE_PROMPTS.plan)+" Use markdown. Be genuinely usable in a real classroom — concrete content, no placeholders."+(window.SYAI&&SYAI.diagramHint?SYAI.diagramHint:""),"Topic: "+t,{maxTokens:1400})
+      .then(function(txt){$('out').innerHTML='<div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:6px">Live AI · '+esc(mode)+'</div>'+SYAI.render(txt)})
+      .catch(function(e){$('out').innerHTML='<div class="note" style="color:#f0a0a0">Live AI error — showing the template.</div>';setTimeout(function(){genStatic(s,l,t)},300)});
+    return;
+  }
+  genStatic(s,l,t);
+}
+function genStatic(s,l,t){
+  var o='';
+  if(mode==='plan')o='<h4>Lesson plan · '+t+'</h4>Objectives: define, apply and reason about '+t+'.\nStarter (5m): retrieval.\nMain (25m): I do → we do → you do.\nDifferentiation: scaffold + stretch.\nCheck: 4-question mini-quiz.\nPlenary: summary + homework.';
+  else if(mode==='diff')o='<h4>Differentiated tasks · '+t+'</h4>Support: partially-worked example + sentence starters.\nCore: standard practice set.\nStretch: multi-step exam question + "explain why".\nSEND/EAL: visual scaffold, key vocabulary list.';
+  else if(mode==='quiz')o='<h4>Quiz · '+t+'</h4>1. Recall\n2. One-step apply\n3. Two-step apply\n4. Spot-the-error\n5. Exam-style stretch (auto-marked in the live build).';
+  else if(mode==='homework')o='<h4>Homework · '+t+'</h4>5 questions rising in difficulty + one reasoning task (~25 min, auto-marked).';
+  else if(mode==='explain')o='<h4>Explaining '+t+'</h4>Hook → plain-language idea → worked example → common misconception → student explains it back. Analogy included.';
+  else if(mode==='mark')o='<h4>Marking &amp; feedback · '+t+'</h4>Strengths: … \nTargets: … \nNext step: one specific action. WWW/EBI format, exam-board aligned.';
+  else if(mode==='parent')o='<h4>Parent email</h4>Dear parent, this week your child worked on '+t+' in '+s+'. They showed good progress; next step is short practice at home. Best wishes.';
+  else if(mode==='behaviour')o='<h4>Behaviour strategy · '+t+'</h4>Positive framing, clear routine, seating plan tweak, 2-minute check-ins, and a reward milestone. Log incidents to the pastoral team.';
+  $('out').style.display='block';$('out').innerHTML=o;
+}
+$('go').onclick=gen;
+
+/* ---- Homework: set to the class, students submit, teacher marks, parents see ---- */
+if(window.SYHomework&&$('hw-teach-mount')){
+  SYHomework.mountTeacher($('hw-teach-mount'),{
+    schoolCode:TW.schoolCode||SY.get('schoolCode',null),
+    teacher:SY.session.email, teacherName:SY.session.name,
+    subjects:(SEC.subjects&&SEC.subjects.length)?SEC.subjects:undefined,
+    levels:(SEC.levels&&SEC.levels.length)?SEC.levels:undefined
+  });
+}
+/* ---- Exam Paper Builder: branded to the school, metered from the school ACU pool ---- */
+if(window.SYExam&&$('exam-mount')){
+  var code=TW.schoolCode||null;
+  var poolNote=$('exam-pool-note');
+  function poolBal(){return code?(SY.schoolGet(code,'acu',{balance:0,burn:[]}).balance||0):null}
+  function refreshPool(){poolNote.innerHTML=code
+    ?('School pool: <b style="color:var(--gold-300)">'+poolBal().toLocaleString()+' ACUs</b> at '+esc(TW.schoolName||'your school')+'.')
+    :'No school linked yet — papers build in preview mode and carry StudYear branding until you <a href="../register/#sec-school" style="color:var(--gold-300)">link your school</a>.';}
+  refreshPool();
+  SYExam.mount($('exam-mount'),{
+    brand:code?{name:TW.schoolName||'Your school',line:'Powered by StudYear'}:{name:'StudYear',line:'AI Academic Operating System'},
+    defaults:{subject:(SEC.subjects&&SEC.subjects[0])||'',level:(SEC.levels&&SEC.levels[0])||'GCSE',board:(SEC.boards&&SEC.boards[0])||''},
+    goId:'exam-go',
+    spend:function(cost,label){
+      if(!code)return true; /* preview mode until a school is linked */
+      var pool=SY.schoolGet(code,'acu',{balance:0,burn:[]});
+      if((pool.balance||0)<cost){poolNote.innerHTML='<span style="color:var(--warn)">Not enough school ACUs — '+(pool.balance||0)+'/'+cost+' needed. Ask your school admin to top up the pool.</span>';return false}
+      pool.balance-=cost;pool.burn=(pool.burn||[]).slice(-6);pool.burn.push(cost);
+      SY.schoolSet(code,'acu',pool);
+      SY.log&&SY.log('billing',label+' — '+cost+' school ACUs',(pool.balance)+' ACUs left in the school pool.');
+      refreshPool();return true;},
+    onBuilt:function(st){SY.log&&SY.log('create','Exam paper built: '+st.meta.title,st.meta.n+' questions · '+st.meta.total+' marks · answer sheet included.')}
+  });
+}
+/* ---- Resource Makers: the student "create your own" suite, for the class ---- */
+if(window.SYMakers&&$('makers-mount')){
+  var mcode=TW.schoolCode||null;
+  SYMakers.mount($('makers-mount'),{
+    context:'teacher',
+    brand:mcode?{name:TW.schoolName||'Your school',line:'Powered by StudYear'}:{name:'StudYear',line:'AI Academic Operating System'},
+    subjects:(SEC.subjects&&SEC.subjects.length)?SEC.subjects:undefined,
+    levels:(SEC.levels&&SEC.levels.length)?SEC.levels:undefined,
+    defaults:{subject:(SEC.subjects&&SEC.subjects[0])||'',level:(SEC.levels&&SEC.levels[0])||'GCSE'},
+    cost:5,
+    spend:function(cost,label){
+      if(!mcode)return true; /* preview until a school is linked */
+      var pool=SY.schoolGet(mcode,'acu',{balance:0,burn:[]});
+      if((pool.balance||0)<cost)return false;
+      pool.balance-=cost;pool.burn=(pool.burn||[]).slice(-6);pool.burn.push(cost);
+      SY.schoolSet(mcode,'acu',pool);
+      SY.log&&SY.log('billing',label+' — '+cost+' school ACUs',(pool.balance)+' ACUs left in the school pool.');
+      return true;}
+  });
+}
+})();
+</script>
+</body></html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — AI Family Support</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--gold-300:#A9CFF2;--gold-400:#5FA8E0;--gold-500:#3D8FD1;--good:#5CBB7B;--warn:#c98500;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#8795AE;--line:rgba(77,157,224,.14);--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}body{background:radial-gradient(1200px 700px at 82% -12%,rgba(77,157,224,.13),transparent 60%),var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  .wrap{max-width:1040px;margin:0 auto;padding:26px 24px 90px}
+  a{color:inherit}.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}.top .logo{font-family:var(--serif);font-size:18px;text-decoration:none}.top .logo b{color:#4FA6E0}.top .sp{margin-left:auto;display:flex;gap:8px}
+  .chip{font-size:12px;color:var(--ink-2);border:1px solid rgba(170,182,204,.25);border-radius:20px;padding:6px 12px;text-decoration:none}.chip:hover{color:var(--gold-300);border-color:var(--gold-500)}
+  h1{font-family:var(--serif);font-weight:500;font-size:28px;margin-top:6px}.k{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-400)}p.lede{color:var(--ink-2);font-weight:300;margin-top:4px;max-width:78ch}
+  .coach{border:1px solid rgba(77,157,224,.3);background:linear-gradient(180deg,rgba(77,157,224,.09),rgba(77,157,224,.03));border-radius:14px;padding:16px 18px;margin-top:18px}
+  .coach .ch{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600;color:var(--gold-300)}
+  .coach p{font-size:13px;color:var(--ink-2);margin-top:6px}
+  .cats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}@media(max-width:860px){.cats{grid-template-columns:1fr 1fr}}@media(max-width:560px){.cats{grid-template-columns:1fr}}
+  .cat{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:16px 18px;transition:border-color .25s}
+  .cat:hover{border-color:rgba(77,157,224,.4)}
+  .cat .ci{font-size:24px}.cat h3{font-family:var(--serif);font-weight:500;font-size:16px;margin:8px 0 4px}
+  .cat p{font-size:12.5px;color:var(--ink-3)}
+  .cat .links{margin-top:10px;display:none}
+  .cat.open .links{display:block}
+  .cat .links a{display:block;font-size:12.5px;color:var(--gold-300);text-decoration:none;padding:5px 0;border-top:1px solid var(--line)}
+  .cat .links a:hover{color:var(--ink)}
+  .cat .toggle{margin-top:10px;font-size:11.5px;color:var(--ink-3);cursor:pointer;user-select:none}
+  .note{font-size:11.5px;color:var(--ink-3);margin-top:16px}
+</style></head><body>
+<script src="../../guard.js" data-role="parent" data-base="../../"></script>
+<div class="wrap">
+  <div class="top"><a class="logo" href="../../">⌂ <b class="wm">StudYear</b></a><div class="sp"><a class="chip" href="../">Command Centre</a><a class="chip" href="../account/">My Account</a><a class="chip" href="#" id="signout">Sign out</a></div></div>
+  <div class="k">AI Family Support™</div>
+  <h1>When families improve, children improve.</h1>
+  <p class="lede">StudYear supports the whole family — not just the student. Curated help across literacy, skills,
+    money, work and wellbeing, with trusted UK services one tap away. Private and judgement-free.</p>
+
+  <div class="coach"><div class="ch">🤝 AI Family Coach</div><p id="coach-body">Tell me what would help your family most and I'll point you to the right support first. Everything here is free and confidential.</p>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap" id="need-chips"></div>
+  </div>
+
+  <div class="cats" id="cats"></div>
+  <div class="note">External links open trusted UK services in a new tab. StudYear never shares your family's information without your consent.</div>
+</div>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;
+function $(id){return document.getElementById(id)}function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e}
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+var CATS=[
+  {k:'literacy',i:'📚',t:'Literacy support',d:'Reading & writing help for the whole family.',links:[['National Literacy Trust','https://literacytrust.org.uk/'],['BBC Bitesize','https://www.bbc.co.uk/bitesize'],['Reading Agency','https://readingagency.org.uk/']]},
+  {k:'digital',i:'💻',t:'Digital skills',d:'Get confident online — free courses.',links:[['Learn My Way','https://www.learnmyway.com/'],['Google Digital Garage','https://learndigital.withgoogle.com/digitalgarage'],['Barclays Digital Wings','https://digital.wings.uk.barclays/']]},
+  {k:'money',i:'💷',t:'Financial guidance',d:'Budgeting and money advice you can trust.',links:[['MoneyHelper (gov-backed)','https://www.moneyhelper.org.uk/'],['Citizens Advice','https://www.citizensadvice.org.uk/'],['StepChange debt help','https://www.stepchange.org/']]},
+  {k:'employment',i:'💼',t:'Employment resources',d:'Find work, CVs and interview help.',links:[['National Careers Service','https://nationalcareers.service.gov.uk/'],['Find a job (gov.uk)','https://www.gov.uk/find-a-job'],['Jobcentre Plus','https://www.gov.uk/contact-jobcentre-plus']]},
+  {k:'apprentice',i:'🛠️',t:'Apprenticeship information',d:'Earn while you learn — for teens & adults.',links:[['Find an apprenticeship','https://www.gov.uk/apply-apprenticeship'],['UCAS apprenticeships','https://www.ucas.com/apprenticeships'],['Amazing Apprenticeships','https://amazingapprenticeships.com/']]},
+  {k:'wellbeing',i:'❤️',t:'Mental wellbeing',d:'Support for the whole family’s wellbeing.',links:[['NHS Every Mind Matters','https://www.nhs.uk/every-mind-matters/'],['Young Minds (parents)','https://www.youngminds.org.uk/parent/'],['Samaritans','https://www.samaritans.org/']]},
+  {k:'local',i:'📍',t:'Local services',d:'Find help near you.',links:[['Find your council','https://www.gov.uk/find-local-council'],['Family Hubs','https://www.gov.uk/government/collections/family-hubs'],['Local offer (SEND)','https://www.gov.uk/find-send-local-offer']]},
+  {k:'community',i:'🤝',t:'Community organisations',d:'Charities and groups that can help.',links:[['Citizens Advice','https://www.citizensadvice.org.uk/'],['Turn2us','https://www.turn2us.org.uk/'],['Family Action','https://www.family-action.org.uk/']]},
+  {k:'food',i:'🍲',t:'Food support',d:'Food banks and free-meal help.',links:[['Find a food bank (Trussell Trust)','https://www.trusselltrust.org/get-help/find-a-foodbank/'],['Healthy Start','https://www.healthystart.nhs.uk/'],['Free school meals','https://www.gov.uk/apply-free-school-meals']]},
+  {k:'benefit',i:'📄',t:'Benefit guidance',d:'Check what you’re entitled to.',links:[['Benefits calculator','https://www.gov.uk/benefits-calculators'],['Universal Credit','https://www.gov.uk/universal-credit'],['Turn2us grants','https://www.turn2us.org.uk/get-support']]},
+  {k:'housing',i:'🏠',t:'Housing support',d:'Housing and homelessness help.',links:[['Shelter','https://www.shelter.org.uk/'],['Apply for council housing','https://www.gov.uk/apply-for-council-housing'],['Homelessness help','https://www.gov.uk/homelessness-help-from-council']]}
+];
+var cats=$('cats');
+CATS.forEach(function(c){
+  var box=el('div','cat');box.id='cat-'+c.k;
+  box.innerHTML='<div class="ci">'+c.i+'</div><h3>'+c.t+'</h3><p>'+c.d+'</p>'+
+    '<div class="toggle" data-t="'+c.k+'">Show resources ▾</div>'+
+    '<div class="links">'+c.links.map(function(l){return '<a href="'+l[1]+'" target="_blank" rel="noopener">'+l[0]+' ↗</a>'}).join('')+'</div>';
+  cats.appendChild(box);
+});
+cats.querySelectorAll('.toggle').forEach(function(t){t.onclick=function(){var box=$('cat-'+t.dataset.t);box.classList.toggle('open');t.textContent=box.classList.contains('open')?'Hide resources ▴':'Show resources ▾'}});
+/* AI Family Coach need chips */
+var NEEDS=[['money','Money is tight'],['wellbeing','Wellbeing'],['employment','Finding work'],['literacy','Reading & school'],['food','Food support'],['housing','Housing']];
+var chips=$('need-chips');
+NEEDS.forEach(function(n){var b=el('button','chip',n[1]);b.style.cursor='pointer';b.onclick=function(){
+  var c=CATS.find(function(x){return x.k===n[0]});
+  $('coach-body').innerHTML='For <b>'+n[1].toLowerCase()+'</b>, start with <b>'+c.t+'</b> — I’ve opened it below. These services are free and confidential. You’re doing the right thing by looking.';
+  var box=$('cat-'+n[0]);box.classList.add('open');box.querySelector('.toggle').textContent='Hide resources ▴';box.scrollIntoView({behavior:'smooth',block:'center'});
+};chips.appendChild(b)});
+})();
+</script>
+</body></html>

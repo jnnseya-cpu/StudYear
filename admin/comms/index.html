@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>StudYear — Communication Event Architecture</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--gold-300:#A9CFF2;--gold-400:#5FA8E0;--gold-500:#3D8FD1;--good:#5CBB7B;--warn:#c98500;--crit:#e66767;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#8795AE;--line:rgba(77,157,224,.14);--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--brand:#4FA6E0}
+  *{margin:0;padding:0;box-sizing:border-box}body{background:radial-gradient(1200px 700px at 82% -12%,rgba(77,157,224,.13),transparent 60%),var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  .shell{display:flex;min-height:100vh;max-width:1500px;margin:0 auto}
+  aside{width:224px;flex:none;border-right:1px solid var(--line);padding:22px 14px 30px;position:sticky;top:0;align-self:flex-start;max-height:100vh;overflow-y:auto}
+  .slogo{font-family:var(--serif);font-size:19px;color:var(--ink);text-decoration:none;display:block;padding:4px 10px 6px}.slogo b{color:var(--brand);font-weight:600}
+  aside .role{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);padding:0 10px 14px}
+  aside nav a{display:block;font-size:13px;color:var(--ink-2);text-decoration:none;padding:8px 10px;border-radius:8px;margin:1px 0}aside nav a:hover{color:var(--gold-300);background:rgba(77,157,224,.08)}aside nav a.on{color:var(--gold-300);background:rgba(77,157,224,.12)}
+  main{flex:1;padding:30px 30px 90px;min-width:0;max-width:1180px}@media(max-width:960px){.shell{flex-direction:column}aside{width:100%;position:sticky;top:0;z-index:60;max-height:44vh;overflow-y:auto;background:#060B18;border-right:none;border-bottom:1px solid var(--line)}aside nav{display:flex;flex-wrap:wrap;gap:2px}main{padding:22px 18px 70px}}
+  a{color:inherit}h1{font-family:var(--serif);font-weight:500;font-size:30px}.k{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-400)}p.lede{color:var(--ink-2);font-weight:300;margin-top:6px;max-width:86ch}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:18px}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:18px 20px}.card h3{font-family:var(--serif);font-weight:500;font-size:16px}.card .sub{font-size:12px;color:var(--ink-3);margin:4px 0 10px}
+  .stat .v{font-family:var(--serif);font-size:30px;color:var(--gold-300);line-height:1}.stat .k2{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}.stat .d{font-size:11px;margin-top:4px;color:var(--ink-3)}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-top:16px}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}@media(max-width:900px){.grid>*{grid-column:span 12}}
+  label.f{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:12px 0 5px}
+  select,input{width:100%;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}select option{background:#101B33;color:#EDF1F8}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12px var(--sans);border-radius:9px;padding:9px 15px;cursor:pointer;text-decoration:none;display:inline-block}.btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}.btn.sm{padding:6px 11px;font-size:11.5px}.btn.ghost{border-color:rgba(170,182,204,.3);background:transparent;color:var(--ink-2)}
+  .row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:13px}.row b{color:var(--ink)}
+  .th{color:var(--ink-3);font-size:11px;letter-spacing:.04em}
+  .chan{display:inline-block;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);border-radius:6px;padding:2px 6px;color:var(--ink-2);margin:0 2px 2px 0}
+  .chan.email{border-color:rgba(77,157,224,.45);color:var(--gold-300)}.chan.inapp{border-color:rgba(150,150,170,.4)}.chan.sms{border-color:rgba(201,133,0,.5);color:#e0b566}.chan.push{border-color:rgba(92,187,123,.5);color:#8ee0a5}.chan.whatsapp{border-color:rgba(37,211,102,.5);color:#5fe08a}
+  .sev{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;border-radius:6px;padding:2px 7px}
+  .sev.info{border:1px solid rgba(77,157,224,.4);color:var(--gold-300)}.sev.success{border:1px solid rgba(92,187,123,.45);color:var(--good)}.sev.warning{border:1px solid rgba(201,133,0,.45);color:#e0b566}.sev.critical{border:1px solid rgba(230,103,103,.5);color:#f0a0a0}
+  .mand{font-size:9px;letter-spacing:.08em;text-transform:uppercase;background:rgba(230,103,103,.16);border:1px solid rgba(230,103,103,.45);color:#f0a0a0;border-radius:6px;padding:2px 6px}
+  .ev{border:1px solid var(--line);border-radius:11px;padding:12px 14px;margin-top:8px;background:rgba(6,11,24,.3)}
+  .ev .top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ev .nm{font-weight:600;color:var(--ink);font-size:13.5px}.ev .key{font-family:var(--serif);font-size:11.5px;color:var(--brand)}
+  .ev .subj{font-size:12px;color:var(--ink-2);margin-top:4px}.ev .chans{margin-top:7px}
+  .cat-head{display:flex;align-items:baseline;gap:10px;border-bottom:1px solid var(--line);padding-bottom:8px;margin:26px 0 4px}.cat-head h2{font-family:var(--serif);font-weight:500;font-size:20px}.cat-head .n{font-size:11.5px;color:var(--ink-3)}
+  .coverbar{display:flex;align-items:center;gap:10px;margin:9px 0;font-size:13px}
+  .coverbar .bar{flex:1;height:9px;border-radius:5px;background:rgba(170,182,204,.12);overflow:hidden}.coverbar .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),#2E6BC4)}
+  .status{font-size:10px;border-radius:20px;padding:2px 8px;border:1px solid var(--line)}.status.sent{border-color:rgba(92,187,123,.45);color:var(--good)}.status.logged,.status.sandbox{border-color:rgba(201,133,0,.4);color:#e0b566}
+  /* branded email preview (light) */
+  .mail{background:#f4f6fb;color:#1a2030;border-radius:12px;overflow:hidden;margin-top:10px;border:1px solid rgba(170,182,204,.25)}
+  .mail .hd{background:var(--brand);padding:16px 20px;display:flex;align-items:center;gap:10px}.mail .hd img{width:26px;height:26px}.mail .hd b{color:#fff;font-family:var(--serif);font-size:17px}
+  .mail .bd{padding:22px 22px 18px}.mail .bd h4{font-size:18px;color:#0f1830;font-family:var(--serif);font-weight:600;margin-bottom:8px}.mail .bd p{font-size:13.5px;color:#3a4258;margin:8px 0}
+  .mail .cta{display:inline-block;background:var(--brand);color:#fff;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;margin-top:8px}
+  .mail .ft{border-top:1px solid #e2e7f0;padding:14px 22px;font-size:11px;color:#7a8299}
+  .empty{color:var(--ink-3);font-style:italic;padding:12px 0}.note{font-size:11.5px;color:var(--ink-3);margin-top:8px}
+  .foot{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-3)}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+</style></head><body>
+<script src="../../guard.js" data-role="admin" data-base="../../"></script>
+<div class="shell">
+<aside><a class="slogo" href="../../">⌂ <b class="wm">StudYear</b></a><div class="role">Admin · Comms engine</div><nav>
+  <a href="../">Admin console</a><a href="./" class="on">Communication events</a><a href="#coverage">Channel coverage</a><a href="#qa">Template QA</a><a href="#deliveries">Recent deliveries</a><a href="#catalogue">Event catalogue</a><a href="../gateway/">AI Gateway</a><a href="#" id="signout">Sign out</a>
+</nav></aside>
+<main>
+  <div class="k">Platform · notifications</div>
+  <h1>Communication Event Architecture</h1>
+  <p class="lede" id="lede">One event engine — events fan out across email, in-app, SMS, push and WhatsApp, tuned to every StudYear role: students, parents, teachers, tutors, schools and local authorities.</p>
+
+  <div class="kpis">
+    <div class="card stat"><div class="v" id="k-events">0</div><div class="k2">Catalogue events</div><div class="d" id="k-cats">0 categories</div></div>
+    <div class="card stat"><div class="v" id="k-mand">0</div><div class="k2">Mandatory notices</div><div class="d">bypass user opt-outs</div></div>
+    <div class="card stat"><div class="v" id="k-delivered">0</div><div class="k2">Messages delivered</div><div class="d" id="k-attempted">of 0 attempted</div></div>
+    <div class="card stat"><div class="v" id="k-channels">5</div><div class="k2">Channels wired</div><div class="d">email · in-app · sms · push · whatsapp</div></div>
+    <div class="card stat"><div class="v" id="k-safeguard">0</div><div class="k2">Safeguarding-grade</div><div class="d">critical · always delivered</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="card c6" id="coverage"><h3>Channel coverage</h3><div class="sub">How many catalogue events fire on each channel by default</div><div id="cover"></div></div>
+    <div class="card c6" id="qa"><h3>Template QA</h3><div class="sub">Preview the branded email (StudYear or a tenant school) or fire any event to yourself across its channels</div>
+      <div class="two" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div><label class="f">Brand / tenant</label><select id="brand"></select></div><div><label class="f">Event</label><select id="qa-event"></select></div></div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="preview-btn">Preview email</button><button class="btn solid" id="send-btn">Send test to me</button></div>
+      <div id="mail-wrap"></div>
+      <div class="note" id="qa-note">Preview renders exactly what a recipient receives — the selected brand's logo, colour and details on every outbound email. “Send test to me” fires it live when the provider key is set; otherwise it is recorded in sandbox so the flow is always testable.</div>
+    </div>
+    <div class="card c12" id="deliveries"><h3>Recent deliveries</h3><div class="sub">Every event × channel × recipient with its delivery status</div>
+      <div style="display:flex;gap:8px;margin:2px 0 6px"><button class="btn sm ghost" id="seed-btn">Load sample activity</button><button class="btn sm ghost" id="clear-btn">Clear log</button></div>
+      <div id="deliv"></div></div>
+  </div>
+
+  <div id="catalogue"></div>
+
+  <div class="foot" id="foot">StudYear — the AI Academic Operating System · Groupe Nseya Digital | JNN Global Ltd</div>
+</main>
+</div>
+<div id="toast"></div>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;
+function $(id){return document.getElementById(id)}function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var e=$('toast');e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2200)}
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+function pad(n){return n<10?'0'+n:''+n}function hhmmss(d){return pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds())}
+
+/* ---- StudYear communication event catalogue ----
+   [key,label,subject,severity,channels,mandatory] · channels ⊆ email,inapp,sms,push,whatsapp
+   inapp is the universal backbone — present on every event. */
+var CH=['email','inapp','sms','push','whatsapp'];
+function E(key,label,subject,sev,chans,mand){return {key:key,label:label,subject:subject,sev:sev,chans:chans,mand:!!mand}}
+var CATALOG=[
+ ['Identity & Account',[
+   E('account.registration.requested','Account requested','Welcome to StudYear — confirm your account','info','email,inapp'),
+   E('account.registration.received','Registration received','We received your registration','info','email,inapp'),
+   E('account.email_verification_required','Email verification required','Verify your email address','warning','email,inapp'),
+   E('account.mobile_verification_required','Mobile verification required','Verify your mobile number','warning','email,inapp,sms'),
+   E('account.verification.successful','Verification successful','Your account is verified','success','email,inapp'),
+   E('account.verification.failed','Verification failed','Verification could not be completed','warning','email,inapp'),
+   E('account.verification.expired','Verification expired','Your verification link expired','warning','email,inapp'),
+   E('account.registration.abandoned','Registration abandoned','Finish setting up your StudYear account','info','email,inapp'),
+   E('school.application.received','School application received','Your school application was received','info','email,inapp'),
+   E('school.verification.started','School verification started','Verification of {{school}} has started','info','email,inapp'),
+   E('school.documents.requested','School documents requested','Documents needed to verify {{school}}','warning','email,inapp'),
+   E('school.documents.approved','School documents approved','Your documents were approved','success','email,inapp'),
+   E('school.documents.rejected','School documents rejected','Documents need attention','warning','email,inapp'),
+   E('school.activated','School activated','{{school}} is now live on StudYear','success','email,inapp,push'),
+   E('tutor.application.received','Tutor application received','Your tutor application was received','info','email,inapp'),
+   E('tutor.dbs_verification.started','DBS verification started','Your DBS verification has started','info','email,inapp'),
+   E('invitation.teacher_sent','Teacher invited','{{school}} invited you to teach on StudYear','info','email,inapp'),
+   E('invitation.reminder','Invitation reminder','Reminder: your invitation to {{school}}','info','email,inapp'),
+   E('invitation.accepted','Invitation accepted','{{name}} accepted your invitation','success','inapp'),
+   E('invitation.expired','Invitation expired','Your invitation has expired','info','email,inapp')
+ ]],
+ ['Login & Security',[
+   E('auth.login.success','Successful login','New sign-in to your StudYear account','info','inapp'),
+   E('auth.login.failed','Failed login','Failed sign-in attempt','warning','inapp'),
+   E('auth.login.suspicious','Suspicious login','Unusual sign-in detected','critical','email,inapp,sms',1),
+   E('auth.device.new','New device detected','New device signed in','warning','email,inapp',1),
+   E('auth.device.approved','Device approved','Device approved','success','inapp'),
+   E('auth.device.rejected','Device rejected','Device rejected','warning','email,inapp'),
+   E('password.forgot','Forgot password','Reset your StudYear password','info','email,inapp'),
+   E('password.reset_link','Password reset link','Your password reset link','info','email,inapp'),
+   E('password.reset.successful','Password reset successful','Your password was reset','success','email,inapp,sms',1),
+   E('password.changed','Password changed','Your password was changed','success','email,inapp',1),
+   E('mfa.otp_code','OTP code','Your StudYear verification code','info','email,inapp,sms'),
+   E('mfa.enabled','MFA enabled','Two-factor authentication enabled','success','email,inapp',1),
+   E('mfa.disabled','MFA disabled','Two-factor authentication disabled','warning','email,inapp,sms',1),
+   E('security.alert','Security alert','Security alert on your account','critical','email,inapp,sms',1),
+   E('account.locked','Account locked','Your account has been locked','critical','email,inapp,sms',1),
+   E('account.unlocked','Account unlocked','Your account is unlocked','success','email,inapp'),
+   E('session.revoked','Session revoked','A session was signed out','warning','email,inapp',1)
+ ]],
+ ['Subscription, ACUs & Billing',[
+   E('subscription.trial_started','Trial started','Your StudYear trial has started','success','email,inapp'),
+   E('subscription.trial_ending','Trial ending','Your trial ends soon','warning','email,inapp'),
+   E('subscription.activated','Subscription activated','Your {{plan}} plan is active','success','email,inapp'),
+   E('subscription.cancelled','Subscription cancelled','Your plan was cancelled','warning','email,inapp'),
+   E('acu.monthly_grant','Quarterly ACU grant','100 free ACUs added to your wallet (every 3 months)','info','inapp'),
+   E('acu.wallet_low','ACU balance low','Your ACU balance is running low','warning','email,inapp,push'),
+   E('acu.wallet_topped_up','ACUs topped up','ACUs added — {{amount}}','success','email,inapp'),
+   E('acu.hard_stop','ACU hard stop','You have reached zero ACUs','warning','email,inapp,push'),
+   E('acu.school_pool_low','School ACU pool low','Your school ACU pool is running low','warning','email,inapp',1),
+   E('acu.school_pool_topped_up','School pool topped up','Your school ACU pool was topped up','success','email,inapp'),
+   E('payment.pending','Payment pending','Payment is processing','info','inapp'),
+   E('payment.successful','Payment successful','Payment received — {{amount}}','success','email,inapp'),
+   E('payment.failed','Payment failed','Your payment failed','warning','email,inapp,sms',1),
+   E('payment.retry','Payment retry','We will retry your payment','info','email,inapp'),
+   E('payment.card_expiring','Card expiring','Your card expires soon','warning','email,inapp'),
+   E('invoice.generated','Invoice generated','Invoice {{number}} is ready','info','email,inapp'),
+   E('invoice.paid','Invoice paid','Invoice {{number}} paid','success','email,inapp'),
+   E('invoice.overdue','Invoice overdue','Invoice {{number}} is overdue','warning','email,inapp,sms',1),
+   E('payment.refund_processed','Refund processed','Your refund was processed','success','email,inapp')
+ ]],
+ ['School & Roster',[
+   E('school.teacher_linked','Teacher linked','{{teacher}} linked to your school','info','inapp'),
+   E('school.teacher_removed','Teacher removed','A teacher was removed from your school','info','inapp'),
+   E('school.cohort_assigned','Cohort assigned','You were assigned {{cohort}}','info','email,inapp'),
+   E('school.student_added','Student added','{{student}} was added to a class','info','inapp'),
+   E('school.student_removed','Student removed','A student was removed from a class','info','inapp'),
+   E('school.roster_imported','Roster imported','Bulk roster import complete','info','inapp'),
+   E('student.school_link_requested','School link requested','A student requested to link to your school','info','inapp'),
+   E('student.school_link_approved','School link approved','You are now linked to {{school}}','success','email,inapp'),
+   E('student.shared_profile_updated','Shared profile updated','Your school updated your linked profile','info','inapp'),
+   E('school.assessment_scheduled','Assessment scheduled','Leadership scheduled {{item}}','info','inapp,push')
+ ]],
+ ['Learning & Study',[
+   E('diagnostic.assigned','Diagnostic assigned','A diagnostic is ready for you','info','inapp,push'),
+   E('diagnostic.results_ready','Diagnostic results ready','Your diagnostic results are ready','success','email,inapp'),
+   E('studyplan.generated','Study plan generated','Your personalised study plan is ready','success','inapp'),
+   E('studyplan.rebuilt','Study plan rebuilt','Your plan updated overnight around your weak topics','info','inapp'),
+   E('homework.set','Homework set','New homework: {{item}}','info','email,inapp,push'),
+   E('homework.due_soon','Homework due soon','Homework due tomorrow','warning','inapp,push'),
+   E('homework.overdue','Homework overdue','Homework overdue: {{item}}','warning','email,inapp,push'),
+   E('homework.submitted','Homework submitted','Homework submitted','success','inapp'),
+   E('quiz.assigned','Quiz assigned','A quiz is ready: {{item}}','info','inapp,push'),
+   E('quiz.completed','Quiz completed','Quiz completed','success','inapp'),
+   E('lesson.assigned','Lesson assigned','An interactive lesson is ready','info','inapp,push'),
+   E('predictedgrade.updated','Predicted grade updated','Your predicted grade changed','info','inapp'),
+   E('predictedgrade.target_at_risk','Target at risk','Your target grade is at risk','warning','email,inapp,push'),
+   E('streak.milestone','Streak milestone','You hit a new study streak','success','inapp,push'),
+   E('revision.reminder','Revision reminder','Time for a quick revision session','info','push')
+ ]],
+ ['Assignments, Marking & Handwriting',[
+   E('assignment.set','Assignment set','New assignment: {{task}}','info','email,inapp,push'),
+   E('assignment.submitted','Assignment submitted','Assignment submitted','success','inapp'),
+   E('assignment.ai_marked','AI marked','AI has pre-marked {{task}}','info','inapp'),
+   E('assignment.feedback_ready','Feedback ready','Feedback on {{task}} is ready','success','email,inapp,push'),
+   E('assignment.returned','Returned for improvement','{{task}} returned for changes','warning','inapp,push'),
+   E('handwriting.uploaded','Handwriting uploaded','Your photo was received','info','inapp'),
+   E('handwriting.marked','Handwriting marked','Your handwritten work was marked','success','inapp,push'),
+   E('marking.approved_by_teacher','Marks approved','Your teacher approved the AI marks','success','inapp')
+ ]],
+ ['Attendance',[
+   E('attendance.register_taken','Register taken','Register saved for {{cohort}}','info','inapp'),
+   E('attendance.marked_late','Marked late','{{student}} was marked late','info','inapp'),
+   E('attendance.marked_absent','Marked absent','{{student}} was marked absent today','warning','email,inapp,sms'),
+   E('attendance.persistent_absence','Persistent absence','Persistent absence flagged for {{student}}','warning','email,inapp,sms',1),
+   E('attendance.recovery_started','Attendance recovery started','An attendance-recovery plan has started','info','email,inapp'),
+   E('attendance.improved','Attendance improved','Attendance is improving','success','inapp')
+ ]],
+ ['Interventions & Safeguarding',[
+   E('intervention.created','Intervention created','Intervention plan created for {{student}}','info','inapp'),
+   E('intervention.assigned','Intervention assigned','You have a new intervention to run','info','email,inapp,push'),
+   E('intervention.closed','Intervention closed','Intervention closed for {{student}}','success','inapp'),
+   E('risk.flagged','Risk flagged','{{student}} has been flagged at risk','warning','email,inapp,push'),
+   E('risk.escalated','Risk escalated','Risk escalated for {{student}}','critical','email,inapp,sms',1),
+   E('safeguarding.alert','Safeguarding alert','Safeguarding alert raised','critical','email,inapp,sms',1),
+   E('safeguarding.referral_logged','Safeguarding referral logged','A safeguarding referral was logged','critical','email,inapp',1),
+   E('wellbeing.check_needed','Wellbeing check needed','A wellbeing check is recommended','warning','email,inapp')
+ ]],
+ ['Live Classroom',[
+   E('live.session_started','Live session started','{{teacher}} started a live lesson','info','inapp,push'),
+   E('live.invitation','Live invitation','You are invited to a live lesson','info','email,inapp,push'),
+   E('live.reminder','Live reminder','Your live lesson starts soon','info','inapp,push'),
+   E('live.joined','Joined live','You joined the live lesson','info','inapp'),
+   E('live.session_ended','Live session ended','The live lesson has ended','info','inapp'),
+   E('live.recording_ready','Recording ready','Your lesson recording is ready','success','email,inapp')
+ ]],
+ ['Tutor Marketplace',[
+   E('tutor.listing_published','Listing published','Your marketplace listing is live','success','inapp'),
+   E('tutor.booking_requested','Booking requested','New booking request from {{name}}','info','email,inapp,push'),
+   E('tutor.booking_confirmed','Booking confirmed','Your session is confirmed','success','email,inapp,push'),
+   E('tutor.booking_cancelled','Booking cancelled','A session was cancelled','warning','email,inapp'),
+   E('tutor.session_reminder','Session reminder','Your session is tomorrow','info','inapp,push,sms'),
+   E('tutor.session_completed','Session completed','Session completed','success','inapp'),
+   E('tutor.review_received','Review received','{{name}} left you a review','info','email,inapp'),
+   E('tutor.payout_processed','Payout processed','Your payout was sent','success','email,inapp'),
+   E('tutor.new_message','New message','You have a new message','info','inapp,push')
+ ]],
+ ['Parent Partnership',[
+   E('parent.child_linked','Child linked','You linked {{student}} to your account','success','email,inapp'),
+   E('parent.weekly_digest','Weekly digest','Your weekly family briefing','info','email,inapp,whatsapp'),
+   E('parent.risk_alert','Risk alert','An alert about {{student}}','warning','email,inapp,push,sms'),
+   E('parent.report_ready','Report ready','A progress report for {{student}} is ready','success','email,inapp'),
+   E('parent.message_from_teacher','Message from teacher','Message from {{teacher}}','info','email,inapp,whatsapp'),
+   E('parent.consent_request','Consent request','We need your consent','info','email,inapp',1),
+   E('parent.meeting_invitation','Meeting invitation','Parents’ evening invitation','info','email,inapp')
+ ]],
+ ['AI Agents',[
+   E('ai.insight_generated','Insight generated','New insight from {{actor}}','info','inapp,push'),
+   E('ai.recommendation_available','Recommendation available','A recommendation is ready','info','inapp'),
+   E('ai.opportunity_identified','Opportunity identified','An opportunity was identified','success','email,inapp'),
+   E('ai.risk_detected','Risk detected','AI risk alert','warning','email,inapp,push'),
+   E('ai.cost_alert','AI cost alert','AI spend threshold reached','warning','email,inapp'),
+   E('ai.lesson_generated','Lesson generated','Your AI lesson is ready','success','inapp'),
+   E('ai.marking_completed','Marking completed','AI marking is complete','success','inapp'),
+   E('ai.workflow_completed','Workflow completed','Workflow completed','success','inapp'),
+   E('ai.workflow_failed','Workflow failed','Workflow failed','warning','email,inapp,push'),
+   E('ai.content_flagged','Content flagged','AI content needs review','warning','inapp'),
+   E('ai.human_intervention_required','Human intervention required','Action needed: {{item}}','critical','email,inapp,push',1)
+ ]],
+ ['Reporting & Analytics',[
+   E('report.generated','Report generated','Report ready: {{item}}','info','inapp'),
+   E('report.scheduled_ready','Scheduled report ready','Your scheduled report is ready','info','email,inapp'),
+   E('report.export_completed','Export completed','Your export is ready','success','email,inapp'),
+   E('progress8.updated','Progress 8 updated','Your Progress 8 estimate updated','info','inapp'),
+   E('benchmark.updated','Benchmark updated','New benchmarking data is available','info','inapp'),
+   E('kpi.threshold_breached','KPI threshold breached','KPI alert: {{item}}','warning','email,inapp,push'),
+   E('certification.achieved','Certification achieved','World-Class certification achieved','success','email,inapp'),
+   E('la.evidence_pack_ready','Evidence pack ready','Your funding-impact evidence pack is ready','success','email,inapp')
+ ]],
+ ['Local Authority & Programmes',[
+   E('la.school_connected','School connected','{{school}} connected to your authority','info','inapp'),
+   E('la.cohort_data_received','Cohort data received','Anonymised cohort data received','info','inapp'),
+   E('la.programme_pushed','Programme pushed','{{programme}} pushed to your schools','info','email,inapp'),
+   E('la.programme_progress_reported','Programme progress reported','Progress reported on {{programme}}','info','inapp'),
+   E('la.funding_impact_updated','Funding impact updated','Funding-impact evidence updated','success','inapp'),
+   E('la.attendance_concern','Area attendance concern','Area persistent absence rising','warning','email,inapp'),
+   E('la.neet_alert','NEET alert','NEET risk rising across the area','critical','email,inapp',1)
+ ]],
+ ['Platform, Privacy & Compliance',[
+   E('system.maintenance_scheduled','Scheduled maintenance','Scheduled maintenance on {{date}}','info','email,inapp'),
+   E('system.maintenance_emergency','Emergency maintenance','Emergency maintenance in progress','warning','email,inapp,sms',1),
+   E('system.outage','System outage','Service disruption','critical','email,inapp,sms',1),
+   E('system.service_restored','Service restored','Service restored','success','email,inapp'),
+   E('audit.completed','Audit completed','Audit completed','info','inapp'),
+   E('audit.policy_violation','Policy violation','Policy violation detected','critical','email,inapp,sms',1),
+   E('privacy.consent_request','Consent request','We need your consent','info','email,inapp',1),
+   E('privacy.consent_updated','Consent updated','Your consent preferences were updated','info','email,inapp'),
+   E('privacy.data_export_ready','Data export ready','Your data export is ready','success','email,inapp'),
+   E('privacy.account_deletion_requested','Account deletion requested','Account deletion requested','warning','email,inapp',1),
+   E('privacy.account_deletion_completed','Account deletion completed','Your account has been deleted','info','email,inapp',1),
+   E('compliance.kcsie_workflow','KCSIE workflow','A safeguarding (KCSIE) workflow requires action','warning','email,inapp',1),
+   E('compliance.aadc_check','AADC check','Age-appropriate design check','info','inapp'),
+   E('regulatory.update','Regulatory update','Regulatory update','info','email,inapp')
+ ]]
+];
+CATALOG.forEach(function(c){c[1].forEach(function(e){e.chans=e.chans.split(',')})});
+var ALL=[];CATALOG.forEach(function(c){c[1].forEach(function(e){e.cat=c[0];ALL.push(e)})});
+
+/* brands / tenants — StudYear plus any registered school (multi-tenant branded email) */
+var BRANDS=[{id:'studyear',name:'StudYear',colour:'#4FA6E0',logo:'../../logo.svg',owner:'Groupe Nseya Digital | JNN Global Ltd'}];
+(function(){var seen={};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);var m=k&&k.match(/^sy-school:([^:]+):name$/);if(m&&!seen[m[1]]){seen[m[1]]=1;try{BRANDS.push({id:m[1],name:JSON.parse(localStorage.getItem(k)),colour:'#4FA6E0',logo:'../../logo.svg',owner:'Powered by StudYear'})}catch(e){}}}})();
+
+/* delivery log */
+function log(){return SY.get('commsLog',[])}
+function setLog(v){SY.set('commsLog',v.slice(0,200))}
+
+/* ---- stats ---- */
+function renderStats(){
+  var mand=ALL.filter(function(e){return e.mand}).length;
+  var crit=ALL.filter(function(e){return e.sev==='critical'}).length;
+  var L=log();var delivered=L.filter(function(x){return x.status==='sent'||x.status==='logged'||x.status==='sandbox'}).length;
+  $('k-events').textContent=ALL.length;$('k-cats').textContent=CATALOG.length+' categories';
+  $('k-mand').textContent=mand;$('k-safeguard').textContent=crit;
+  $('k-delivered').textContent=delivered;$('k-attempted').textContent='of '+L.length+' attempted';
+  $('lede').textContent='One event engine — '+ALL.length+' events fan out across email, in-app, SMS, push and WhatsApp, tuned to every StudYear role: students, parents, teachers, tutors, schools and local authorities.';
+}
+
+/* ---- channel coverage ---- */
+function renderCoverage(){
+  var L=log();
+  $('cover').innerHTML=CH.map(function(ch){
+    var n=ALL.filter(function(e){return e.chans.indexOf(ch)>=0}).length;
+    var sent=L.filter(function(x){return x.ch===ch}).length;
+    var pct=Math.round(100*n/ALL.length);
+    var label=ch==='inapp'?'in-app':ch;
+    return '<div class="coverbar"><span class="chan '+ch+'" style="width:64px;text-align:center">'+esc(label)+'</span><span class="bar"><i style="width:'+pct+'%"></i></span><span style="width:120px;text-align:right;color:var(--ink-2)">'+n+' events'+(sent?' · '+sent+' sent':'')+'</span></div>';
+  }).join('');
+}
+
+/* ---- brand + event selects ---- */
+$('brand').innerHTML=BRANDS.map(function(b){return '<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>'}).join('');
+$('qa-event').innerHTML=CATALOG.map(function(c){return '<optgroup label="'+esc(c[0])+'">'+c[1].map(function(e){return '<option value="'+esc(e.key)+'">'+esc(e.label)+' — '+esc(e.key)+'</option>'}).join('')+'</optgroup>'}).join('');
+
+function curBrand(){return BRANDS.find(function(b){return b.id===$('brand').value})||BRANDS[0]}
+function curEvent(){return ALL.find(function(e){return e.key===$('qa-event').value})||ALL[0]}
+function bodyFor(e,brand){
+  var sub=e.subject.replace(/\{\{(\w+)\}\}/g,function(_,k){return '<'+k+'>'});
+  return 'Hello,<br><br>'+esc(sub)+'. This is a preview of the <b>'+esc(e.label)+'</b> notification ('+esc(e.key)+') as it appears from <b>'+esc(brand.name)+'</b>.<br><br>The live message adapts to the recipient’s role and the event’s data. Sensitive notices are end-to-end encrypted and safeguarding events are always delivered.';
+}
+function renderMail(){
+  var e=curEvent(),b=curBrand();
+  $('mail-wrap').innerHTML='<div class="mail" style="--brand:'+esc(b.colour)+'">'+
+    '<div class="hd"><img src="'+esc(b.logo)+'" alt=""><b>'+esc(b.name)+'</b></div>'+
+    '<div class="bd"><h4>'+esc(e.subject.replace(/\{\{(\w+)\}\}/g,'‹$1›'))+'</h4>'+
+    '<p>'+bodyFor(e,b)+'</p><a class="cta">Open StudYear</a></div>'+
+    '<div class="ft">'+esc(b.name)+' · '+esc(b.owner)+'<br>You received this because of your StudYear account. '+(e.mand?'This is a mandatory service notice.':'Manage notification preferences in your account.')+'</div></div>';
+}
+$('preview-btn').onclick=function(){renderMail();toast('Branded email preview rendered')};
+$('brand').onchange=function(){if($('mail-wrap').innerHTML)renderMail()};
+$('qa-event').onchange=function(){if($('mail-wrap').innerHTML)renderMail()};
+
+/* provider key: read from gateway settings if present */
+function providerReady(){var g=SY.get('gateway',{});return !!(g&&(g.resendKey||g.emailKey||g.smsKey))}
+$('send-btn').onclick=function(){
+  var e=curEvent(),b=curBrand();var to=SY.session.email||'admin@studyear';
+  var now=new Date();var L=log();
+  /* live email via the backend /notify when the cloud is up (delivers only to
+     the signed-in admin's own address; server enforces that) — every other
+     channel sandbox-logs until its provider is wired */
+  var emailLive=false;
+  function record(ready){
+    e.chans.forEach(function(ch){
+      var live=(ch==='email'&&ready)||(ch!=='email'&&providerReady());
+      L.unshift({ch:ch,event:e.key,to:to,brand:b.name,status:live?'sent':'sandbox',provider:live?(ch==='email'?'smtp':ch):'sandbox',at:now.toISOString(),t:hhmmss(now)});
+    });
+    setLog(L);SY.log('comms','Test event fired',e.key+' → '+e.chans.length+' channel(s)');
+    toast((ready?'Email sent live':'Sandbox-logged')+' — '+e.key+' across '+e.chans.length+' channel'+(e.chans.length===1?'':'s'));
+    renderStats();renderCoverage();renderDeliveries();
+  }
+  if(window.SYCloud&&SYCloud.ready()&&e.chans.indexOf('email')>-1){
+    SYCloud.token(to).then(function(tk){
+      if(!tk)return record(false);
+      return fetch(JSON.parse(localStorage.getItem('sy-cloud-config')).apiBase.replace(/\/$/,'')+'/notify',{
+        method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tk},
+        body:JSON.stringify({subject:e.subject.replace(/\{\{(\w+)\}\}/g,'example'),
+          text:'Test of the '+e.key+' notification from the StudYear Communication Event Architecture ('+b.name+' brand).'})
+      }).then(function(r){return r.json()}).then(function(j){record(!!(j&&j.ok))});
+    }).catch(function(){record(false)});
+  }else record(providerReady());
+};
+
+/* ---- recent deliveries ---- */
+function renderDeliveries(){
+  var L=log();
+  $('deliv').innerHTML=L.length?('<div class="row th"><span style="width:70px">Channel</span><span style="flex:1">Event</span><span style="width:150px">Recipient</span><span style="width:90px">Status</span><span style="width:80px">Time</span></div>'+
+    L.slice(0,40).map(function(x){return '<div class="row"><span style="width:70px"><span class="chan '+esc(x.ch)+'">'+esc(x.ch==='inapp'?'in-app':x.ch)+'</span></span><span style="flex:1;color:var(--brand);font-family:var(--serif);font-size:12px">'+esc(x.event)+'</span><span style="width:150px;color:var(--ink-3);font-size:11.5px">'+esc(x.to||'')+'</span><span style="width:90px"><span class="status '+esc(x.status)+'">'+esc(x.status)+'</span> <span style="color:var(--ink-3);font-size:10.5px">'+esc(x.provider||'')+'</span></span><span style="width:80px;color:var(--ink-3);font-size:11px">'+esc(x.t||'')+'</span></div>'}).join('')):'<div class="empty">No deliveries yet — fire a test from Template QA, or load sample activity.</div>';
+}
+if(!(SY.session&&SY.session.demo)){var _s=document.getElementById('seed-btn');if(_s)_s.style.display='none'}
+$('seed-btn').onclick=function(){
+  var now=new Date();var L=log();var picks=['approval.approved','invitation.teacher_sent','parent.weekly_digest','safeguarding.alert','homework.set','tutor.booking_confirmed'];
+  picks.forEach(function(k,i){var e=ALL.find(function(x){return x.key===k})||ALL[i];if(!e)return;var d=new Date(now.getTime()-i*60000);e.chans.slice(0,2).forEach(function(ch){L.unshift({ch:ch,event:e.key,to:SY.session.email||'admin@studyear',brand:'StudYear',status:ch==='email'?'sent':'logged',provider:ch==='email'?'resend':ch,at:d.toISOString(),t:hhmmss(d)})})});
+  setLog(L);toast('Sample activity loaded');renderStats();renderCoverage();renderDeliveries();
+};
+$('clear-btn').onclick=function(){setLog([]);toast('Delivery log cleared');renderStats();renderCoverage();renderDeliveries()};
+
+/* ---- catalogue ---- */
+function renderCatalogue(){
+  $('catalogue').innerHTML=CATALOG.map(function(c){
+    return '<div class="cat-head"><h2>'+esc(c[0])+'</h2><span class="n">'+c[1].length+' events</span></div>'+
+      c[1].map(function(e){
+        return '<div class="ev"><div class="top"><span class="nm">'+esc(e.label)+'</span>'+(e.mand?'<span class="mand">mandatory</span>':'')+'<span class="sev '+e.sev+'">'+e.sev+'</span><span class="key" style="margin-left:auto">'+esc(e.key)+'</span></div>'+
+          '<div class="subj">'+esc(e.subject)+'</div>'+
+          '<div class="chans">'+e.chans.map(function(ch){return '<span class="chan '+ch+'">'+esc(ch==='inapp'?'in-app':ch)+'</span>'}).join('')+'</div></div>';
+      }).join('');
+  }).join('');
+}
+
+renderStats();renderCoverage();renderDeliveries();renderCatalogue();
+})();
+</script>
+</body></html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Blog</title>
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#060B18">
+<meta name="description" content="Product news and evidence-based study advice from StudYear.">
+<style>
+  :root{--navy-950:#060B18;--navy-800:#101B33;--blue-300:#A9CFF2;--blue-400:#5FA8E0;--blue-500:#3D8FD1;
+    --ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#8795AE;--line:rgba(77,157,224,.16);
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:
+    radial-gradient(1100px 600px at 80% -10%, rgba(77,157,224,.10), transparent 60%),
+    radial-gradient(900px 700px at -10% 30%, rgba(22,37,74,.85), transparent 65%),
+    var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.7;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding:0 32px 80px}
+  nav.top{display:flex;align-items:center;gap:16px;padding:20px 0;border-bottom:1px solid var(--line);margin-bottom:52px}
+  .logo{font-family:var(--serif);font-size:22px;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;gap:10px}
+  .logo img{height:34px;width:34px;filter:drop-shadow(0 0 12px rgba(79,166,224,.45))}
+  .logo b{color:#4FA6E0;font-weight:600}
+  nav.top .right{margin-left:auto;display:flex;gap:18px;align-items:center}
+  nav.top a{color:var(--ink-2);text-decoration:none;font-size:13.5px}
+  nav.top a:hover{color:var(--blue-300)}
+  nav.top a.cta{background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff;font-weight:600;
+    border-radius:9px;padding:9px 18px}
+  .k{font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--blue-500);margin-bottom:14px}
+  h1{font-family:var(--serif);font-weight:500;font-size:clamp(34px,4.6vw,48px);line-height:1.12;letter-spacing:-.01em}
+  .lede{color:var(--ink-2);font-weight:300;font-size:17px;margin-top:14px;max-width:64ch}
+  article{margin-top:44px}
+  article h2{font-family:var(--serif);font-weight:500;font-size:24px;margin:40px 0 12px;color:var(--blue-300)}
+  article h3{font-size:15px;font-weight:600;margin:24px 0 8px}
+  article p{color:var(--ink-2);margin:10px 0}
+  article b,article strong{color:var(--ink);font-weight:600}
+  article ul,article ol{margin:10px 0 10px 22px;color:var(--ink-2)}
+  article li{margin:6px 0}
+  article a{color:var(--blue-400)}
+  .card{border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin:18px 0;
+    background:linear-gradient(180deg,rgba(16,27,51,.62),rgba(11,18,32,.9))}
+  .card h2,.card h3{margin-top:0}
+  .meta{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+  .updated{font-size:12.5px;color:var(--ink-3);font-style:italic;margin-top:8px}
+  footer{border-top:1px solid var(--line);margin-top:70px;padding-top:24px;font-size:13px;color:var(--ink-3);
+    display:flex;gap:18px;flex-wrap:wrap}
+  footer a{color:var(--ink-2);text-decoration:none}
+  footer a:hover{color:var(--blue-300)}
+</style>
+<link rel="stylesheet" href="../pub.css">
+<link rel="stylesheet" href="../theme.css">
+<link rel="canonical" href="https://www.studyear.com/blog/">
+<!-- Cookie-consent-gated analytics/marketing (loads only on opt-in; see /cookies/) -->
+<script src="../consent.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+<nav class="top">
+  <a class="logo" href="../"><img src="../logo.svg" alt=""><b class="wm">StudYear</b></a>
+  <span class="right">
+    <a href="../how-it-works/">How it works</a>
+    <a href="../study/">Study tools</a>
+    <a href="./admin/">✍ AI Studio</a>
+    <a href="../app/" class="cta">Start Free</a>
+  </span>
+</nav>
+<div class="k">Notes from the command centre</div>
+<h1>The StudYear blog.</h1>
+<p class="lede">Product news, evidence-based study advice, and what we're learning from the data. <span id="post-count" style="color:var(--blue-300)"></span></p>
+<article>
+<div id="ai-posts"></div>
+
+<div class="card">
+<div class="meta">Product · Launch</div>
+<h2 style="margin-top:8px">StudYear is live: one OS, a console for every seat at the table</h2>
+<p>Today the full StudYear platform goes public: separate consoles and dashboards for students, parents, teachers, schools and tutors — all reading the same live mastery record. Start with the free diagnostic, watch your plan build itself, and see your predicted grade move where you can actually see it.</p>
+<p><a href="../app/">Choose your console →</a></p>
+</div>
+<div class="card">
+<div class="meta">Study science</div>
+<h2 style="margin-top:8px">Study smarter, not harder: the three habits the data keeps confirming</h2>
+<p><b>1 · Retrieval beats re-reading.</b> Testing yourself on a topic (flashcards, quizzes, blurting) builds far more durable memory than reading notes again. That's why every StudYear plan is built around active recall sessions, not "read chapter 4".</p>
+<p><b>2 · Spacing beats cramming.</b> Six 40-minute sessions across two weeks outperform one four-hour binge. The planner spaces your weak topics automatically and brings them back just before you'd forget them.</p>
+<p><b>3 · Past papers are the final boss — early.</b> Students who meet real exam questions weeks before the exam consistently outperform those who save them for the end. Your plan switches to timed past-paper mode for the final week by default.</p>
+</div>
+<div class="card">
+<div class="meta">Parents</div>
+<h2 style="margin-top:8px">Report cards are autopsies. You want a heartbeat.</h2>
+<p>By the time a bad grade arrives, the damage is weeks old. The parent console is built around <b>risk alerts</b> — missed-deadline patterns, mastery dips, adherence collapse — that fire while there's still time to act, with one suggested next step attached. Clarity without micromanaging.</p>
+<p><a href="../app/parent/">See the parent console →</a></p>
+</div>
+
+</article>
+<script>
+(function(){
+  var SITE='https://www.studyear.com';
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  /* full markdown → HTML: ## / ### headings, **bold**, *italic*, [text](url)
+     links (internal stay same-tab; outbound get rel=noopener), - lists, and
+     paragraphs. Escapes text first, then applies inline formatting, so
+     author/AI content renders its links (the SEO signal) safely. */
+  function inline(t){
+    t=esc(t);
+    t=t.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]*)\)/g,function(_,txt,url){
+      var ext=/^https?:/.test(url)&&url.indexOf('studyear.com')<0;
+      return '<a href="'+url+'"'+(ext?' target="_blank" rel="noopener nofollow"':'')+'>'+txt+'</a>';});
+    t=t.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/(^|[^*])\*([^*]+)\*/g,'$1<em>$2</em>');
+    return t;
+  }
+  function md(src){
+    var lines=String(src||'').split(/\n/),out=[],li=[];
+    function flush(){if(li.length){out.push('<ul style="margin:8px 0 8px 18px">'+li.join('')+'</ul>');li=[]}}
+    lines.forEach(function(l){l=l.replace(/\s+$/,'');
+      if(!l.trim()){flush();return;}
+      var h=l.match(/^(#{2,3})\s+(.*)/);
+      if(h){flush();out.push(h[1].length===2?'<h2 style="margin:18px 0 8px;font-size:20px">'+inline(h[2])+'</h2>':'<h3 style="margin:14px 0 6px">'+inline(h[2])+'</h3>');return;}
+      var m=l.match(/^[-*]\s+(.*)/);if(m){li.push('<li style="margin:3px 0">'+inline(m[1])+'</li>');return;}
+      flush();out.push('<p>'+inline(l.trim())+'</p>');});
+    flush();return out.join('');
+  }
+  var mdlite=md;   /* single renderer everywhere */
+  var posts=[];
+  var wrap=document.getElementById('ai-posts');
+  function slugOf(p){return p.slug||p.id;}
+  /* Published posts committed in posts.json are pre-rendered to a real,
+     crawlable page at /blog/<slug>/ by scripts/gen-blog.mjs — link straight
+     to it (max per-article indexing). Local-only drafts have no static page,
+     so they fall back to the in-page #slug reader. */
+  function readHref(p){return p._static?encodeURIComponent(slugOf(p))+'/':'#'+esc(slugOf(p));}
+  function postUrl(p){return 'https://www.studyear.com/blog/'+(p._static?encodeURIComponent(slugOf(p))+'/':'#'+encodeURIComponent(slugOf(p)));}
+  function shareRow(p){
+    var url=postUrl(p);
+    return '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">'+
+      '<a href="'+readHref(p)+'" style="font-size:12.5px">Read →</a>'+
+      '<a href="#" data-copy="'+esc(url)+'" style="font-size:12.5px">Copy share link</a>'+
+      '<a target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(p.title+' — '+url)+'" style="font-size:12.5px">WhatsApp</a>'+
+      '<a target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text='+encodeURIComponent(p.title)+'&url='+encodeURIComponent(url)+'" style="font-size:12.5px">X</a>'+
+      '<a target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url='+encodeURIComponent(url)+'" style="font-size:12.5px">LinkedIn</a></div>';}
+  /* internal linking: related articles by shared tag/keyword (max 4) */
+  function relatedFor(p){
+    var mine=(p.tags||[]).concat([p.keyword]).map(function(t){return String(t||'').toLowerCase()});
+    return posts.filter(function(q){return q!==p;}).map(function(q){
+      var his=(q.tags||[]).concat([q.keyword]).map(function(t){return String(t||'').toLowerCase()});
+      var overlap=his.filter(function(t){return t&&mine.indexOf(t)>=0;}).length;
+      return {q:q,n:overlap};
+    }).filter(function(o){return o.n>0;}).sort(function(a,b){return b.n-a.n;}).slice(0,4).map(function(o){return o.q;});
+  }
+  function relatedBlock(p){
+    var r=relatedFor(p);if(!r.length)return '';
+    return '<div style="margin-top:18px;border-top:1px solid var(--line,rgba(255,255,255,.12));padding-top:12px"><b style="font-size:13px;letter-spacing:.04em">Related articles</b><ul style="margin:8px 0 0 18px">'+
+      r.map(function(q){return '<li style="margin:4px 0"><a href="'+readHref(q)+'">'+esc(q.title)+'</a></li>';}).join('')+'</ul></div>';
+  }
+  function breadcrumb(p){
+    return '<nav aria-label="Breadcrumb" class="meta" style="margin:0 0 10px"><a href="../">Home</a> › <a href="./">Blog</a> › <span>'+esc(p.category||'Article')+'</span></nav>';
+  }
+  /* per-post technical SEO: BlogPosting + Breadcrumb + FAQ JSON-LD, canonical,
+     Open Graph / Twitter, and the document title — injected when a single post
+     is open so each article is a fully-optimised, shareable page. */
+  function faqFromBody(body){
+    var out=[],lines=String(body||'').split(/\n/),q=null;
+    lines.forEach(function(l){var m=l.match(/^###?\s*(?:Q[:.]?\s*)?(.+\?)\s*$/);
+      if(m){q={question:m[1].trim(),answer:''};out.push(q);}
+      else if(q&&l.trim()&&!/^#{1,3}\s/.test(l)){q.answer=(q.answer?q.answer+' ':'')+l.trim();}
+      else if(/^#{1,3}\s/.test(l)){q=null;}});
+    return out.filter(function(x){return x.answer;}).slice(0,8);
+  }
+  function setMeta(name,val,attr){var sel=(attr||'name');var el=document.head.querySelector('meta['+sel+'="'+name+'"]');
+    if(!el){el=document.createElement('meta');el.setAttribute(sel,name);document.head.appendChild(el);}el.setAttribute('content',val);}
+  function seoHead(p){
+    var url=postUrl(p);
+    try{document.title=(p.title||'StudYear Blog')+' — StudYear';}catch(e){}
+    var can=document.querySelector('link[rel="canonical"]');if(can)can.setAttribute('href',url);
+    var desc=p.metaDesc||p.excerpt||'';
+    setMeta('description',desc);
+    setMeta('og:title',p.title||'',{}.hasOwnProperty?'property':'property');
+    setMeta('og:title',p.title||'','property');setMeta('og:description',desc,'property');
+    setMeta('og:type','article','property');setMeta('og:url',url,'property');
+    setMeta('og:image',SITE+'/icon-512.png','property');
+    setMeta('twitter:card','summary_large_image');setMeta('twitter:title',p.title||'');setMeta('twitter:description',desc);
+    document.querySelectorAll('script[data-sy-ld]').forEach(function(s){s.remove();});
+    var blocks=[{"@context":"https://schema.org","@type":"BlogPosting","headline":p.title,"description":desc,
+      "datePublished":p.date,"dateModified":p.reviewed||p.date,"keywords":(p.tags||[]).join(', '),
+      "wordCount":String(p.body||'').split(/\s+/).length,"mainEntityOfPage":{"@type":"WebPage","@id":url},
+      "author":{"@type":"Organization","name":"StudYear","url":SITE},
+      "publisher":{"@type":"Organization","name":"StudYear","logo":{"@type":"ImageObject","url":SITE+'/icon-512.png'}}},
+      {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+        {"@type":"ListItem","position":1,"name":"Home","item":SITE+'/'},
+        {"@type":"ListItem","position":2,"name":"Blog","item":SITE+'/blog/'},
+        {"@type":"ListItem","position":3,"name":p.title,"item":url}]}];
+    var faq=faqFromBody(p.body);
+    if(faq.length)blocks.push({"@context":"https://schema.org","@type":"FAQPage","mainEntity":faq.map(function(f){
+      return {"@type":"Question","name":f.question,"acceptedAnswer":{"@type":"Answer","text":f.answer}};})});
+    blocks.forEach(function(b){var s=document.createElement('script');s.type='application/ld+json';s.setAttribute('data-sy-ld','1');s.textContent=JSON.stringify(b);document.head.appendChild(s);});
+  }
+  function paintViews(){
+    try{ if(!(window.SYCloud&&SYCloud.blogViews))return;
+      SYCloud.blogViews().then(function(v){ if(!v)return;
+        document.querySelectorAll('[data-bvslug]').forEach(function(el){ var c=v[el.getAttribute('data-bvslug')]||0; if(c>0)el.textContent=' · '+c.toLocaleString()+' view'+(c===1?'':'s'); });
+      });
+    }catch(e){}
+  }
+  function drawPosts(){
+    var open=decodeURIComponent(location.hash.replace('#',''));
+    var featured=posts.find(function(p){return (p.slug||p.id)===open});
+    /* a shared link (#slug) opens JUST that article — a clean single-post
+       page with a way back to the full list, never the list itself */
+    wrap.innerHTML=featured?('<p style="margin:0 0 14px"><a href="#" id="back-all" style="font-size:13px">← All articles</a></p>'+
+      '<div class="card" id="featured" style="border-color:rgba(217,174,85,.5)">'+
+      breadcrumb(featured)+
+      '<div class="meta">'+esc(featured.category||'Article')+' · '+(featured.readTime||3)+' min read</div>'+
+      '<h1 style="margin-top:8px;font-size:26px">'+esc(featured.title)+'</h1>'+md(featured.body)+
+      (featured.tags&&featured.tags.length?'<p class="meta" style="letter-spacing:.06em">'+featured.tags.map(function(t){return '#'+esc(t)}).join(' ')+'</p>':'')+
+      shareRow(featured)+relatedBlock(featured)+'</div>')
+    :posts.map(function(p){
+      return '<div class="card" id="'+esc(p.slug||p.id)+'"><div class="meta">'+esc(p.category||'Article')+' · '+(p.readTime||3)+' min read</div>'+
+        '<h2 style="margin-top:8px">'+esc(p.title)+'</h2>'+
+        '<p>'+esc(p.excerpt||p.metaDesc||'')+'</p>'+
+        (p.tags&&p.tags.length?'<p class="meta" style="letter-spacing:.06em">'+p.tags.map(function(t){return '#'+esc(t)}).join(' ')+'</p>':'')+
+        shareRow(p)+
+        '<div class="updated">Published '+esc((p.date||'').slice(0,10))+(p.reviewed?' · Updated '+esc(p.reviewed.slice(0,10)):'')+'<span class="bv" data-bvslug="'+esc(slugOf(p))+'"></span></div></div>';
+    }).join('');
+    paintViews();
+    wrap.querySelectorAll('[data-copy]').forEach(function(a){a.onclick=function(e){e.preventDefault();
+      try{navigator.clipboard.writeText(a.dataset.copy);a.textContent='✓ Copied'}catch(err){}}});
+    var back=document.getElementById('back-all');
+    if(back)back.onclick=function(e){e.preventDefault();history.replaceState(null,'',location.pathname);drawPosts();window.scrollTo({top:0,behavior:'smooth'})};
+    if(featured){seoHead(featured);setTimeout(function(){var f=document.getElementById('featured');if(f)f.scrollIntoView({behavior:'smooth'})},60);}
+  }
+  function blogLd(){
+    var ld={"@context":"https://schema.org","@type":"Blog","name":"StudYear Blog","url":SITE+'/blog/',
+      "publisher":{"@type":"Organization","name":"StudYear","logo":{"@type":"ImageObject","url":SITE+'/icon-512.png'}},
+      "blogPost":posts.slice(0,20).map(function(p){return {"@type":"BlogPosting","headline":p.title,"url":postUrl(p),"description":p.metaDesc||p.excerpt||"","datePublished":p.date,"dateModified":p.reviewed||p.date,"keywords":(p.tags||[]).join(', '),"author":{"@type":"Organization","name":"StudYear"}}})};
+    var s=document.createElement('script');s.type='application/ld+json';s.textContent=JSON.stringify(ld);document.head.appendChild(s);
+  }
+  var hashBound=false;
+  function init(){
+    posts=posts.filter(function(p){return p.published;});
+    posts.sort(function(a,b){return (b.date||'').localeCompare(a.date||'');});
+    /* legacy shared links used /blog/#slug — send them to the crawlable
+       static page /blog/<slug>/ when one exists (301-equivalent client hop) */
+    var hash=decodeURIComponent(location.hash.replace('#',''));
+    if(hash){var t=posts.find(function(p){return slugOf(p)===hash&&p._static;});
+      if(t){location.replace(encodeURIComponent(hash)+'/');return;}}
+    var pc=document.getElementById('post-count');
+    if(posts.length){
+      drawPosts();if(!hashBound){addEventListener('hashchange',drawPosts);hashBound=true;}
+      if(pc)pc.textContent='Evidence-based study guides, revision science and results-day help.';
+      blogLd();
+    } else if(pc){ pc.textContent='New articles are on the way.'; }
+  }
+  /* Load the crawlable, committed post store (visible to every visitor AND to
+     search engines), then merge any admin-only local drafts on top. This is
+     what makes the blog rank — posts must exist in the served bundle, not only
+     in the author's browser. */
+  var seen={};
+  function merge(arr,isStatic){ (arr||[]).forEach(function(p){ if(p&&p.id&&!seen[p.id]){seen[p.id]=1;if(isStatic&&p.published)p._static=1;posts.push(p);} }); }
+  var localPosts=[];try{localPosts=JSON.parse(localStorage.getItem('sy-blog'))||[];}catch(e){}
+  /* Live backend posts (one-click published from the AI Studio) have no
+     pre-rendered page yet, so they merge as NON-static — the in-page reader
+     renders them immediately. Committed posts.json posts merge first and keep
+     their crawlable /blog/<slug>/ page (seen-dedup lets the static one win). */
+  fetch('posts.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():[];}).catch(function(){return [];})
+    .then(function(remote){
+      merge(localPosts,false); merge(remote,true); init();
+      /* augment with live backend posts once cloud.js (deferred) has loaded —
+         DOMContentLoaded fires after all deferred scripts, so SYCloud exists by
+         then. Failure/offline leaves the committed content untouched. */
+      function augment(){ try{ if(!(window.SYCloud&&SYCloud.blogList))return;
+        SYCloud.blogList().then(function(live){ if(!live||!live.length)return;
+          var before=posts.length; merge(live,false); if(posts.length!==before) init(); }).catch(function(){}); }catch(e){} }
+      if(window.SYCloud) augment(); else addEventListener('DOMContentLoaded',augment);
+    });
+})();
+</script>
+<footer>
+  <a href="../">Home</a><a href="../about/">About</a><a href="../contact/">Contact</a><a href="../blog/">Blog</a>
+  <a href="../terms/">Terms</a><a href="../privacy/">Privacy</a><a href="../disclaimer/">Disclaimer</a><a href="../cookies/">Cookies</a>
+  <span style="margin-left:auto">© StudYear — Serving the whole UK</span>
+</footer>
+</div>
+<script src="../cloud.js" defer></script>
+<script src="../pwa.js"></script>
+</body>
+</html>

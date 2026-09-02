@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — People management</title>
+<link rel="manifest" href="../../manifest.json">
+<link rel="icon" href="../../icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--navy-900:#0B1220;--navy-800:#101B33;--gold-300:#A9CFF2;--gold-400:#5FA8E0;--gold-500:#3D8FD1;
+    --ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#8795AE;--good:#5CBB7B;--warn:#c98500;--crit:#e66767;--line:rgba(77,157,224,.14);
+    --serif:Georgia,"Times New Roman",serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:radial-gradient(1200px 700px at 82% -12%,rgba(77,157,224,.13),transparent 60%),radial-gradient(900px 700px at -10% 25%,rgba(22,37,74,.85),transparent 65%),var(--navy-950);
+    color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  .shell{display:flex;min-height:100vh;max-width:1440px;margin:0 auto}
+  aside{width:236px;flex:none;border-right:1px solid var(--line);padding:22px 14px 30px;position:sticky;top:0;align-self:flex-start;max-height:100vh;overflow-y:auto}
+  .slogo{font-family:var(--serif);font-size:19px;color:var(--ink);text-decoration:none;display:block;padding:4px 10px 14px}.slogo b{color:#4FA6E0;font-weight:600}
+  aside nav a{display:block;font-size:13px;color:var(--ink-2);text-decoration:none;padding:8px 10px;border-radius:8px;margin:1px 0}
+  aside nav a:hover{color:var(--gold-300);background:rgba(77,157,224,.08)}aside nav a.on{color:var(--gold-300);background:rgba(77,157,224,.12)}
+  main{flex:1;padding:30px 30px 90px;min-width:0}
+  @media(max-width:960px){.shell{flex-direction:column}aside{width:100%;position:sticky;top:0;z-index:60;max-height:46vh;overflow-y:auto;background:#060B18;border-right:none;border-bottom:1px solid var(--line)}aside nav{display:flex;flex-wrap:wrap;gap:2px}main{padding:22px 18px 70px}}
+  a{color:inherit}
+  h1{font-family:var(--serif);font-weight:500;font-size:28px;letter-spacing:-.01em}
+  p.lede{color:var(--ink-2);font-weight:300;margin-top:6px;max-width:80ch}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:18px 20px;margin-top:18px}
+  .card h3{font-family:var(--serif);font-weight:500;font-size:17px}.card .sub{font-size:12.5px;color:var(--ink-3);margin:5px 0 12px}
+  .tiles{display:flex;gap:14px;flex-wrap:wrap;margin-top:16px}
+  .tile{border:1px solid var(--line);border-radius:12px;background:rgba(16,27,51,.5);padding:14px 20px}
+  .tile .v{font-family:var(--serif);font-size:26px;color:var(--gold-300)}.tile .k{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+  label.f{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:12px 0 5px}
+  input{background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}
+  input:focus{border-color:var(--gold-500)}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12px var(--sans);border-radius:9px;padding:9px 15px;cursor:pointer;text-decoration:none;display:inline-block}
+  .btn:hover{background:rgba(77,157,224,.22)}.btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}.btn.sm{padding:6px 11px;font-size:11.5px}
+  .code{font-family:var(--serif);font-size:30px;letter-spacing:.18em;color:var(--gold-300)}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+  th{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+  td{padding:8px;border-bottom:1px solid rgba(170,182,204,.08);vertical-align:middle}
+  .badge{font-size:10px;letter-spacing:.06em;border-radius:20px;padding:3px 9px;border:1px solid rgba(170,182,204,.25);color:var(--ink-2)}
+  .badge.admin{border-color:rgba(95,168,224,.5);color:var(--gold-300)}.badge.tutor{border-color:rgba(201,133,0,.5);color:#e0b566}
+  .empty{color:var(--ink-3);font-style:italic;padding:14px 0}
+  .steps{font-size:13px;color:var(--ink-2);margin:6px 0 0 18px}.steps li{margin:4px 0}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+</style>
+</head>
+<body>
+<script src="../../guard.js" data-role="school" data-base="../../"></script>
+<div class="shell">
+<aside>
+  <a class="slogo" href="../../">⌂ <b class="wm">StudYear</b></a>
+  <nav>
+    <a href="../">Command Centre</a><a href="../#risk">Risk intelligence</a><a href="../interventions/">Intervention war room</a>
+    <a href="./" class="on">People management</a><a href="../analytics/">Analytics</a><a href="../acu/">ACU command</a>
+    <a href="../assessments/">Assessments</a><a href="../reports/">Executive reports</a><a href="../#knowledge">Knowledge hub</a>
+    <a href="../plans/">Top up ACUs</a><a href="../account/">Settings</a>
+  </nav>
+</aside>
+<main>
+  <h1>People management</h1>
+  <p class="lede">Add teachers and students, assign classes to teachers, and manage your whole school roll from this page.</p>
+
+  <div class="card">
+    <h3>How to set up your school in three steps</h3>
+    <ol class="steps">
+      <li>Invite teachers below (email invite or School Join Code).</li>
+      <li>Add students by email — they must already have a StudYear account.</li>
+      <li>Assign students individually to each teacher, or use Assign cohorts for whole year groups and classes.</li>
+    </ol>
+  </div>
+
+  <div class="tiles">
+    <div class="tile"><div class="v" id="t-teachers">0</div><div class="k">Teachers linked</div></div>
+    <div class="tile"><div class="v" id="t-students">0</div><div class="k">Students on roll</div></div>
+    <div class="tile"><div class="v" id="t-pending">0</div><div class="k">Pending invites</div></div>
+  </div>
+
+  <div class="card" id="add-teacher">
+    <h3>Teachers</h3><div class="sub">Invite staff, share your join code, then assign year groups and classes.</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end">
+      <div><label class="f">School Join Code</label><div class="code" id="join-code">------</div>
+        <div class="sub" style="margin:4px 0 0">Teachers enter this on their Command Centre to link to your school.</div></div>
+      <div style="display:flex;gap:8px"><button class="btn sm" id="copy-code">Copy</button><button class="btn sm" id="regen">Regenerate</button></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:flex-end">
+      <div style="flex:1;min-width:200px"><label class="f">Invite teacher by email</label><input type="text" id="inv-email" placeholder="teacher@school.uk" style="width:100%"></div>
+      <button class="btn solid" id="inv-go">Invite teacher</button>
+    </div>
+    <div id="pending-wrap" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card">
+    <h3>Teacher list &amp; student assignment</h3><div class="sub">Assign students individually, or assign whole cohorts (year groups). Teachers see both.</div>
+    <div style="overflow-x:auto"><table id="staff-table"><tr><th>Name</th><th>Role</th><th>Email</th><th>Cohorts</th><th>Students</th><th></th></tr></table></div>
+  </div>
+
+  <div class="card" id="add-student">
+    <h3>Students</h3><div class="sub">Link existing StudYear accounts to your school roll.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:1;min-width:220px"><label class="f">Student email</label><input type="text" id="stu-email" placeholder="student@schoolmail.com" style="width:100%"></div>
+      <button class="btn solid" id="stu-go">Add student to school</button>
+    </div>
+    <div class="sub" style="margin-top:6px">The student must already have a StudYear account with this email.</div>
+    <div style="overflow-x:auto;margin-top:12px"><table id="roster-table"><tr><th>Name</th><th>Email</th><th>Year group</th><th>Progress</th><th></th></tr></table></div>
+    <div id="roster-empty" class="empty" style="display:none">No students linked yet — add a student by email above.</div>
+  </div>
+</main>
+</div>
+<div id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var SY=window.SY; if(!SY) return; var S=SY.session;
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var toastTimer;function toast(t){var el=$('toast');el.textContent=t;el.style.opacity=1;clearTimeout(toastTimer);toastTimer=setTimeout(function(){el.style.opacity=0},2800)}
+
+var profile=SY.get('profile',{}), schoolName=profile.name||S.name;
+var code=SY.get('schoolCode',null);
+if(!code){code=(Math.random().toString(36).slice(2,10)).toUpperCase();SY.set('schoolCode',code)}
+SY.schoolSet(code,'name',schoolName);SY.schoolSet(code,'admin',S.email);
+/* publish the join code to the backend directory so students on any device can link */
+SY.publishCode(code,'school');
+$('join-code').textContent=code;
+
+function roster(){return SY.schoolGet(code,'roster',[])}
+function staff(){return SY.schoolGet(code,'staff',[])}
+function pending(){return SY.schoolGet(code,'pending',[])}
+function studentProgress(email){
+  var qz=SY.readAccount(email,'quizzes',[]),diag=(SY.readAccount(email,'diagnostics',[])||[])[0];
+  var by={};qz.forEach(function(q){(by[q.subj]=by[q.subj]||[]).push(q.pct)});var subs=Object.keys(by);
+  var m=subs.length?Math.round(subs.reduce(function(a,s){return a+by[s].reduce(function(x,z){return x+z},0)/by[s].length},0)/subs.length):(diag?diag.avg:0);
+  return m;
+}
+
+function draw(){
+  var r=roster(),st=staff(),pn=pending();
+  $('t-teachers').textContent=st.length;$('t-students').textContent=r.length;$('t-pending').textContent=pn.length;
+  /* pending */
+  $('pending-wrap').innerHTML=pn.length?('<div class="sub" style="margin-bottom:4px">Pending teacher invites</div>'+pn.map(function(p,i){
+    return '<div style="display:flex;gap:8px;align-items:center;padding:5px 0"><span style="flex:1;font-size:13px">'+esc(p.email)+' <span class="badge">invited</span></span>'+
+      '<button class="btn sm" data-accept="'+i+'">Mark linked</button><button class="btn sm" data-cancel="'+i+'">Cancel</button></div>';
+  }).join('')):'<div class="sub" style="margin-top:8px">No pending invites.</div>';
+  /* staff table: admin (this account) + linked teachers */
+  var rows='<tr><th>Name</th><th>Role</th><th>Email</th><th>Cohorts</th><th>Students</th><th></th></tr>';
+  st.forEach(function(t,i){
+    rows+='<tr><td>'+esc(t.name||t.email)+'</td><td><span class="badge tutor">TEACHER</span></td><td>'+esc(t.email)+'</td>'+
+      '<td>'+(t.cohorts&&t.cohorts.length?esc(t.cohorts.join(', ')):'All year groups')+'</td>'+
+      '<td>'+((t.students&&t.students.length)||'None')+'</td>'+
+      '<td style="white-space:nowrap"><button class="btn sm" data-cohort="'+i+'">Assign cohorts</button> <button class="btn sm" data-remove-staff="'+i+'">Remove</button></td></tr>';
+  });
+  rows+='<tr><td>'+esc(schoolName)+'</td><td><span class="badge admin">ADMIN</span></td><td>'+esc(S.email)+'</td><td>—</td><td>—</td><td>Admin access</td></tr>';
+  $('staff-table').innerHTML=rows;
+  /* roster */
+  var rr='<tr><th>Name</th><th>Email</th><th>Year group</th><th>Progress</th><th></th></tr>';
+  r.forEach(function(s,i){var pf=SY.readAccount(s.email,'profile',{});var prog=studentProgress(s.email);
+    var mg=SY.schoolGet(code,'managed:'+(s.email||'').toLowerCase(),{});
+    var yr=mg.level||pf.level||s.year||'—';
+    rr+='<tr><td>'+esc(SY.accountName(s.email)||s.name||s.email)+'</td><td>'+esc(s.email)+'</td>'+
+      '<td>'+esc(yr)+(mg.level?' <span class="badge">school-set</span>':'')+'</td><td>'+prog+'%</td>'+
+      '<td style="white-space:nowrap"><button class="btn sm" data-set-year="'+i+'">Set year</button> <button class="btn sm" data-remove-student="'+i+'">Remove</button></td></tr>';
+  });
+  $('roster-table').innerHTML=rr;
+  $('roster-table').style.display=r.length?'table':'none';
+  $('roster-empty').style.display=r.length?'none':'block';
+
+  $('pending-wrap').querySelectorAll('[data-accept]').forEach(function(b){b.onclick=function(){
+    var pn=pending();var inv=pn.splice(+b.dataset.accept,1)[0];SY.schoolSet(code,'pending',pn);
+    var st=staff();st.push({email:inv.email,name:inv.email.split('@')[0],cohorts:[],students:[]});SY.schoolSet(code,'staff',st);
+    toast('Teacher linked');draw();}});
+  $('pending-wrap').querySelectorAll('[data-cancel]').forEach(function(b){b.onclick=function(){var pn=pending();pn.splice(+b.dataset.cancel,1);SY.schoolSet(code,'pending',pn);draw()}});
+  $('staff-table').querySelectorAll('[data-remove-staff]').forEach(function(b){b.onclick=function(){var st=staff();st.splice(+b.dataset.removeStaff,1);SY.schoolSet(code,'staff',st);draw()}});
+  $('staff-table').querySelectorAll('[data-cohort]').forEach(function(b){b.onclick=function(){
+    var st=staff();var i=+b.dataset.cohort;var cur=(st[i].cohorts||[]).join(', ');
+    var v=prompt('Assign cohorts (comma-separated year groups, e.g. "GCSE, Year 11"). Leave blank for all year groups:',cur);
+    if(v===null)return;st[i].cohorts=v.split(',').map(function(x){return x.trim()}).filter(Boolean);SY.schoolSet(code,'staff',st);toast('Cohorts updated');draw();}});
+  $('roster-table').querySelectorAll('[data-set-year]').forEach(function(b){b.onclick=function(){
+    var r=roster();var s=r[+b.dataset.setYear];var email=(s.email||'').toLowerCase();
+    var mg=SY.schoolGet(code,'managed:'+email,{});
+    var v=prompt('Set the school-managed year group / study level for '+(SY.accountName(s.email)||s.email)+'.\nThis is read-only on the student’s own profile — only the school can change it.',mg.level||'');
+    if(v===null)return;mg.level=v.trim();SY.schoolSet(code,'managed:'+email,mg);toast('Year group set (managed by school)');draw();}});
+  $('roster-table').querySelectorAll('[data-remove-student]').forEach(function(b){b.onclick=function(){var r=roster();r.splice(+b.dataset.removeStudent,1);SY.schoolSet(code,'roster',r);draw()}});
+}
+draw();
+
+/* pull in students who linked with the join code from another device */
+try{SY.myLinks().then(function(g){
+  if(!g||!g.inbound)return;var r=roster(),added=false;
+  g.inbound.filter(function(l){return l.relation==='student'}).forEach(function(l){
+    if(l.email&&!r.some(function(x){return x.email===l.email})){r.push({email:l.email,name:l.name||l.email.split('@')[0],year:''});added=true;}
+  });
+  if(added){SY.schoolSet(code,'roster',r);draw();}
+}).catch(function(){});}catch(e){}
+
+$('copy-code').onclick=function(){(navigator.clipboard?navigator.clipboard.writeText(code):Promise.reject()).then(function(){toast('Join code copied')},function(){toast('Code: '+code)})};
+$('regen').onclick=function(){if(!confirm('Regenerate the join code? Existing links stay, but new staff/students must use the new code.'))return;
+  code=(Math.random().toString(36).slice(2,10)).toUpperCase();SY.set('schoolCode',code);SY.schoolSet(code,'name',schoolName);SY.schoolSet(code,'admin',S.email);SY.publishCode(code,'school');$('join-code').textContent=code;toast('New join code generated')};
+$('inv-go').onclick=function(){var e=$('inv-email').value.trim().toLowerCase();
+  if(!/^\S+@\S+\.\S+$/.test(e)){toast('Enter a valid email');return}
+  var pn=pending();if(pn.some(function(p){return p.email===e})){toast('Already invited');return}
+  pn.push({email:e,when:new Date().toISOString()});SY.schoolSet(code,'pending',pn);$('inv-email').value='';
+  SY.log('people','Invited teacher '+e,'Pending — teacher links with the join code.');toast('Invite recorded — share your join code with them');draw();};
+$('stu-go').onclick=function(){var e=$('stu-email').value.trim().toLowerCase();
+  if(!/^\S+@\S+\.\S+$/.test(e)){toast('Enter a valid email');return}
+  var r=roster();if(r.some(function(x){return x.email===e})){toast('Already on roll');return}
+  var known=SY.resolveCode; // account existence check via users
+  var us=[];try{us=JSON.parse(localStorage.getItem('sy-users'))||[]}catch(x){}
+  var acc=us.find(function(u){return u.email===e&&u.role==='student'});
+  r.push({email:e,name:acc?acc.name:e.split('@')[0],year:acc?(SY.readAccount(e,'profile',{}).level||''):''});SY.schoolSet(code,'roster',r);
+  /* also record the school link on the student side if that account exists locally */
+  try{if(acc){var sl={code:code,name:schoolName,when:new Date().toISOString()};SY.writeAccount(e,'schoolLink',sl);}}catch(x){}
+  $('stu-email').value='';SY.log('people','Added student '+e,'Linked to the school roll.');
+  toast(acc?'Student added to roll':'Added — they will fully link once they sign up / accept');draw();};
+})();
+</script>
+</body>
+</html>

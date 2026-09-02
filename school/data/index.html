@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Data intake hub</title>
+<link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--bg:#060B18;--panel:#0B1428;--line:rgba(170,182,204,.16);--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#77839B;
+    --gold-300:#F2CE7B;--gold-400:#D9AE55;--gold-500:#B98A2F;--good:#5CBB7B;--warn:#E0A93F;--bad:#E06060;
+    --serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans)}
+  .wrap{max-width:1100px;margin:0 auto;padding:26px 22px 80px}
+  h1{font-family:var(--serif);font-size:27px;margin:6px 0 4px}
+  h3{font-family:var(--serif);font-size:16.5px}
+  .k{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-400)}
+  .lede{color:var(--ink-2);font-size:14px;margin:4px 0 16px;line-height:1.6;max-width:84ch}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:16px 18px;margin-bottom:12px}
+  .feeds{display:inline-block;font-size:10.5px;color:#8ee0a5;border:1px solid rgba(92,187,123,.35);border-radius:14px;padding:2px 9px;margin-left:8px;font-weight:400}
+  .note{font-size:11.5px;color:var(--ink-3);line-height:1.6}
+  .btn{appearance:none;border:1px solid var(--gold-500);border-radius:8px;padding:8px 13px;font-size:12.5px;font-weight:600;cursor:pointer;background:linear-gradient(180deg,var(--gold-300),var(--gold-400));color:#1a1405}
+  .btn.ghost{background:none;border-color:var(--line);color:var(--ink-2)}
+  .btn.sm{padding:4px 9px;font-size:11px}
+  input,select,textarea{background:rgba(6,11,24,.6);border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:7px 9px;font-size:12.5px;font-family:var(--sans)}
+  .f{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin:0 0 3px}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:6px 6px;border-bottom:1px solid var(--line)}
+  td{padding:6px;border-bottom:1px solid rgba(170,182,204,.08);vertical-align:middle}
+  td b{color:var(--ink)}
+  .tag{display:inline-block;border:1px solid var(--line);border-radius:14px;padding:2px 8px;font-size:10px;margin:2px 3px 2px 0;cursor:pointer;color:var(--ink-3)}
+  .tag.on{border-color:var(--gold-500);color:var(--gold-300)}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:11px 18px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:99}
+  a.back{color:var(--ink-3);font-size:13px;text-decoration:none}
+</style></head><body>
+<script src="../../guard.js" data-role="school" data-base="../../"></script>
+<div class="wrap">
+<a class="back" href="../">← School Command Centre</a>
+<div class="k" style="margin-top:14px">Data intake hub · every signal has its source</div>
+<h1>Feed the AI School Brain™</h1>
+<p class="lede">Every metric on the Command Centre traces back to an input on this page (or an automatic feed from the
+  OS — attendance from the register, homework from planners, mastery from quizzes). Enter it once here and every
+  dashboard, briefing, record and report updates itself. Teachers never enter the same data twice.</p>
+
+<div class="card"><h3>👤 Student data grid <span class="feeds">feeds → Equity Engine · Attainment gaps · SEND/EAL/PP briefing counts · Reading concerns · Core progress · Destination prediction · Student records</span></h3>
+  <div class="note">Set each child's characteristics once — the Equity Engine and every gap analysis compute from them automatically.</div>
+  <div style="overflow-x:auto;margin-top:8px"><table id="meta-table">
+    <thead><tr><th>Student</th><th>Gender</th><th>Ethnicity</th><th>Flags</th><th>Groups</th><th>Reading age</th><th>Destination</th></tr></thead>
+    <tbody></tbody></table></div>
+  <div class="note" id="meta-empty" style="display:none">No students on the roster yet — add them in People management.</div>
+</div>
+
+<div class="card"><h3>🧭 Behaviour log <span class="feeds">feeds → Behaviour index · AI School Brain · morning briefing · improvement plan</span></h3>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-top:6px">
+    <div><label class="f">Student</label><select id="bh-student"></select></div>
+    <div><label class="f">Type</label><select id="bh-kind"><option value="positive">Positive (praise/merit)</option><option value="minor">Minor incident</option><option value="serious">Serious incident</option></select></div>
+    <div style="flex:1;min-width:180px"><label class="f">Note</label><input id="bh-note" style="width:100%" placeholder="e.g. Excellent contribution in class / Disruption in P3"></div>
+    <button class="btn" id="bh-add">Log</button>
+  </div>
+  <div id="bh-list" style="margin-top:8px"></div>
+</div>
+
+<div class="card"><h3>❤️ Wellbeing check-ins <span class="feeds">feeds → Wellbeing score · wellbeing alerts · School Brain · student records</span></h3>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-top:6px">
+    <div><label class="f">Student</label><select id="wb-student"></select></div>
+    <div><label class="f">Score (0–100)</label><input id="wb-score" type="number" min="0" max="100" value="75" style="width:90px"></div>
+    <div style="flex:1;min-width:180px"><label class="f">Note (pastoral)</label><input id="wb-note" style="width:100%" placeholder="e.g. Settled well after form-tutor check-in"></div>
+    <button class="btn" id="wb-add">Record check-in</button>
+  </div>
+  <div id="wb-list" style="margin-top:8px"></div>
+</div>
+
+<div class="card"><h3>⚠️ Safeguarding log <span class="feeds">feeds → Safeguarding alerts · leadership dashboard · improvement plan</span></h3>
+  <div class="note">Restricted — visible to senior leadership only. Production stores these under a separate encrypted, access-audited collection.</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-top:6px">
+    <div><label class="f">Student</label><select id="sg-student"></select></div>
+    <div style="flex:1;min-width:200px"><label class="f">Concern</label><input id="sg-note" style="width:100%"></div>
+    <button class="btn" id="sg-add">Raise alert</button>
+  </div>
+  <div id="sg-list" style="margin-top:8px"></div>
+</div>
+
+<div class="card"><h3>👩‍🏫 Staff workload <span class="feeds">feeds → Teacher workload % · School Brain · improvement plan</span></h3>
+  <div class="note">Weekly contact hours per staff member — the workload sustainability metric computes from these.</div>
+  <div id="staff-list" style="margin-top:8px"></div>
+</div>
+
+<div class="card"><h3>📚 Curriculum coverage <span class="feeds">feeds → Curriculum % · School Brain · department reviews</span></h3>
+  <div class="note">Per department: how much of the year's specification has been taught so far.</div>
+  <div id="cov-list" style="margin-top:8px"></div>
+  <div style="display:flex;gap:8px;align-items:end;margin-top:8px">
+    <div><label class="f">Department / subject</label><input id="cov-subj" placeholder="e.g. Mathematics"></div>
+    <div><label class="f">% covered</label><input id="cov-pct" type="number" min="0" max="100" value="70" style="width:90px"></div>
+    <button class="btn sm" id="cov-add">Set</button>
+  </div>
+</div>
+
+<div class="card"><h3>🤖 Automatic feeds <span class="feeds">no input needed — already flowing</span></h3>
+  <div class="note" style="font-size:12.5px">
+    <b style="color:var(--ink)">Attendance</b> ← the teacher register &nbsp;·&nbsp;
+    <b style="color:var(--ink)">Homework completion</b> ← student planners &nbsp;·&nbsp;
+    <b style="color:var(--ink)">Assessments &amp; mastery</b> ← quizzes and diagnostics &nbsp;·&nbsp;
+    <b style="color:var(--ink)">Engagement</b> ← OS activity &nbsp;·&nbsp;
+    <b style="color:var(--ink)">Parent links</b> ← family connections &nbsp;·&nbsp;
+    <b style="color:var(--ink)">Interventions</b> ← the war room and student records &nbsp;·&nbsp;
+    <b style="color:var(--ink)">ACU burn</b> ← the AI gateway &nbsp;·&nbsp;
+    <b style="color:var(--ink)">Predicted grades</b> ← the learning models.
+  </div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+(function(){
+'use strict';
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var e=$('toast');e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2000)}
+var code=SY.get('schoolCode',null);
+if(!code){code=(Math.random().toString(36).slice(2,10)).toUpperCase();SY.set('schoolCode',code)}
+var roster=SY.schoolGet(code,'roster',[]);
+var staff=SY.schoolGet(code,'staff',[]);
+function g(k,d){return SY.schoolGet(code,k,d)}
+function s(k,v){SY.schoolSet(code,k,v)}
+var GROUPS=[['lac','Looked-after'],['refugee','Refugee'],['migrant','Recent migrant'],['lowIncome','Low income'],['youngCarer','Young carer'],['traveller','Traveller']];
+var ETH=['','White British','Black','Asian','Mixed heritage','Other'];
+var DEST=['','University','Apprenticeship','Sixth Form / College','Employment','Needs support'];
+
+/* ---- student data grid ---- */
+function drawMeta(){
+  var meta=g('studentMeta',{});
+  $('meta-empty').style.display=roster.length?'none':'block';
+  $('meta-table').querySelector('tbody').innerHTML=roster.map(function(r,i){
+    var m=meta[r.email]||{};
+    return '<tr data-e="'+esc(r.email)+'">'+
+      '<td><b>'+esc(r.name||r.email)+'</b><div class="note">'+esc(r.year||'')+'</div></td>'+
+      '<td><select data-k="gender"><option value=""></option><option'+(m.gender==='Female'?' selected':'')+'>Female</option><option'+(m.gender==='Male'?' selected':'')+'>Male</option><option'+(m.gender==='Other'?' selected':'')+'>Other</option></select></td>'+
+      '<td><select data-k="ethnicity">'+ETH.map(function(e){return '<option'+(m.ethnicity===e?' selected':'')+'>'+e+'</option>'}).join('')+'</select></td>'+
+      '<td>'+[['send','SEND'],['pp','PP'],['eal','EAL']].map(function(f){return '<span class="tag'+(m[f[0]]?' on':'')+'" data-t="'+f[0]+'">'+f[1]+'</span>'}).join('')+'</td>'+
+      '<td>'+GROUPS.map(function(f){return '<span class="tag'+(m[f[0]]?' on':'')+'" data-t="'+f[0]+'">'+f[1]+'</span>'}).join('')+'</td>'+
+      '<td><input data-k="readingAge" type="number" step="0.1" min="4" max="18" value="'+(m.readingAge||'')+'" style="width:68px"></td>'+
+      '<td><select data-k="destination">'+DEST.map(function(d){return '<option'+(m.destination===d?' selected':'')+'>'+d+'</option>'}).join('')+'</select></td></tr>';
+  }).join('');
+  function saveCell(email,key,val){
+    var mm=g('studentMeta',{});mm[email]=mm[email]||{};
+    if(val===''||val===false)delete mm[email][key];else mm[email][key]=val;
+    s('studentMeta',mm);toast('Saved — dashboards updated');
+  }
+  $('meta-table').querySelectorAll('tr[data-e]').forEach(function(tr){
+    var email=tr.dataset.e;
+    tr.querySelectorAll('[data-k]').forEach(function(el){el.onchange=function(){
+      var v=el.dataset.k==='readingAge'?(parseFloat(el.value)||''):el.value;saveCell(email,el.dataset.k,v);
+    }});
+    tr.querySelectorAll('.tag').forEach(function(t){t.onclick=function(){
+      t.classList.toggle('on');saveCell(email,t.dataset.t,t.classList.contains('on'));
+    }});
+  });
+}
+
+/* ---- pickers ---- */
+var opts=roster.map(function(r){return '<option value="'+esc(r.email)+'">'+esc(r.name||r.email)+'</option>'}).join('');
+['bh-student','wb-student','sg-student'].forEach(function(id){$(id).innerHTML=opts});
+
+/* ---- behaviour ---- */
+function drawBeh(){
+  var list=g('behaviour',[]);
+  $('bh-list').innerHTML=list.slice(0,8).map(function(e,i){
+    var c=e.kind==='positive'?'var(--good)':e.kind==='serious'?'var(--bad)':'var(--warn)';
+    return '<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid rgba(170,182,204,.07);font-size:12px"><span><b style="color:'+c+'">'+esc(e.kind)+'</b> · <b>'+esc(SY.accountName(e.email))+'</b> <span class="note">'+esc(e.note||'')+'</span></span><span class="note">'+esc(String(e.when).slice(0,10))+' <button class="btn ghost sm" data-i="'+i+'">×</button></span></div>';
+  }).join('')||'<div class="note">No incidents logged.</div>';
+  $('bh-list').querySelectorAll('button').forEach(function(b){b.onclick=function(){var l=g('behaviour',[]);l.splice(+b.dataset.i,1);s('behaviour',l);drawBeh()}});
+}
+$('bh-add').onclick=function(){
+  if(!$('bh-student').value)return;
+  var _bk=$('bh-kind').value;var _bp=(_bk==='positive'?2:_bk==='serious'?-5:-2);var _bem=String($('bh-student').value||'').toLowerCase();var _bn=new Date().toISOString();
+  var l=g('behaviour',[]);l.unshift({email:$('bh-student').value,student:_bem,kind:_bk,points:_bp,note:$('bh-note').value.trim(),reason:$('bh-note').value.trim(),category:'General',when:_bn,at:_bn,by:SY.session.email});
+  s('behaviour',l.slice(0,300));$('bh-note').value='';toast('Logged — behaviour index updated');drawBeh();
+};
+
+/* ---- wellbeing ---- */
+function drawWb(){
+  var list=g('wellbeing',[]);
+  $('wb-list').innerHTML=list.slice(0,8).map(function(e){
+    var c=e.score>=70?'var(--good)':e.score>=55?'var(--warn)':'var(--bad)';
+    return '<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid rgba(170,182,204,.07);font-size:12px"><span><b style="color:'+c+'">'+e.score+'</b> · <b>'+esc(SY.accountName(e.email))+'</b> <span class="note">'+esc(e.note||'')+'</span></span><span class="note">'+esc(String(e.when).slice(0,10))+'</span></div>';
+  }).join('')||'<div class="note">No check-ins yet.</div>';
+}
+$('wb-add').onclick=function(){
+  if(!$('wb-student').value)return;
+  var l=g('wellbeing',[]);l.unshift({email:$('wb-student').value,score:Math.max(0,Math.min(100,+$('wb-score').value||75)),note:$('wb-note').value.trim(),when:new Date().toISOString(),by:SY.session.email});
+  s('wellbeing',l.slice(0,300));$('wb-note').value='';toast('Recorded — wellbeing metrics updated');drawWb();
+};
+
+/* ---- safeguarding ---- */
+function drawSg(){
+  var list=g('safeguard',[]).map(function(x){return typeof x==='object'?x:{note:String(x),status:'active'}});
+  $('sg-list').innerHTML=list.slice(0,8).map(function(e,i){
+    return '<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid rgba(170,182,204,.07);font-size:12px"><span><b style="color:'+(e.status==='resolved'?'var(--good)':'var(--bad)')+'">'+esc(e.status||'active')+'</b> · <b>'+esc(e.email?SY.accountName(e.email):'')+'</b> <span class="note">'+esc(e.note||'')+'</span></span><span><button class="btn ghost sm" data-i="'+i+'">'+(e.status==='resolved'?'Reopen':'Resolve')+'</button></span></div>';
+  }).join('')||'<div class="note">No safeguarding alerts.</div>';
+  $('sg-list').querySelectorAll('button').forEach(function(b){b.onclick=function(){
+    var l=g('safeguard',[]).map(function(x){return typeof x==='object'?x:{note:String(x),status:'active'}});
+    l[+b.dataset.i].status=l[+b.dataset.i].status==='resolved'?'active':'resolved';s('safeguard',l);drawSg();
+  }});
+}
+$('sg-add').onclick=function(){
+  if(!$('sg-student').value||!$('sg-note').value.trim())return;
+  var l=g('safeguard',[]).map(function(x){return typeof x==='object'?x:{note:String(x),status:'active'}});
+  l.unshift({email:$('sg-student').value,note:$('sg-note').value.trim(),status:'active',when:new Date().toISOString(),by:SY.session.email});
+  s('safeguard',l.slice(0,100));$('sg-note').value='';toast('Alert raised — leadership dashboard updated');drawSg();
+};
+
+/* ---- staff workload ---- */
+function drawStaff(){
+  var meta=g('staffMeta',{});
+  $('staff-list').innerHTML=staff.map(function(t){
+    var h=(meta[t.email]||{}).hours||'';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid rgba(170,182,204,.07);font-size:12.5px"><span><b>'+esc(t.name||t.email)+'</b> <span class="note">'+esc(t.role||'Teacher')+'</span></span><span><input data-e="'+esc(t.email)+'" type="number" min="0" max="60" value="'+h+'" placeholder="hrs/wk" style="width:80px"> <span class="note">contact hrs/week</span></span></div>';
+  }).join('')||'<div class="note">No staff yet — invite them in People management.</div>';
+  $('staff-list').querySelectorAll('input').forEach(function(inp){inp.onchange=function(){
+    var m=g('staffMeta',{});m[inp.dataset.e]=m[inp.dataset.e]||{};m[inp.dataset.e].hours=+inp.value||0;s('staffMeta',m);toast('Saved — workload metric updated');
+  }});
+}
+
+/* ---- curriculum coverage ---- */
+function drawCov(){
+  var cov=g('curriculumCoverage',{});
+  $('cov-list').innerHTML=Object.keys(cov).map(function(k){
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(170,182,204,.07);font-size:12.5px"><span><b>'+esc(k)+'</b></span><span>'+cov[k]+'% <button class="btn ghost sm" data-k="'+esc(k)+'">×</button></span></div>';
+  }).join('')||'<div class="note">No departments set yet.</div>';
+  $('cov-list').querySelectorAll('button').forEach(function(b){b.onclick=function(){
+    var c=g('curriculumCoverage',{});delete c[b.dataset.k];s('curriculumCoverage',c);drawCov();
+  }});
+}
+$('cov-add').onclick=function(){
+  var subj=$('cov-subj').value.trim();if(!subj)return;
+  var c=g('curriculumCoverage',{});c[subj]=Math.max(0,Math.min(100,+$('cov-pct').value||0));s('curriculumCoverage',c);
+  $('cov-subj').value='';toast('Saved — curriculum metric updated');drawCov();
+};
+
+drawMeta();drawBeh();drawWb();drawSg();drawStaff();drawCov();
+})();
+</script>
+</body></html>

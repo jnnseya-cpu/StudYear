@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Test our demo</title><link rel="manifest" href="../manifest.json"><link rel="icon" href="../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18"><link rel="stylesheet" href="../theme.css">
+<meta name="description" content="Step inside StudYear free — no account, no card. Choose the school or student view and watch the AI examiner, tutor and command centre work on real school work.">
+<link rel="canonical" href="https://www.studyear.com/demo/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="StudYear">
+<meta property="og:locale" content="en_GB">
+<meta property="og:url" content="https://www.studyear.com/demo/">
+<meta property="og:title" content="Try the StudYear demo — no account, no card">
+<meta property="og:description" content="Choose the school or student view and watch the AI examiner, tutor and command centre work on real school work. Free, no signup.">
+<meta property="og:image" content="https://www.studyear.com/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="StudYear — one platform for every student, teacher, parent and school, running on AI">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Try the StudYear demo — no account, no card">
+<meta name="twitter:description" content="Choose the school or student view and see the AI working on real school work. Free, no signup.">
+<meta name="twitter:image" content="https://www.studyear.com/og-cover.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"EducationalOrganization","@id":"https://www.studyear.com/#org","name":"StudYear","url":"https://www.studyear.com/","logo":"https://www.studyear.com/icon-512.png","email":"contact@studyear.com","areaServed":"GB","contactPoint":{"@type":"ContactPoint","contactType":"customer support","email":"contact@studyear.com","areaServed":"GB","availableLanguage":["en"]}},
+{"@type":"WebPage","@id":"https://www.studyear.com/demo/","url":"https://www.studyear.com/demo/","name":"Try the StudYear demo","isPartOf":{"@id":"https://www.studyear.com/#org"},"inLanguage":"en-GB"}
+]}
+</script>
+<style>
+  :root{--bg:#060B18;--panel:#0B1428;--line:rgba(170,182,204,.16);--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#77839B;
+    --gold-300:#F2CE7B;--gold-400:#D9AE55;--gold-500:#B98A2F;--blue-300:#8FC2EC;--blue-500:#2E6BC4;--good:#5CBB7B;--warn:#E0A93F;
+    --serif:Georgia,"Times New Roman",serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh}
+  .wrap{max-width:1060px;margin:0 auto;padding:40px 22px 80px}
+  .k{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-400)}
+  h1{font-family:var(--serif);font-size:clamp(28px,4.5vw,42px);margin:10px 0 8px}
+  .lede{color:var(--ink-2);font-size:15.5px;line-height:1.7;max-width:62ch}
+  .safe{display:inline-flex;gap:8px;align-items:center;margin-top:14px;border:1px solid rgba(92,187,123,.4);color:#8ee0a5;
+    border-radius:22px;padding:8px 16px;font-size:13px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:28px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:8px;transition:border-color .2s}
+  .card.hot{border-color:var(--gold-500);box-shadow:0 0 0 1px var(--gold-500),0 16px 40px rgba(0,0,0,.4)}
+  .card .ic{font-size:26px}
+  .card h3{font-family:var(--serif);font-size:19px}
+  .card p{color:var(--ink-2);font-size:13.5px;line-height:1.6;flex:1}
+  .who{font-size:12px;color:var(--ink-3)}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .btn{appearance:none;border-radius:9px;padding:10px 14px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--gold-500);
+    background:linear-gradient(180deg,var(--gold-300),var(--gold-400));color:#1a1405}
+  .btn.ghost{background:none;border:1px solid var(--line);color:var(--ink-2)}
+  .btn:hover{filter:brightness(1.06)}
+  .note{font-size:12px;color:var(--ink-3);line-height:1.6}
+  a.back{color:var(--ink-3);font-size:13px;text-decoration:none}
+  a.back:hover{color:var(--gold-300)}
+  .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);
+    border-radius:10px;padding:12px 20px;font-size:13.5px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:99}
+</style></head><body>
+<div class="wrap" role="main">
+  <a class="back" href="../landing.html">← Back to StudYear</a>
+  <div class="k" style="margin-top:22px">Presentation mode</div>
+  <h1>Test our demo — every role, one click</h1>
+  <p class="lede">Walk the whole Academic Operating System as any user. <b>Fully loaded</b> opens a
+    presentation account with realistic data already in place — students, results, school links, ACU wallets.
+    <b>Empty</b> opens a brand-new account so you can watch the OS build itself from zero.</p>
+  <div class="safe">🛡 Demo accounts are for presentation only — they never call live AI models and never reach Stripe. Nothing is spent.</div>
+
+  <div class="grid" id="grid"></div>
+
+  <p class="note" style="margin-top:26px">Demo data lives only in this browser. Relaunching “fully loaded” resets the account
+    to its presentation state; “empty” always starts from a clean slate. Sign out from any console to return here.</p>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+function set(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function del(prefix){var kill=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf(prefix)===0)kill.push(k)}kill.forEach(function(k){localStorage.removeItem(k)})}
+function day(off){var d=new Date();d.setDate(d.getDate()+off);return d.toISOString().slice(0,10)}
+function iso(off){var d=new Date();d.setDate(d.getDate()+off);return d.toISOString()}
+var MONTH=new Date().toISOString().slice(0,7);
+var SCH='DEMOSCH1',LA='LA-DEMO1';
+function registerUser(email,role,name){
+  var users=[];try{users=JSON.parse(localStorage.getItem('sy-users'))||[]}catch(e){}
+  if(!users.some(function(u){return u.email===email&&u.role===role}))
+    users.push({email:email,role:role,name:name,demo:true,created:new Date().toISOString()});
+  set('sy-users',users);
+}
+
+/* ---------- fully-loaded seeds (shapes mirror what each console writes) ---------- */
+function seedStudent(email,name,opts){
+  opts=opts||{};var ns='sy-u:'+email+':';del(ns);
+  registerUser(email,'student',name);
+  set(ns+'profile',{name:name,level:opts.level||'GCSE',board:'AQA',subjects:[
+    {s:'Mathematics',target:8},{s:'Physics',target:7},{s:'English Literature',target:7},{s:'Chemistry',target:8}]});
+  set(ns+'wallet',{acus:opts.acus||2750,plan:'student_max',month:MONTH,planExpires:iso(30)});
+  set(ns+'points',opts.points||2450);
+  var days=[];for(var i=13;i>=0;i--)days.push(day(-i));
+  set(ns+'streak',{days:days,best:21});
+  var q=[],subs=['Mathematics','Physics','English Literature','Chemistry'];
+  for(var j=0;j<8;j++)q.push({t:day(-(21-j*3)),subj:subs[j%4],title:subs[j%4]+' checkpoint '+(j+1),pct:(opts.base||58)+j*4});
+  set(ns+'quizzes',q);
+  set(ns+'consent',{parent:true,schoolToParent:true});
+  set(ns+'mine',[
+    {id:'d1',type:'Revision Notes',title:'Quadratics — completing the square',subj:'Mathematics',level:'GCSE',mine:true,
+     body:'<h5>Method</h5><p>Halve the x-coefficient, square it, adjust the constant. (x+p)²+q form reveals the turning point (−p, q).</p>'},
+    {id:'d2',type:'Revision Notes',title:'Forces — resultant force & F=ma',subj:'Physics',level:'GCSE',mine:true,
+     body:'<h5>Core idea</h5><p>Resultant force causes acceleration in its direction: F = ma. Balanced forces → constant velocity (Newton’s First Law).</p>'}]);
+  /* diagnostic history + saved careers settings: the Career Passport and
+     recovery plan demo with one tap, no setup, matched to the seeded quizzes */
+  var dg={when:iso(-4),risk:'HIGH',avg:51,list:[
+    {s:'Physics',mastery:38,target:'7'},{s:'Mathematics',mastery:45,target:'8'},
+    {s:'Chemistry',mastery:54,target:'8'},{s:'English Literature',mastery:66,target:'7'}]};
+  dg.weak=dg.list.filter(function(x){return x.mastery<60});
+  set(ns+'diagnostics',[dg]);
+  set(ns+'career',{interests:['engineering','health','tech'],locality:'Birmingham',style:'balanced',personality:'',income:''});
+  set(ns+'activity',[
+    {k:'lesson',t:'Interactive lesson: Quadratic Equations',d:'GCSE level — interactive lesson completed.',when:iso(0)},
+    {k:'quiz',t:'Chemistry checkpoint 8',d:'86% — best score this term.',when:iso(-1)},
+    {k:'review',t:'Assignment reviewed: Macbeth essay',d:'GCSE · English Literature — examiner review with targets.',when:iso(-2)},
+    {k:'resource',t:'Mathematics — Quadratics notes',d:'Level: GCSE. Saved to your library.',when:iso(-3)},
+    {k:'plan',t:'Recovery plan generated',d:'A personalised recovery plan was added to your account.',when:iso(-5)},
+    {k:'billing',t:'Student Max activated',d:'2,750 ACUs added to your wallet.',when:iso(-6)}]);
+}
+function seedSchoolStore(){
+  del('sy-school:'+SCH+':');
+  var P='sy-school:'+SCH+':';
+  set(P+'name','Riverside Academy (Demo)');
+  set(P+'verified',true);
+  set(P+'acu',{balance:5000,burn:[120,90,140,110,160,95,130]});
+  /* cohorts must match roster `year` values — myStudents() filters on them */
+  set(P+'staff',[{email:'teacher@demo.studyear',name:'Daniel Mensah',role:'Teacher',cohorts:['Year 10','Year 11']},
+                 {email:'school@demo.studyear',name:'Priya Sharma',role:'Headteacher',cohorts:[]}]);
+  set(P+'roster',[
+    {email:'student@demo.studyear',name:'Emily Carter',cohort:'10A',year:'Year 10'},
+    {email:'jayden@demo.studyear',name:'Jayden Osei',cohort:'10A',year:'Year 10'},
+    {email:'sofia@demo.studyear',name:'Sofia Almeida',cohort:'10A',year:'Year 10'},
+    {email:'liam@demo.studyear',name:'Liam Whitfield',cohort:'11B',year:'Year 11',send:true},
+    {email:'aisha@demo.studyear',name:'Aisha Rahman',cohort:'11B',year:'Year 11'},
+    {email:'tomas@demo.studyear',name:'Tomas Kovacs',cohort:'11B',year:'Year 11'}]);
+  /* light live accounts behind the roster so drill-downs show real data */
+  seedStudent('student@demo.studyear','Emily Carter',{});
+  seedStudent('jayden@demo.studyear','Jayden Osei',{acus:500,points:980,base:48});
+  seedStudent('sofia@demo.studyear','Sofia Almeida',{acus:700,points:1730,base:66});
+  seedStudent('liam@demo.studyear','Liam Whitfield',{acus:500,points:640,base:41,level:'GCSE'});
+  seedStudent('aisha@demo.studyear','Aisha Rahman',{acus:700,points:2210,base:70});
+  seedStudent('tomas@demo.studyear','Tomas Kovacs',{acus:500,points:1120,base:55});
+  /* every rostered child carries their school link; Emily's parent is granted
+     access to her school record so the parent-view demo shows the model */
+  ['student','jayden','sofia','liam','aisha','tomas'].forEach(function(u){
+    set('sy-u:'+u+'@demo.studyear:schoolLink',{code:SCH,name:'Riverside Academy (Demo)',when:iso(-30)});
+  });
+  set('sy-school:'+SCH+':recordAccess',{'student@demo.studyear':{parent:true,by:'school@demo.studyear',when:iso(-7)}});
+  seedHomework();
+  seedEngagement();
+  seedSchoolOS();
+}
+/* Phase 3 school-OS demo data: structure, admissions pipeline, an exam session
+   with results, and a role assignment — so the leadership MIS + AI agents show
+   a full picture. Shapes mirror SYStructure/SYAdmissions/SYExams/SYRoles. */
+function seedSchoolOS(){
+  var P='sy-school:'+SCH+':',T='teacher@demo.studyear',TN='Daniel Mensah';
+  set(P+'structure',{years:['Year 10','Year 11'],subjects:['Mathematics','Physics','Chemistry','English Literature','History','Geography'],
+    classes:[{id:'c1',name:'10A/Ma1',year:'Year 10',subject:'Mathematics',teacher:T,teacherName:TN},
+             {id:'c2',name:'10A/Sc1',year:'Year 10',subject:'Physics',teacher:T,teacherName:TN},
+             {id:'c3',name:'11B/Ma2',year:'Year 11',subject:'Mathematics',teacher:T,teacherName:TN}]});
+  set(P+'admissions',[
+    {id:'ad1',name:'Oliver Bennett',year:'Year 10',stage:'offer',contact:'bennett@family.demo',notes:'',at:iso(-12),history:[{stage:'enquiry',at:iso(-20)},{stage:'application',at:iso(-16)},{stage:'assessment',at:iso(-14)},{stage:'offer',at:iso(-12)}]},
+    {id:'ad2',name:'Maya Patel',year:'Year 10',stage:'assessment',contact:'patel@family.demo',notes:'',at:iso(-8),history:[{stage:'enquiry',at:iso(-11)},{stage:'application',at:iso(-9)},{stage:'assessment',at:iso(-8)}]},
+    {id:'ad3',name:'Harry Dawson',year:'Year 11',stage:'enquiry',contact:'dawson@family.demo',notes:'',at:iso(-3),history:[{stage:'enquiry',at:iso(-3)}]},
+    {id:'ad4',name:'Grace Miller',year:'Year 10',stage:'accepted',contact:'miller@family.demo',notes:'',at:iso(-6),history:[{stage:'enquiry',at:iso(-15)},{stage:'application',at:iso(-12)},{stage:'offer',at:iso(-9)},{stage:'accepted',at:iso(-6)}]}]);
+  set(P+'exams',{sessions:[
+    {id:'ex1',name:'Y11 Maths Paper 1 (Mock)',subject:'Mathematics',board:'AQA',date:iso(-5),group:'Year 11',scheme:'gcse91'},
+    {id:'ex2',name:'Y10 Physics End-of-Unit',subject:'Physics',board:'',date:iso(-2),group:'Year 10',scheme:'gcse91'}],
+    entries:{ex1:{'liam@demo.studyear':{grade:'4',mark:'52'},'aisha@demo.studyear':{grade:'7',mark:'78'},'tomas@demo.studyear':{grade:'5',mark:'61'}},
+             ex2:{'student@demo.studyear':{grade:'8',mark:'84'},'jayden@demo.studyear':{grade:'5',mark:'58'},'sofia@demo.studyear':{grade:'7',mark:'72'}}}});
+  set(P+'roles',{roles:[
+    {id:'leader',name:'School leader',perms:{View:true,Create:true,Edit:true,Delete:true,Approve:true,Publish:true,Export:true,Share:true,Assign:true,Close:true,AccessAI:true,ViewSensitive:true,ManagePermissions:true,Impersonate:true,CrossSchool:true,Historical:true}},
+    {id:'teacher',name:'Teacher',perms:{View:true,Create:true,Edit:true,Approve:false,Publish:true,Export:true,Share:true,Assign:true,Close:false,AccessAI:true,ViewSensitive:false,ManagePermissions:false,Impersonate:false,CrossSchool:false,Historical:false,Delete:false}},
+    {id:'ta',name:'Teaching assistant',perms:{View:true,AccessAI:true}},
+    {id:'safeguard',name:'Safeguarding lead',perms:{View:true,ViewSensitive:true,Historical:true,Export:true}}],
+    assignments:{'teacher@demo.studyear':'teacher','school@demo.studyear':'leader'}});
+}
+/* Satchel-One school-engagement demo data: timetable, announcements, documents
+   and behaviour points — so the school/teacher/student/parent consoles show the
+   full engagement loop live. Shapes mirror SYTimetable/SYAnnounce/SYDocs/SYBehaviour. */
+function seedEngagement(){
+  var T='teacher@demo.studyear',TN='Daniel Mensah';
+  var P='sy-school:'+SCH+':';
+  // timetable — a Year 10 week
+  var TT=[
+    [0,1,'Mathematics','R12'],[0,2,'Physics','Lab 2'],[0,4,'English Literature','R7'],
+    [1,1,'Chemistry','Lab 1'],[1,3,'Mathematics','R12'],[1,5,'PE','Gym'],
+    [2,2,'English Literature','R7'],[2,3,'Physics','Lab 2'],[2,4,'History','R3'],
+    [3,1,'Mathematics','R12'],[3,2,'Chemistry','Lab 1'],[3,5,'Geography','R9'],
+    [4,1,'Physics','Lab 2'],[4,2,'Mathematics','R12'],[4,3,'English Literature','R7']];
+  set(P+'timetable',TT.map(function(x,i){return {id:'tt'+i,group:'Year 10',day:x[0],slot:x[1],subject:x[2],room:x[3],teacher:(x[2]==='Mathematics'||x[2]==='Physics')?T:'',teacherName:(x[2]==='Mathematics'||x[2]==='Physics')?TN:''};}));
+  // announcements
+  set(P+'announcements',[
+    {id:'an1',title:'Parents’ evening — Thursday 6pm',body:'Year 10 parents’ evening this Thursday from 6pm in the main hall. Book a slot with each teacher via reception.',by:'school@demo.studyear',byName:'Priya Sharma',audience:'parents',group:'',priority:'important',at:iso(-2),reads:{}},
+    {id:'an2',title:'Non-uniform day Friday',body:'Wear your own clothes on Friday for £1 — all proceeds to the school charity partner.',by:'school@demo.studyear',byName:'Priya Sharma',audience:'all',group:'',priority:'info',at:iso(-1),reads:{}},
+    {id:'an3',title:'Year 10 mock exams start Monday',body:'Mocks begin Monday. Bring black pens, a calculator and your revision guide. Timetable is in Documents.',by:T,byName:TN,audience:'students',group:'',priority:'urgent',at:iso(0),reads:{}}]);
+  // documents
+  set(P+'documents',[
+    {id:'dc1',title:'Year 10 mock exam timetable',url:'',note:'Room and time for every paper.',category:'Letters',audience:'all',by:'school@demo.studyear',byName:'Priya Sharma',at:iso(-3)},
+    {id:'dc2',title:'GCSE Maths revision checklist',url:'',note:'Tick off each topic as you revise.',category:'Revision',audience:'students',by:T,byName:TN,at:iso(-2)},
+    {id:'dc3',title:'Uniform & behaviour policy 2026',url:'',note:'Please read with your child.',category:'Policies',audience:'all',by:'school@demo.studyear',byName:'Priya Sharma',at:iso(-10)}]);
+  // behaviour points
+  function bh(id,student,name,points,reason,cat,off){return {id:id,student:student,name:name,points:points,reason:reason,category:cat,by:T,byName:TN,at:iso(off)};}
+  set(P+'behaviour',[
+    bh('b1','student@demo.studyear','Emily Carter',3,'Outstanding progress','Progress',-6),
+    bh('b2','student@demo.studyear','Emily Carter',2,'Helping others','Kindness',-4),
+    bh('b3','student@demo.studyear','Emily Carter',2,'Homework excellence','Homework',-2),
+    bh('b4','student@demo.studyear','Emily Carter',2,'Great answer / contribution','Participation',-1),
+    bh('b5','sofia@demo.studyear','Sofia Almeida',2,'Excellent effort','Effort',-3),
+    bh('b6','aisha@demo.studyear','Aisha Rahman',3,'Outstanding progress','Progress',-2),
+    bh('b7','aisha@demo.studyear','Aisha Rahman',2,'Helping others','Kindness',-1),
+    bh('b8','jayden@demo.studyear','Jayden Osei',-1,'Off-task','Focus',-2),
+    bh('b9','jayden@demo.studyear','Jayden Osei',1,'Great answer / contribution','Participation',-1),
+    bh('b10','liam@demo.studyear','Liam Whitfield',-1,'Missing homework','Homework',-3)]);
+  // family messages (school ⇄ parent about Emily)
+  set(P+'messages',{'student@demo.studyear':[
+    {role:'staff',name:TN,text:'Emily had a great week in Maths — really strong on completing the square. Keep it up!',at:iso(-2)},
+    {role:'parent',name:'Marcus Carter',text:'Thank you, that’s lovely to hear. We’ll keep practising at home.',at:iso(-1)}]});
+  // seating plan for Year 10
+  set(P+'seating',{'Year 10':{cols:5,seats:['student@demo.studyear','jayden@demo.studyear','sofia@demo.studyear']}});
+}
+/* Satchel-One Phase 1: the teacher→student→parent homework loop, pre-populated
+   so the demo shows a live mix of marked, submitted, to-do and overdue work.
+   Shape mirrors SYHomework.setAssignment/submit/mark exactly. */
+function seedHomework(){
+  var T='teacher@demo.studyear',TN='Daniel Mensah',E='student@demo.studyear';
+  function sub(name,o){return Object.assign({text:'',files:[],submittedAt:null,grade:'',feedback:'',markedAt:null,comments:[],name:name},o);}
+  set('sy-school:'+SCH+':homework',[
+    {id:'hw-quad3',by:T,byName:TN,title:'Quadratic equations — worksheet 3',subject:'Mathematics',level:'GCSE',topic:'Algebra',
+     body:'Complete Q1–Q10 on completing the square. Show every step and state each turning point. Aim for about 30 minutes.',
+     group:'Year 10',submitMethod:'online',maxScore:20,resources:['Quadratics notes','worksheet-3.pdf'],bloom:'Apply',estMins:30,
+     issuedAt:iso(-5),dueAt:iso(2),parentVisible:true,createdAt:iso(-5),submissions:{
+       'student@demo.studyear':sub('Emily Carter',{text:'Completed all 10. Found turning points by completing the square — e.g. Q4: (x−3)²−4, min at (3,−4).',files:['emily-ws3.pdf'],submittedAt:iso(-2),grade:'18',feedback:'Excellent — accurate completing-the-square throughout. Watch the sign on the constant in Q7.',markedAt:iso(-1)}),
+       'sofia@demo.studyear':sub('Sofia Almeida',{text:'Did Q1–Q8, got stuck on Q9 and Q10.',submittedAt:iso(-1)}),
+       'jayden@demo.studyear':sub('Jayden Osei',{text:'Attempted all ten, unsure on the harder ones.',submittedAt:iso(-2),grade:'12',feedback:'Good effort — revise factorising first, then retry Q3 and Q6.',markedAt:iso(-1)})}},
+    {id:'hw-forces',by:T,byName:TN,title:'Forces & F=ma — exam questions',subject:'Physics',level:'GCSE',topic:'Forces',
+     body:'Answer the six exam-style questions on resultant force and acceleration. Always show the formula, working and units.',
+     group:'Year 10',submitMethod:'online',maxScore:15,resources:['Forces notes'],bloom:'Apply',estMins:40,
+     issuedAt:iso(-8),dueAt:iso(-1),parentVisible:true,createdAt:iso(-8),submissions:{
+       'student@demo.studyear':sub('Emily Carter',{text:'All six done. Q4 resultant = 12 N, a = F/m = 12/3 = 4 m/s².',submittedAt:iso(-3),grade:'13',feedback:'Strong — clear F=ma working. Remember units on every line (Q4 missed m/s²).',markedAt:iso(-2)}),
+       'aisha@demo.studyear':sub('Aisha Rahman',{text:'Completed Q1–Q6.',submittedAt:iso(-2),grade:'14',feedback:'Excellent, precise working throughout.',markedAt:iso(-1)})}},
+    {id:'hw-simul',by:T,byName:TN,title:'Simultaneous equations — mixed practice',subject:'Mathematics',level:'GCSE',topic:'Algebra',
+     body:'Ten mixed problems — use elimination and substitution. Check each answer back in both equations.',
+     group:'Year 10',submitMethod:'online',maxScore:20,resources:[],bloom:'Apply',estMins:30,
+     issuedAt:iso(-1),dueAt:iso(3),parentVisible:true,createdAt:iso(-1),submissions:{
+       'student@demo.studyear':sub('Emily Carter',{text:'Finished all ten and checked them back — waiting for marking.',submittedAt:iso(0)})}},
+    {id:'hw-energy',by:T,byName:TN,title:'Energy stores & transfers — 6-marker',subject:'Physics',level:'GCSE',topic:'Energy',
+     body:'Plan and write a full 6-mark answer describing energy stores and transfers for a bouncing ball. Use the mark-scheme structure.',
+     group:'Year 10',submitMethod:'online',maxScore:6,resources:['Energy stores checklist'],bloom:'Analyse',estMins:25,
+     issuedAt:iso(0),dueAt:iso(5),parentVisible:true,createdAt:iso(0),submissions:{}},
+    {id:'hw-trig',by:T,byName:TN,title:'Trigonometry — SOH CAH TOA drill',subject:'Mathematics',level:'GCSE',topic:'Trigonometry',
+     body:'Twenty right-angled triangle questions: find missing sides and angles. Show which ratio you used each time.',
+     group:'Year 10',submitMethod:'online',maxScore:20,resources:[],bloom:'Apply',estMins:35,
+     issuedAt:iso(-4),dueAt:iso(-2),parentVisible:true,createdAt:iso(-4),submissions:{
+       'aisha@demo.studyear':sub('Aisha Rahman',{text:'All twenty complete.',submittedAt:iso(-3),grade:'19',feedback:'Superb — confident ratio selection.',markedAt:iso(-2)})}}
+  ]);
+}
+var ROLES=[
+ {role:'student',ic:'🎓',t:'Student',who:'Emily Carter · Year 10 · GCSE (AQA)',dest:'../study/',
+  p:'The full learning OS: diagnostic, AI tutor, planner, interactive lessons, creator toolkit, Assignment Review, SkillRush and My Progress — with a term of history already on the account.',
+  loaded:function(){seedSchoolStore();seedStudent('student@demo.studyear','Emily Carter',{});
+    set('sy-u:student@demo.studyear:schoolLink',{code:SCH,name:'Riverside Academy (Demo)',when:iso(-30)});}},
+ {role:'parent',ic:'👨‍👩‍👧',t:'Parent',who:'Marcus Carter · Parent Elite · 1 child linked',dest:'../parent/',
+  p:'The Parent Command Centre with a live child linked: stability, momentum, subject progress, early warnings, weekly briefing and the Elite suite.',
+  loaded:function(){seedSchoolStore();
+    var ns='sy-u:parent@demo.studyear:';del(ns);
+    set(ns+'profile',{name:'Marcus Carter'});
+    set(ns+'wallet',{plan:'parent_elite',acus:900,month:MONTH,planExpires:iso(30)});
+    set(ns+'children',[{email:'student@demo.studyear',name:'Emily Carter',when:iso(-14)}]);}},
+ {role:'teacher',ic:'🧑‍🏫',t:'School Teacher',who:'Daniel Mensah · Riverside Academy · 10A & 11B',dest:'../teacher/',
+  p:'Linked to a demo school with two classes: register, fluency heatmap, AI teaching assistant, Exam Paper Builder on the school ACU pool, interventions and analytics.',
+  loaded:function(){seedSchoolStore();
+    var ns='sy-u:teacher@demo.studyear:';del(ns);
+    set(ns+'profile',{name:'Daniel Mensah'});
+    set(ns+'teacherProfile',{name:'Daniel Mensah',schoolCode:SCH,subjects:['Mathematics','Physics'],levels:['GCSE']});
+    set(ns+'wallet',{acus:800,plan:'teacher_pro',month:MONTH,planExpires:iso(30)});}},
+ {role:'tutor',ic:'🧭',t:'Private Tutor',who:'Amara Okafor · Okafor Tutoring',dest:'../tutor/',
+  p:'The tutoring business OS: marketplace profile, AI assistant, Exam Paper Builder branded to the practice, classroom, pipeline and earnings.',
+  loaded:function(){var ns='sy-u:tutor@demo.studyear:';del(ns);
+    set(ns+'profile',{name:'Amara Okafor'});
+    set(ns+'tutorProfile',{name:'Amara Okafor',businessName:'Okafor Tutoring',published:true,subjects:'Mathematics, Physics',levels:'KS3, GCSE, A-level',rate:38});
+    set(ns+'wallet',{acus:1200,plan:'tutor_pro',month:MONTH,planExpires:iso(30)});
+    seedStudent('student@demo.studyear','Emily Carter',{});
+    set(ns+'tutorStudents',[{email:'student@demo.studyear',name:'Emily Carter',subject:'Mathematics',when:iso(-21)}]);}},
+ {role:'school',ic:'🏫',t:'School Leadership',who:'Priya Sharma · Headteacher · Riverside Academy',dest:'../school/',
+  p:'The AI School Brain: live roster of six students with real learning histories, staff, ACU pool, interventions, assessments, reports and analytics.',
+  loaded:function(){seedSchoolStore();
+    var ns='sy-u:school@demo.studyear:';del(ns);
+    set(ns+'profile',{name:'Priya Sharma'});
+    set(ns+'schoolCode',SCH);
+    set(ns+'wallet',{acus:0,plan:'school',month:MONTH});}},
+ {role:'authority',ic:'🏛',t:'Local Authority',who:'Westbridge Council · multi-school oversight',dest:'../authority/',
+  p:'The Local Authority console: cross-school KPIs, RAG benchmarking with drill-downs, trends, team access on one shared code, and exportable evidence packs.',
+  loaded:function(){var ns='sy-u:authority@demo.studyear:';del(ns);
+    set(ns+'profile',{name:'Westbridge Council'});
+    set(ns+'authorityCode',LA);
+    /* combined-authority structure pre-loaded: WMCA's seven boroughs with the
+       demo schools already assigned, so the per-council rollups, NEET risk,
+       skills-fund and digital-inclusion cards are live on first open */
+    set(ns+'laUnits',['Birmingham','Coventry','Dudley','Sandwell','Solihull','Walsall','Wolverhampton']);
+    set(ns+'laAssign',{DEMOSCH1:'Birmingham',WBHS22:'Sandwell',STMC15:'Solihull',NPCS08:'Walsall',OAKA31:'Wolverhampton'});
+    seedSchoolStore();
+    del('sy-la:'+LA+':school:');
+    [[SCH,'Riverside Academy (Demo)',6,61,14,89,74,0,{'University':2,'Sixth Form / College':2,'Apprenticeship':1,'Needs support':1}],
+     ['WBHS22','Westbridge High',742,63,11,92,71,1,{'University':228,'Sixth Form / College':301,'Apprenticeship':144,'Needs support':69}],
+     ['STMC15','St Margaret\u2019s College',518,68,16,94,77,0,{'University':202,'Sixth Form / College':186,'Apprenticeship':91,'Needs support':39}],
+     ['NPCS08','Northgate Park Community School',611,54,8,87,64,2,{'University':121,'Sixth Form / College':229,'Apprenticeship':167,'Needs support':94}],
+     ['OAKA31','Oakfield Academy',389,59,12,90,69,1,{'University':97,'Sixth Form / College':151,'Apprenticeship':98,'Needs support':43}]]
+    .forEach(function(x,i){set('sy-la:'+LA+':school:'+x[0],{schoolCode:x[0],name:x[1],students:x[2],avg:x[3],progress:x[4],attendance:x[5],wellbeing:x[6],safeguard:x[7],dest:x[8],p8:[0.2,0.4,0.7,-0.3,0.1][i],ppGap:[9,7,5,14,10][i],persistentAbs:[12,9,6,18,13][i],updatedAt:iso(-1)})});
+    set('sy-la:'+LA+':programmes',[
+      {name:'Year 10 Maths Catch-Up',type:'Tutoring',cost:24000,students:120,cohort:'Lowest-attaining schools',status:'active',baseline:52,current:61,reports:[{at:iso(-30),v:55},{at:iso(-7),v:61}]},
+      {name:'Persistent Absence Recovery',type:'Attendance',cost:18000,students:85,cohort:'Persistent absentees',status:'active',baseline:81,current:88,reports:[{at:iso(-21),v:85},{at:iso(-3),v:88}]}]);
+    /* the demo school shows as connected to this authority */
+    set('sy-u:school@demo.studyear:schoolSettings',{authorityCode:LA});
+    set('sy-u:school@demo.studyear:authorityLink',LA);}},
+];
+/* The Platform Admin demo card is intentionally NOT public: the operator
+   view is internal. Admins sign in at /auth/?role=admin with the invite code. */
+
+function launch(r,mode){
+  /* NEET / return-to-learning demo: a 19-year-old NOT on any school roll —
+     their own year group, re-entry Career Passport, funded routes first */
+  if(mode==='neet'){
+    var nEmail='neet@demo.studyear',nns='sy-u:'+nEmail+':';
+    seedStudent(nEmail,'Marcus Bailey',{level:'NEET · Return to learning (16–26)',base:34,points:180,acus:250});
+    set(nns+'wallet',{acus:250,plan:'child_free',month:MONTH});
+    set(nns+'career',{interests:['construction','engineering','tech'],locality:'Wolverhampton',style:'practical',personality:'',income:''});
+    set(nns+'profile',{name:'Marcus Bailey',level:'NEET · Return to learning (16–26)',subjects:[
+      {s:'Mathematics',target:5},{s:'English Language',target:5}]});
+    registerUser(nEmail,'student','Marcus Bailey');
+    set('sy-session',{role:'student',name:'Marcus Bailey',email:nEmail,demo:true});
+    var tn=document.getElementById('toast');
+    tn.textContent='Opening Marcus — 19, returning to learning…';tn.style.opacity=1;
+    setTimeout(function(){location.href='../career/'},350);
+    return;
+  }
+  var email=(mode==='empty'?(r.role+'.new@demo.studyear'):(r.role+'@demo.studyear'));
+  var name=mode==='empty'?('Demo '+r.t):(r.who.split('·')[0].trim());
+  if(mode==='empty')del('sy-u:'+email+':');
+  else r.loaded();
+  registerUser(email,r.role,name);
+  set('sy-session',{role:r.role,name:name,email:email,demo:true});
+  var t=document.getElementById('toast');
+  t.textContent='Opening the '+r.t+' demo ('+(mode==='empty'?'empty':'fully loaded')+')…';t.style.opacity=1;
+  setTimeout(function(){location.href=r.dest},350);
+}
+var grid=document.getElementById('grid');
+ROLES.forEach(function(r){
+  var c=document.createElement('div');c.className='card';c.id='card-'+r.role;
+  c.innerHTML='<div class="ic">'+r.ic+'</div><h3>'+r.t+'</h3><div class="who">'+r.who+'</div><p>'+r.p+'</p>'+
+    '<div class="btns"><button class="btn" data-m="loaded">Launch fully loaded →</button>'+
+    '<button class="btn ghost" data-m="empty">Launch empty</button>'+
+    (r.role==='student'?'<button class="btn ghost" data-m="neet">🎯 NEET learner (19) — return to learning →</button>':'')+
+    '</div>';
+  c.querySelectorAll('button').forEach(function(b){b.onclick=function(){launch(r,b.dataset.m)}});
+  grid.appendChild(c);
+});
+/* deep link: /demo/?role=school (from “Book a school demo”) highlights the school card */
+var want=new URLSearchParams(location.search).get('role');
+if(want){var el=document.getElementById('card-'+want);
+  if(el){el.classList.add('hot');setTimeout(function(){el.scrollIntoView({behavior:'smooth',block:'center'})},150)}}
+})();
+</script>
+</body></html>

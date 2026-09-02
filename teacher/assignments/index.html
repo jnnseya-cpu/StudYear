@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Assignments</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18"></head><body>
+<script src="../../guard.js" data-role="teacher" data-base="../../"></script>
+<div class="shell"><main>
+  <div class="k">Institutional staff</div><h1>Assignment command centre</h1>
+  <p class="lede">School assessments and student homework completion (live).</p>
+  <div class="grid">
+    <div class="card c6"><h3>School assessments</h3><div class="sub">Set by leadership</div><div id="assess"></div></div>
+    <div class="card c6"><h3>Homework snapshot</h3><div class="sub">Cohort completion rate from study tasks</div>
+      <div class="stat" style="margin-top:6px"><div class="v" id="hw-pct">0%</div><div class="k">cohort completion rate</div></div>
+      <div id="hw-list" style="margin-top:10px"></div>
+    </div>
+    <div class="card c12"><h3>Set homework for your class</h3>
+      <div class="sub">Type your own, or let the AI read your cohort's live quiz data and target the weak spots</div>
+      <div style="margin:10px 0"><button class="btn" id="hw-ai">✨ AI: suggest targeted homework</button></div>
+      <div id="hw-suggestions" style="display:none;margin:4px 0 12px"></div>
+      <div class="two"><div><label class="f">Title</label><input id="hw-title" placeholder="e.g. Quadratics — 10 questions"></div><div><label class="f">Due</label><input id="hw-due" type="date"></div></div>
+      <div style="margin-top:12px"><button class="btn solid" id="hw-set">Set homework</button></div>
+      <div id="set-list" style="margin-top:12px"></div>
+    </div>
+  </div>
+</main></div>
+<script src="../nav.js" data-base="../" data-cur="assignments/"></script>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;var TW=window.TW||{};
+function $(id){return document.getElementById(id)}function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var e=$('toast');if(!e)return;e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2000)}
+var students=(TW.myStudents&&TW.myStudents())||[];
+var M=students.map(function(s){return TW.metrics(s.email)});
+var hwAvg=M.length?Math.round(M.reduce(function(a,m){return a+m.hw},0)/M.length):0;
+$('hw-pct').textContent=hwAvg+'%';
+$('hw-list').innerHTML=M.length?M.slice(0,8).map(function(m){var c=m.hw>=70?'var(--good)':m.hw>=40?'var(--warn)':'var(--crit)';return '<div class="row"><span style="width:150px">'+esc(SY.accountName(m.email))+'</span><span class="bar" style="flex:1"><i style="width:'+m.hw+'%;background:'+c+'"></i></span><span style="width:40px;text-align:right;font-size:12px">'+m.hw+'%</span></div>'}).join(''):'<div class="empty">No students linked.</div>';
+var assess=TW.schoolCode?SY.schoolGet(TW.schoolCode,'assessments',[]):[];
+$('assess').innerHTML=assess.length?assess.map(function(a){return '<div class="row"><b>'+esc(a.title||a.name)+'</b><span style="margin-left:auto;color:var(--ink-3)">'+esc(a.date||'')+'</span></div>'}).join(''):'<div class="empty">No assessments yet.</div>';
+function drawSet(){var hw=SY.get('teacherHomework',[]);$('set-list').innerHTML=hw.length?hw.slice().reverse().map(function(h){return '<div class="row"><b>'+esc(h.title)+'</b><span style="margin-left:auto;color:var(--ink-3);font-size:11.5px">due '+esc(h.due||'—')+'</span></div>'}).join(''):'';}
+/* ---- AI homework co-pilot: cohort-weakness-targeted suggestions ---- */
+function cohortWeakness(){
+  var subj={};
+  students.forEach(function(st){
+    (SY.readAccount(st.email,'quizzes',[])||[]).forEach(function(q){
+      if(!q.subj)return;(subj[q.subj]=subj[q.subj]||[]).push(+q.pct||0);
+    });
+  });
+  var rows=Object.keys(subj).map(function(k){
+    var a=subj[k];var avg=Math.round(a.reduce(function(x,y){return x+y},0)/a.length);
+    var strugglers=students.filter(function(st){
+      var qs=(SY.readAccount(st.email,'quizzes',[])||[]).filter(function(q){return q.subj===k});
+      if(!qs.length)return false;
+      return qs.reduce(function(x,q){return x+(+q.pct||0)},0)/qs.length<55;
+    }).length;
+    return {subject:k,avg:avg,n:a.length,strugglers:strugglers};
+  }).sort(function(a,b){return a.avg-b.avg});
+  return rows;
+}
+function plusDays(n){var d=new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
+function renderSuggestions(list){
+  var box=$('hw-suggestions');box.style.display='block';
+  box.innerHTML=list.map(function(sg,i){
+    return '<div class="row" style="align-items:center;gap:10px"><span style="flex:1"><b>'+esc(sg.title)+'</b>'+
+      (sg.why?'<div style="font-size:11.5px;color:var(--ink-3)">'+esc(sg.why)+'</div>':'')+'</span>'+
+      '<span style="font-size:11.5px;color:var(--ink-3)">due '+esc(sg.due)+'</span>'+
+      '<button class="btn sm" data-sg="'+i+'">Use</button></div>';
+  }).join('');
+  box.querySelectorAll('button[data-sg]').forEach(function(b){b.onclick=function(){
+    var sg=list[+b.dataset.sg];$('hw-title').value=sg.title;$('hw-due').value=sg.due;
+    toast('Filled in — press Set homework to send it to the class');
+    $('hw-title').scrollIntoView({behavior:'smooth',block:'center'});
+  }});
+}
+$('hw-ai').onclick=function(){
+  if(!students.length){toast('No students linked yet — link your school first');return}
+  var weak=cohortWeakness();
+  var fallback=function(){
+    var w=weak[0],w2=weak[1];
+    var list=[];
+    if(w)list.push({title:w.subject+' — recovery set: 10 targeted questions',due:plusDays(3),
+      why:'Cohort average '+w.avg+'% in '+w.subject+(w.strugglers?' · '+w.strugglers+' student(s) below 55%':'')});
+    if(w)list.push({title:w.subject+' — timed past-paper section (20 min)',due:plusDays(7),
+      why:'Exam-condition practice on the weakest subject'});
+    if(w2)list.push({title:'Mixed retrieval quiz — '+w.subject+' & '+w2.subject,due:plusDays(2),
+      why:'Spaced retrieval across the two lowest-scoring subjects ('+w.avg+'% / '+w2.avg+'%)'});
+    if(!list.length)list.push({title:'Retrieval quiz — this week\'s topics (10 questions)',due:plusDays(2),
+      why:'No quiz data yet — a baseline retrieval check gives the AI something to target next time'});
+    renderSuggestions(list);
+  };
+  if(window.SYAI&&SYAI.ready()){
+    $('hw-ai').textContent='✨ Thinking…';
+    var brief=weak.slice(0,4).map(function(r){return r.subject+': avg '+r.avg+'% ('+r.strugglers+' struggling)'}).join('; ')||'no quiz data yet';
+    SYAI.ask('You are a UK teacher\'s planning assistant. Reply with exactly 3 lines, each formatted as: TITLE | WHY (one short sentence). No other text.',
+      'My class cohort data: '+brief+'. Suggest 3 targeted homework tasks (UK curriculum, specific and actionable).',{maxTokens:220})
+      .then(function(out){
+        var list=String(out||'').split('\n').map(function(l){return l.trim()}).filter(Boolean).slice(0,3).map(function(l,i){
+          var p=l.split('|');return {title:p[0].replace(/^\d+[).\s]*/,'').trim(),why:(p[1]||'').trim(),due:plusDays(i===1?7:i===2?2:3)};
+        }).filter(function(x){return x.title});
+        if(list.length)renderSuggestions(list);else fallback();
+      }).catch(fallback).finally?undefined:null;
+    // .finally not universally available in this codebase style; restore label:
+    setTimeout(function(){$('hw-ai').textContent='✨ AI: suggest targeted homework'},4000);
+  }else fallback();
+};
+$('hw-set').onclick=function(){var t=$('hw-title').value.trim();if(!t){toast('Enter a title');return}var hw=SY.get('teacherHomework',[]);hw.push({title:t,due:$('hw-due').value,set:new Date().toISOString()});SY.set('teacherHomework',hw);SY.log('homework','Homework set',t);$('hw-title').value='';toast('Homework set for your class');drawSet()};
+drawSet();
+})();
+</script>
+</body></html>

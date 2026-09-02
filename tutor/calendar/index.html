@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Tutor Calendar</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .filters .fchip{font-size:12px;color:var(--ink-2);border:1px solid var(--line);border-radius:20px;padding:6px 13px;cursor:pointer;user-select:none}
+  .filters .fchip.on{color:var(--gold-300);border-color:var(--gold-500);background:rgba(77,157,224,.1)}
+  .week{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-top:16px}@media(max-width:900px){.week{grid-template-columns:repeat(3,1fr)}}@media(max-width:560px){.week{grid-template-columns:1fr 1fr}}
+  .day{border:1px solid var(--line);border-radius:12px;background:rgba(6,11,24,.32);min-height:180px;padding:10px;display:flex;flex-direction:column}
+  .day.over{border-color:var(--gold-500);background:rgba(77,157,224,.08)}
+  .day .dh{font-size:12px;color:var(--ink-2);font-weight:600;display:flex;justify-content:space-between;margin-bottom:8px}.day .dh span{color:var(--ink-3);font-weight:400}
+  .day .drop{flex:1;display:grid;place-items:center;color:var(--ink-3);font-size:11px;font-style:italic;border:1px dashed rgba(170,182,204,.16);border-radius:8px;min-height:40px}
+  .sess{border-radius:9px;padding:8px 9px;margin-bottom:7px;cursor:grab;font-size:12px;border:1px solid}
+  .sess:active{cursor:grabbing}
+  .sess.confirmed{border-color:rgba(92,187,123,.4);background:rgba(92,187,123,.08)}
+  .sess.pending{border-color:rgba(201,133,0,.4);background:rgba(201,133,0,.08)}
+  .sess.missed{border-color:rgba(230,103,103,.4);background:rgba(230,103,103,.08)}
+  .sess.scheduled{border-color:rgba(77,157,224,.4);background:rgba(77,157,224,.08)}
+  .sess b{display:block;color:var(--ink);font-size:12.5px}.sess .m{color:var(--ink-3);font-size:11px}.sess .ai{font-size:10px;color:var(--gold-300)}
+</style></head><body>
+<script src="../../guard.js" data-role="tutor" data-base="../../"></script>
+<div class="shell"><main>
+  <div class="k">Teaching operator</div>
+  <h1>Live calendar</h1>
+  <p class="lede">Professional scheduling — availability, recurring lessons and parent approvals. Drag a session to reschedule.</p>
+  <div class="filters" id="filters">
+    <span class="fchip on" data-f="confirmed">Confirmed</span>
+    <span class="fchip on" data-f="pending">Pending</span>
+    <span class="fchip on" data-f="missed">Missed</span>
+    <span class="fchip on" data-f="scheduled">Scheduled</span>
+    <span class="fchip on" data-f="ai">AI-supported</span>
+    <span style="margin-left:auto"><button class="btn sm" id="add">+ Add session</button> <button class="btn sm ghost" id="prev">‹</button> <button class="btn sm ghost" id="next">›</button></span>
+  </div>
+  <div class="note" id="range"></div>
+  <div class="week" id="week"></div>
+</main></div>
+<script src="../nav.js" data-base="../" data-cur="calendar/"></script>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;
+function $(id){return document.getElementById(id)}function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var e=$('toast');if(!e)return;e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2200)}
+var DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+var sessions=SY.get('tutorSessions',[]);
+var filters={confirmed:true,pending:true,missed:true,scheduled:true,ai:true};
+var weekOffset=0;
+
+function monday(off){var n=new Date();var day=(n.getDay()+6)%7;var m=new Date(n);m.setDate(n.getDate()-day+off*7);m.setHours(0,0,0,0);return m}
+function fmt(d){return d.toLocaleDateString([], {day:'numeric',month:'short'})}
+
+function draw(){
+  var mon=monday(weekOffset);
+  var end=new Date(mon);end.setDate(mon.getDate()+6);
+  $('range').textContent='Week of '+fmt(mon)+' – '+fmt(end);
+  var cols=DAYS.map(function(lbl,i){var d=new Date(mon);d.setDate(mon.getDate()+i);return {lbl:lbl,date:d}});
+  $('week').innerHTML=cols.map(function(c,i){
+    return '<div class="day" data-day="'+i+'"><div class="dh">'+c.lbl+' <span>'+c.date.getDate()+'</span></div><div class="slots" data-slots="'+i+'"></div><div class="drop" data-drop="'+i+'">Drag sessions here</div></div>';
+  }).join('');
+  /* place sessions */
+  sessions.forEach(function(s,idx){
+    if(!passFilter(s))return;
+    var d=new Date(s.when);var day=(d.getDay()+6)%7;
+    var inWeek=d>=mon&&d<new Date(mon.getTime()+7*86400000);
+    if(!inWeek)return;
+    var slot=document.querySelector('[data-slots="'+day+'"]');if(!slot)return;
+    var el=document.createElement('div');el.className='sess '+(s.status||'scheduled');el.draggable=true;el.dataset.idx=idx;
+    el.innerHTML='<b>'+esc(s.student)+'</b><span class="m">'+esc(s.subject||'General')+' · '+d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+'</span>'+(s.ai?'<span class="ai">✦ AI-supported</span>':'');
+    el.addEventListener('dragstart',function(e){e.dataTransfer.setData('text/plain',idx);e.dataTransfer.effectAllowed='move'});
+    slot.appendChild(el);
+    var drop=slot.parentNode.querySelector('.drop');if(drop)drop.style.display='none';
+  });
+  /* drop targets */
+  document.querySelectorAll('.day').forEach(function(col){
+    col.addEventListener('dragover',function(e){e.preventDefault();col.classList.add('over')});
+    col.addEventListener('dragleave',function(){col.classList.remove('over')});
+    col.addEventListener('drop',function(e){e.preventDefault();col.classList.remove('over');
+      var idx=+e.dataTransfer.getData('text/plain');var targetDay=+col.dataset.day;
+      var s=sessions[idx];if(!s)return;var d=new Date(s.when);var newDate=new Date(mon);newDate.setDate(mon.getDate()+targetDay);newDate.setHours(d.getHours(),d.getMinutes(),0,0);
+      s.when=newDate.toISOString();SY.set('tutorSessions',sessions);toast('Rescheduled to '+DAYS[targetDay]);draw();
+    });
+  });
+}
+function passFilter(s){
+  if(s.status==='cancelled')return false;
+  if(s.ai&&!filters.ai)return false;
+  var st=s.status||'scheduled';if(st in filters)return filters[st]!==false||s.ai&&filters.ai;
+  return true;
+}
+$('filters').querySelectorAll('[data-f]').forEach(function(c){c.onclick=function(){var f=c.dataset.f;filters[f]=!filters[f];c.classList.toggle('on',filters[f]);draw()}});
+$('prev').onclick=function(){weekOffset--;draw()};$('next').onclick=function(){weekOffset++;draw()};
+$('add').onclick=function(){
+  var stu=prompt('Student name:');if(!stu)return;
+  var subj=prompt('Subject:','Mathematics')||'General';
+  var when=prompt('Date & time (YYYY-MM-DD HH:MM):',new Date(Date.now()+86400000).toISOString().slice(0,16).replace('T',' '));
+  if(!when)return;var iso=new Date(when.replace(' ','T'));if(isNaN(iso.getTime())){toast('Invalid date');return}
+  sessions.push({student:stu,subject:subj,when:iso.toISOString(),status:'scheduled',ai:false,rate:parseFloat((SY.get('tutorProfile',{}).hourlyRate))||35});
+  SY.set('tutorSessions',sessions);toast('Session added');draw();
+};
+draw();
+})();
+</script>
+</body></html>
