@@ -119,6 +119,12 @@
   .hero-trust{display:flex;flex-wrap:wrap;gap:9px 16px;margin-top:20px}
   .hero-trust span{font-size:12px;color:var(--ink-3);display:inline-flex;align-items:center}
   .hero-trust span::before{content:"✓";color:var(--gold-300);font-weight:700;margin-right:6px;font-size:11px}
+  /* one-click routing into each visitor's own lane */
+  .hero-roles{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:22px}
+  .hero-roles .hr-lbl{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);margin-right:4px}
+  .hero-roles a{font-size:13px;color:var(--ink-2);border:1px solid var(--line);border-radius:999px;
+    padding:6px 14px;text-decoration:none;transition:border-color .2s,color .2s}
+  .hero-roles a:hover{border-color:var(--gold-300);color:var(--ink)}
 
   /* ---------- sections ---------- */
   section{position:relative;padding:110px 0}
@@ -342,6 +348,15 @@
       <span>End-to-end encrypted</span>
       <span>AI never trains on your data</span>
     </div>
+    <div class="hero-roles">
+      <span class="hr-lbl">You're a</span>
+      <a href="#students">Student</a>
+      <a href="#parents">Parent</a>
+      <a href="#teachers">Teacher</a>
+      <a href="#tutors">Tutor</a>
+      <a href="#schools">School</a>
+      <a href="#authorities">Local authority</a>
+    </div>
 
     <!-- Capability facts (true regardless of adoption) show by default so the
          hero never displays cold-start zeros. The owner's LIVE counters below
@@ -482,7 +497,8 @@
         <h3>A full AI teaching team.</h3>
         <p>Every teacher gets a personal AI workforce that plans lessons, differentiates work, marks to the
           mark scheme, writes parent emails and drafts interventions — and a continuous coaching programme that
-          grows their practice. Hours back, every week.</p>
+          grows their practice. <b>The AI drafts; you review, adjust and approve — you stay in control.</b>
+          Hours back, every week.</p>
         <ul>
           <li>AI lesson &amp; course builder, quizzes, homework and exam questions</li>
           <li>Auto-marking and examiner-style feedback to your rubric</li>
@@ -495,7 +511,8 @@
       <div class="aud rv" id="tutors" style="transition-delay:.08s"><div class="glyph">★</div>
         <div class="who">Private Tutors</div>
         <h3>Run your whole tutoring business.</h3>
-        <p>Get discovered on the marketplace, then run everything from one command centre: bookings, a student
+        <p><b>The AI does the admin and the grind — you keep the teaching, the relationship and the fees.</b>
+          Get discovered on the marketplace, then run everything from one command centre: bookings, a student
           pipeline, live video lessons, earnings and a 15-agent AI workforce that handles planning, marking,
           invoicing and marketing.</p>
         <ul>
@@ -532,7 +549,7 @@
           <li>Aligned to the UK Youth Guarantee agenda — employability through attainment</li>
           <li>Safeguarding-first: KCSIE workflows, AADC-conformant by design</li>
         </ul>
-        <div class="chips"><span class="chip">Verified impact</span><span class="chip">GDPR &amp; AADC</span><span class="chip">Area-wide licensing</span></div><div style="margin-top:16px"><a class="btn btn-ghost" href="app/authority/" style="padding:11px 20px;font-size:13.5px">Open the local authority console →</a></div>
+        <div class="chips"><span class="chip">Before/after evidence packs</span><span class="chip">GDPR &amp; AADC</span><span class="chip">Area-wide licensing</span></div><div style="margin-top:16px"><a class="btn btn-ghost" href="app/authority/" style="padding:11px 20px;font-size:13.5px">Open the local authority console →</a></div>
       </div>
     </div>
   </div>
