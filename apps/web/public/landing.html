@@ -125,6 +125,34 @@
   .hero-roles a{font-size:13px;color:var(--ink-2);border:1px solid var(--line);border-radius:999px;
     padding:6px 14px;text-decoration:none;transition:border-color .2s,color .2s}
   .hero-roles a:hover{border-color:var(--gold-300);color:var(--ink)}
+  /* ---------- proof / trust ---------- */
+  .proof-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:44px}
+  @media(max-width:760px){.proof-grid{grid-template-columns:1fr}}
+  .pcard{border:1px solid var(--line);border-radius:14px;padding:22px 24px;position:relative;
+    background:linear-gradient(180deg,rgba(16,27,51,.55),rgba(11,18,32,.85))}
+  .pcard .pi{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(180deg,rgba(43,58,98,.55),rgba(14,22,42,.9));border:1px solid rgba(150,170,214,.18);
+    box-shadow:0 1px 0 rgba(255,255,255,.06) inset;margin-bottom:14px}
+  .pcard .pi svg{width:22px;height:22px;stroke:var(--gold-400);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .pcard h3{font-family:var(--serif);font-size:20px;font-weight:500;margin:0 0 7px}
+  .pcard p{color:var(--ink-2);font-size:14px;font-weight:300;margin:0;line-height:1.5}
+  .pcard .pcta{margin-top:12px;display:inline-block;font-size:13.5px;color:var(--gold-400);text-decoration:none;
+    border-bottom:1px solid rgba(95,168,224,.4)}
+  .proof-social{margin-top:8px}
+  .proof-outcomes{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;
+    background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:24px}
+  .po{background:rgba(11,18,32,.85);padding:22px 24px}
+  .po .v{font-family:var(--serif);font-size:34px;color:var(--gold-300);line-height:1}
+  .po .l{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-top:8px}
+  .proof-quotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:24px}
+  .quote{border:1px solid var(--line);border-radius:14px;padding:22px 24px;
+    background:linear-gradient(180deg,rgba(16,27,51,.5),rgba(11,18,32,.82))}
+  .quote p{font-family:var(--serif);font-size:16px;color:var(--ink);line-height:1.5;margin:0 0 14px}
+  .quote .by{font-size:13px;color:var(--ink-2)}.quote .by b{color:var(--gold-400)}
+  .proof-logos{display:flex;flex-wrap:wrap;gap:14px 26px;align-items:center;margin-top:26px;opacity:.9}
+  .proof-logos span{font-size:14px;color:var(--ink-2)}.proof-logos img{height:28px;width:auto}
+  .proof-cases{margin-top:22px;display:flex;flex-wrap:wrap;gap:10px 22px}
+  .proof-cases a{font-size:14px;color:var(--gold-400);text-decoration:none;border-bottom:1px solid rgba(95,168,224,.35)}
 
   /* ---------- sections ---------- */
   section{position:relative;padding:110px 0}
@@ -666,6 +694,58 @@
 
 <div class="divider"></div>
 
+<!-- ================= PROOF / TRUST =================
+     Honest by design: the four pillars below are always true today. The social
+     proof (outcomes, quotes, logos, case studies) is populated ONLY from real
+     entries in /proof.json — nothing renders until you add real ones, so the
+     page never shows a fabricated testimonial or a school we don't have. -->
+<section id="proof">
+  <div class="wrap">
+    <div class="sec-kicker rv">Why you can trust it</div>
+    <h2 class="rv">Judge us on evidence, not adjectives.</h2>
+    <p class="sub rv">Anyone can claim to be revolutionary. Here's what's already true today — the safeguards,
+      the coverage and the method — and the proof that grows as schools and families put StudYear to work.
+      Until then, the fastest proof is to open it and see the output yourself.</p>
+
+    <div class="proof-grid">
+      <div class="pcard rv">
+        <div class="pi"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></div>
+        <h3>Safeguarding-first, by design</h3>
+        <p>UK GDPR &amp; DPA 2018, KCSIE-aligned workflows and AADC age-appropriate design. Student data is
+          end-to-end encrypted, and our AI providers never train on your data. The first question every
+          school and authority asks — answered before you ask it.</p>
+      </div>
+      <div class="pcard rv" style="transition-delay:.06s">
+        <div class="pi"><svg viewBox="0 0 24 24"><path d="M4 5c2.5-1 5-1 8 0v14c-3-1-5.5-1-8 0V5z"/><path d="M20 5c-2.5-1-5-1-8 0v14c3-1 5.5-1 8 0V5z"/></svg></div>
+        <h3>The whole curriculum, every stage</h3>
+        <p>Every UK exam board — AQA, Edexcel, OCR, WJEC, CCEA, SQA, CIE — and the International Baccalaureate,
+          from KS1 through GCSE and A-level to University. Not a niche tool bolted on; the actual syllabus your
+          children sit.</p>
+      </div>
+      <div class="pcard rv">
+        <div class="pi"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14-4M4 5v4h4"/><path d="M4 13a8 8 0 0 0 14 4M20 19v-4h-4"/></svg></div>
+        <h3>A method, not a gimmick</h3>
+        <p>Every console runs the same disciplined loop — <b style="color:var(--ink)">Assess → Plan → Learn →
+          Improve</b>. Evidence in, a plan out, progress tracked and re-planned. The same rigour a great school
+          already uses, run continuously for every child.</p>
+      </div>
+      <div class="pcard rv" style="transition-delay:.06s">
+        <div class="pi"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5v-7z"/></svg></div>
+        <h3>Proof by product</h3>
+        <p>Don't take our word for anything. Open the live demo and judge the AI's real output — the marking,
+          the examiner-style feedback, the plans — with your own eyes. It's more convincing than any claim we
+          could print here.</p>
+        <a class="pcta" href="demo/">Try the live demo — no signup →</a>
+      </div>
+    </div>
+
+    <!-- Real social proof only: built from /proof.json, hidden while empty. -->
+    <div class="proof-social" id="proofSocial" hidden></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
 <!-- ================= PRICING ================= -->
 <section id="pricing">
   <div class="wrap">
@@ -857,6 +937,41 @@
     d3.style.transform=`rotateX(${3-py*5}deg) rotateY(${px*6}deg)`;
   });
   ds.addEventListener('pointerleave',()=>{d3.style.transform='rotateX(3deg)'});
+
+  // Proof section — social proof is built ONLY from real entries in proof.json
+  // (outcomes, testimonials, logos, case studies). Nothing renders while those
+  // arrays are empty, so the page never shows a fabricated quote or a school we
+  // don't have. Add real entries to proof.json and they appear — no code change.
+  (function(){
+    const host=document.getElementById('proofSocial'); if(!host)return;
+    const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const safeHref=h=>{h=String(h||'#');return /^(https?:|\/|\.|#)/.test(h)?h:'#';};
+    const arr=x=>Array.isArray(x)?x:[];
+    fetch('proof.json').then(r=>r.json()).then(d=>{
+      if(!d)return; let html='',any=false;
+      const outcomes=arr(d.outcomes),quotes=arr(d.testimonials),logos=arr(d.logos),cases=arr(d.caseStudies);
+      if(outcomes.length){any=true;
+        html+='<div class="proof-outcomes">'+outcomes.map(o=>
+          '<div class="po"><div class="v">'+esc(o.value)+'</div><div class="l">'+esc(o.label)+'</div></div>').join('')+'</div>';
+      }
+      if(quotes.length){any=true;
+        html+='<div class="proof-quotes">'+quotes.map(t=>{
+          const by=[t.name,t.role,t.org].filter(Boolean).map(esc);
+          return '<div class="quote"><p>&ldquo;'+esc(t.quote)+'&rdquo;</p><div class="by"><b>'+(by[0]||'')+'</b>'+
+            (by.slice(1).length?' &middot; '+by.slice(1).join(' &middot; '):'')+'</div></div>';
+        }).join('')+'</div>';
+      }
+      if(logos.length){any=true;
+        html+='<div class="proof-logos">'+logos.map(l=>
+          l&&l.src?'<img src="'+esc(l.src)+'" alt="'+esc(l.name||'')+'">':'<span>'+esc(l&&l.name||l)+'</span>').join('')+'</div>';
+      }
+      if(cases.length){any=true;
+        html+='<div class="proof-cases">'+cases.map(c=>
+          '<a href="'+safeHref(c.href)+'">'+esc(c.title)+' &rarr;</a>').join('')+'</div>';
+      }
+      if(any){host.innerHTML=html;host.hidden=false;}
+    }).catch(()=>{});
+  })();
 </script>
 <script src="pwa.js"></script>
 </body>
