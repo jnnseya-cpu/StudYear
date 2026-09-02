@@ -11,10 +11,31 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="StudYear">
-<script src="splash.js"></script>
+<script src="splash.js" defer></script>
 <script>try{var _r=new URLSearchParams(location.search).get('ref');if(_r)localStorage.setItem('sy-ref',String(_r).slice(0,32));}catch(e){}</script>
 <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});</script>
-<meta name="description" content="StudYear turns academic chaos into measurable progress. A personal examiner, tutor and strategist for every student — and a live window into learning for every parent, school and local authority.">
+<meta name="description" content="The AI operating system for UK education — a personal examiner, tutor and strategist for every student, plus live insight for parents, schools and authorities.">
+<!-- Open Graph / social preview -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="StudYear">
+<meta property="og:locale" content="en_GB">
+<meta property="og:url" content="https://www.studyear.com/">
+<meta property="og:title" content="StudYear — the AI operating system for UK education">
+<meta property="og:description" content="A personal examiner, tutor and strategist for every student, plus live insight for parents, schools and authorities. Every UK exam board, KS1 to University.">
+<meta property="og:image" content="https://www.studyear.com/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="StudYear — one platform for every student, teacher, parent and school, running on AI">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="StudYear — the AI operating system for UK education">
+<meta name="twitter:description" content="A personal examiner, tutor and strategist for every student, plus live insight for parents, schools and authorities.">
+<meta name="twitter:image" content="https://www.studyear.com/og-cover.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"EducationalOrganization","@id":"https://www.studyear.com/#org","name":"StudYear","url":"https://www.studyear.com/","logo":"https://www.studyear.com/icon-512.png","description":"The AI operating system for UK education — a personal examiner, tutor and strategist for every student, plus live insight for parents, schools and local authorities.","email":"contact@studyear.com","areaServed":"GB","contactPoint":{"@type":"ContactPoint","contactType":"customer support","email":"contact@studyear.com","areaServed":"GB","availableLanguage":["en"]}},
+{"@type":"WebSite","@id":"https://www.studyear.com/#website","url":"https://www.studyear.com/","name":"StudYear","inLanguage":"en-GB","publisher":{"@id":"https://www.studyear.com/#org"}}
+]}
+</script>
 <style>
   /* ============ NSEYA X-EXECUTE · Navy/Gold cinematic system ============ */
   :root{
@@ -789,7 +810,7 @@
 <section class="finale">
   <div class="beam" style="width:700px;height:700px;top:40%;left:50%;transform:translate(-50%,-50%);background:rgba(77,157,224,.1)"></div>
   <div class="wrap">
-    <img class="finale-mark rv" src="logo.svg" alt="">
+    <img class="finale-mark rv" src="logo.svg" alt="" aria-hidden="true">
     <div class="sec-kicker rv">Turn data into better grades</div>
     <h2 class="rv">Your child's next grade is already visible.<br><em style="font-style:italic;color:var(--gold-300)">Come and see it.</em></h2>
     <p class="lede rv" style="max-width:52ch">The free diagnostic takes minutes. The plan builds itself.
@@ -805,7 +826,7 @@
   <div class="wrap">
     <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;padding-bottom:38px">
       <div>
-        <a class="logo" style="font-size:20px" href="#"><img class="mark" style="height:30px;width:30px" src="logo.svg" alt=""><b class="wm">StudYear</b></a>
+        <a class="logo" style="font-size:20px" href="#"><img class="mark" style="height:30px;width:30px" src="logo.svg" alt="StudYear"><b class="wm">StudYear</b></a>
         <p style="margin-top:14px;max-width:34ch;font-weight:300;color:var(--ink-3)">StudYear is an AI-powered
           academic command centre, unifying student data, learning, teaching, and communication in one
           intelligent platform.</p>
@@ -832,7 +853,7 @@
     </div>
     <div class="foot" style="border-top:1px solid rgba(77,157,224,.08);padding-top:26px">
       <span>© StudYear — The AI Academic Operating System</span>
-      <span>Serving the whole UK · UK GDPR · Assess → Plan → Learn → Improve</span>
+      <span>Serving the whole UK · UK GDPR · <a href="mailto:contact@studyear.com" style="color:var(--gold-400);text-decoration:none">contact@studyear.com</a></span>
     </div>
   </div>
 </footer>
