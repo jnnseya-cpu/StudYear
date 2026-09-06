@@ -63,7 +63,7 @@ export const PERSONAS: Persona[] = [
     dashboard: 'parent',
     workspace: 'parent',
     workspaceCta: 'Open my Parent Command Centre',
-    account: { name: 'Mrs. Okafor', detail: '3 children linked · Parent Pro' },
+    account: { name: 'Mrs. Okafor', detail: '3 children linked · Parent Elite'},
     plans: PARENT_PLANS,
     modules: [
       { agent: AgentId.FamilyDigest, label: 'Family Digest', desc: 'Weekly plain-English summary of every child’s momentum.', href: 'parent/' },

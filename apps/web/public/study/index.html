@@ -419,7 +419,7 @@
   <div class="filters">
     <div><label class="f">Subject</label><select id="pp-subj" aria-label="Past papers: subject"></select></div>
     <div><label class="f">Level</label><select id="pp-level" aria-label="Past papers: level"><option>GCSE</option><option>IGCSE</option><option>National 5</option><option>AS</option><option>A2/A-level</option><option>Scottish Highers</option><option>Scottish Advanced Highers</option><option>BTEC National</option></select></div>
-    <div><label class="f">Exam board</label><select id="pp-board" aria-label="Past papers: exam board"><option value="">All boards</option><option>AQA</option><option>CCEA</option><option>CIE</option><option>Edexcel</option><option>ICAAE</option><option>OCR</option><option>SQA</option><option>WJEC</option><option>Other</option></select></div>
+    <div><label class="f">Exam board</label><select id="pp-board" aria-label="Past papers: exam board"><option value="">All boards</option><option>AQA</option><option>CCEA</option><option>CIE</option><option>Edexcel</option><option>OCR</option><option>SQA</option><option>WJEC</option><option>Other</option></select></div>
     <div><label class="f">Year</label><select id="pp-year" aria-label="Past papers: year"><option value="">All years</option></select></div>
   </div>
   <div id="pp-list"></div>
@@ -2596,7 +2596,7 @@ function renderPlan(){
 renderPlan();
 
 /* ============================ PAST PAPERS ============================ */
-const PP_YEARS=[2025,2024,2023,2022,2021,2019];
+const PP_YEARS=[2026,2025,2024,2023,2022,2021,2019];
 fillSelect(document.getElementById("pp-year"),PP_YEARS);
 function paperCode(board,subj,yr,paper){
   const sc=subj.split(" ").map(w=>w[0]).join("").toUpperCase();
