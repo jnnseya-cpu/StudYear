@@ -143,6 +143,10 @@
   </div>
 </div>
 
+<div role="note" style="display:flex;gap:10px;align-items:flex-start;border:1px solid rgba(230,199,102,.4);background:rgba(230,199,102,.08);border-radius:12px;padding:12px 14px;margin:0 0 16px;font-size:13px;line-height:1.5;color:var(--ink-2)">
+  <b style="color:#e6c766;white-space:nowrap">Preview — not live yet</b>
+  <span>The profiles below are illustrative demo data that shows how the marketplace will work — they are <b>not real, bookable tutors</b>. DBS-verified tutors, payments and live booking arrive when the marketplace launches. You can register interest below and we’ll let you know the moment it opens.</span>
+</div>
 <div class="tgrid" id="tlist"></div>
 <div class="empty" id="tempty" style="display:none">No tutors match those filters — widen the price cap or clear a checkbox.</div>
 <p class="note">Preview build: the tutor directory is seeded demo data. Live profiles, DBS verification, payouts and
@@ -233,7 +237,7 @@ function draw(){
         (t.ai?'<span class="tag ai">AI Teaching</span>':'')+(t.exam?'<span class="tag">Exam Specialist</span>':'')+
         (t.dbs?'<span class="tag dbs">DBS verified</span>':'')+'</div>\
       <div class="tacts"><button class="btn ghost sm" data-view="'+t.id+'">View profile</button>\
-      <button class="btn solid sm" data-book="'+t.id+'">Book session</button></div>\
+      <button class="btn solid sm" data-book="'+t.id+'">Register interest</button></div>\
     </div>'}).join('');
   $('tempty').style.display=hits.length?'none':'block';
 }
@@ -263,18 +267,18 @@ document.body.addEventListener('click',function(e){
   if(b.dataset.book){
     t=TUTORS.find(function(x){return x.id===b.dataset.book});
     modal.classList.add('on');
-    mbody.innerHTML='<h2>Request a session — '+esc(t.name)+'</h2><div class="mmeta">£'+t.rate+'/hr · '+esc(t.avail)+'</div>'+
+    mbody.innerHTML='<h2>Register interest — '+esc(t.name)+'</h2><div class="mmeta">Illustrative profile · demo · marketplace not live yet</div>'+
       '<label class="f" style="display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:12px 0 5px">Subject</label>'+
       '<select id="bk-subj">'+t.subs.map(function(s){return '<option>'+esc(s)+'</option>'}).join('')+'</select>'+
-      '<label class="f" style="display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:12px 0 5px">What do you want help with?</label>'+
+      '<label class="f" style="display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:12px 0 5px">What would you want help with?</label>'+
       '<input type="text" id="bk-note" placeholder="e.g. quadratics before my mock on the 24th">'+
-      '<div style="margin-top:16px"><button class="btn solid" id="bk-send">Send booking request</button></div>'+
-      '<p class="note">Preview: requests are saved to your activity feed — payments, confirmations and video sessions arrive with the marketplace backend.</p>';
+      '<div style="margin-top:16px"><button class="btn solid" id="bk-send">Register my interest</button></div>'+
+      '<p class="note">This is a preview: no real tutor is contacted and nothing is charged. We save your interest to your activity feed and will let you know when real, DBS-verified tutors and live booking go live.</p>';
     $('bk-send').onclick=function(){
       var subj=$('bk-subj').value,note=$('bk-note').value.trim();
-      SY.log('booking','Booking request: '+t.name,subj+(note?' — '+note:'')+' · £'+t.rate+'/hr. The tutor responds when the marketplace goes live.');
+      SY.log('tutor-interest','Registered tutor interest ('+esc(t.subs[0]||'tutoring')+')',subj+(note?' — '+note:'')+'. Illustrative demo profile — we’ll notify you when the marketplace goes live.');
       modal.classList.remove('on');
-      toast('Booking request sent to '+t.name+' — tracked in your activity feed');
+      toast('Interest registered — we’ll email you when live tutors are available');
     };
   }
 });
@@ -292,7 +296,7 @@ function renderView(t){
     (t.ai?'<span class="tag ai">AI Teaching</span>':'')+(t.exam?'<span class="tag">Exam Specialist</span>':'')+
     (t.dbs?'<span class="tag dbs">DBS verified</span>':'')+'</div>'+
     '<p style="font-size:13px;color:var(--ink-3);margin-top:12px">Availability: '+esc(t.avail)+'</p>'+
-    '<div style="margin-top:16px"><button class="btn solid" data-book="'+t.id+'">Book session →</button></div>'+
+    '<div style="margin-top:16px"><button class="btn solid" data-book="'+t.id+'">Register interest →</button></div>'+
     '<h3 style="font-family:var(--serif);font-weight:500;font-size:16px;margin-top:22px;border-top:1px solid var(--line);padding-top:16px">Reviews &amp; ratings</h3>'+revHtml+
     '<div style="border:1px solid var(--line);border-radius:11px;padding:12px;margin-top:12px">'+
       '<div style="font-size:12.5px;color:var(--ink-2);margin-bottom:8px">Leave a review</div>'+

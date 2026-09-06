@@ -21,6 +21,16 @@
 
   var PIXEL = '3470955229736707';
   var GTM = 'GTM-5GNC8F6G';
+  /* Google Analytics 4 + Google Ads — DORMANT until real IDs are set here.
+     Leave '' to keep them OFF (nothing loads, nothing fires). Set GA4 to your
+     'G-XXXXXXXXXX' Measurement ID for site analytics + audiences; set ADS to
+     your 'AW-XXXXXXXXXX' Google Ads ID and ADS_PURCHASE_LABEL to the Purchase
+     conversion label to measure ad ROI + build remarketing lists.
+     Use these for a DIRECT gtag install, OR configure GA4/Ads inside the GTM
+     container above — do one or the other, not both, to avoid double-counting. */
+  var GA4 = '';
+  var ADS = '';
+  var ADS_PURCHASE_LABEL = '';
 
   function get() { try { return localStorage.getItem('sy-consent'); } catch (e) { return null; } }
   function set(v) { try { localStorage.setItem('sy-consent', v); } catch (e) {} }
@@ -45,6 +55,14 @@
     params = params || {};
     try { (window.dataLayer = window.dataLayer || []).push(assign({ event: name }, params)); } catch (e) {}
     try { if (window.fbq) { if (META_STD[name]) window.fbq('track', name, params); else window.fbq('trackCustom', name, params); } } catch (e) {}
+    /* GA4 event mirror (only when a direct GA4 install is configured) */
+    try { if (window.gtag && GA4) window.gtag('event', name, params); } catch (e) {}
+    /* Google Ads Purchase conversion (only when Ads ID + label are configured) */
+    try {
+      if (window.gtag && ADS && ADS_PURCHASE_LABEL && name === 'Purchase') {
+        window.gtag('event', 'conversion', assign({ send_to: ADS + '/' + ADS_PURCHASE_LABEL }, params));
+      }
+    } catch (e) {}
   }
   function emit(name, params) {
     if (!allowed || !name) return;               // never queue or send on blocked pages
@@ -74,6 +92,20 @@
     /* Google Tag Manager */
     try {
       (function (w, d, s, l, i) { w[l] = w[l] || []; w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' }); var f = d.getElementsByTagName(s)[0], j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f); })(window, document, 'script', 'dataLayer', GTM);
+    } catch (e) {}
+    /* Google gtag.js — GA4 and/or Google Ads. Loads ONLY when a direct ID is
+       set above; stays dormant otherwise (GTM can deliver these instead). */
+    try {
+      if (GA4 || ADS) {
+        var gj = document.createElement('script'); gj.async = true;
+        gj.src = 'https://www.googletagmanager.com/gtag/js?id=' + (GA4 || ADS);
+        document.head.appendChild(gj);
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+        window.gtag('js', new Date());
+        if (GA4) window.gtag('config', GA4);
+        if (ADS) window.gtag('config', ADS);
+      }
     } catch (e) {}
     /* flush anything raised before load, then the automatic content event */
     var pending = queue.splice(0, queue.length);

@@ -170,8 +170,36 @@ async function alertOwner(key: string, subject: string, detail: Record<string, u
 }
 
 // ------------------------------------------------------------------ health ----
-export const health = onRequest({ region: 'europe-west2', cors: true }, (_req, res) => {
-  res.json({ ok: true, service: 'studyear-api', marginFloor: MARGIN.FLOOR });
+/**
+ * GET /health — public liveness ({ok, service, marginFloor}).
+ *
+ * With a valid ADMIN bearer token it ALSO returns a `readiness` block that
+ * proves the money + value chain is actually provisioned in this runtime —
+ * booleans only, never the secret values. Use `readiness.ready` as the
+ * pre-ad-spend gate: if it isn't true, a paying visitor would hit a 503 on AI
+ * or a broken checkout, so ad budget would burn on a dead funnel. Non-admin
+ * callers get only the base payload (config state is never exposed publicly).
+ */
+export const health = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  const base: Record<string, unknown> = { ok: true, service: 'studyear-api', marginFloor: MARGIN.FLOOR };
+  const auth = req.headers.authorization;
+  if (auth) {
+    try {
+      await requireAdmin(auth);
+      const aiProviders = aiProviderChain().map((p) => p.provider);
+      const ai = aiProviders.length > 0;
+      const stripe = !!process.env.STRIPE_SECRET_KEY;
+      const stripeWebhook = !!process.env.STRIPE_WEBHOOK_SECRET;
+      const mail = !!process.env.MAIL_HOST;
+      base.readiness = {
+        ready: ai && stripe && stripeWebhook,   // the funnel can take money AND deliver value
+        ai, aiProviders,                          // provider NAMES only (never keys)
+        stripe, stripeWebhook, mail,
+        backupBucket: !!process.env.BACKUP_BUCKET,
+      };
+    } catch (e) { /* not an admin — return the public payload only, never leak config state */ }
+  }
+  res.json(base);
 });
 
 // -------------------------------------------------------------- ACU meter ----

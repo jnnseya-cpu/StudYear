@@ -81,3 +81,38 @@ Every `aiProxy` response carries `X-Request-Id` (also in the JSON `rid` and on
 TARGET_URL="https://www.studyear.com/how-it-works/" CONCURRENCY=50 DURATION=30 node tests/load/loadtest.mjs
 ```
 Targets: critical p95 < 800ms, error rate < 1%, recovery after spike < 5 min.
+
+## Pre-ad-spend readiness gate (do this before any paid campaign)
+The funnel is code-complete but only earns money if the runtime secrets are
+actually loaded. Prove it — don't assume it:
+
+1. **Readiness probe.** As a platform admin, GET `/health` with your Firebase
+   ID token as a bearer:
+   ```bash
+   curl -s https://europe-west2-revision-rocket-4nuir.cloudfunctions.net/health \
+     -H "Authorization: Bearer <admin-id-token>" | jq .readiness
+   ```
+   `readiness.ready` must be `true`. It reports booleans only (never secret
+   values): `ai` (an AI provider key is loaded) + `aiProviders`, `stripe`
+   (`STRIPE_SECRET_KEY` set), `stripeWebhook` (`STRIPE_WEBHOOK_SECRET` set),
+   `mail`, `backupBucket`. If `ready` is false, a paying visitor hits a 503 on
+   AI or a broken checkout — do not spend on ads.
+2. **One real end-to-end test on prod:** sign up → buy the smallest top-up →
+   confirm ACUs credited → run one AI action. This is the only proof the whole
+   chain works.
+3. **Confirm an alert lands:** trigger (or wait for) one `opsAlerts` write and
+   confirm the email actually reaches ALERT_TO/MAIL_TO. Alerting is silent if
+   SMTP isn't really delivering.
+4. **Set a GCP billing budget alert** (console: Billing → Budgets & alerts) as
+   the runaway backstop — the `AI_DAILY_*` caps and `aiProxy maxInstances:20`
+   bound cost, but a budget alert is the last line of defence during a spike.
+
+## Marketing / conversion IDs (where to paste them)
+All browser tracking is consent-gated in `apps/web/public/consent.js`. Meta
+Pixel and GTM are already set. To measure paid-ad ROI, set the two Google IDs
+at the top of that file (they stay dormant while empty — nothing loads or
+fires): `GA4` (`G-…` Measurement ID), `ADS` (`AW-…` Google Ads ID) and
+`ADS_PURCHASE_LABEL` (the Purchase conversion label). Use these for a direct
+gtag install OR configure the same tags inside the GTM container — not both, to
+avoid double-counting. The `Purchase` event fires on the real Stripe return, so
+it only produces revenue conversions once the Stripe secrets (above) are live.
