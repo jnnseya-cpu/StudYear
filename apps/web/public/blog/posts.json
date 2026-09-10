@@ -1,5 +1,93 @@
 [
   {
+    "id": "ai-agents-for-teachers",
+    "title": "AI agents for teachers: your AI teaching team",
+    "slug": "ai-agents-for-teachers",
+    "category": "AI in education",
+    "excerpt": "AI agents for teachers go beyond a chatbot: a teaching team that plans, differentiates and marks, with the teacher always in control.",
+    "metaDesc": "AI agents for teachers: an AI teaching team that plans, differentiates and marks — with you in control. What it does, and how to keep it safe and effective.",
+    "body": "A chatbot can draft a worksheet. A team of AI agents can plan the lesson, differentiate it three ways, mark the results against your rubric and flag who is falling behind — while you stay in control of every decision. That is the shift AI agents bring to teaching.\n\n## From one chatbot to a teaching team\nThe value is not a single clever assistant; it is several agents, each with a job, working together. One plans, one differentiates, one marks, one watches the cohort for early warning signs. Together they hand a teacher back the hours that admin usually eats. The government's [guidance on generative AI in education](https://www.gov.uk/government/publications/generative-artificial-intelligence-in-education) supports using AI to reduce workload where a professional stays in charge.\n\n## What AI agents do for teachers\n- Plan lessons and schemes of work aligned to your spec and rubric.\n- Differentiate the same lesson for higher, middle and lower attainers.\n- Mark to the mark scheme and draft examiner-style feedback.\n- Draft parent emails and intervention notes for you to approve.\n- Surface who is drifting — the reason, and a suggested next step.\n\nThe last one runs on the [AI School Brain that predicts results](/blog/ai-school-brain-predicts-results/) weeks before the mocks.\n\n## You stay in control\nGood classroom AI drafts; it never decides. The teacher reviews, adjusts and approves everything, so professional judgement and accountability stay exactly where they belong. This is the principle behind StudYear's [AI teaching team](/app/teacher/) — and it is why the [Education Endowment Foundation](https://educationendowmentfoundation.org.uk) stresses that impact depends on how a tool is used, not the tool alone.\n\n## What it means for your school\nDeployed across a school, agents give every teacher the toolkit and leadership a live view of cohort risk. See how it fits together in the [school console](/app/school/), or read our overview of [AI agents in education](/blog/ai-agents-in-education/). The fastest way to judge it is to [open the live demo](/demo/).\n\n## Getting started safely in your classroom\nYou do not have to hand a class over to AI on day one. Start with the parts that only cost you time: let an agent draft next week's lesson and differentiate it three ways, then review and adjust before you teach it. Try having it mark one set of mock answers against the rubric, and compare its feedback with your own — you will quickly learn where to trust it and where to correct it. Once the drafts earn your confidence, widen it to parent emails, revision resources and intervention notes.\n\nKeep two rules throughout. First, the agent drafts and you decide — every output passes through your professional judgement before it reaches a student or a parent. Second, nothing about a child ever leaves the school's control: check that data is encrypted, permissioned and never used to train external AI. Used that way, the hours saved are real, the quality stays high, and the accountability stays exactly where it belongs — with you.\n\n## FAQ\n### Will AI agents replace teachers?\nNo. AI agents remove the grind — planning, marking, admin — but they do not teach, build relationships or exercise professional judgement. The teacher stays in control and makes the decisions.\n\n### Are AI agents accurate enough to mark student work?\nThey are good enough to draft feedback fast, but a teacher should always review and approve. Used that way — agent drafts, teacher decides — they save hours without risking accuracy or accountability.\n\n### How do teachers start with AI agents?\nTry the [live demo](/demo/) to see the teaching team in action, then bring it to your school. Teacher tools are free, so staff can start without a per-seat cost.",
+    "tags": [
+      "AI agents",
+      "teachers",
+      "AI teaching team",
+      "schools",
+      "StudYear"
+    ],
+    "keyword": "AI agents for teachers",
+    "readTime": 3,
+    "seoScore": 100,
+    "published": true,
+    "date": "2026-09-10T10:00:00.000Z",
+    "reviewed": "2026-09-10T10:00:00.000Z"
+  },
+  {
+    "id": "ai-agents-revision",
+    "title": "How to use AI agents for GCSE and A-Level revision",
+    "slug": "ai-agents-for-gcse-a-level-revision",
+    "category": "Study science",
+    "excerpt": "A step-by-step guide to using AI agents for GCSE and A-Level revision — diagnose, plan, practise and adapt, instead of just asking questions.",
+    "metaDesc": "How to use AI agents for GCSE and A-Level revision: diagnose weak topics, build a plan that adapts, and get real mark-scheme feedback. A step-by-step guide.",
+    "body": "Most students use AI like a search box: ask a question, get an answer. That helps you understand a topic, but it does not raise a grade. AI agents can — because they run the whole revision loop, not just the questions. Here is how to use them well.\n\n## What an AI agent does for revision\nA revision agent works toward a goal — your target grade — instead of answering one question at a time. It diagnoses where you are, plans what to do, generates practice, marks it, and adjusts. The [Education Endowment Foundation](https://educationendowmentfoundation.org.uk) is clear that the highest-impact revision is spaced, retrieval-based and targeted at weak spots — exactly the routine an agent can automate. For the bigger picture, see [AI agents in education](/blog/ai-agents-in-education/).\n\n## Step 1: diagnose your weak topics\nDo not start by revising what you already know. Let the agent look at your subjects, target grade and recent work, and pinpoint the shaky and missing topics first. A free diagnostic and predicted grade is the fastest way in — try the [free tools](/free/).\n\n## Step 2: let the agent build the plan\nAsk for a week-by-week plan, not a to-do list. A good agent front-loads your weakest topics, spaces them for retention, and switches to timed past papers near the exam — then rebuilds the plan automatically when you miss a session. You can run this in the [study workspace](/study/).\n\n## Step 3: practise with mark-scheme feedback\nAnswering questions is not the same as answering them the way an examiner rewards. Have the agent mark your work against the real mark scheme and tell you exactly where the marks were lost — the approach behind an [AI tutor that teaches the method](/blog/ai-tutor-that-teaches-not-cheats/). Then create a [free account](/app/) to keep your plan and progress in one place.\n\n## Do AI agents actually help grades?\nThey do not replace the work — but by targeting the effort that matters and giving fast, specific feedback, they make the hours you put in count for more. The gains come from the evidence-based habits underneath: spacing, retrieval and targeted practice.\n\n## A sample two-week revision loop\nHere is what an agent-run fortnight looks like in practice. Days one and two: a diagnostic, then a plan built around your three weakest topics. Days three to nine: short, spaced sessions on those topics, each ending in a few retrieval questions the agent marks and logs. Day ten: the agent reshuffles the plan based on what stuck and what did not. Days eleven to thirteen: timed past-paper questions marked against the mark scheme, with feedback on exactly where marks were dropped. Day fourteen: a mixed recap of everything, weighted toward whatever is still shaky. You supply the effort; the agent supplies the structure, the marking and the memory — which is the part most students never keep up by hand.\n\n## FAQ\n### How do I start using AI agents for revision?\nBegin with a diagnostic so the agent knows your weak topics, then ask it to build an adaptive plan and mark your practice against the mark scheme. The [free tools](/free/) and [study workspace](/study/) are a good starting point.\n\n### Can AI agents help with any subject?\nYes — StudYear covers every UK exam board from KS1 to A-Level and beyond, so an agent can diagnose, plan and mark across your subjects rather than just one.\n\n### Is using an AI agent for revision cheating?\nNot if it teaches you. A good agent explains the method and marks your own work so you improve — see the difference between an [AI agent and a chatbot](/blog/ai-agent-vs-chatbot/). Handing in AI-written work is cheating; using an agent to learn faster is not.",
+    "tags": [
+      "AI agents",
+      "revision",
+      "GCSE",
+      "A-Level",
+      "StudYear"
+    ],
+    "keyword": "AI agents for revision",
+    "readTime": 3,
+    "seoScore": 100,
+    "published": true,
+    "date": "2026-09-10T10:00:00.000Z",
+    "reviewed": "2026-09-10T10:00:00.000Z"
+  },
+  {
+    "id": "ai-agents-safe-for-children",
+    "title": "Are AI agents safe for children? A parent's guide",
+    "slug": "are-ai-agents-safe-for-children",
+    "category": "AI in education",
+    "excerpt": "AI agents can be safe for children — with the right guardrails. The five questions every parent should ask before trusting one.",
+    "metaDesc": "Are AI agents safe for children? The five questions every parent should ask about data, safeguarding and human oversight before trusting one with your child.",
+    "body": "AI agents can do a lot for a child's learning. They can also do a lot with a child's data. Whether they are safe comes down to how they are built — and there are five questions any parent can ask to tell the difference.\n\n## Can AI agents be safe for children?\nYes, when they are designed for it. An agent that plans and acts on a child's behalf needs stronger guardrails than a simple chatbot, because it touches more data and does more. The UK's [Age Appropriate Design Code](https://ico.org.uk) (the Children's Code) sets the standard AI used by children should meet, and the government's [guidance on generative AI in education](https://www.gov.uk/government/publications/generative-artificial-intelligence-in-education) is clear that safety and data protection come first.\n\n## The five questions every parent should ask\n- Does a human stay in control, or can the agent act unchecked?\n- What happens to my child's data — is it encrypted, and who can see it?\n- Is the AI ever allowed to train on my child's information?\n- Is it age-appropriate by design, and does it meet UK GDPR and KCSIE expectations?\n- Can my child be tracked or advertised to inside the learning area?\n\n## Data: what happens to your child's information\nThis is the question that matters most. A safe agent encrypts a child's data, keeps it permissioned, and never lets AI providers train on it. StudYear is built [safeguarding-first](/about/): end-to-end encryption, UK GDPR and KCSIE workflows, AADC by design, and a firm rule that the learning areas are never tracked for advertising and the AI never trains on your child's data.\n\n## Human oversight matters\nAn agent should draft and suggest — never decide alone. In a school, a teacher reviews and approves; at home, a parent stays informed. StudYear turns everything into one plain-English [parent view](/app/parent/) so you always know what your child is doing and how they are getting on.\n\n## How to check before you trust one\nDo not take marketing on faith. [Open the live demo](/demo/) and look for the guardrails yourself, and read our overview of [AI agents in education](/blog/ai-agents-in-education/) to understand what a well-built agent should and should not do.\n\n## Green flags in a safe AI agent\nWhen you are comparing tools, a few signs separate the safe from the careless. Look for a clear privacy policy written for families, not lawyers. Look for a named data-protection contact and a UK registration. Look for encryption described in plain terms, a stated position that the AI never trains on children's data, and controls that let a parent or school see and delete what is held. An agent that hides these, or buries them, is telling you something. And remember that free is not always the same as safe — check who pays, and how, before you decide. StudYear puts these up front precisely because a school's data-protection lead and a cautious parent will both ask.\n\n## FAQ\n### Are AI agents safe for young children to use?\nThey can be, if they are age-appropriate by design, keep a human in control, encrypt data, and never train AI on a child's information. Check for UK GDPR, KCSIE and AADC compliance before trusting one.\n\n### Will an AI agent do my child's homework for them?\nA well-designed education agent should teach the method, not hand over answers — the approach behind an [AI tutor that teaches rather than cheats](/blog/ai-tutor-that-teaches-not-cheats/). That builds understanding instead of dependence.\n\n### What data does an AI study agent collect?\nIt varies by product. A safe one collects only what it needs to help, encrypts it, keeps it permissioned, and never sells it or trains external AI on it. Always check the privacy policy before you sign up.",
+    "tags": [
+      "AI agents",
+      "child safety",
+      "AI in education",
+      "parents",
+      "StudYear"
+    ],
+    "keyword": "are AI agents safe for children",
+    "readTime": 3,
+    "seoScore": 100,
+    "published": true,
+    "date": "2026-09-10T10:00:00.000Z",
+    "reviewed": "2026-09-10T10:00:00.000Z"
+  },
+  {
+    "id": "ai-agent-vs-chatbot",
+    "title": "AI agent vs chatbot: what's the difference?",
+    "slug": "ai-agent-vs-chatbot",
+    "category": "AI in education",
+    "excerpt": "A chatbot answers; an agent acts. The real difference between AI agents and chatbots — and why it changes what AI can do for learning.",
+    "metaDesc": "AI agent vs chatbot: a chatbot answers a question, an agent plans and acts to reach a goal. Here's the real difference and why it matters for learning.",
+    "body": "If you have used ChatGPT, you have used a chatbot. An AI agent is a different thing — and the gap between them decides how much AI can really do for a student, parent or teacher.\n\n## What a chatbot does\nA chatbot is reactive. You send a message, it predicts a helpful reply, and it stops. It has no goal beyond answering the thing in front of it, and no memory of a plan. Ask it to \"explain osmosis\" and it will — clearly and instantly. That is genuinely useful, and it is where most people's experience of AI begins.\n\n## What an AI agent does\nAn AI agent is goal-driven. Give it an outcome — \"get me ready for my Chemistry mock\" — and it breaks that into steps, uses tools, acts, and checks its own work. It might read your last assessment, find your weakest topics, build a two-week plan, generate practice, mark it against the mark scheme, and adjust when you fall behind. A chatbot replies; an agent gets something done. The UK government's [guidance on generative AI in education](https://www.gov.uk/government/publications/generative-artificial-intelligence-in-education) reflects this shift from answering to acting.\n\n## AI agent vs chatbot: the key differences\n- Goal: a chatbot answers one message; an agent pursues an outcome over many steps.\n- Memory: a chatbot forgets; an agent keeps a plan and a record to work against.\n- Tools: a chatbot only writes text; an agent can use tools — diagnostics, planners, markers.\n- Self-checking: an agent reviews and revises its own output; a chatbot does not.\n\nFor the fuller picture of where this is heading, see our guide to [AI agents in education](/blog/ai-agents-in-education/).\n\n## Which one helps learning more\nFor a quick explanation, a chatbot is perfect. For actually moving a grade, you want agents — because learning is a loop, not a single question. That is how StudYear works: it is an [AI operating system](/how-it-works/) of agents that assess, plan, teach and measure. Its [AI tutor teaches the method](/blog/ai-tutor-that-teaches-not-cheats/) rather than handing over answers, and you can put it to work in the [study workspace](/study/) or [create a free account](/app/) to try it on your next assignment.\n\n## When a chatbot is enough\nAgents are not always the right tool. When you just need a fact explained, a definition, a quick worked example or a sentence rephrased, a chatbot is faster and simpler — there is no goal to pursue and no plan to keep. The skill is knowing which you need: reach for a chatbot to understand something in the moment, and an agent to achieve something over time, like getting a whole topic exam-ready. The best products blend the two — a quick answer when you want one, and an agent quietly running the plan behind it — so you are never asking a simple question of a heavyweight system, or a big goal of a tool that can only reply.\n\n## FAQ\n### Is an AI agent just a chatbot with extra steps?\nNo. A chatbot generates a reply to one message. An agent pursues a goal — it plans, uses tools, takes multiple actions and checks its work — so it can complete a task, not just answer a question.\n\n### Is ChatGPT an agent or a chatbot?\nBy default it behaves as a chatbot. It can be given agent-like abilities (tools, memory, multi-step tasks), but a purpose-built education agent is designed around a learning goal from the start.\n\n### Which is better for revision, a chatbot or an AI agent?\nA chatbot is great for one-off explanations. For revision that actually raises a grade you want an agent, because it can diagnose weak topics, build a plan and adapt it over weeks — see [how to use AI agents for revision](/blog/ai-agents-for-gcse-a-level-revision/).",
+    "tags": [
+      "AI agents",
+      "AI chatbot",
+      "AI in education",
+      "edtech",
+      "StudYear"
+    ],
+    "keyword": "AI agent vs chatbot",
+    "readTime": 3,
+    "seoScore": 100,
+    "published": true,
+    "date": "2026-09-10T10:00:00.000Z",
+    "reviewed": "2026-09-10T10:00:00.000Z"
+  },
+  {
     "id": "ai-agents-2026",
     "title": "AI agents in education: what they are and why now",
     "slug": "ai-agents-in-education",

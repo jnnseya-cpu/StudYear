@@ -16,6 +16,10 @@
   <url><loc>https://www.studyear.com/cookies/</loc><priority>0.3</priority></url>
   <url><loc>https://www.studyear.com/disclaimer/</loc><priority>0.3</priority></url>
   <!-- BLOG:START -->
+  <url><loc>https://www.studyear.com/blog/ai-agents-for-teachers/</loc><lastmod>2026-09-10</lastmod><priority>0.6</priority></url>
+  <url><loc>https://www.studyear.com/blog/ai-agents-for-gcse-a-level-revision/</loc><lastmod>2026-09-10</lastmod><priority>0.6</priority></url>
+  <url><loc>https://www.studyear.com/blog/are-ai-agents-safe-for-children/</loc><lastmod>2026-09-10</lastmod><priority>0.6</priority></url>
+  <url><loc>https://www.studyear.com/blog/ai-agent-vs-chatbot/</loc><lastmod>2026-09-10</lastmod><priority>0.6</priority></url>
   <url><loc>https://www.studyear.com/blog/ai-agents-in-education/</loc><lastmod>2026-09-10</lastmod><priority>0.6</priority></url>
   <url><loc>https://www.studyear.com/blog/adult-learning-reskill-changed-job-market/</loc><lastmod>2026-08-22</lastmod><priority>0.6</priority></url>
   <url><loc>https://www.studyear.com/blog/ai-school-brain-predicts-results/</loc><lastmod>2026-08-22</lastmod><priority>0.6</priority></url>
