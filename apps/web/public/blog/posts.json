@@ -1,5 +1,27 @@
 [
   {
+    "id": "ai-agents-2026",
+    "title": "AI agents in education: what they are and why now",
+    "slug": "ai-agents-in-education",
+    "category": "AI in education",
+    "excerpt": "AI agents are the next step beyond chatbots: software that plans and acts, not just answers. What that means for learning — and how to try it today.",
+    "metaDesc": "AI agents go beyond chatbots — software that plans, acts and checks its work. What they mean for students, parents and schools, and how to try one today.",
+    "body": "Ask most people what AI means for schoolwork and they picture a chatbot: you type a question, it types an answer. AI agents are the next step — and they change what is possible for every student, parent and teacher.\n\n## What is an AI agent?\nAn AI agent is software that does not just answer a question — it can plan, take steps and use tools to reach a goal, then check its own work. A chatbot replies; an agent acts. In learning, that is the difference between \"explain photosynthesis\" and \"read my mock, find my three weakest topics, build a two-week plan, and rebuild it if I miss a session.\"\n\nThat shift — from answering to acting — is why the UK government now publishes dedicated [guidance on generative AI in education](https://www.gov.uk/government/publications/generative-artificial-intelligence-in-education), and why independent evidence bodies like the [Education Endowment Foundation](https://educationendowmentfoundation.org.uk) are studying how it affects real outcomes.\n\n## Why AI agents matter for learning now\nA single agent is useful. A team of agents, each with a job, is transformative. One diagnoses; one plans; one tutors; one marks against the real mark scheme; one watches for a child drifting off-track. Together they do what only a well-resourced private tutor used to: continuous, personal, one-to-one support — for everyone, not just the families who can pay for it.\n\nThis is exactly how StudYear is built. It is not a single chatbot bolted onto a website — it is an [AI operating system](/how-it-works/) where agents run one closed loop: assess, plan, learn, improve.\n\n## What AI agents already do in StudYear\n- A personal [AI tutor that teaches the method](/blog/ai-tutor-that-teaches-not-cheats/) step by step — it never just hands over the answer.\n- An examiner agent that marks essays and papers against the actual mark scheme and predicts your grade — put it to work in the [study workspace](/study/).\n- A full [AI teaching team](/app/teacher/) for teachers that plans lessons, differentiates work and drafts interventions — with the teacher always reviewing and approving.\n- The [AI School Brain](/blog/ai-school-brain-predicts-results/) that reads every signal and flags the child drifting weeks before the mocks.\n- A [parent view](/app/parent/) that turns all of it into one plain-English weekly briefing.\n\n## AI agents and safety: what parents and schools should ask\nAgents that act need guardrails. Before you trust any AI agent with a child, ask three questions: does a human stay in control, is children's data protected, and is the AI ever allowed to train on it? StudYear is built [safeguarding-first](/about/) — UK GDPR, KCSIE workflows and AADC by design, end-to-end encryption, and AI providers that never train on your data. The agent drafts; the teacher decides.\n\n## How to try AI agents in your study or school\nYou do not have to take any of this on faith. [Open the live demo](/demo/) — choose the School view to see what a leader would run, then the Student view to feel what a learner gets. Or start free with the [predicted-grade and revision tools](/free/), or [create a free account](/app/) and set an agent loose on your next assessment tonight.\n\n## FAQ\n### What is the difference between an AI agent and a chatbot?\nA chatbot answers a single message. An AI agent pursues a goal — it can plan, use tools, take several steps and check its own work, like building and adapting a whole revision plan rather than answering one question.\n\n### Are AI agents safe for children to use?\nThey can be, with the right guardrails. Look for a human in the loop, UK GDPR and KCSIE compliance, age-appropriate (AADC) design, encryption, and a clear promise that the AI never trains on your child's data — the standard [StudYear](/about/) is built to.\n\n### Can AI agents actually improve grades?\nAgents do not replace effort, but by finding weak topics early, planning around them and giving mark-scheme feedback, they focus the effort that works. See how StudYear turns that into a [predicted grade you can watch move](/study/).\n\n### How do I start using AI agents for study?\nTry the [free tools](/free/) or the [two-minute demo](/demo/) — no account or card needed — then create a free account when you are ready.",
+    "tags": [
+      "AI agents",
+      "AI in education",
+      "edtech",
+      "AI tutor",
+      "StudYear"
+    ],
+    "keyword": "AI agents in education",
+    "readTime": 3,
+    "seoScore": 100,
+    "published": true,
+    "date": "2026-09-10T09:00:00.000Z",
+    "reviewed": "2026-09-10T09:00:00.000Z"
+  },
+  {
     "id": "seed1",
     "title": "Spaced repetition: the highest-ROI revision habit",
     "slug": "spaced-repetition-highest-roi-revision",
