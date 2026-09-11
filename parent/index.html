@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Parent Command Centre</title>
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#060B18">
+<style>
+  :root{
+    --navy-950:#060B18; --navy-900:#0B1220; --navy-800:#101B33;
+    --gold-300:#A9CFF2; --gold-400:#5FA8E0; --gold-500:#3D8FD1;
+    --ink:#EDF1F8; --ink-2:#AAB6CC; --ink-3:#8795AE;
+    --good:#5CBB7B; --warn:#c98500; --crit:#e66767;
+    --line:rgba(77,157,224,.14);
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:
+    radial-gradient(1200px 700px at 82% -12%, rgba(77,157,224,.14), transparent 60%),
+    radial-gradient(900px 700px at -10% 25%, rgba(22,37,74,.85), transparent 65%),
+    var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1200px;margin:0 auto;padding:30px 26px 100px}
+  a{color:inherit}
+  .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:8px}
+  .logo{font-family:var(--serif);font-size:20px;text-decoration:none;display:inline-flex;align-items:center;gap:9px}
+  .logo b{color:#4FA6E0;font-weight:600}
+  .top .sp{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .chip{font-size:12px;color:var(--ink-2);border:1px solid rgba(170,182,204,.25);border-radius:20px;padding:6px 13px;text-decoration:none}
+  .chip:hover{border-color:var(--gold-500);color:var(--gold-300)}
+
+  /* hero */
+  .hero{border:1px solid var(--line);border-radius:18px;background:linear-gradient(160deg,rgba(16,27,51,.7),rgba(11,18,32,.92));padding:30px 32px;margin:14px 0 20px;position:relative;overflow:hidden}
+  .hero .k{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold-500)}
+  .hero h1{font-family:var(--serif);font-weight:500;font-size:38px;letter-spacing:-.01em;margin:10px 0 4px}
+  .hero p{color:var(--ink-2);max-width:64ch;font-weight:300}
+  .hero .cta{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.14);color:var(--gold-300);
+    font:600 13px var(--sans);border-radius:10px;padding:11px 20px;cursor:pointer;letter-spacing:.02em;text-decoration:none;display:inline-block}
+  .btn:hover{background:rgba(77,157,224,.24)}
+  .btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}
+  .btn.ghost{border-color:rgba(170,182,204,.25);background:none;color:var(--ink-2)}
+  .btn.sm{padding:7px 13px;font-size:12px}
+  input,textarea{background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}
+  input:focus,textarea:focus{border-color:var(--gold-500)}
+
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+  .c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+  @media(max-width:960px){.grid>*{grid-column:span 12}}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:18px 20px}
+  .card h3{font-family:var(--serif);font-weight:500;font-size:17px;margin-bottom:2px}
+  .card .sub{font-size:12px;color:var(--ink-3);margin-bottom:12px}
+  .sec-title{font-family:var(--serif);font-weight:500;font-size:22px;margin:26px 0 12px;display:flex;align-items:baseline;gap:12px}
+  .sec-title .pill{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-400);border:1px solid rgba(95,168,224,.4);border-radius:20px;padding:3px 10px}
+
+  .stat{border:1px solid var(--line);border-radius:12px;background:rgba(16,27,51,.5);padding:15px 17px}
+  .stat .v{font-family:var(--serif);font-size:30px;color:var(--gold-300);line-height:1}
+  .stat .k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}
+  .stat .d{font-size:12px;margin-top:3px}
+  .up{color:var(--good)}.down{color:var(--crit)}
+  .ring{--p:0;width:78px;height:78px;border-radius:50%;background:conic-gradient(from -90deg,#E06060 0,#F2CE7B calc(var(--p)*0.5%),#5CBB7B calc(var(--p)*1%),rgba(170,182,204,.14) 0);box-shadow:0 0 18px rgba(92,187,123,.25),inset 0 0 8px rgba(0,0,0,.4);display:grid;place-items:center;flex:none}
+  .ring i{width:60px;height:60px;border-radius:50%;background:var(--navy-900);display:grid;place-items:center;font-family:var(--serif);font-size:22px;color:var(--gold-300);font-style:normal}
+  .badge{font-size:10px;letter-spacing:.06em;border-radius:20px;padding:3px 9px;border:1px solid rgba(170,182,204,.25);color:var(--ink-2)}
+  .badge.good{border-color:rgba(92,187,123,.5);color:var(--good)}
+  .badge.warn{border-color:rgba(201,133,0,.5);color:#e0b566}
+  .badge.crit{border-color:rgba(230,103,103,.5);color:#f0a0a0}
+
+  .alert{font-size:13px;color:var(--ink-2);padding:7px 0;border-bottom:1px solid rgba(170,182,204,.08);display:flex;gap:9px}
+  .alert .dot{width:7px;height:7px;border-radius:50%;background:var(--gold-500);margin-top:6px;flex:none}
+  .feat{font-size:13px;color:var(--ink-2);padding:4px 0}
+  .feat b{color:var(--good)}
+
+  .snap{border:1px solid var(--line);border-radius:14px;background:rgba(16,27,51,.5);padding:16px 18px;margin-bottom:12px}
+  .snap .hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .snap .hd h4{font-family:var(--serif);font-weight:500;font-size:17px}
+  .snap .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+  @media(max-width:700px){.snap .metrics{grid-template-columns:repeat(2,1fr)}}
+  .snap .metrics .m{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:rgba(6,11,24,.4)}
+  .snap .metrics .m .mk{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+  .snap .metrics .m .mv{font-size:15px;color:var(--ink);margin-top:3px;font-weight:600}
+
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:22px 0 6px}
+  .tabs button{appearance:none;background:none;border:none;border-bottom:2px solid transparent;color:var(--ink-2);font:600 13px var(--sans);padding:10px 14px;cursor:pointer}
+  .tabs button.on{color:var(--gold-300);border-bottom-color:var(--gold-500)}
+  .tabpane{display:none;margin-top:14px}.tabpane.on{display:block}
+
+  .subj-row{display:grid;grid-template-columns:1.4fr 1fr 90px;gap:12px;align-items:center;margin:9px 0;font-size:13px}
+  .bar{height:8px;border-radius:5px;background:rgba(170,182,204,.12);overflow:hidden}
+  .bar i{display:block;height:100%}
+  svg{display:block;width:100%}
+  .heat{display:block}
+  .hm-grid{display:grid;gap:3px;align-items:center}
+  .hm-lbl{font-size:11px;color:var(--ink-2);padding-right:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hm-col{font-size:9.5px;color:var(--ink-3);text-align:center;letter-spacing:.04em}
+  .hm-cell{height:24px;border-radius:4px;cursor:default;transition:transform .12s}
+  .hm-cell:hover{transform:scale(1.12);z-index:2;position:relative;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+  .hm-cell.empty{background:rgba(170,182,204,.08);background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(170,182,204,.07) 4px,rgba(170,182,204,.07) 6px)}
+  .hm-val{font-size:10.5px;color:var(--ink);font-weight:700;text-align:right}
+  .hm-scale{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:10px;color:var(--ink-2)}
+  .hm-scale i{flex:0 0 110px;height:8px;border-radius:5px;background:linear-gradient(90deg,#E06060,#E0A93F,#5CBB7B)}
+
+  .res{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;background:rgba(6,11,24,.4);padding:9px 12px;margin-bottom:7px}
+  .res .t{flex:1;font-size:13px}.res .t small{display:block;color:var(--ink-3);font-size:11px}
+  .risk-card{border:1px solid rgba(230,103,103,.35);border-radius:12px;background:rgba(230,103,103,.06);padding:15px 17px;margin-bottom:12px}
+  .risk-card h4{font-size:15px;color:#f0a0a0}
+  .risk-card .prob{font-family:var(--serif);font-size:26px;color:#f0a0a0}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .qchip{border:1px solid rgba(170,182,204,.3);border-radius:20px;background:none;color:var(--ink-2);font-size:12px;padding:9px 13px;min-height:40px;cursor:pointer}
+  .qchip:hover{border-color:var(--gold-500);color:var(--gold-300)}
+  #advisor-out{border:1px solid var(--line);border-radius:10px;background:rgba(6,11,24,.5);padding:12px 14px;font-size:13.5px;color:var(--ink-2);min-height:40px;margin-top:10px;white-space:pre-wrap}
+  .note{font-size:11.5px;color:var(--ink-3);font-style:italic;margin-top:10px}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+  .parity-item{border:1px solid var(--line);border-radius:11px;background:rgba(6,11,24,.32);margin-top:9px;overflow:hidden}
+  .parity-item summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:14px}
+  .parity-item summary::-webkit-details-marker{display:none}.parity-item .pi-ic{font-size:18px}
+  .parity-item[open] summary{border-bottom:1px solid var(--line)}
+  .pi-body{padding:12px 14px;font-size:13px;color:var(--ink-2);display:grid;gap:8px;line-height:1.6}
+  .pi-lbl{display:inline-block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-400);margin-right:4px}
+  .pi-myth{color:var(--good);background:rgba(92,187,123,.06);border:1px solid rgba(92,187,123,.3);border-radius:9px;padding:8px 11px;font-size:12.5px}
+  .pi-foot{font-size:12px;color:var(--ink-3);margin-top:12px}
+</style>
+</head>
+<body>
+<script src="../guard.js" data-role="parent" data-base="../"></script>
+<script src="../invite.js"></script>
+<script src="../ai.js"></script>
+<script src="../record.js"></script>
+<script src="../homework.js"></script>
+<script src="../schoolsuite.js"></script>
+<script src="../reach.js"></script>
+<script src="../readiness.js"></script>
+<div class="wrap" role="main">
+
+<div class="top">
+  <a class="logo" href="../">⌂ <b class="wm">StudYear</b></a>
+  <div class="sp" style="align-items:center">
+    <a class="chip" href="../dashboards/parent/">Analytics</a>
+    <a class="chip" href="support/">Family Support</a>
+    <a class="chip" href="account/">My Account</a>
+    <a class="chip" href="profile/">Edit profile</a>
+    <a class="chip" href="#" id="signout">Sign out</a>
+    <a href="account/" title="My Account" style="display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff;font-weight:700;font-size:14px;text-decoration:none" id="topavatar"></a>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="k">AI-powered · <span id="hero-plan">Parent</span></div>
+  <h1>Protect their future.<br>Not just their grades.</h1>
+  <p>Real-time academic intelligence — predictive, reassuring and action-oriented. Built for parents who want
+     control, not spreadsheets.</p>
+  <div class="cta">
+    <input id="link-code" type="text" placeholder="Child's Parent Link Code" style="max-width:220px">
+    <button class="btn solid" id="link-go">Link a child</button>
+    <span class="note" style="margin:0" id="link-hint">Get the code from your child: My Account → Connect a parent.</span>
+  </div>
+</div>
+
+<!-- academic command centre bar -->
+<div class="sec-title">Academic Command Centre <span class="pill">Live intelligence</span></div>
+<div class="grid" style="margin-bottom:8px">
+  <div class="card c3" style="display:flex;gap:14px;align-items:center">
+    <div class="ring" id="stab-ring"><i id="stab-v">–</i></div>
+    <div><div style="font-size:13px;color:var(--ink)">Academic Stability</div><div class="note" style="margin:2px 0 0" id="stab-note">Link a child to begin monitoring.</div></div>
+  </div>
+  <div class="stat c3"><div class="v" id="cc-momentum">–</div><div class="k">Weekly momentum</div></div>
+  <div class="stat c3"><div class="v" id="cc-focus">–</div><div class="k">Focus consistency</div></div>
+  <div class="stat c3"><div class="v" id="cc-alerts">0</div><div class="k">Live AI alerts</div></div>
+</div>
+
+<div class="grid">
+  <div class="card c8" id="sec-alerts"><h3>Live AI Alerts</h3><div class="sub">Signals across your linked learners, updated from their live activity</div><div id="alerts"></div></div>
+  <div class="card c4"><h3>Your subscription</h3><div class="sub" id="sub-name">Parent</div>
+    <div id="sub-feats"></div>
+    <div style="margin-top:10px"><a class="btn sm" href="plans/">Manage plan</a></div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card c12" id="invite-root"></div>
+  <div class="card c12" id="readiness-root"></div>
+  <div class="card c12" id="elite-suite"><h3>Your Elite suite — quick access</h3><div class="sub">Everything in your plan, one tap away in your command centre</div>
+    <div class="eqa" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+      <a class="btn ghost sm" href="#stab-ring" data-scroll>🧭 Family intelligence dashboard</a>
+      <a class="btn ghost sm" href="#sec-alerts" data-scroll>🔔 Live AI alerts</a>
+      <a class="btn ghost sm" data-tab="pathway">🎓 University readiness</a>
+      <a class="btn ghost sm" data-tab="intel">🧠 Burnout prevention</a>
+      <a class="btn ghost sm" data-tab="pathway">🚀 Future pathway &amp; careers</a>
+      <a class="btn ghost sm" href="#sec-advisor" data-scroll>🤖 Priority AI advisor</a>
+      <a class="btn ghost sm" href="plans/">💳 3,900 ACUs / month</a>
+    </div>
+    <div class="note" id="elite-note" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card c12" id="pc-actions"><h3>🎴 Parent Action Cards™</h3>
+    <div class="sub">You never have to interpret the data alone — these are this week's actions, computed from your child's live learning model.</div>
+    <div id="action-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:8px"></div></div>
+  <div class="card c12" id="pc-schoolrec" style="display:none"><h3>🏫 School record &amp; learning model</h3>
+    <div class="sub">Your child's dedicated school record — visible to you because their school granted access. Built by the learning model from everything they do in the OS.</div>
+    <div id="schoolrec-body"></div></div>
+  <div class="card c12" id="pc-skillrush"><h3>⚡ SkillRush™ — daily fluency</h3><div class="sub">The 5-minute academic gym: safe, anonymous, no ads or chat. Here's what it means for your child.</div>
+    <div id="sr-parent"></div>
+  </div>
+</div>
+
+<!-- snapshots -->
+<div class="sec-title">Live child snapshots <span class="pill" id="linked-count">0 linked</span></div>
+<div id="snapshots"></div>
+
+<!-- homework from school (teacher → student → parent loop) -->
+<div class="sec-title">📥 Homework &amp; assignments <span class="pill">From school</span></div>
+<div class="grid">
+  <div class="card c12"><h3>What your child's teachers set</h3>
+    <div class="sub">Live from the school: what's been set, whether it's submitted, and the grades &amp; feedback.</div>
+    <div id="hw-parent-mount" style="margin-top:10px"></div></div>
+</div>
+
+<!-- school engagement: behaviour, notices, timetable, documents -->
+<div class="sec-title">🏫 School engagement <span class="pill">Live</span></div>
+<div class="grid">
+  <div class="card c6"><h3>🎁 Behaviour &amp; rewards</h3><div class="sub">Points and badges their teachers award — and any concerns logged.</div><div id="bh-parent-mount" style="margin-top:10px"></div></div>
+  <div class="card c6"><h3>📣 Notices from school</h3><div class="sub">Announcements for families. Acknowledge so school knows you've seen them.</div><div id="an-parent-mount" style="margin-top:10px"></div></div>
+  <div class="card c6"><h3>🗓 Your child's timetable</h3><div class="sub">Their weekly lessons as published by school.</div><div id="tt-parent-mount" style="margin-top:10px"></div></div>
+  <div class="card c6"><h3>📎 School documents</h3><div class="sub">Letters, policies and resources shared with parents.</div><div id="dc-parent-mount" style="margin-top:10px"></div></div>
+  <div class="card c12"><h3>✉️ Message the school</h3><div class="sub">A private message thread with your child's school.</div><div id="cm-parent-mount" style="margin-top:10px"></div></div>
+  <div class="card c6"><h3>⚙ Access &amp; data settings</h3><div class="sub">Low-data mode, language, and an offline pack of your child's work.</div><div id="rc-parent-mount" style="margin-top:10px"></div></div>
+</div>
+<script>try{if(window.SYReach)SYReach.mountSettings(document.getElementById('rc-parent-mount'));}catch(e){}</script>
+
+<!-- deep view (per most-recent child) -->
+<div id="deep" style="display:none">
+  <div class="tabs" id="tabs">
+    <button data-t="overview" class="on">Overview</button>
+    <button data-t="subjects">Subjects &amp; resources</button>
+    <button data-t="warnings">Early warnings</button>
+    <button data-t="intel">Study intelligence</button>
+    <button data-t="pathway">Future pathway</button>
+  </div>
+
+  <div class="tabpane on" id="pane-overview">
+    <div class="grid">
+      <div class="card c7"><h3>Performance momentum</h3><div class="sub" id="mom-sub">Growth trajectory</div><div id="mom-chart"></div></div>
+      <div class="card c5"><h3>Subject heatmap</h3><div class="sub">quiz mastery per subject</div><div class="heat" id="heatmap"></div></div>
+      <div class="card c4"><h3>AI grade forecast</h3><div class="sub">latest prediction from your child's dashboard</div>
+        <div style="font-family:var(--serif);font-size:44px;color:var(--gold-300)" id="forecast">–</div></div>
+      <div class="card c8"><h3>Weekly AI parent briefing</h3><div class="sub" id="brief-when">Executive summary</div><div id="brief"></div></div>
+    </div>
+  </div>
+
+  <div class="tabpane" id="pane-subjects">
+    <div class="card c12"><h3>Live subjects</h3><div class="sub">From profile &amp; quiz activity</div><div id="live-subjects"></div></div>
+    <div class="card c12" style="margin-top:14px"><h3>Saved resources</h3><div class="sub">Live from your child's library — updates when they save new work</div><div id="saved-res"></div></div>
+  </div>
+
+  <div class="tabpane" id="pane-warnings">
+    <div id="warnings"></div>
+    <div class="card c12"><h3>Homework &amp; deadline command centre</h3><div class="sub">Upcoming study sessions from your child's plan</div><div id="deadlines"></div></div>
+  </div>
+
+  <div class="tabpane" id="pane-intel">
+    <div class="grid">
+      <div class="card c5"><h3>Real Verified Study Hours™</h3><div class="sub">Genuine participation — not passive tab time</div>
+        <div class="grid" style="gap:10px;margin-top:6px">
+          <div class="stat c6"><div class="v" id="vh-logged">–</div><div class="k">Logged</div></div>
+          <div class="stat c6"><div class="v" id="vh-verified">–</div><div class="k">Verified productive</div></div>
+          <div class="stat c12"><div class="v" id="vh-score">–</div><div class="k" id="vh-band">Verified score</div></div>
+        </div></div>
+      <div class="card c7"><h3>AI study-behaviour engine</h3><div class="sub">Patterns detected from live data</div><div id="behaviour"></div>
+        <h3 style="margin-top:16px">Emotional &amp; motivation intelligence</h3><div id="emotion"></div></div>
+    </div>
+  </div>
+
+  <div class="tabpane" id="pane-pathway">
+    <div class="card c12"><h3>Future pathway</h3><div class="sub" id="pathway-sub">Data-driven next steps — GCSE, A-level, and university direction</div><div id="pathway"></div></div>
+    <div class="card c12" id="parity-card"><h3>🧭 Understanding your child's options — every route explained</h3>
+      <div class="sub">University isn't the only road to a good career. From 14, children can combine academic subjects with technical
+        training tied to local jobs. Here's what each route really is, and where it leads — no route is a lesser choice.</div>
+      <div id="parity"></div>
+    </div>
+  </div>
+</div>
+
+<!-- advisor + intervention -->
+<div class="grid" style="margin-top:22px">
+  <div class="card c7" id="sec-advisor"><h3>AI parent advisor</h3><div class="sub">Your co-pilot for parenting education — personalised to live data</div>
+    <div class="chips" id="advisor-chips"></div>
+    <div style="display:flex;gap:8px"><input id="advisor-in" placeholder="Ask a question about your child's learning…" style="flex:1"><button class="btn" id="advisor-go">Ask advisor</button></div>
+    <div id="advisor-out">Ask anything about your child's learning and I'll answer from their live data.</div>
+  </div>
+  <div class="card c5"><h3>AI intervention mode</h3><div class="sub" id="interv-sub">Generate a recovery plan when risk is elevated</div>
+    <div id="interv"></div>
+  </div>
+</div>
+
+<p class="note" id="foot-note">StudYear protects outcomes, not just displays data.</p>
+</div>
+<div id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var SY=window.SY; if(!SY) return;
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var toastTimer;function toast(t){var el=$('toast');el.textContent=t;el.style.opacity=1;clearTimeout(toastTimer);toastTimer=setTimeout(function(){el.style.opacity=0},3000)}
+function gradeFor(m){return Math.max(1,Math.min(9,Math.round(1+8*m/100)))}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+/* One-time cleanup: strip any demo child (*@demo.studyear) that leaked into a
+   REAL parent account from demo testing on this browser, so Analytics and the
+   command centre never show seeded demo data for a real parent. */
+(function(){try{if(SY.session&&!SY.session.demo&&SY.isDemoAccount){var ch=SY.get('children',[])||[];var cl=ch.filter(function(k){return !SY.isDemoAccount(k.email)});if(cl.length!==ch.length)SY.set('children',cl);}}catch(e){}})();
+
+/* ---- subscription (parent plan) ---- */
+var PARENT_PLANS={parent_view:{label:'Parent View',acus:300,feats:['Weekly digest & progress reports','Risk alerts','300 ACUs per month']},
+  parent_pro:{label:'Parent Pro',acus:700,feats:['Everything in View','Book support from alerts','700 ACUs per month']},
+  parent_pro_plus:{label:'Parent Pro+',acus:1650,feats:['Predictive grades & micro-weakness detection','AI parent advisor','1,650 ACUs per month']},
+  parent_elite:{label:'Parent Elite',acus:3900,feats:['AI Parent Advisor & intervention mode','Future pathway & university suggestions','Predictive grades & micro-weakness detection','3,900 ACUs per month']}};
+var wallet=SY.get('wallet',null)||{plan:'parent_elite'};
+var planId=(wallet.plan&&PARENT_PLANS[wallet.plan])?wallet.plan:'parent_elite';
+var plan=PARENT_PLANS[planId];
+$('hero-plan').textContent=plan.label; $('sub-name').textContent=plan.label;
+$('sub-feats').innerHTML=plan.feats.map(function(f){return '<div class="feat"><b>✓</b> '+esc(f)+'</div>'}).join('');
+$('foot-note').textContent='Plan: '+plan.label+' · StudYear protects outcomes, not just displays data';
+
+/* parent identity: avatar in the bar + cover behind the hero */
+var _prof=SY.get('profile',{});
+var _ta=$('topavatar');
+if(_prof.photo)_ta.innerHTML='<img src="'+_prof.photo+'" style="width:100%;height:100%;object-fit:cover" alt="">';
+else _ta.textContent=((_prof.name||SY.session.name)[0]||'?').toUpperCase();
+if(_prof.cover){var _h=document.querySelector('.hero');
+  _h.style.backgroundImage='linear-gradient(160deg,rgba(8,13,26,.82),rgba(8,13,26,.93)),url('+JSON.stringify(_prof.cover)+')';
+  _h.style.backgroundSize='cover';_h.style.backgroundPosition='center';}
+
+/* ---- compute live metrics for a linked child ---- */
+function metrics(email){
+  var profile=SY.readAccount(email,'profile',{});
+  var quizzes=SY.readAccount(email,'quizzes',[]);
+  var diag=(SY.readAccount(email,'diagnostics',[])||[])[0]||null;
+  var plan=SY.readAccount(email,'plan',null);
+  var activity=SY.readAccount(email,'activity',[]);
+  var mine=SY.readAccount(email,'mine',[]);
+  var consent=SY.readAccount(email,'consent',{parent:true,schoolToParent:true});
+  var byS={};quizzes.forEach(function(q){(byS[q.subj]=byS[q.subj]||[]).push(q)});
+  var profSubs=(profile.subjects||[]);
+  var names={};profSubs.forEach(function(x){names[x.s]=x.target});
+  Object.keys(byS).forEach(function(s){if(!(s in names))names[s]=null});
+  var subjects=Object.keys(names).map(function(s){
+    var qs=byS[s]||[];
+    var progress=qs.length?Math.round(qs.reduce(function(a,b){return a+b.pct},0)/qs.length):0;
+    var momentum=0;
+    if(qs.length>=2){var h=qs.slice(0,Math.ceil(qs.length/2)),l=qs.slice(-Math.ceil(qs.length/2));
+      momentum=Math.round(l.reduce(function(a,b){return a+b.pct},0)/l.length - h.reduce(function(a,b){return a+b.pct},0)/h.length);}
+    var dm=diag&&diag.list?(diag.list.find(function(x){return x.s===s})||{}).mastery:null;
+    var mastery=qs.length&&dm!=null?Math.round((progress+dm)/2):(qs.length?progress:(dm!=null?dm:0));
+    return {s:s,target:names[s],progress:progress,momentum:momentum,mastery:mastery,attempts:qs.length};
+  });
+  var withData=subjects.filter(function(x){return x.attempts||x.mastery});
+  var overall=withData.length?Math.round(withData.reduce(function(a,b){return a+b.mastery},0)/withData.length):(diag?diag.avg:0);
+  /* streak */
+  var st=SY.readAccount(email,'streak',{days:[]}),set={};(st.days||[]).forEach(function(d){set[d]=1});
+  var streak=0,dd=new Date();while(set[dd.toISOString().slice(0,10)]){streak++;dd.setDate(dd.getDate()-1)}
+  var lessons=activity.filter(function(a){return a.k==='lesson'||a.k==='course'}).length;
+  var weekly=0;
+  var recentQ=quizzes.slice(-4),olderQ=quizzes.slice(0,Math.max(1,quizzes.length-4));
+  if(quizzes.length>=2)weekly=Math.round((recentQ.reduce(function(a,b){return a+b.pct},0)/recentQ.length)-(olderQ.reduce(function(a,b){return a+b.pct},0)/olderQ.length))/2;
+  weekly=clamp(weekly,-15,15);
+  var risk=diag?diag.risk:(overall<40?'HIGH':overall<60?'MEDIUM':'LOW');
+  var engagement=activity.length>=8?'High':activity.length>=3?'Medium':'Low';
+  var focus=streak>=5?'High':streak>=2?'Medium':'Low';
+  var loggedH=Math.round((activity.length*0.6+lessons*0.8+quizzes.length*0.4)*10)/10;
+  var verifiedH=Math.round(loggedH*(0.35+overall/400)*10)/10;
+  var vScore=loggedH?clamp(Math.round(verifiedH/loggedH*100),0,100):0;
+  var weakest=withData.length?withData.reduce(function(a,b){return a.mastery<b.mastery?a:b}).s:null;
+  var strongest=withData.length?withData.reduce(function(a,b){return a.mastery>b.mastery?a:b}).s:null;
+  /* predicted = the level-correct attainment LABEL (e.g. "Grade 5", "Expected
+     Standard", "scaled 108", "2:1"), not a hardcoded GCSE 1–9 grade — a KS2
+     child's parent must never be told a "Grade 7". */
+  var _att=(window.SY&&SY.attainment)?SY.attainment(profile.level,overall):null;
+  return {email:email,profile:profile,subjects:subjects,overall:overall,streak:streak,lessons:lessons,
+    weekly:weekly,risk:risk,engagement:engagement,focus:focus,diag:diag,plan:plan,activity:activity,mine:mine,
+    loggedH:loggedH,verifiedH:verifiedH,vScore:vScore,weakest:weakest,strongest:strongest,consent:consent,
+    predicted:_att?_att.short:('Grade '+gradeFor(overall)),
+    attSystem:_att?_att.system:'generic',
+    isPrimary:!!(_att&&/ks1|ks2|eyfs|elevenplus/.test(_att.system))};
+}
+
+/* ---- render everything ---- */
+function riskBadge(r){return r==='CRITICAL'||r==='HIGH'?'crit':r==='MEDIUM'?'warn':'good'}
+function render(){
+  var kids=SY.get('children',[]);
+  $('linked-count').textContent=kids.length+' linked';
+  try{if(window.SYHomework)SYHomework.mountParent($('hw-parent-mount'),{children:kids});}catch(e){}
+  try{if(window.SYBehaviour)SYBehaviour.mountParent($('bh-parent-mount'),{children:kids});}catch(e){}
+  try{if(window.SYAnnounce)SYAnnounce.mountFeed($('an-parent-mount'),{role:'parents',email:SY.session.email,viewerEmail:(kids[0]&&kids[0].email)});}catch(e){}
+  try{if(window.SYTimetable&&kids[0])SYTimetable.mountParentChild($('tt-parent-mount'),kids[0].email);else if($('tt-parent-mount'))$('tt-parent-mount').innerHTML='<div class="note">Link a child to see their timetable.</div>';}catch(e){}
+  try{if(window.SYDocs)SYDocs.mountBrowse($('dc-parent-mount'),{role:'parents',viewerEmail:(kids[0]&&kids[0].email)});}catch(e){}
+  try{if(window.SYComms)SYComms.mountParent($('cm-parent-mount'),{children:kids,name:SY.session.name});}catch(e){}
+  if(!kids.length){
+    $('snapshots').innerHTML='<div class="card c12"><div class="note" style="font-style:normal">No children linked yet. Enter your child\'s Parent Link Code above — you\'ll see live stability, momentum, subject progress and AI guidance.</div></div>';
+    $('deep').style.display='none';
+    $('stab-note').textContent='Link a child to begin monitoring.';
+    $('alerts').innerHTML='<div class="note" style="font-style:normal">Alerts appear once a child is linked.</div>';
+    return;
+  }
+  var all=kids.map(function(k){return metrics(k.email)});
+  var shared=all.filter(function(m){return m.consent.parent!==false});
+  /* command-centre aggregate */
+  var stability=shared.length?Math.round(shared.reduce(function(a,b){return a+b.overall},0)/shared.length):0;
+  var mom=shared.length?Math.round(shared.reduce(function(a,b){return a+b.weekly},0)/shared.length):0;
+  var focus=shared.some(function(m){return m.focus==='High'})?'High':shared.some(function(m){return m.focus==='Medium'})?'Medium':'Low';
+  $('stab-ring').style.setProperty('--p',stability); $('stab-v').textContent=stability;
+  var stabCol=stability>=70?'#5CBB7B':stability>=50?'#F2CE7B':'#E06060';
+  $('stab-v').style.color=stabCol;
+  $('stab-note').innerHTML='<b style="color:'+stabCol+'">'+(stability>=70?'● Stable':stability>=50?'● Watch':'● At risk')+'</b> — '+
+    (stability>=70?'AI monitoring active across linked learners':stability>=50?'some subjects need attention':'intervention recommended');
+  $('cc-momentum').textContent=(mom>=0?'+':'')+mom+'%';
+  $('cc-momentum').className='v '+(mom>=0?'up':'down');
+  $('cc-focus').textContent=focus;
+  /* alerts */
+  var alerts=[];
+  shared.forEach(function(m){
+    var nm=SY.accountName(m.email);
+    var wk=m.subjects.filter(function(x){return x.attempts&&x.progress<50}).slice(0,1);
+    if(wk.length)alerts.push(esc(wk[0].s)+' confidence needs support for '+esc(nm)+' — quiz average '+wk[0].progress+'%.');
+    m.subjects.slice(0,7).forEach(function(x){alerts.push(esc(x.s)+' quiz progress at '+x.progress+'% for '+esc(nm)+'.')});
+    var lastRes=m.activity.find(function(a){return a.k==='resource'||a.k==='plan'});
+    if(lastRes)alerts.push(esc(nm)+' saved “'+esc(lastRes.t.replace(/^.*?— /,''))+'” recently.');
+  });
+  $('cc-alerts').textContent=alerts.length;
+  $('alerts').innerHTML=alerts.slice(0,9).map(function(a){return '<div class="alert"><span class="dot"></span><span>'+a+'</span></div>'}).join('')||'<div class="note">No alerts — everything on track.</div>';
+
+  /* snapshots */
+  $('snapshots').innerHTML=kids.map(function(k,ki){
+    var nm=SY.accountName(k.email);
+    var m=all[ki];
+    if(m.consent.parent===false){
+      return '<div class="snap"><div class="hd"><h4>'+esc(nm)+'</h4><span class="badge warn">sharing paused</span>'+
+        '<button class="btn ghost sm" data-unlink="'+ki+'" style="margin-left:auto">Unlink child</button></div>'+
+        '<div class="note" style="font-style:normal">'+esc(nm)+' has paused progress sharing.</div></div>';
+    }
+    var liveSubs=m.subjects.filter(function(x){return x.attempts||x.mastery}).length||m.subjects.length;
+    return '<div class="snap"><div class="hd">'+
+      '<div class="ring" style="--p:'+m.overall+';width:56px;height:56px"><i style="width:42px;height:42px;font-size:16px">'+m.overall+'</i></div>'+
+      '<div><h4>'+esc(nm)+' <span style="color:var(--gold-400)">✨</span></h4>'+
+      '<div class="note" style="margin:0;font-style:normal">'+esc(m.profile.level||'—')+' · '+liveSubs+' live subjects</div></div>'+
+      '<button class="btn ghost sm" data-unlink="'+ki+'" style="margin-left:auto">Unlink child</button></div>'+
+      '<div class="metrics">'+
+        '<div class="m"><div class="mk">Engagement</div><div class="mv">'+m.engagement+'</div></div>'+
+        '<div class="m"><div class="mk">Focus</div><div class="mv">'+m.focus+'</div></div>'+
+        '<div class="m"><div class="mk">Exam risk</div><div class="mv"><span class="badge '+riskBadge(m.risk)+'">'+m.risk.toLowerCase()+'</span></div></div>'+
+        '<div class="m"><div class="mk">Weekly growth</div><div class="mv '+(m.weekly>=0?'up':'down')+'">'+(m.weekly>=0?'+':'')+m.weekly+'%</div></div>'+
+      '</div></div>';
+  }).join('');
+  $('snapshots').querySelectorAll('[data-unlink]').forEach(function(b){b.onclick=function(){
+    var kids=SY.get('children',[]);kids.splice(+b.dataset.unlink,1);SY.set('children',kids);render();
+  }});
+
+  /* deep view for the first shared child */
+  var m=shared[0];
+  if(!m){$('deep').style.display='none';return}
+  $('deep').style.display='block';
+  renderDeep(m);
+}
+
+function renderDeep(m){
+  var nm=SY.accountName(m.email);
+  /* momentum chart (last 6 quiz points or synthesised) */
+  var pts=m.activity;
+  var series=(SY.readAccount(m.email,'quizzes',[])||[]).slice(-6).map(function(q){return q.pct});
+  while(series.length<6)series.unshift(Math.max(0,m.overall-(6-series.length)*4));
+  $('mom-sub').textContent='Growth trajectory for '+esc(nm);
+  var W=520,H=180,P=26,n=series.length;
+  var x=function(i){return P+i*(W-2*P)/(n-1)},y=function(v){return H-P-(v/100)*(H-2*P)};
+  var sv='<svg viewBox="0 0 '+W+' '+H+'">';
+  [0,25,50,75,100].forEach(function(g){sv+='<line x1="'+P+'" x2="'+(W-P)+'" y1="'+y(g)+'" y2="'+y(g)+'" stroke="rgba(170,182,204,.12)"/><text x="'+(P-6)+'" y="'+(y(g)+4)+'" text-anchor="end" fill="#6B7A96" font-size="10">'+g+'</text>'});
+  sv+='<polyline fill="none" stroke="#3D8FD1" stroke-width="2.5" points="'+series.map(function(v,i){return x(i)+','+y(v)}).join(' ')+'"/>';
+  series.forEach(function(v,i){sv+='<circle cx="'+x(i)+'" cy="'+y(v)+'" r="4" fill="#A9CFF2"/>'});
+  ['W-5','W-4','W-3','W-2','W-1','Now'].forEach(function(l,i){sv+='<text x="'+x(i)+'" y="'+(H-6)+'" text-anchor="middle" fill="#6B7A96" font-size="10">'+l+'</text>'});
+  sv+='</svg>';$('mom-chart').innerHTML=sv;
+
+  /* subject × week mastery heatmap — a real cell matrix: rows are subjects,
+     columns the last 6 weeks + Now, colour graded red→amber→green (the OS RAG
+     scale), no-data weeks stay neutral. Hover any cell for the exact value. */
+  var hs=m.subjects.filter(function(x){return x.attempts||x.mastery}).slice(0,8);
+  var heatSubs=hs.length?hs:m.subjects.slice(0,6);
+  var qz=SY.readAccount(m.email,'quizzes',[])||[];
+  var WEEKS=6;
+  function weekStart(off){var d=new Date();d.setDate(d.getDate()-d.getDay()+1-off*7);d.setHours(0,0,0,0);return d}
+  function heatCol(v){ /* diverging: red 0 → amber 50 → green 100, lightness rises with mastery */
+    if(v==null)return null;
+    var stops=[[224,96,96],[224,169,63],[92,187,123]];
+    var t=clamp(v,0,100)/50, i=t<1?0:1, f=t<1?t:t-1;
+    var a=stops[i],b=stops[i+1];
+    return 'rgb('+Math.round(a[0]+(b[0]-a[0])*f)+','+Math.round(a[1]+(b[1]-a[1])*f)+','+Math.round(a[2]+(b[2]-a[2])*f)+')';
+  }
+  var colHead='<div class="hm-lbl"></div>';
+  for(var wi=WEEKS-1;wi>=1;wi--){var ws=weekStart(wi);colHead+='<div class="hm-col">'+ws.getDate()+'/'+(ws.getMonth()+1)+'</div>'}
+  colHead+='<div class="hm-col" style="color:var(--gold-300)">Now</div><div class="hm-col"></div>';
+  var rowsHtml=heatSubs.map(function(x){
+    var cells='<div class="hm-lbl" title="'+esc(x.s)+'">'+esc(x.s.length>13?x.s.slice(0,12)+'…':x.s)+'</div>';
+    for(var w=WEEKS-1;w>=1;w--){
+      var s0=weekStart(w).getTime(),s1=s0+7*864e5,pts=[];
+      qz.forEach(function(q){if(q.subj!==x.s)return;var t=new Date(q.t).getTime();if(t>=s0&&t<s1)pts.push(q.pct)});
+      var v=pts.length?Math.round(pts.reduce(function(a,b){return a+b},0)/pts.length):null;
+      var wl=weekStart(w);
+      cells+=v==null
+        ?'<div class="hm-cell empty" title="'+esc(x.s)+' · w/c '+wl.getDate()+'/'+(wl.getMonth()+1)+' · no quizzes"></div>'
+        :'<div class="hm-cell" style="background:'+heatCol(v)+'" title="'+esc(x.s)+' · w/c '+wl.getDate()+'/'+(wl.getMonth()+1)+' · '+v+'% ('+pts.length+' quiz'+(pts.length===1?'':'zes')+')"></div>';
+    }
+    var now=x.mastery||0;
+    cells+='<div class="hm-cell" style="background:'+heatCol(now)+';box-shadow:0 0 0 1.5px rgba(242,206,123,.55)" title="'+esc(x.s)+' · current mastery '+now+'%"></div>';
+    cells+='<div class="hm-val">'+now+'%</div>';
+    return cells;
+  }).join('');
+  $('heatmap').innerHTML=
+    '<div class="hm-grid" style="grid-template-columns:minmax(84px,1.4fr) repeat('+WEEKS+',1fr) 34px">'+colHead+rowsHtml+'</div>'+
+    '<div class="hm-scale"><span>0%</span><i></i><span>100%</span><span style="margin-left:auto;color:var(--ink-3)">column = week · gold ring = now · hover any cell</span></div>';
+
+  $('forecast').textContent=m.predicted;
+
+  /* briefing */
+  var brief=SY.readAccount(m.email,'brief',null);
+  $('brief-when').textContent='Executive summary · '+new Date().toLocaleDateString('en-GB');
+  var win=m.strongest||(m.subjects[0]&&m.subjects[0].s);
+  $('brief').innerHTML='<p style="font-size:13.5px;color:var(--ink-2)">This week '+esc(nm)+' showed '+(m.weekly>=0?'steady academic engagement':'a dip in engagement')+'. '+
+    (m.strongest?'Strongest area: <b style="color:var(--ink)">'+esc(m.strongest)+'</b>. ':'')+
+    (m.weakest?'Needs attention: <b style="color:var(--ink)">'+esc(m.weakest)+'</b>.':'')+'</p>'+
+    '<div style="font-size:12px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase;margin-top:8px">Wins</div>'+
+    '<div class="feat"><b>✓</b> '+esc(nm)+': '+(m.weekly>=0?'+':'')+m.weekly+'% weekly growth'+(win?' · momentum in '+esc(win):'')+'</div>';
+  /* live-AI weekly briefing on top of the data summary */
+  if(window.SYAI&&SYAI.ready()){
+    SYAI.ask("You are StudYear's family-briefing writer. From the data, write a warm, specific weekly parent briefing: 3–4 sentences on how the week really went, one 'Wins' bullet list (2–3 real wins from the data), one 'This week, try' action. Ground every claim in the data; never invent. Markdown.",
+      "Child "+nm+": overall "+m.overall+"%, predicted "+m.predicted+", weekly growth "+m.weekly+"%, risk "+m.risk+". Subjects: "+(m.subjects||[]).map(function(x){return x.s+" "+x.mastery+"% (momentum "+x.momentum+"%)"}).join("; ")+".",{maxTokens:600})
+    .then(function(t){$('brief').innerHTML='<div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:4px">Live AI briefing</div>'+SYAI.render(t)}).catch(function(){});
+  }
+
+  /* live subjects */
+  $('live-subjects').innerHTML=m.subjects.map(function(x){
+    return '<div class="subj-row"><span><b>'+esc(x.s)+'</b> <span class="note" style="margin:0">'+(x.momentum>=0?'+':'')+x.momentum+'% momentum · Target '+(x.target||'N/A')+'</span></span>'+
+      '<div class="bar"><i style="width:'+x.progress+'%;background:'+(x.progress<50?'var(--crit)':x.progress<75?'var(--warn)':'var(--good)')+'"></i></div>'+
+      '<span style="text-align:right;color:var(--ink-2);font-size:12px">'+x.progress+'%</span></div>';
+  }).join('')||'<div class="note">No subjects yet.</div>';
+
+  /* saved resources (mine + activity resource/plan entries) */
+  var res=[];
+  (m.mine||[]).slice().reverse().forEach(function(r){res.push({t:r.title,ty:r.type,when:null})});
+  (m.activity||[]).filter(function(a){return['resource','plan','course','lesson','review','tutor'].indexOf(a.k)>-1}).forEach(function(a){
+    res.push({t:a.t.replace(/^.*?: /,''),ty:({plan:'Study Plans',course:'AI Courses',lesson:'Interactive Lessons',review:'Assignment Reviews',tutor:'AI Tutor Sessions',resource:'Library'})[a.k]||'Resource',when:a.when})});
+  $('saved-res').innerHTML=res.slice(0,20).map(function(r){
+    return '<div class="res"><div class="t"><b>'+esc(r.t)+'</b><small>'+esc(r.ty)+(r.when?' · '+SY.timeAgo(r.when):'')+'</small></div></div>';
+  }).join('')||'<div class="note">No saved resources yet.</div>';
+
+  /* early warnings */
+  var atRisk=m.subjects.filter(function(x){return (x.attempts&&x.progress<50)||(x.target&&x.mastery<gradeToPct(x.target)-25)}).sort(function(a,b){return a.progress-b.progress});
+  var pending=m.plan&&m.plan.plan?m.plan.plan.reduce(function(a,w){return a+w.days.length},0)-Object.keys(m.plan.done||{}).length:0;
+  $('warnings').innerHTML=(atRisk.length?atRisk:m.subjects.slice(0,1)).map(function(x){
+    var prob=clamp(100-x.progress,40,96);
+    return '<div class="risk-card"><h4>'+esc(x.s)+' underperformance risk</h4>'+
+      '<div class="prob">'+prob+'% probability</div>'+
+      '<div class="note" style="font-style:normal">Forecast window: 14 days · '+esc(nm)+'</div>'+
+      '<div style="font-size:12px;color:var(--gold-400);margin:10px 0 4px;letter-spacing:.06em;text-transform:uppercase">Primary causes</div>'+
+      '<div class="feat">• '+esc(x.s)+' quiz average at '+x.progress+'% with '+(x.momentum>=0?'+':'')+x.momentum+'% momentum</div>'+
+      (pending?'<div class="feat">• '+pending+' pending study task'+(pending>1?'s':'')+' in the planner</div>':'')+
+      '<div style="font-size:12px;color:var(--gold-400);margin:10px 0 4px;letter-spacing:.06em;text-transform:uppercase">AI recommendation</div>'+
+      '<div class="feat">Schedule 20-minute active-recall blocks for '+esc(x.s)+' before the next quiz.</div></div>';
+  }).join('')||'<div class="card c12"><div class="note" style="font-style:normal">No elevated risks right now.</div></div>';
+
+  /* deadlines */
+  var up=[];
+  if(m.plan&&m.plan.plan){m.plan.plan.forEach(function(w){w.days.forEach(function(s){if(s.date&&new Date(s.date+'T00:00:00')>=new Date(new Date().toDateString()))up.push(s)})})}
+  up.sort(function(a,b){return (a.date||'').localeCompare(b.date||'')});
+  $('deadlines').innerHTML=up.length?up.slice(0,8).map(function(s){
+    var days=Math.max(0,Math.round((new Date(s.date+'T00:00:00')-new Date(new Date().toDateString()))/86400000));
+    return '<div class="res"><div class="t"><b>'+esc(s.subj)+(s.topic?' · '+esc(s.topic):'')+'</b><small>due in '+days+' day'+(days!==1?'s':'')+' · '+esc(s.mode||'')+'</small></div>'+
+      '<span class="badge good">'+clamp(100-(s.priority==='HIGH'?30:10),40,95)+'% on-time</span></div>';
+  }).join(''):'<div class="note" style="font-style:normal">No upcoming tasks scheduled — generate a plan in the study workspace.</div>';
+
+  /* study intelligence */
+  $('vh-logged').textContent=m.loggedH+'h';
+  $('vh-verified').textContent=m.verifiedH+'h';
+  $('vh-score').textContent=m.vScore+'%';
+  $('vh-band').textContent='Verified score · '+(m.vScore>=70?'Strong':m.vScore>=40?'Fair':'Low');
+  $('behaviour').innerHTML=[
+    (m.strongest?'Strongest: <b style="color:var(--ink)">'+esc(m.strongest)+'</b>':''),
+    (m.weakest?'Needs attention: <b style="color:var(--ink)">'+esc(m.weakest)+'</b> (overall progress '+m.overall+'%).':''),
+    m.subjects.filter(function(x){return x.target&&x.mastery<gradeToPct(x.target)}).length+' subject(s) below target pace.',
+    'Study streak: '+m.streak+' day'+(m.streak!==1?'s':'')+' · engagement '+m.engagement+'.'
+  ].filter(Boolean).map(function(t){return '<div class="feat">• '+t+'</div>'}).join('');
+  $('emotion').innerHTML='<div class="feat">'+(m.streak>=3?'Consistent routine — low burnout risk.':m.streak>=1?'Building a routine — encourage daily short sessions.':'Irregular activity — a gentle nudge and a small win will help re-engage.')+'</div>'+
+    '<div class="feat">Motivation signal: '+(m.weekly>=0?'positive — recent scores trending up.':'watch — recent scores dipping; celebrate small wins.')+'</div>';
+
+  /* future pathway */
+  renderPathway(m,nm);
+
+  /* intervention */
+  var target=atRisk[0]||m.subjects.filter(function(x){return x.attempts}).sort(function(a,b){return a.progress-b.progress})[0]||m.subjects[0];
+  $('interv-sub').textContent='Live signals for '+esc(nm)+' — generate a recovery plan when risk is elevated';
+  if(target){
+    $('interv').innerHTML='<div class="risk-card" style="margin-bottom:10px"><h4>'+esc(target.s)+' underperformance risk</h4>'+
+      '<div class="feat" style="color:var(--ink-2)">Schedule 20-minute active-recall blocks for '+esc(target.s)+' before the next quiz.</div>'+
+      '<div class="note" style="font-style:normal">Focus: quiz mastery at '+target.progress+'%'+(target.target?', target '+esc(String(target.target)):'')+' — below pace · 4-week recovery</div></div>'+
+      '<button class="btn solid" id="interv-go">Generate intervention for '+esc(nm.split(' ')[0])+'</button>'+
+      '<div class="note">Rebuilds schedules · increases weak-area intensity · optimises timing · reduces burnout risk</div>';
+    $('interv-go').onclick=function(){generateIntervention(m,target)};
+  }else{$('interv').innerHTML='<div class="note" style="font-style:normal">No elevated risk — nothing to intervene on right now.</div>';}
+}
+function gradeToPct(g){var n={'A*':95,'A':85,'B':70,'C':55,'D':45,'E':35,'U':10}[g]!=null?{'A*':95,'A':85,'B':70,'C':55,'D':45,'E':35,'U':10}[g]:(+g?(+g)/9*100:60);return n}
+
+/* ---- future pathway: university & career engine, micro-weakness, radar ---- */
+var UNI_MAP={Mathematics:['Mathematics','Engineering','Economics','Computer Science','Actuarial Science'],
+  Physics:['Physics','Engineering','Astrophysics','Materials Science'],
+  Chemistry:['Chemistry','Medicine','Pharmacy','Chemical Engineering'],
+  Biology:['Biology','Medicine','Biochemistry','Veterinary Science'],
+  Science:['Natural Sciences','Biomedical Science','Environmental Science'],
+  Economics:['Economics','PPE','Business','Finance'],
+  'English':['English','Law','Journalism'],
+  'English Literature':['English','Law','Journalism','History'],
+  History:['History','Law','Politics','Archaeology'],
+  'Computer Science':['Computer Science','Software Engineering','Data Science','AI'],
+  ICT:['Computer Science','Information Systems','Cybersecurity'],
+  Psychology:['Psychology','Neuroscience','Criminology'],
+  Geography:['Geography','Environmental Science','Urban Planning','Architecture'],
+  'Business Studies':['Business','Management','Marketing','Accounting'],
+  'Construction Management':['Architecture','Civil Engineering','Construction Management','Quantity Surveying'],
+  Law:['Law','Criminology','Politics']};
+function degreesFor(s){return UNI_MAP[s]||[s,'Business','a related degree']}
+function renderPathway(m,nm){
+  var level=(m.profile.level||'').toLowerCase();
+  var isPost16=/a2|a-level|advanced higher|ib|international bacc|university/.test(level);
+  var trajLabel=isPost16?'A-level trajectory':/gcse|igcse|national 5/.test(level)?'GCSE trajectory':'Trajectory';
+  /* PRIMARY (EYFS/KS1/KS2): never show a GCSE forecast, degree routes, UCAS or
+     A-level pathways to a young child's parent — show strengths & gentle next
+     steps instead. Formal options come later. */
+  if(m.isPrimary){
+    var strongP=m.subjects.slice().filter(function(x){return x.mastery}).sort(function(a,b){return b.mastery-a.mastery});
+    var topP=strongP.slice(0,3), growP=strongP.slice(-3).reverse();
+    var lbl=function(v){return (window.SY&&SY.attainment)?esc(SY.attainment(m.profile.level,v).short):(v+'%');};
+    $('pathway-sub').textContent='Strengths and next steps for '+esc(nm)+' — pitched to primary school, not exams';
+    var ph='<div class="card" style="background:none;border:none;padding:0;margin-bottom:12px"><div class="note" style="font-style:normal">At primary level we build confidence and the basics — formal grades, options and university come later. Here is where '+esc(nm)+' is shining and where a little practice helps.</div></div>';
+    ph+='<div style="font-size:13px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase;margin:6px 0 8px">Where they shine</div>';
+    ph+=topP.length?('<div class="grid">'+topP.map(function(x){return '<div class="card c4"><h3 style="font-size:15px">'+esc(x.s)+'</h3><div class="feat" style="color:var(--ink-2)">'+lbl(x.mastery)+' — a real strength.</div></div>';}).join('')+'</div>'):'<div class="feat">Play a few quizzes to reveal strengths.</div>';
+    ph+='<div style="font-size:13px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase;margin:16px 0 6px">A little practice helps</div>';
+    ph+=growP.length?growP.map(function(x){return '<div class="risk-card" style="margin-top:8px"><h4>'+esc(x.s)+'</h4><div class="feat" style="color:var(--ink-2)">'+lbl(x.mastery)+' — short, regular practice will build it up.</div></div>';}).join(''):'<div class="feat">Everything is on track.</div>';
+    ph+='<div class="note" style="margin-top:14px">Fun ways to help at home: read together every day, play times-tables games, and praise effort over marks.</div>';
+    $('pathway').innerHTML=ph; return;
+  }
+  $('pathway-sub').textContent='University readiness & career direction — from '+esc(nm)+"'s live subject strength";
+
+  /* forecast header */
+  var likelihood=clamp(100-m.overall,20,90);
+  var html='<div class="card" style="background:none;border:none;padding:0;margin-bottom:14px">'+
+    '<div style="font-size:12px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase">University &amp; future pathway engine</div>'+
+    '<div class="note" style="font-style:normal;margin-top:2px">'+trajLabel+' · predictive certainty</div>'+
+    '<div style="display:flex;gap:20px;align-items:baseline;margin-top:8px;flex-wrap:wrap">'+
+      '<div><span style="font-family:var(--serif);font-size:30px;color:var(--gold-300)">'+esc(m.predicted)+'</span> <span class="note" style="margin:0">latest AI forecast</span></div>'+
+      '<div><span style="font-family:var(--serif);font-size:22px;color:var(--ink)">'+likelihood+'%</span> <span class="note" style="margin:0">on-target likelihood at current pace</span></div>'+
+    '</div></div>';
+
+  /* degree cards */
+  var scored={};
+  var contrib={};
+  m.subjects.forEach(function(x){var mm=x.mastery||0;degreesFor(x.s).forEach(function(d){if(!scored[d]||mm>contrib[d].m){scored[d]=(scored[d]||0);contrib[d]={s:x.s,m:mm}}scored[d]=(scored[d]||0)+mm})});
+  var ranked=Object.keys(scored).sort(function(a,b){return scored[b]-scored[a]}).slice(0,5);
+  html+='<div style="font-size:13px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase;margin:6px 0 8px">University &amp; career pathways</div>'+
+    '<div class="note" style="margin-top:0">AI-matched degree routes based on live subject strength for '+esc(nm)+'</div>'+
+    '<div class="grid" style="margin-top:10px">'+ranked.map(function(d){
+      var c=contrib[d], fit=clamp(Math.round(55+(c.m)*0.4),50,98);
+      return '<div class="card c6"><div style="display:flex;justify-content:space-between;align-items:baseline"><h3 style="font-size:16px">'+esc(d)+'</h3><span class="badge good">'+fit+'% fit</span></div>'+
+        '<div class="feat" style="color:var(--ink-2)">'+esc(nm)+"'s strength in "+esc(c.s)+' ('+c.m+'% mastery) aligns with '+esc(d)+'. '+' — projected: '+esc(m.predicted)+'.</div>'+
+        '<div style="font-size:11px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase;margin:8px 0 3px">Entry requirements</div>'+
+        '<div class="feat" style="color:var(--ink-3)">• Strong performance in '+esc(c.s)+' and related subjects<br>• Grades meeting typical university offers<br>• Relevant A-level / BTEC pathway in Year 12–13</div>'+
+        '<div style="font-size:11px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase;margin:8px 0 3px">Next steps</div>'+
+        '<div class="feat" style="color:var(--ink-3)">• Research entry requirements on UCAS<br>• Book a subject taster or open day<br>• Align the revision plan to required grades</div></div>';
+    }).join('')+'</div>';
+
+  /* micro-weakness detection */
+  var weak=m.subjects.filter(function(x){return (x.attempts&&x.progress<50)||(x.target&&x.mastery<gradeToPct(x.target)-20)}).sort(function(a,b){return a.mastery-b.mastery});
+  html+='<div style="font-size:13px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase;margin:18px 0 4px">Micro-weakness detection</div>'+
+    '<div class="note" style="margin-top:0">Precision interventions — not generic “weak in Maths”</div>'+
+    (weak.length?weak.slice(0,4).map(function(x){
+      return '<div class="risk-card" style="margin-top:10px"><h4>'+esc(x.s)+'</h4>'+
+        '<div class="feat" style="color:var(--ink-2)">Quiz mastery at '+x.progress+'%'+(x.target?' · Target '+esc(String(x.target))+' — below pace':'')+'</div>'+
+        '<div class="note" style="font-style:normal">Recovery timeline: ~4 weeks · intensive intensity</div></div>';
+    }).join(''):'<div class="feat" style="margin-top:8px">No micro-weaknesses flagged — every subject is at or above target pace.</div>');
+
+  /* exam readiness radar */
+  html+='<div style="font-size:13px;color:var(--gold-400);letter-spacing:.06em;text-transform:uppercase;margin:18px 0 6px">Exam readiness radar</div>'+radarSvg(m.subjects.filter(function(x){return x.attempts||x.mastery}).slice(0,8));
+
+  $('pathway').innerHTML=html;
+}
+function radarSvg(subs){
+  if(!subs.length)return '<div class="feat">Take a few quizzes to populate the readiness radar.</div>';
+  var W=460,H=330,cx=W/2,cy=H/2,R=110,n=subs.length;
+  var HUES=['#4FA6E0','#8B5CF6','#34D399','#F2CE7B','#F472B6','#22D3EE','#F59E0B','#A78BFA'];
+  var pt=function(i,r){var a=-Math.PI/2+i*2*Math.PI/n;return [cx+Math.cos(a)*r,cy+Math.sin(a)*r]};
+  function col(v){return v>=70?'#5CBB7B':v>=50?'#F2CE7B':'#E06060'}
+  var sv='<svg viewBox="0 0 '+W+' '+H+'">'+
+    '<defs><radialGradient id="rg" cx="50%" cy="50%" r="65%">'+
+    '<stop offset="0%" stop-color="#F2CE7B" stop-opacity=".38"/>'+
+    '<stop offset="55%" stop-color="#4FA6E0" stop-opacity=".30"/>'+
+    '<stop offset="100%" stop-color="#8B5CF6" stop-opacity=".22"/></radialGradient>'+
+    '<filter id="glow"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+  /* graded webs: green outer band → amber → red core, so parents read the scale at a glance */
+  [[1,'rgba(92,187,123,.30)'],[0.75,'rgba(242,206,123,.24)'],[0.5,'rgba(224,169,63,.20)'],[0.25,'rgba(224,96,96,.20)']].forEach(function(f){
+    var pts=subs.map(function(_,i){return pt(i,R*f[0]).join(',')}).join(' ');
+    sv+='<polygon points="'+pts+'" fill="none" stroke="'+f[1]+'" stroke-width="1.2"/>';
+  });
+  subs.forEach(function(_,i){var p=pt(i,R);sv+='<line x1="'+cx+'" y1="'+cy+'" x2="'+p[0]+'" y2="'+p[1]+'" stroke="'+HUES[i%HUES.length]+'" stroke-opacity=".3"/>'});
+  /* target ring (their target grades ⇒ 85%) */
+  var tpts=subs.map(function(x,i){return pt(i,R*0.85).join(',')}).join(' ');
+  sv+='<polygon points="'+tpts+'" fill="none" stroke="#F2CE7B" stroke-width="1.4" stroke-dasharray="5 4" opacity=".8"/>';
+  /* the child\'s readiness surface */
+  var dpts=subs.map(function(x,i){return pt(i,R*clamp((x.mastery||0)/100,0.05,1)).join(',')}).join(' ');
+  sv+='<polygon points="'+dpts+'" fill="url(#rg)" stroke="#8FC2EC" stroke-width="2.4" filter="url(#glow)"/>';
+  /* per-subject dots + % values, coloured by RAG */
+  subs.forEach(function(x,i){
+    var v=x.mastery||0,p=pt(i,R*clamp(v/100,0.05,1));
+    sv+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="4.5" fill="'+col(v)+'" stroke="#0B1428" stroke-width="1.5" filter="url(#glow)"/>';
+    var lp=pt(i,R+18);
+    sv+='<text x="'+lp[0]+'" y="'+(lp[1]-5)+'" text-anchor="middle" fill="'+HUES[i%HUES.length]+'" font-size="10.5" font-weight="700">'+esc(x.s.length>12?x.s.slice(0,11)+'…':x.s)+'</text>'+
+       '<text x="'+lp[0]+'" y="'+(lp[1]+8)+'" text-anchor="middle" fill="'+col(v)+'" font-size="10" font-weight="700">'+v+'%</text>';
+  });
+  sv+='<text x="'+cx+'" y="'+(H-6)+'" text-anchor="middle" fill="#77839B" font-size="9.5">— solid: current readiness · ┄ gold: target band · dot colour: green ≥70 · amber ≥50 · red &lt;50</text>';
+  return sv+'</svg>';
+}
+
+/* ---- intervention: build a recovery plan and (with consent) push it to the child ---- */
+function generateIntervention(m,target){
+  /* live model writes subject-specific recovery topics when configured */
+  if(window.SYAI&&SYAI.ready()&&!arguments[2]){
+    toast('Designing the intervention with '+SYAI.provider()+'…');
+    SYAI.ask("List exactly 5 specific recovery-session topics for a "+(m.profile.level||'GCSE')+" student weak in "+target.s+" (mastery "+(target.mastery||0)+"%). One per line, no numbering — each a concrete, teachable session (topic + activity), ordered easiest first. The topics MUST be at the right level for this stage — never harder-stage content."+((window.SY&&SY.stageStyle)?SY.stageStyle(m.profile.level):""),"Subject: "+target.s,{maxTokens:300})
+      .then(function(t){var tp=String(t).split("\n").map(function(x){return x.trim().replace(/^[-*\d.]+\s*/,'')}).filter(Boolean).slice(0,5);
+        generateIntervention(m,target,tp.length>=3?tp:null)})
+      .catch(function(){generateIntervention(m,target,true)});
+    return;
+  }
+  var aiTopics=Array.isArray(arguments[2])?arguments[2]:null;
+  var nm=SY.accountName(m.email);
+  var plan=SY.readAccount(m.email,'plan',{plan:[],done:{}})||{plan:[],done:{}};
+  var wkN=(plan.plan&&plan.plan.length)?plan.plan[plan.plan.length-1].n+1:1;
+  var topics=aiTopics||['Foundations & key terms','Active-recall drill','Timed practice questions','Review wrong answers'];
+  var lvl=m.profile.level||'GCSE';
+  var week={n:wkN,days:['Mon','Tue','Wed','Thu','Fri'].map(function(d,i){
+    return {date:null,d:d,dow:d,subj:target.s,level:lvl,topic:topics[i%topics.length],slot:2,time:'19:00',mins:30,
+      priority:'HIGH',mode:'Parent-set recovery · '+topics[i%topics.length]};
+  })};
+  plan.plan=(plan.plan||[]).concat([week]);
+  /* write back to the child's account (consent-gated: parent access already granted) */
+  try{SY.writeAccount(m.email,'plan',plan)}catch(e){}
+  try{
+    var feed=SY.readAccount(m.email,'activity',[]);
+    feed.unshift({k:'plan',t:'Recovery plan from your parent',d:target.s+' — 5 sessions added by '+SY.session.name+'.',when:new Date().toISOString()});
+    SY.writeAccount(m.email,'activity',feed.slice(0,100));
+  }catch(e){}
+  SY.log('family','Intervention created for '+nm,target.s+' recovery week added to their planner.');
+  toast('Intervention created — a '+target.s+' recovery week was added to '+nm.split(' ')[0]+"'s planner");
+}
+
+/* ---- AI parent advisor ---- */
+function advisorAnswer(q){
+  var kids=SY.get('children',[]); if(!kids.length)return 'Link a child first, then I can answer from their live data.';
+  var m=metrics(kids[0].email), nm=SY.accountName(kids[0].email);
+  var t=q.toLowerCase();
+  if(/struggl|why.*(bad|low|behind)|worried/.test(t)){
+    return nm+' is finding '+(m.weakest||'some subjects')+' hardest — overall progress is '+m.overall+'% and '+
+      m.subjects.filter(function(x){return x.target&&x.mastery<gradeToPct(x.target)}).length+' subject(s) are below target pace. '+
+      'The fastest lever is short daily active-recall on '+(m.weakest||'the weakest topic')+'. Use the intervention button to add a recovery week.';
+  }
+  if(/urgent|which subject|attention|priorit/.test(t)){
+    return 'Most urgent: '+(m.weakest||'—')+' (progress '+ (m.subjects.find(function(x){return x.s===m.weakest})||{progress:0}).progress +'%). Protect the target grade there first; '+(m.strongest||'their strongest subject')+' is safe for now.';
+  }
+  if(/burnout|tired|stress|overwhelm/.test(t)){
+    return 'Burnout risk looks '+(m.streak>=3?'low':'moderate')+' — study streak is '+m.streak+' day(s) and weekly momentum '+(m.weekly>=0?'+':'')+m.weekly+'%. '+
+      'Keep sessions to 20–40 minutes, protect one rest day, and celebrate small wins to sustain motivation.';
+  }
+  if(/intensity|more|increase|harder|revision/.test(t)){
+    if(m.isPrimary)return (m.overall<60?'Yes — a little more gentle practice on '+(m.weakest||'the tricky areas')+' would help, but keep it short and playful.':'The balance looks about right. Keep practice little and often, and keep it fun — reading together and quick games do a lot at this age.')+
+      ' The planner already weights the trickier subjects heaviest.';
+    return (m.overall<60?'Yes — increase intensity gently on '+(m.weakest||'the weak areas')+', but keep sessions short and specific.':'Intensity looks about right. Hold the routine and shift toward past papers as the exam nears.')+
+      ' The planner already weights weak subjects heaviest.';
+  }
+  if(/universit|degree|career|pathway|future/.test(t)){
+    if(m.isPrimary)return 'At primary age it\'s far too early — and unnecessary — to think about university. The best thing now is a broad, happy foundation: strong reading, number confidence and curiosity. On current strengths ('+(m.subjects.filter(function(x){return x.mastery>=60}).slice(0,2).map(function(x){return x.s}).join(', ')||'a broad base')+'), just keep encouraging what they enjoy.';
+    return 'On current strengths ('+(m.subjects.filter(function(x){return x.mastery>=60}).slice(0,2).map(function(x){return x.s}).join(', ')||'developing across the board')+
+      '), the Future pathway tab suggests directions. Keep every subject above target to widen options.';
+  }
+  if(m.isPrimary)return 'Here\'s what the live data shows for '+nm+': overall progress '+m.overall+'%, working at '+m.predicted+'. '+
+    'Trickiest: '+(m.weakest||'—')+'; strongest: '+(m.strongest||'—')+'. Ask about a subject, wellbeing, or how to help at home.';
+  return 'Here\'s what the live data shows for '+nm+': overall progress '+m.overall+'%, predicted around '+m.predicted+', exam risk '+m.risk.toLowerCase()+
+    '. Weakest: '+(m.weakest||'—')+'; strongest: '+(m.strongest||'—')+'. Ask about a subject, burnout, revision intensity, or university options.';
+}
+var CHIPS=['Why is my child struggling?','What subject needs urgent attention?','Is burnout likely?','Should revision intensity increase?'];
+$('advisor-chips').innerHTML=CHIPS.map(function(c){return '<button class="qchip">'+esc(c)+'</button>'}).join('');
+$('advisor-chips').querySelectorAll('.qchip').forEach(function(b){b.onclick=function(){$('advisor-in').value=b.textContent;askAdvisor()}});
+function childContext(){try{return 'Child: '+nm+'. Overall progress '+m.overall+'%, predicted '+m.predicted+', exam risk '+m.risk+'. Weakest subject '+(m.weakest||'—')+', strongest '+(m.strongest||'—')+'. Per-subject mastery: '+(m.subjects||[]).map(function(x){return x.s+' '+x.mastery+'%'}).join(', ')+'.'}catch(e){return 'No child linked yet.'}}
+function askAdvisor(){
+  var q=$('advisor-in').value.trim();if(!q)return;
+  if(window.SYAI&&SYAI.ready()){
+    $('advisor-out').innerHTML='<span style="opacity:.6">Thinking with '+SYAI.provider()+'…</span>';
+    var sys="You are StudYear's AI Parent Advisor. Give a parent calm, practical, specific guidance about their child's learning, grounded ONLY in the data provided — never invent numbers. Be concise (3–5 sentences or short bullets), reassuring and action-oriented, and suggest one concrete next step.";
+    SYAI.ask(sys,q+"\n\n"+childContext(),{maxTokens:600}).then(function(t){$('advisor-out').innerHTML=SYAI.render(t)}).catch(function(e){$('advisor-out').textContent=advisorAnswer(q)});
+    return;
+  }
+  $('advisor-out').textContent=advisorAnswer(q);
+}
+$('advisor-go').onclick=askAdvisor;
+$('advisor-in').addEventListener('keydown',function(e){if(e.key==='Enter')askAdvisor()});
+
+/* ---- link a child ---- */
+function doLink(code,retried){
+  var btn=$('link-go');btn.disabled=true;
+  return SY.connectCode(code,'parent').then(function(r){
+    if(!r||!r.email){
+      return SY.cloudAuthed().then(function(ok){
+        if(ok){btn.disabled=false;toast('No account found for that code. Ask your child to open StudYear once, then check the code in My Account → Connect a parent.');return;}
+        if(retried){btn.disabled=false;toast('Still can\'t reach StudYear to link — check your connection and try again shortly.');return;}
+        /* un-tokenised on this device: the code could be same-device (checked and
+           not found) OR added on another device (needs a quick reconnect to look
+           up). Name BOTH so the reconnect prompt isn't a surprise, and never
+           imply the code is invalid when we simply couldn't check. */
+        btn.disabled=false;
+        toast('We couldn\'t find that code on this device. If your child added it on another device, confirm your password once to look it up.');
+        return SY.ensureCloud().then(function(done){
+          if(!done){toast('No problem — you can reconnect any time from My Account, then paste the code again. If it still isn\'t found, ask your child to open StudYear once.');return;}
+          $('link-go').disabled=true;
+          return doLink(code,true);
+        });
+      });
+    }
+    btn.disabled=false;
+    var email=r.email,name=r.name||SY.accountName(email);
+    var kids=SY.get('children',[]);
+    if(kids.some(function(k){return k.email===email})){toast('That child is already linked.');$('link-code').value='';return}
+    kids.push({email:email,name:name,uid:r.uid||null,when:new Date().toISOString()});
+    SY.set('children',kids);
+    /* same-device: also stamp the link on the child's side so they see it offline */
+    try{var pl=SY.readAccount(email,'parentLinks',[]);
+      if(!pl.some(function(p){return p.email===SY.session.email})){pl.push({email:SY.session.email,name:SY.session.name});SY.writeAccount(email,'parentLinks',pl);}}catch(e){}
+    SY.log('family','Linked child: '+name,'Live monitoring active.');
+    $('link-code').value=''; toast('Linked to '+name+' — live intelligence active'); render();
+  }).catch(function(){btn.disabled=false;toast('Couldn\'t link just now — please try again in a moment.');});
+}
+$('link-go').onclick=function(){
+  var code=$('link-code').value.trim();
+  if(!/^[A-Za-z0-9-]{4,}$/.test(code)){toast('Enter the link code from your child\'s account.');return}
+  doLink(code,false);
+};
+/* Scanned from a child's QR: /parent/?link=CODE — prefill and link automatically
+   so scanning with a phone camera "just works". */
+(function(){try{
+  var m=/[?&]link=([A-Za-z0-9-]{4,24})/.exec(location.search||'');
+  if(!m)return;var code=m[1];var f=$('link-code');if(!f)return;
+  f.value=code;
+  try{f.scrollIntoView({behavior:'smooth',block:'center'})}catch(e){}
+  toast('Code '+code+' scanned from your child — linking…');
+  setTimeout(function(){doLink(code,false)},400);
+  /* tidy the URL so a refresh doesn't re-trigger */
+  try{history.replaceState(null,'',location.pathname)}catch(e){}
+}catch(e){}})();
+
+/* ---- tabs ---- */
+$('tabs').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+  $('tabs').querySelectorAll('button').forEach(function(x){x.classList.toggle('on',x===b)});
+  document.querySelectorAll('.tabpane').forEach(function(p){p.classList.toggle('on',p.id==='pane-'+b.dataset.t)});
+});
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+
+/* ---- Parity explainer: every post-16 route in plain language (zero AI cost) ---- */
+(function(){var host=document.getElementById('parity');if(!host)return;
+  var ROUTES=[
+    {ic:'🎓',t:'University (degree)',is:'Three or more years studying one subject in depth. Tuition is paid by a student loan that is only repaid once your child earns above a threshold — it is not upfront debt like a normal loan.',leads:'Graduate careers and professions that require a degree (medicine, law, engineering design, teaching).',good:'your child loves academic study and wants a profession that needs a degree.',myth:'A degree is one good route — not the only sign of success.'},
+    {ic:'🏗️',t:'Degree apprenticeship',is:'A full university degree done while employed and paid — the employer and government cover the tuition, so your child leaves with a degree and no tuition debt.',leads:'The same degree as university, plus years of real work experience and, very often, a permanent job at the end.',good:'your child wants a degree but also wants to earn, work and avoid tuition fees.',myth:'This is often the hardest route to get onto — it is prestigious, not a fallback.'},
+    {ic:'🔧',t:'T-Level',is:'A two-year technical qualification (ages 16–18) that is the same size as three A-levels, built with employers and including a substantial industry placement.',leads:'Skilled employment, a higher/degree apprenticeship, or university.',good:'your child knows the field they want and learns best by doing, not just exams.',myth:'T-Levels are a rigorous, respected qualification — universities accept them.'},
+    {ic:'🛠️',t:'Apprenticeship',is:'A paid job with structured training, from level 2 up to degree level. Your child earns a wage from day one while gaining a nationally recognised qualification.',leads:'A trade or profession with a qualification and real experience — and no tuition debt.',good:'your child wants to earn while they learn and build a career through work.',myth:'Apprenticeships now run all the way to degree level — the ceiling is high.'},
+    {ic:'🏫',t:'College / further education',is:'Technical and vocational courses (BTECs, technical certificates, Access to HE) at a local college.',leads:'Employment, apprenticeships, or university — it keeps every door open.',good:'your child wants a practical, supported route and time to decide their direction.',myth:'College is a genuine springboard, including to university.'},
+    {ic:'💼',t:'Employment / entry role',is:'Starting work with training on the job, gaining qualifications alongside employment.',leads:'Progression through experience, promotion and qualifications earned while working.',good:'your child is ready for the workplace and learns best in a real job.',myth:'Starting work early is a strong path when it comes with training and progression.'}
+  ];
+  host.innerHTML=ROUTES.map(function(r){
+    return '<details class="parity-item"><summary><span class="pi-ic">'+r.ic+'</span><b>'+r.t+'</b></summary>'+
+      '<div class="pi-body"><div><span class="pi-lbl">What it is</span> '+r.is+'</div>'+
+      '<div><span class="pi-lbl">Where it leads</span> '+r.leads+'</div>'+
+      '<div><span class="pi-lbl">Good if</span> '+r.good+'</div>'+
+      '<div class="pi-myth">💡 '+r.myth+'</div></div></details>';
+  }).join('')+'<div class="pi-foot">Your child can explore their best-fit routes any time in their <b>Career Passport</b> — it maps these options to their own strengths, interests and local jobs.</div>';
+})();
+
+/* ---- Elite suite quick-access: scroll to a section, or open a deep-view tab ---- */
+function activateTab(t){var deep=$('deep');if(!deep||deep.style.display==='none'){var n=$('elite-note');if(n)n.textContent='Link a child above to open live '+t+' — your Elite tools activate the moment a learner is connected.';deep&&deep.scrollIntoView&&deep.scrollIntoView({behavior:'smooth'});return}
+  var btn=$('tabs').querySelector('[data-t="'+t+'"]');if(btn){btn.click();deep.scrollIntoView({behavior:'smooth',block:'start'})}}
+document.querySelectorAll('#elite-suite [data-scroll]').forEach(function(a){a.onclick=function(e){e.preventDefault();var el=document.querySelector(a.getAttribute('href'));if(el)el.scrollIntoView({behavior:'smooth',block:'center'})}});
+document.querySelectorAll('#elite-suite [data-tab]').forEach(function(a){a.onclick=function(e){e.preventDefault();activateTab(a.getAttribute('data-tab'))}});
+
+/* ---- SkillRush parent view: improved today · stuck · say tonight · confidence ·
+   family plan · weekly report · burnout · reward · curfew (safeguarding) ---- */
+(function(){
+  var box=document.getElementById('sr-parent');if(!box)return;
+  var kids=SY.get('children',[]);
+  if(!kids.length){box.innerHTML='<div class="note" style="font-style:normal">Link a child above — their SkillRush fluency progress, family practice plan and quiet-hours control appear here.</div>';return}
+  var kid=kids[0];var nm=SY.accountName(kid.email);
+  var SRN={addition:'Addition',subtraction:'Subtraction',tables:'Times tables',division:'Division',bonds:'Number bonds',inverse:'Inverse operations',word:'Word problems',mental:'Mental arithmetic',fractions:'Fractions',decimals:'Decimals',percent:'Percentages',algebra:'Algebra',squares:'Squares & roots',formulas:'Formula recall',spelling:'Spelling',grammar:'Grammar',vocab:'Vocabulary',science:'Science facts',geography:'Geography facts',history:'History dates',french:'French vocab'};
+  var sr=SY.readAccount(kid.email,'skillrush',null);
+  var today=new Date().toISOString().slice(0,10);
+  var curfew=SY.readAccount(kid.email,'skillrushCurfew',null)||{};
+  function acc(st){return st&&st.total?Math.round(100*st.right/st.total):null}
+  var html='';
+  if(!sr||!(sr.history||[]).length){
+    html='<div class="note" style="font-style:normal">'+esc(nm)+' hasn\'t played SkillRush yet. Tonight\'s 10-minute family plan: open SkillRush together, pick 🌱 Confidence Mode, then finish with 👨‍👧 Parent Challenge — you vs them, 6 questions each.</div>';
+  }else{
+    var todays=sr.history.filter(function(h){return h.d===today});
+    var improved=todays.length?todays.map(function(h){return (SRN[h.skill]||h.skill)+' ('+h.acc+'%)'}).join(', '):null;
+    var worst=null,worstAcc=101;Object.keys(sr.skill||{}).forEach(function(k){var a=acc(sr.skill[k]);if(a!=null&&a<worstAcc){worstAcc=a;worst=k}});
+    var week=sr.history.filter(function(h){return (new Date(today)-new Date(h.d))/864e5<7});
+    var weekAcc=week.length?Math.round(week.reduce(function(a,h){return a+h.acc},0)/week.length):null;
+    var burnout=todays.length>=6;
+    var confDip=week.length>=3&&week.slice(0,2).every(function(h){return h.acc<45});
+    html='<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:4px">'+
+      '<div class="card" style="margin:0"><h3 style="font-size:14px">✨ Improved today</h3><div class="note" style="font-style:normal;margin-top:6px">'+(improved?esc(nm.split(' ')[0])+' practised '+esc(improved)+'.':'No session yet today — a nudge tonight keeps the streak alive.')+'</div></div>'+
+      '<div class="card" style="margin:0"><h3 style="font-size:14px">🧗 Where they\'re stuck</h3><div class="note" style="font-style:normal;margin-top:6px">'+(worst?('<b style="color:var(--ink)">'+esc(SRN[worst]||worst)+'</b> at '+worstAcc+'% — short daily bursts beat long sessions.'):'Nothing flagged yet.')+'</div></div>'+
+      '<div class="card" style="margin:0"><h3 style="font-size:14px">💬 What to say tonight</h3><div class="note" style="font-style:normal;margin-top:6px">“'+(improved?('I saw you practised '+esc((SRN[(todays[0]||{}).skill]||'today'))+' — show me your fastest answer!'):'Fancy beating me at Parent Challenge? Loser makes the hot chocolate.')+'”</div></div>'+
+      '<div class="card" style="margin:0"><h3 style="font-size:14px">📅 10-minute family plan</h3><div class="note" style="font-style:normal;margin-top:6px">1) 3 min Focus on '+esc(SRN[worst]||'their mission')+' · 2) 3 min Confidence Mode · 3) 4 min 👨‍👧 Parent Challenge together.</div></div>'+
+      '<div class="card" style="margin:0"><h3 style="font-size:14px">📈 Weekly report</h3><div class="note" style="font-style:normal;margin-top:6px">'+week.length+' session'+(week.length===1?'':'s')+' this week'+(weekAcc!=null?' · average accuracy '+weekAcc+'%':'')+' · '+(sr.coins||0)+' coins · '+(sr.xp||0)+' XP.</div></div>'+
+      '<div class="card" style="margin:0"><h3 style="font-size:14px">'+(burnout?'🛑 Burnout warning':confDip?'💛 Confidence alert':'🏅 Reward suggestion')+'</h3><div class="note" style="font-style:normal;margin-top:6px">'+
+        (burnout?esc(nm.split(' ')[0])+' has done '+todays.length+' sessions today — celebrate, then encourage a rest. Little and often wins.'
+        :confDip?'Recent scores dipped — worth a gentle check-in. Suggest 🌱 Confidence Mode (no timer, hints on).'
+        :(weekAcc!=null&&weekAcc>=85?'A brilliant week ('+weekAcc+'%) — a small reward tonight lands the habit: their choice of dinner?':'Consistency is forming — praise the streak, not just the scores.'))+'</div></div></div>';
+  }
+  html+='<div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-top:12px">'+
+    '<div><label class="f" style="margin:0 0 4px">Quiet hours from</label><select id="cf-from"><option value="">off</option>'+Array.from({length:24},function(_,h){return '<option value="'+h+'"'+(String(curfew.from)===String(h)?' selected':'')+'>'+h+':00</option>'}).join('')+'</select></div>'+
+    '<div><label class="f" style="margin:0 0 4px">to</label><select id="cf-to">'+Array.from({length:24},function(_,h){return '<option value="'+h+'"'+(String(curfew.to)===String(h)?' selected':(curfew.to==null&&h===7?' selected':''))+'>'+h+':00</option>'}).join('')+'</select></div>'+
+    '<button class="btn sm" id="cf-save">Save quiet hours</button>'+
+    '<span class="note" style="margin:0">Safeguarding: SkillRush pauses during quiet hours (e.g. 20:00–07:00). No ads · no chat · anonymous leaderboards.</span></div>';
+  box.innerHTML=html;
+  document.getElementById('cf-save').onclick=function(){
+    var f=document.getElementById('cf-from').value,t=document.getElementById('cf-to').value;
+    try{SY.writeAccount(kid.email,'skillrushCurfew',f===''?null:{from:+f,to:+t});}catch(e){}
+    toast(f===''?'Quiet hours off':'Quiet hours saved — SkillRush pauses '+f+':00–'+t+':00');
+  };
+})();
+
+/* pull children linked on another device (backend directory) into this view */
+function mergeCloudChildren(){
+  try{
+    return SY.myLinks().then(function(g){
+      if(!g||!g.outbound)return;
+      var kids=SY.get('children',[]),added=false;
+      g.outbound.forEach(function(l){
+        if(!l.email)return;
+        if(SY.crossesDemoBoundary&&SY.crossesDemoBoundary(l.email))return; // never merge a demo child into a real account
+        if(kids.some(function(k){return k.email===l.email}))return;
+        kids.push({email:l.email,name:l.name||SY.accountName(l.email),uid:l.uid||null,when:new Date().toISOString()});added=true;
+      });
+      if(added){SY.set('children',kids);render();}
+    }).catch(function(){});
+  }catch(e){return Promise.resolve();}
+}
+
+render();
+mergeCloudChildren();
+})();
+</script>
+<script>
+(function(){
+  try{
+    if(!window.SYRecord||!window.SY)return;
+    var kids=SY.get('children',[])||[];if(!kids.length)return;
+    for(var i=0;i<kids.length;i++){
+      var child=kids[i].email;
+      var link=SY.readAccount(child,'schoolLink',null);
+      if(!link||!link.code)continue;
+      var acc=SYRecord.access(link.code,child,SY.session.email,'parent');
+      if(!acc.allowed)continue;
+      SYRecord.logAccess(link.code,child,SY.session.email,'parent');
+      var rec=SYRecord.collect(child),m=SYRecord.model(rec),strat=SYRecord.strategy(rec,m);
+      var esc=function(x){return String(x==null?'':x).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})};
+      var card=document.getElementById('pc-schoolrec');if(!card)return;
+      card.style.display='block';
+      document.getElementById('schoolrec-body').innerHTML=
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:6px">'+
+        [['Study style & model',m.styleLabel],['Rhythm',m.rhythm],['Pace',m.weekly+' activities/week'],['Overall',(m.overall||0)+'% · risk '+m.risk.toLowerCase()]].map(function(x){
+          return '<div style="border:1px solid rgba(170,182,204,.16);border-radius:10px;padding:10px 12px"><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#77839B">'+x[0]+'</div><div style="font-size:13px;margin-top:3px">'+esc(x[1])+'</div></div>'}).join('')+'</div>'+
+        '<div style="margin-top:10px">'+strat.slice(0,3).map(function(x){return '<div style="padding:7px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:12.5px"><b>'+esc(x.h)+'</b><div class="note" style="margin-top:2px">'+esc(x.p)+'</div></div>'}).join('')+'</div>'+
+        '<div class="note" style="margin-top:8px">Provided by '+esc(link.name||'the school')+' · your access is school-granted and logged.</div>';
+      break;
+    }
+  }catch(e){}
+})();
+</script>
+<script>
+(function(){
+  try{
+    var kids=SY.get('children',[])||[];var box=document.getElementById('action-cards');if(!box)return;
+    if(!kids.length){box.innerHTML='<div class="note" style="font-style:normal">Link a child — action cards appear the moment live data flows.</div>';return}
+    var esc=function(x){return String(x==null?'':x).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})};
+    var cards=[];
+    kids.slice(0,2).forEach(function(k){
+      var nm=(SY.accountName(k.email)||'').split(' ')[0]||'them';
+      var qz=SY.readAccount(k.email,'quizzes',[])||[];
+      var by={};qz.forEach(function(q){(by[q.subj]=by[q.subj]||[]).push(q.pct)});
+      var subs=Object.keys(by).map(function(s2){var a=by[s2];return [s2,Math.round(a.reduce(function(x,y){return x+y},0)/a.length),a.length>1?a[a.length-1]-a[0]:0]}).sort(function(a,b){return a[1]-b[1]});
+      if(subs.length){
+        var w=subs[0];
+        cards.push(['💬','Ask this tonight','Ask '+nm+' to explain one '+w[0]+' problem aloud — teaching it back is the fastest repair at '+w[1]+'%.']);
+        var up=subs.filter(function(x){return x[2]>3}).sort(function(a,b){return b[2]-a[2]})[0];
+        if(up)cards.push(['🌟','Praise this improvement',up[0]+' has climbed '+up[2]+' points — name it specifically; effort praised is effort repeated.']);
+      }
+      var plan=SY.readAccount(k.email,'plan',null);
+      if(plan&&plan.plan&&plan.plan.length){
+        var total=plan.plan.reduce(function(a,wk){return a+wk.days.length},0),done=Object.keys(plan.done||{}).length;
+        if(total&&done/total<0.5)cards.push(['📋','Check this assignment','Plan completion is at '+Math.round(100*done/total)+'% — sit with '+nm+' for the next session rather than adding new work.']);
+      }
+      var acts=SY.readAccount(k.email,'activity',[])||[];
+      if(!acts.some(function(a){return Date.now()-new Date(a.when).getTime()<3*864e5}))
+        cards.push(['🧭','Gentle restart','No StudYear activity for 3+ days — a 10-minute SkillRush session together tonight restarts the habit without pressure.']);
+    });
+    if(!cards.length)cards.push(['✅','No action required','Everything is on track this week — protect their rest and let the system keep monitoring.']);
+    box.innerHTML=cards.slice(0,4).map(function(c){
+      return '<div style="border:1px solid rgba(170,182,204,.18);border-radius:11px;padding:12px 14px;background:rgba(6,11,24,.35)"><div style="font-size:19px">'+c[0]+'</div><b style="color:#EDF1F8;font-size:13px">'+esc(c[1])+'</b><div style="color:#AAB6CC;font-size:12px;margin-top:3px;line-height:1.55">'+esc(c[2])+'</div></div>';
+    }).join('');
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

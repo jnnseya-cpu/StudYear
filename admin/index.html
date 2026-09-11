@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Admin Dashboard</title><link rel="manifest" href="../manifest.json"><link rel="icon" href="../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--gold-300:#F2CE7B;--gold-400:#D9AE55;--gold-500:#B98A2F;--blue-300:#8FC2EC;--good:#5CBB7B;--warn:#c98500;--crit:#e66767;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#8795AE;--line:rgba(77,157,224,.14);--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}body{background:var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  .shell{display:flex;min-height:100vh;max-width:1440px;margin:0 auto}
+  aside{width:230px;flex:none;border-right:1px solid var(--line);padding:22px 14px 30px;position:sticky;top:0;align-self:flex-start;max-height:100vh;overflow-y:auto}
+  .slogo{font-family:var(--serif);font-size:19px;color:var(--ink);text-decoration:none;display:block;padding:4px 10px 6px}.slogo b{color:#4FA6E0;font-weight:600}
+  aside .role{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);padding:0 10px 14px}
+  aside nav a{display:block;font-size:13px;color:var(--ink-2);text-decoration:none;padding:7px 10px;border-radius:8px;margin:1px 0}aside nav a:hover{color:var(--gold-300);background:rgba(77,157,224,.08)}aside nav a.on{color:var(--gold-300);background:rgba(77,157,224,.12)}
+  main{flex:1;padding:30px 30px 90px;min-width:0;max-width:1120px}@media(max-width:960px){.shell{flex-direction:column}aside{width:100%;position:static;max-height:none;border-right:none;border-bottom:1px solid var(--line)}aside nav{display:flex;flex-wrap:wrap;gap:2px}main{padding:22px 18px 70px}}
+  a{color:inherit}h1{font-family:var(--serif);font-weight:500;font-size:28px}.k{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-400)}p.lede{color:var(--ink-2);font-weight:300;margin-top:6px;max-width:82ch;font-size:14px}
+  .live{font-size:11px;color:var(--good);border:1px solid rgba(92,187,123,.4);border-radius:20px;padding:3px 10px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:10px;margin-top:16px}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-top:16px}.c3{grid-column:span 3}.c4{grid-column:span 4}.c6{grid-column:span 6}.c8{grid-column:span 8}.c12{grid-column:span 12}@media(max-width:960px){.grid>*{grid-column:span 12}}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:18px 20px}.card h3{font-family:var(--serif);font-weight:500;font-size:16px}.card .sub{font-size:12px;color:var(--ink-3);margin:4px 0 10px}
+  .stat .v{font-family:var(--serif);font-size:27px;color:var(--gold-300);line-height:1.1}.stat .k2{font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}
+  .econ .v{font-family:var(--serif);font-size:23px;color:var(--gold-300);margin:4px 0 2px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+  td{padding:8px;border-bottom:1px solid rgba(170,182,204,.08);vertical-align:top;color:var(--ink-2)}td b{color:var(--ink)}
+  .pill{display:inline-block;border:1px solid var(--line);border-radius:20px;padding:2px 9px;font-size:10.5px;letter-spacing:.05em}
+  .pill.role{color:var(--blue-300);border-color:rgba(79,166,224,.4);text-transform:uppercase}
+  .pill.plan{color:var(--gold-300);border-color:rgba(217,174,85,.4)}
+  .pill.ok{color:var(--good);border-color:rgba(92,187,123,.4)}
+  .pill.warn{color:#e0b566;border-color:rgba(201,133,0,.4)}
+  .pill.bad{color:var(--crit);border-color:rgba(230,103,103,.4)}
+  .acts{display:flex;gap:5px;flex-wrap:wrap}
+  .btn{appearance:none;border:1px solid var(--gold-500);border-radius:8px;padding:8px 13px;font-size:12.5px;font-weight:600;cursor:pointer;background:linear-gradient(180deg,var(--gold-300),var(--gold-400));color:#1a1405}
+  .btn.ghost{background:none;border-color:var(--line);color:var(--ink-2)}
+  .btn.sm{padding:4px 9px;font-size:11px}
+  .btn.danger{background:none;border-color:rgba(230,103,103,.5);color:#e59b9b}
+  .mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:12px;margin-top:14px}
+  .mod{border:1px solid var(--line);border-radius:13px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+  .mod h4{font-family:var(--serif);font-size:15.5px;font-weight:500}
+  .mod p{color:var(--ink-3);font-size:12px;line-height:1.55;flex:1}
+  .panel{display:none}.panel.on{display:block}
+  input,select,textarea{background:rgba(6,11,24,.6);border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:8px 10px;font-size:13px;font-family:var(--sans)}
+  .f{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin:0 0 4px}
+  .note{font-size:11.5px;color:var(--ink-3);line-height:1.6}
+  .bar{height:9px;border-radius:6px;background:rgba(170,182,204,.12);overflow:hidden;margin:4px 0 8px}.bar i{display:block;height:100%;background:linear-gradient(90deg,#4FA6E0,#8B5CF6)}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:11px 18px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:99}
+  dialog{background:#0B1428;border:1px solid var(--gold-500);border-radius:14px;color:var(--ink);padding:22px;max-width:420px;width:92vw}
+  dialog::backdrop{background:rgba(4,8,18,.75)}
+</style></head><body>
+<script src="../guard.js" data-role="admin" data-base="../"></script>
+<script src="../export.js"></script>
+<script src="../growth.js"></script>
+<div class="shell">
+<aside><a class="slogo" href="../">⌂ <b class="wm">StudYear</b></a><div class="role">Admin console</div><nav id="nav">
+  <a href="#dashboard" class="on">Dashboard</a>
+  <a href="#users">User Management</a>
+  <a href="#tutors">Tutor applications</a>
+  <a href="#schools">School Management</a>
+  <a href="#support">Support Tools</a>
+  <a href="#inbox">Contact inbox</a>
+  <a href="../blog/admin/">Blog</a>
+  <a href="#content">Content Management</a>
+  <a href="#growth">Growth Partners</a>
+  <a href="#revenue">Revenue &amp; billing</a>
+  <a href="#ai">AI usage &amp; costs</a>
+  <a href="#analytics">Analytics &amp; Reporting</a>
+  <a href="#settings">System &amp; AI Settings</a>
+  <a href="#fraud">Fraud Monitoring</a>
+  <a href="../account/me/">👤 My profile</a>
+  <div class="note" id="build-id" style="padding:10px 12px;font-size:10px;letter-spacing:.08em">build —</div>
+  <script>fetch('../build.json').then(function(r){return r.json()}).then(function(b){
+    document.getElementById('build-id').textContent='build '+b.sha+' · '+String(b.when).slice(0,16).replace('T',' ');
+  }).catch(function(){});</script>
+  <a href="gateway/">AI Gateway</a>
+  <a href="comms/">Comms engine</a>
+  <a href="#" id="signout">Sign out</a>
+</nav></aside>
+<main>
+
+<!-- ============ DASHBOARD ============ -->
+<section class="panel on" id="p-dashboard">
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span class="live">● Live</span><span class="k" style="margin:0">StudYear · Admin operations</span></div>
+  <h1>Admin Dashboard</h1>
+  <p class="lede">Welcome, Admin! Here is an overview of the platform's performance. Customer emails are masked in this
+    static console — full PII lives only in the secure backend admin.</p>
+
+  <div class="card" id="whatsnew" style="margin:6px 0 4px">
+    <h3 style="margin:0">✨ What's new</h3>
+    <div class="sub">Everything recently shipped, reachable from one place. Console links open for the matching role.</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-top:12px">
+      <div style="border:1px solid var(--line);border-radius:11px;padding:12px 13px;background:rgba(6,11,24,.3)">
+        <b style="display:block;font-size:13.5px">🛡️ Future-Readiness (NEET early-warning)</b>
+        <span style="font-size:12px;color:var(--ink-3)">Strengths-and-needs early identification in the Teacher, School, Parent &amp; Authority consoles.</span>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn sm" href="../school/primary/">Primary console (EYFS–KS2)</a>
+          <a class="btn sm ghost" href="../school/">School view</a>
+          <a class="btn sm ghost" href="../authority/">Authority area view</a>
+        </div>
+      </div>
+      <div style="border:1px solid var(--line);border-radius:11px;padding:12px 13px;background:rgba(6,11,24,.3)">
+        <b style="display:block;font-size:13.5px">📣 AI Growth Engine</b>
+        <span style="font-size:12px;color:var(--ink-3)">10 role-tailored marketing tools inside each partner console.</span>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn sm ghost" href="../tutor/">Tutor</a>
+          <a class="btn sm ghost" href="../employer/">Employer</a>
+          <a class="btn sm ghost" href="../college/">College</a>
+        </div>
+      </div>
+      <div style="border:1px solid var(--line);border-radius:11px;padding:12px 13px;background:rgba(6,11,24,.3)">
+        <b style="display:block;font-size:13.5px">✍ Blog &amp; SEO</b>
+        <span style="font-size:12px;color:var(--ink-3)">Static per-article pages + the new NEET-review post; publish from the AI Studio.</span>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn sm" href="../blog/admin/">AI Studio</a>
+          <a class="btn sm ghost" href="../blog/">Blog</a>
+          <a class="btn sm ghost" href="../blog/neet-risk-early-identification-primary-schools/">NEET post</a>
+        </div>
+      </div>
+      <div style="border:1px solid var(--line);border-radius:11px;padding:12px 13px;background:rgba(6,11,24,.3)">
+        <b style="display:block;font-size:13.5px">💳 ACU metering &amp; free tier</b>
+        <span style="font-size:12px;color:var(--ink-3)">Every AI action metered (no free passes); free grant is 100 ACUs / 3 months.</span>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn sm ghost" href="../account/">Account</a>
+          <a class="btn sm ghost" href="../account/topup/">Plans &amp; top-up</a>
+          <a class="btn sm ghost" href="#ai">AI usage log</a>
+        </div>
+      </div>
+      <div style="border:1px solid var(--line);border-radius:11px;padding:12px 13px;background:rgba(6,11,24,.3)">
+        <b style="display:block;font-size:13.5px">📊 Strategy documents</b>
+        <span style="font-size:12px;color:var(--ink-3)">Shareable briefings (private artifacts — open the Share menu to grant access).</span>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn sm ghost" href="https://claude.ai/code/artifact/3981e6d3-6bf1-4103-b927-50aa73d78041" target="_blank" rel="noopener">Market map &amp; pricing</a>
+          <a class="btn sm ghost" href="https://claude.ai/code/artifact/6747e908-c7cb-4576-8dba-d050c222290d" target="_blank" rel="noopener">NEET / DPIA brief</a>
+        </div>
+      </div>
+      <div style="border:1px solid var(--line);border-radius:11px;padding:12px 13px;background:rgba(6,11,24,.3)">
+        <b style="display:block;font-size:13.5px">🎓 Pathways &amp; encounters</b>
+        <span style="font-size:12px;color:var(--ink-3)">Employer/college opportunities, Gatsby evidence and skills-supply intelligence.</span>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn sm ghost" href="../career/">Student Pathways</a>
+          <a class="btn sm ghost" href="../school/pathways/">Gatsby evidence</a>
+          <a class="btn sm ghost" href="../app/">All consoles</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="sec-agent" style="margin:6px 0 4px;border-color:rgba(92,187,123,.4)">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-size:20px">🛡️</span>
+      <div><h3 style="margin:0">AI Security Agent</h3><div class="sub" style="margin:0" id="sec-status">Human-only access &amp; anti-hacking sentinel — active on every page.</div></div>
+      <span class="badge" id="sec-badge" style="margin-left:auto;border-color:rgba(92,187,123,.5);color:var(--good,#5CBB7B)">● Active</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:12px">
+      <div class="stat" style="border:1px solid var(--line);border-radius:11px;padding:11px;background:rgba(6,11,24,.3)"><div class="v" id="sec-events" style="font-size:22px">0</div><div class="k2">Security events</div></div>
+      <div class="stat" style="border:1px solid var(--line);border-radius:11px;padding:11px;background:rgba(6,11,24,.3)"><div class="v" id="sec-blocked" style="font-size:22px">0</div><div class="k2">Threats blocked</div></div>
+      <div class="stat" style="border:1px solid var(--line);border-radius:11px;padding:11px;background:rgba(6,11,24,.3)"><div class="v" id="sec-synth" style="font-size:22px">0</div><div class="k2">Synthetic events</div></div>
+      <div class="stat" style="border:1px solid var(--line);border-radius:11px;padding:11px;background:rgba(6,11,24,.3)"><div class="v" id="sec-mode" style="font-size:16px;padding-top:4px">—</div><div class="k2">Enforcement</div></div>
+    </div>
+    <div id="sec-recent" style="margin-top:10px;font-size:12px;color:var(--ink-3)"></div>
+  </div>
+  <script>
+  (function(){
+    function esc(s){return String(s==null?'':s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
+    function paint(){
+      var el=document.getElementById('sec-events');if(!el)return;
+      var st=(window.SYSentinel&&SYSentinel.status)?SYSentinel.status():null;
+      if(!st){var b=document.getElementById('sec-badge');if(b){b.textContent='● Loading';b.style.color='var(--ink-3)'}return;}
+      document.getElementById('sec-events').textContent=st.events||0;
+      document.getElementById('sec-blocked').textContent=st.blocked||0;
+      document.getElementById('sec-synth').textContent=st.synthetic||0;
+      document.getElementById('sec-mode').textContent=st.enforcing?'Enforcing':'Monitor';
+      var r=document.getElementById('sec-recent');
+      r.innerHTML=(st.recent&&st.recent.length)?('<b style="color:var(--ink-2)">Recent:</b> '+st.recent.slice(0,4).map(function(x){return esc(x.kind)+' ('+esc(x.sev||'med')+')'}).join(' · ')):'No anomalies detected this session.';
+    }
+    window.addEventListener('sy-security',paint);
+    window.addEventListener('sy-sentinel-ready',paint);
+    setInterval(paint,4000); setTimeout(paint,600);
+  })();
+  </script>
+
+  <div class="kpis">
+    <div class="card stat"><div class="v" id="k-students">0</div><div class="k2">Total Students</div></div>
+    <div class="card stat"><div class="v" id="k-active">0</div><div class="k2">Active Users</div></div>
+    <div class="card stat"><div class="v" id="k-risk">0</div><div class="k2">High-Risk Students</div></div>
+    <div class="card stat"><div class="v" id="k-sponsored">0</div><div class="k2">Sponsored Students</div></div>
+    <div class="card stat"><div class="v" id="k-schools">0</div><div class="k2">School Partners</div></div>
+    <div class="card stat"><div class="v" id="k-aispend">£0.00</div><div class="k2">Est. AI spend (30d)</div></div>
+    <div class="card stat"><div class="v" id="k-gross">£0.00</div><div class="k2">Stripe gross (30d)</div></div>
+  </div>
+
+  <div class="k" style="margin-top:18px">Platform economics</div>
+  <div class="grid">
+    <div class="card c3 econ"><h3>Stripe gross (30d)</h3><div class="sub">Gross payments recorded</div>
+      <div class="v" id="e-gross30">£0.00</div><div class="note"><span id="e-pay30">0</span> payments · <a href="#revenue" style="color:var(--gold-300)">Billing detail</a></div></div>
+    <div class="card c3 econ"><h3>Stripe gross (90d)</h3><div class="sub">Rolling quarter-style window</div>
+      <div class="v" id="e-gross90">£0.00</div><div class="note"><span id="e-pay90">0</span> payments in period</div></div>
+    <div class="card c3 econ"><h3>Est. AI API spend (30d)</h3><div class="sub">Provider-side token estimate</div>
+      <div class="v" id="e-ai30">£0.00</div><div class="note">≈ <span id="e-ai-usd">$0.00</span> USD list-price hint @ 1 USD ≈ 0.79 GBP · <a href="#ai" style="color:var(--gold-300)">Usage log</a></div></div>
+    <div class="card c3 econ"><h3>ACUs consumed (30d)</h3><div class="sub">Debit volume · Entry-pack £ hint</div>
+      <div class="v" id="e-acus">0</div><div class="note">≈ £<span id="e-acus-gbp">0.00</span> · <span id="e-calls">0</span> successful AI calls</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="card c6"><h3>Accounts by role</h3><div class="sub">Distribution across the platform</div><div id="roles"></div></div>
+    <div class="card c6"><h3>Recent accounts</h3><div class="sub">Emails masked for privacy</div><div id="recent"></div></div>
+  </div>
+
+  <div class="mods">
+    <div class="mod"><h4>User Management</h4><p>View, edit, and manage user wallets, roles and subscriptions.</p><button class="btn" data-go="users">Manage</button></div>
+    <div class="mod"><h4>Tutor Management</h4><p>Review tutor applications and manage tutor profiles.</p><button class="btn" data-go="tutors">Manage</button></div>
+    <div class="mod"><h4>School Management</h4><p>Review and approve new school partner accounts.</p><button class="btn" data-go="schools">Manage</button></div>
+    <div class="mod"><h4>Support Tools</h4><p>Access support features like 'View as User' to assist customers.</p><button class="btn" data-go="support">Manage</button></div>
+    <div class="mod"><h4>Contact inbox &amp; email test</h4><p>View contact form messages and send a test email.</p><button class="btn" data-go="inbox">Manage</button></div>
+    <div class="mod"><h4>Blog</h4><p>Create posts, publish to the public site, and view read counts.</p><a class="btn" href="../blog/admin/" style="text-decoration:none;text-align:center">Manage</a></div>
+    <div class="mod"><h4>Content Management</h4><p>Manage subjects, topics, and moderate generated content.</p><button class="btn" data-go="content">Manage</button></div>
+    <div class="mod"><h4>Growth Partner Programme</h4><p>Approve influencers, review referrals, and monitor commission caps.</p><button class="btn" data-go="growth">Manage</button></div>
+    <div class="mod"><h4>Revenue &amp; billing</h4><p>Stripe gross, payments, discount codes, and ACU ledger.</p><button class="btn" data-go="revenue">Manage</button></div>
+    <div class="mod"><h4>Analytics &amp; Reporting</h4><p>View generation volumes and student engagement metrics.</p><button class="btn" data-go="analytics">Manage</button></div>
+    <div class="mod"><h4>System &amp; AI Settings</h4><p>Control AI rate limits, feature flags, and other global settings.</p><button class="btn" data-go="settings">Manage</button></div>
+    <div class="mod"><h4>Fraud Monitoring</h4><p>Review accounts flagged for suspicious activity.</p><button class="btn" data-go="fraud">Manage</button></div>
+  </div>
+</section>
+
+<!-- ============ USERS ============ -->
+<section class="panel" id="p-users">
+  <h1>User Management</h1>
+  <p class="lede">View and manage all users on the platform — edit names, change role and subscription, link parents and
+    schools, adjust wallets, impersonate for support, or delete. Emails are masked in this static console.</p>
+  <div class="card" style="margin-bottom:12px"><h3>📥 Bulk import — bring your existing users across</h3>
+    <div class="sub">Paste one user per line: <b>name, email, role, plan</b> (role: student/parent/teacher/tutor/school ·
+      plan optional). Accounts are created with secure temporary passwords — export the credential list and email each
+      user their invite. Imported users never touch the public signup, so signup bots can't impersonate them; the
+      human check and throttling still guard every sign-in, and their end-to-end encryption keys mint on first login.</div>
+    <textarea id="imp-csv" rows="4" style="width:100%" placeholder="Jessie Nseya, jessie@example.com, student, student_premium&#10;Marcus Carter, marcus@example.com, parent, parent_elite"></textarea>
+    <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">
+      <button class="btn" id="imp-go">Import users</button>
+      <button class="btn ghost" id="imp-export" style="display:none">⬇ Download invite credentials (CSV)</button>
+      <span class="note" id="imp-note"></span></div>
+  </div>
+  <div class="card">
+    <h3>All Users</h3><div class="sub">A real-time list of all registered users from this workspace's database.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <input id="u-search" placeholder="Search name or email…" style="min-width:220px">
+      <select id="u-role"><option value="">All roles</option><option>student</option><option>parent</option><option>teacher</option><option>tutor</option><option>school</option><option>authority</option><option>admin</option></select>
+      <button class="btn ghost" id="u-clean" title="Removes duplicate rows, test/demo-domain accounts and bot-pattern names. Real users are never touched.">🧹 Clean test &amp; duplicate data</button>
+      <button class="btn danger" id="u-delsel" style="display:none">Delete selected (<span id="u-selcount">0</span>)</button>
+      <span class="note" style="align-self:center" id="u-count"></span>
+    </div>
+    <div style="overflow-x:auto"><table id="u-table">
+      <thead><tr><th style="width:26px"><input type="checkbox" id="u-all" title="Select all shown" style="width:auto"></th><th>Display Name</th><th>Email</th><th>Role</th><th>Subscription</th><th>ACUs</th><th>Actions</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ TUTORS ============ -->
+<section class="panel" id="p-tutors">
+  <h1>Tutor applications</h1>
+  <p class="lede">Review, approve, or reject private tutor registrations. Tutors cannot access the marketplace until approved.</p>
+  <div class="kpis">
+    <div class="card stat"><div class="v" id="t-total">0</div><div class="k2">Total</div></div>
+    <div class="card stat"><div class="v" id="t-pending">0</div><div class="k2">Pending</div></div>
+    <div class="card stat"><div class="v" id="t-approved">0</div><div class="k2">Approved</div></div>
+    <div class="card stat"><div class="v" id="t-rejected">0</div><div class="k2">Rejected</div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>All applications</h3>
+    <div class="sub">Sorted by status — pending first. Approve or reject to unlock / block marketplace access.</div>
+    <div style="overflow-x:auto"><table id="t-table"><thead><tr><th>Tutor</th><th>Subjects</th><th>Hourly rate</th><th>Fee paid</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+    <div class="note" id="t-empty" style="display:none">No tutor applications yet — tutors apply by publishing from their Registration.</div>
+  </div>
+</section>
+
+<!-- ============ SCHOOLS ============ -->
+<section class="panel" id="p-schools">
+  <h1>School Management</h1>
+  <p class="lede">Review and approve school partner accounts, monitor rosters and ACU pools.</p>
+  <div class="card"><h3>School partners</h3><div class="sub">Institutions registered on this workspace</div>
+    <div style="overflow-x:auto"><table id="s-table"><thead><tr><th>School</th><th>Code</th><th>Students</th><th>Staff</th><th>ACU pool</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+    <div class="note" id="s-empty" style="display:none">No schools registered yet.</div>
+  </div>
+</section>
+
+<!-- ============ SUPPORT ============ -->
+<section class="panel" id="p-support">
+  <h1>Support Tools</h1>
+  <p class="lede">Access admin-only support features. All actions are logged.</p>
+  <div class="grid">
+    <div class="card c6"><h3>View as User</h3><div class="sub">Initiate a secure, time-limited impersonation session to assist a user. Sign out to end it.</div>
+      <label class="f">Target user — search by name or email</label>
+      <input id="sup-search" placeholder="Search by name or email…" style="width:100%">
+      <label class="f" style="margin-top:8px">Account</label><select id="sup-user" style="width:100%"></select>
+      <label class="f" style="margin-top:8px">Account ID — filled when you pick a user, or paste an email directly</label>
+      <input id="sup-uid" placeholder="user@example.com" style="width:100%">
+      <label class="f" style="margin-top:8px">Reason for Session</label>
+      <textarea id="sup-reason" rows="2" placeholder="e.g. 'Investigating user report of missing study plan…'" style="width:100%"></textarea>
+      <div style="margin-top:10px"><button class="btn" id="sup-view">Start View as User Session</button></div></div>
+    <div class="card c6"><h3>Wallet inspector</h3><div class="sub">Plan, balance and last billing events for the selected account</div>
+      <div id="sup-wallet" class="note">Select an account on the left.</div></div>
+    <div class="card c12"><h3>Open tickets</h3><div class="sub">Live from the contact inbox — support &amp; billing enquiries that still need an answer</div>
+      <div id="sup-tickets"></div></div>
+    <div class="card c12"><h3>Support session log</h3><div class="sub">Every impersonation session with its reason — most recent first</div>
+      <div id="sup-log"></div></div>
+  </div>
+</section>
+
+<!-- ============ INBOX ============ -->
+<section class="panel" id="p-inbox">
+  <h1>Contact inbox</h1>
+  <p class="lede">Click a message to read the full enquiry and reply. The public contact form blocks bots
+    (honeypot, human check, time-trap, gibberish filter) before anything reaches this inbox.</p>
+  <div class="card"><h3>Email delivery &amp; test</h3>
+    <div class="sub">Welcome emails, top-up receipts and contact notifications use SMTP in production. Send a test to confirm delivery.</div>
+    <div class="note">Static preview: SMTP (e.g. smtp.hostinger.com:465, MAIL_USERNAME = full mailbox address, MAIL_PASSWORD = the
+      mailbox webmail password) attaches with the Firebase backend — until then the test opens your mail client.</div>
+    <div style="display:flex;gap:8px;align-items:end;margin-top:10px;flex-wrap:wrap">
+      <div><label class="f">Send test email to</label><input id="mail-to" value="contact@studyear.com"></div>
+      <button class="btn" id="mail-send">Send test email</button>
+      <button class="btn ghost" id="inbox-refresh">Refresh status</button>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card c12"><h3>Submissions</h3><div class="sub"><span id="inbox-count">0</span> messages — click to open and read</div>
+      <div style="overflow-x:auto"><table id="inbox-table"><thead><tr><th>Date</th><th>From</th><th>Type</th><th>Message</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+      <div class="note" id="inbox-empty" style="display:none">No messages yet — the public contact form posts straight into this inbox.</div>
+    </div>
+    <div class="card c12"><h3>Spam quarantine</h3><div class="sub">Messages the bot filter blocked — kept for audit, never shown as live enquiries</div>
+      <div style="margin:6px 0"><button class="btn danger sm" id="spam-purge">Empty quarantine</button></div>
+      <div id="spam-list"></div></div>
+  </div>
+</section>
+
+<!-- ============ CONTENT ============ -->
+<section class="panel" id="p-content">
+  <h1>Content Management</h1>
+  <p class="lede">Manage subjects, topics, and curate external video resources. Approved pipeline items publish straight
+    into 🔎 Find resources for every student on this workspace.</p>
+  <div class="grid">
+    <div class="card c5" style="grid-column:span 5"><h3>Add New Resource</h3><div class="sub">Add a new resource to the ingestion pipeline.</div>
+      <label class="f">Resource Type</label><select id="cm-type" style="width:100%"><option>Video</option><option>Web Page</option><option>Document</option><option>Audio</option><option>Image</option></select>
+      <label class="f" style="margin-top:8px">Title</label><input id="cm-title" style="width:100%">
+      <label class="f" style="margin-top:8px">URL</label><input id="cm-url" placeholder="https://…" style="width:100%">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+        <div><label class="f">Subject</label><select id="cm-subj" style="width:100%"></select></div>
+        <div><label class="f">Level</label><select id="cm-level" style="width:100%"></select></div>
+      </div>
+      <label class="f" style="margin-top:8px">Topic</label><input id="cm-topic" style="width:100%">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+        <div><label class="f">License Type</label><select id="cm-license" style="width:100%"><option>Standard YouTube</option><option>Creative Commons</option><option>Own content</option><option>Licensed</option></select></div>
+        <div><label class="f">Attribution (if required)</label><input id="cm-attr" style="width:100%"></div>
+      </div>
+      <div style="margin-top:12px"><button class="btn" id="cm-add">Add to Pipeline</button></div>
+    </div>
+    <div class="card c7" style="grid-column:span 7"><h3>Resource Ingestion Pipeline</h3><div class="sub">Review and approve curated content — approved items go live in the student library.</div>
+      <div style="overflow-x:auto"><table id="cm-table"><thead><tr><th>Title</th><th>Type</th><th>Subject</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+      <div class="note" id="cm-empty" style="display:none">No resources in the pipeline.</div>
+    </div>
+    <div class="card c12"><h3>User-generated pool moderation</h3><div class="sub">Resources students created and shared — hide anything unsuitable; AI keeps only correct or corrected versions</div>
+      <div style="overflow-x:auto"><table id="c-table"><thead><tr><th>Resource</th><th>Type</th><th>Subject · Level</th><th>Owner</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+      <div class="note" id="c-empty" style="display:none">No user-generated resources on this workspace yet.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GROWTH ============ -->
+<section class="panel" id="p-growth">
+  <h1>Growth Partner Programme</h1>
+  <p class="lede">Open to every user — individual signup at <b>/partners/</b>. Tiers by verified following across
+    all platforms (YouTube included): <b>10,000+ → 1%</b> of referred customers' spending for life ·
+    <b>5,000–9,999 → 0.25%</b> · everyone else → <b>250 ACUs per referral</b>. Lifetime cap:
+    <b>£20,000 income per referred user</b>.</p>
+  <div class="grid">
+    <div class="card c12" id="growth-root"></div>
+    <div class="card c12"><h3>Applications</h3><div class="sub">From the public /partners/ page — verify the following count before approving; the tier is assigned automatically from it</div>
+      <div style="overflow-x:auto"><table id="ga-table"><thead><tr><th>Applicant</th><th>Social</th><th>Followers</th><th>Proposed tier</th><th>Code</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+      <div class="note" id="ga-empty" style="display:none">No applications yet — share https://www.studyear.com/partners/</div></div>
+    <div class="card c8"><h3>Approved partners</h3><div class="sub">Code · tier · referrals recorded · earnings vs the £20k per-referred-user lifetime cap</div>
+      <div style="overflow-x:auto"><table id="g-table"><thead><tr><th>Partner</th><th>Code</th><th>Tier</th><th>Referrals</th><th>Earned / cap</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+      <div class="note" id="g-empty" style="display:none">No approved partners yet.</div></div>
+    <div class="card c4"><h3>Add partner manually</h3>
+      <label class="f">Name</label><input id="g-name" style="width:100%">
+      <label class="f" style="margin-top:8px">Referral code</label><input id="g-code" placeholder="e.g. EMILY20" style="width:100%">
+      <label class="f" style="margin-top:8px">Total followers (sets the tier)</label><input id="g-cap" type="number" value="0" style="width:100%">
+      <div style="margin-top:10px"><button class="btn" id="g-add">Add partner</button></div></div>
+  </div>
+</section>
+
+<!-- ============ REVENUE ============ -->
+<section class="panel" id="p-revenue">
+  <h1>Billing &amp; Revenue</h1>
+  <p class="lede">Stripe gross vs estimated AI spend. Subscription renewals appear here when logged as payment rows.</p>
+  <div class="card"><h3>Stripe connection</h3><div class="sub">Checkout configuration on this deployment</div>
+    <div id="stripe-status"></div>
+    <div style="margin-top:10px"><button class="btn ghost sm" id="stripe-recheck">Re-check connection</button>
+      <a class="btn sm" href="gateway/" style="text-decoration:none">Configure in AI Gateway</a></div>
+  </div>
+  <div class="grid">
+    <div class="card c4"><h3>Recent Payments</h3><div class="sub">Transactions processed via Stripe</div>
+      <div style="overflow-x:auto"><table id="r-pay"><thead><tr><th>User</th><th>Amount</th><th>Date</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="card c4"><h3>Recent ACU Debits</h3><div class="sub">High-value AI credit consumptions from the ledger</div>
+      <div style="overflow-x:auto"><table id="r-deb"><thead><tr><th>User</th><th>Feature</th><th>ACUs</th><th>Date</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="card c4"><h3>Indicative margin (30d)</h3><div class="sub">Stripe gross minus estimated AI spend (GBP hint)</div>
+      <div class="econ"><div class="v" id="r-margin">£0.00</div></div>
+      <div class="note">Estimated AI spend uses token-based provider list prices (USD) × a fixed USD→GBP hint — verify against
+        provider invoices. ACU £ value assumes the Entry pack (£5 / 500 ACU).</div></div>
+    <div class="card c12"><h3>Manage Discount Codes</h3>
+      <div class="sub">Codes pass to Stripe as prefilled promo codes. Share links like <b>/account/topup/?code=YOUR_CODE</b> so users land with the code ready.</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px">
+        <div><label class="f">New code</label><input id="dc-code" placeholder="e.g. SUMMER25" style="width:100%"></div>
+        <div><label class="f">Type</label><select id="dc-type" style="width:100%"><option value="pct">Percentage off</option><option value="amt">Amount off (£)</option></select></div>
+        <div><label class="f">Value</label><input id="dc-val" type="number" value="10" style="width:100%"></div>
+        <div><label class="f">Valid until (optional)</label><input id="dc-until" type="date" style="width:100%"></div>
+        <div><label class="f">Max redemptions (optional)</label><input id="dc-max" type="number" placeholder="e.g. 100" style="width:100%"></div>
+        <div style="align-self:end"><button class="btn" id="dc-add" style="width:100%">Create discount code</button></div>
+      </div>
+      <div class="k" style="margin-top:14px">Active codes</div>
+      <div id="dc-list" style="margin-top:6px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ AI USAGE ============ -->
+<section class="panel" id="p-ai">
+  <h1>AI usage &amp; API costs</h1>
+  <p class="lede">Estimated API spend is shown in GBP (USD list-price hint × 0.79 FX). ACU £ uses the Entry-pack rule
+    (£5 / 500 ACU). Confirm against real vendor invoices.</p>
+  <div class="grid">
+    <div class="card c3 econ"><h3>Est. AI API spend (30d)</h3><div class="sub">Provider-side token estimate</div><div class="v" id="ai-spend">£0.00</div></div>
+    <div class="card c3 econ"><h3>ACUs consumed (30d)</h3><div class="sub">Debit volume</div><div class="v" id="ai-acus">0</div></div>
+    <div class="card c3 econ"><h3>Successful calls (30d)</h3><div class="sub">From the usage log</div><div class="v" id="ai-ok">0</div></div>
+    <div class="card c3 econ"><h3>Failed calls (30d)</h3><div class="sub">Errors + timeouts</div><div class="v" id="ai-fail">0</div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>Recent AI requests</h3><div class="sub">Latest rows from the on-device usage log (production reads Firestore aiUsageLogs)</div>
+    <div style="overflow-x:auto"><table id="ai-table"><thead><tr><th>User</th><th>Model</th><th>Est. API (£)</th><th>Status</th><th>Latency</th><th>Date</th></tr></thead><tbody></tbody></table></div>
+    <div class="note" id="ai-empty" style="display:none">No AI requests logged yet — every live SYAI call records here.</div>
+  </div>
+</section>
+
+<!-- ============ ANALYTICS ============ -->
+<section class="panel" id="p-analytics">
+  <h1>Analytics &amp; Reporting</h1>
+  <p class="lede">Sign-up trends, returning activity, and AI usage volume — exportable as Excel, Word, PDF or PowerPoint.</p>
+  <div class="kpis">
+    <div class="card stat"><div class="v" id="an-total">0</div><div class="k2">Total users</div></div>
+    <div class="card stat"><div class="v" id="an-returning">0</div><div class="k2">Returning (30d)</div></div>
+    <div class="card stat"><div class="v" id="an-new">0</div><div class="k2">New sign-ups (30d)</div></div>
+    <div class="card stat"><div class="v" id="an-ai">0</div><div class="k2">AI requests logged (30d)</div></div>
+  </div>
+  <div class="grid">
+    <div class="card c6"><h3>New Users This Year</h3><div class="sub">Sign-ups per month</div><div id="a-months"></div></div>
+    <div class="card c6"><h3>Avg. Study Time / Week (Hours)</h3><div class="sub">Estimated from learning activity across all students</div><div id="a-study"></div></div>
+    <div class="card c6"><h3>Generation volumes</h3><div class="sub">Events recorded across all accounts</div><div id="a-kinds"></div></div>
+    <div class="card c6"><h3>Engagement — last 14 days</h3><div class="sub">All activity events per day</div><div id="a-days"></div>
+      <div style="margin-top:10px"><button class="btn" id="a-export">⬇ Export report</button></div></div>
+  </div>
+</section>
+
+<!-- ============ SETTINGS ============ -->
+<section class="panel" id="p-settings">
+  <!-- provider economics injected below AI provider settings -->
+  <h1>System &amp; AI Settings</h1>
+  <p class="lede">Control AI rate limits, feature flags, email delivery, and other global settings. Live AI keys and Stripe links live in the <a href="gateway/" style="color:var(--gold-300)">AI Gateway</a>.</p>
+  <div class="grid">
+    <div class="card c12"><h3>Message copy &amp; contact addresses</h3><div class="sub">Inbox routing and email templates — used across the contact page, auth flows and receipts</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px">
+        <div><label class="f">Company name (contact page)</label><input data-cc="company" style="width:100%"></div>
+        <div><label class="f">Registered address</label><input data-cc="address" style="width:100%"></div>
+        <div><label class="f">Support email (displayed)</label><input data-cc="support" style="width:100%"></div>
+        <div><label class="f">Contact inbox email</label><input data-cc="inbox" style="width:100%"></div>
+        <div><label class="f">Outbound sender (reference)</label><input data-cc="sender" style="width:100%"></div>
+        <div><label class="f">Signup welcome — subject</label><input data-cc="welcomeSubject" style="width:100%"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div><label class="f">Contact form — success message</label><textarea data-cc="contactSuccess" rows="2" style="width:100%"></textarea></div>
+        <div><label class="f">Signup welcome — body</label><textarea data-cc="welcomeBody" rows="2" style="width:100%"></textarea></div>
+      </div>
+      <div style="margin-top:10px"><button class="btn" id="cc-save">Save communications</button>
+        <button class="btn ghost" data-go="inbox">View contact inbox</button></div>
+    </div>
+    <div class="card c6"><h3>Feature Flags</h3><div class="sub">Globally enable or disable key platform features</div><div id="flag-list"></div></div>
+    <div class="card c6"><h3>Pricing &amp; Billing Rules</h3><div class="sub">Core financial parameters</div>
+      <label class="f">ACU Pricing Multiplier</label><input id="pr-mult" type="number" step="0.5" style="width:130px">
+      <div class="note" style="margin:2px 0 8px">User charge = internal AI cost × this multiplier.</div>
+      <label class="f">Tutor Marketplace Commission (%)</label><input id="pr-comm" type="number" style="width:130px">
+      <div class="note" style="margin:2px 0 8px">The platform's cut on tutor bookings.</div>
+      <label class="f">Max AI calls per user per day</label><input id="lim-calls" type="number" style="width:130px">
+      <label class="f" style="margin-top:8px">Max ACUs per user per day</label><input id="lim-acus" type="number" style="width:130px">
+    </div>
+    <div class="card c12"><h3>AI Provider Settings</h3><div class="sub">Control the models and providers in use — keys stay in the AI Gateway</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px">
+        <div><label class="f">Default Provider</label><select id="pv-default" style="width:100%"><option value="openai">OpenAI</option><option value="gemini">Google Gemini</option><option value="anthropic">Anthropic</option></select></div>
+        <div><label class="f">Fallback Provider</label><select id="pv-fallback" style="width:100%"><option value="openai">OpenAI</option><option value="gemini">Google Gemini</option><option value="anthropic">Anthropic</option></select></div>
+        <div><label class="f">OpenAI — cost-effective</label><input data-pm="openai_cheap" style="width:100%"></div>
+        <div><label class="f">OpenAI — performance</label><input data-pm="openai_perf" style="width:100%"></div>
+        <div><label class="f">Gemini — cost-effective</label><input data-pm="gemini_cheap" style="width:100%"></div>
+        <div><label class="f">Gemini — performance</label><input data-pm="gemini_perf" style="width:100%"></div>
+        <div><label class="f">Anthropic — cost-effective</label><input data-pm="anthropic_cheap" style="width:100%"></div>
+        <div><label class="f">Anthropic — performance</label><input data-pm="anthropic_perf" style="width:100%"></div>
+      </div>
+      <div style="margin-top:16px"><h3 style="font-size:13px;font-weight:600">Cost &amp; users per provider (30d)</h3>
+      <div class="sub">Live from the AI usage log — calls, distinct users and estimated £ per provider</div>
+      <div style="overflow-x:auto"><table id="pv-costs"><thead><tr><th>Provider</th><th>Calls</th><th>Users</th><th>Est. £ (30d)</th><th>Avg £/call</th></tr></thead><tbody></tbody></table></div>
+      <div class="note" id="pv-costs-empty" style="display:none">No AI usage logged yet.</div>
+      </div>
+      <div style="margin-top:12px"><button class="btn" id="set-save">Save All Settings</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FRAUD ============ -->
+<section class="panel" id="p-fraud">
+  <h1>Fraud Monitoring</h1>
+  <p class="lede">Signals from the auth defences and account anomalies. Flag anything for review.</p>
+  <div class="grid">
+    <div class="card c6"><h3>Live signals</h3><div class="sub">From the sign-in bot defences and account data</div><div id="f-signals"></div></div>
+    <div class="card c6"><h3>Automated rules scan</h3><div class="sub">One free account per device · signup velocity · top-up velocity · bot-pattern names</div>
+      <div style="margin:8px 0"><button class="btn sm" id="f-scan">Run fraud scan now</button></div>
+      <div class="note" id="f-scan-note">Flags anything the rules catch into the review queue (never auto-suspends).</div></div>
+    <div class="card c6"><h3>Flag an account</h3><div class="sub">Adds it to the review queue below with your reason</div>
+      <label class="f">Account</label><select id="f-user" style="width:100%"></select>
+      <label class="f" style="margin-top:8px">Reason for flag</label>
+      <input id="f-reason" placeholder="e.g. Rapid duplicate signups from one device" style="width:100%">
+      <div style="margin-top:10px"><button class="btn sm" id="f-add">Flag for review</button></div></div>
+    <div class="card c12"><h3>Flagged Accounts</h3><div class="sub">These accounts have been flagged for manual review.</div>
+      <div style="overflow-x:auto"><table id="f-table"><thead><tr><th>User</th><th>Reason for Flag</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+      <div class="note" id="f-empty" style="display:none">No flagged users found.</div></div>
+  </div>
+</section>
+
+</main></div>
+<div class="toast" id="toast"></div>
+
+<!-- user editor -->
+<dialog id="u-dialog">
+  <h3 style="font-family:var(--serif)">Edit account</h3>
+  <div class="note" id="ud-email" style="margin:2px 0 12px"></div>
+  <label class="f">Display name</label><input id="ud-name" style="width:100%">
+  <label class="f" style="margin-top:10px">Role</label>
+  <select id="ud-role" style="width:100%"><option>student</option><option>parent</option><option>teacher</option><option>tutor</option><option>school</option><option>authority</option><option>admin</option></select>
+  <label class="f" style="margin-top:10px">Subscription</label>
+  <select id="ud-plan" style="width:100%"></select>
+  <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+    <button class="btn ghost" id="ud-cancel">Cancel</button>
+    <button class="btn" id="ud-save">Save changes</button>
+  </div>
+</dialog>
+
+<script>
+(function(){
+'use strict';
+var SY=window.SY;if(!SY)return;
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var e=$('toast');e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2200)}
+function store(k,d){try{var v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function mask(e){
+  e=String(e||'');
+  if(/@(demo\.studyear|local\.test|t\.test|e2e\.test|studyear\.com)$/i.test(e))return e;
+  var p=e.split('@');if(p.length!==2)return e;
+  return p[0].slice(0,2)+'•••@'+(p[1][0]||'')+'•••.'+(p[1].split('.').pop()||'');
+}
+var PLAN_NAMES={child_free:'Child Free',student_access:'Student Access',student_premium:'Student Premium',
+  student_premium_plus:'Student Premium+',student_max:'Student Max',parent_pro:'Parent Pro',parent_pro_plus:'Parent Pro+',
+  parent_elite:'Parent Elite',teacher_pro:'Teacher Pro',tutor_pro:'Tutor Pro',school:'School staff',admin:'Admin'};
+var LEVELS=['Reception','KS1','KS2','11+','KS3','GCSE','IGCSE','National 5','AS','A-level','Highers','IB','BTEC','University'];
+var SUBJECTS=['Accounting','Art','Biology','Business','Chemistry','Computer Science','Design & Technology','Drama','Economics','English Language','English Literature','French','Further Maths','Geography','German','History','Mathematics','Music','Physical Education','Physics','Politics','Psychology','Religious Studies','Sociology','Spanish'];
+/* read/write through the guard so end-to-end-encrypted accounts stay sealed */
+function acct(email,k,d){return SY.readAccount(email,k,d)}
+function acctSet(email,k,v){SY.writeAccount(email,k,v)}
+function users(){return store('sy-users',[])}
+function uniqUsers(){var seen={},out=[];users().forEach(function(u){var k=(u.email||'')+'|'+(u.role||'');if(u.email&&!seen[k]){seen[k]=1;out.push(u)}});return out}
+function schools(){
+  var out={},i,k,m;
+  for(i=0;i<localStorage.length;i++){k=localStorage.key(i);m=k&&k.match(/^sy-school:([^:]+):name$/);
+    if(m)out[m[1]]={code:m[1],name:store(k,''),roster:store('sy-school:'+m[1]+':roster',[]),
+      staff:store('sy-school:'+m[1]+':staff',[]),acu:store('sy-school:'+m[1]+':acu',{balance:0}),
+      verified:store('sy-school:'+m[1]+':verified',false),
+      rejected:store('sy-school:'+m[1]+':rejected',false)};}
+  return Object.keys(out).map(function(c){return out[c]});
+}
+function allActivity(){
+  var out=[];uniqUsers().forEach(function(u){
+    (acct(u.email,'activity',[])||[]).forEach(function(a){out.push({email:u.email,name:u.name,k:a.k,t:a.t,d:a.d,when:a.when})})});
+  out.sort(function(a,b){return String(b.when).localeCompare(String(a.when))});
+  return out;
+}
+function within(iso,days){var t=new Date(iso).getTime();return t&&Date.now()-t<days*864e5}
+function fmtDate(iso){return iso?String(iso).slice(0,16).replace('T',' '):'—'}
+
+/* ---------- routing ---------- */
+var PANELS=['dashboard','users','tutors','schools','support','inbox','content','growth','revenue','ai','analytics','settings','fraud'];
+function show(p){
+  if(PANELS.indexOf(p)<0)p='dashboard';
+  PANELS.forEach(function(x){var el=$('p-'+x);if(el)el.classList.toggle('on',x===p)});
+  document.querySelectorAll('#nav a').forEach(function(a){a.classList.toggle('on',a.getAttribute('href')==='#'+p)});
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange',function(){show(location.hash.replace('#',''))});
+document.querySelectorAll('[data-go]').forEach(function(b){b.onclick=function(){location.hash=b.dataset.go}});
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+
+/* ---------- dashboard ---------- */
+function billingEvents(days){return allActivity().filter(function(a){return a.k==='billing'&&(!days||within(a.when,days))})}
+function usageLog(){return store('sy-ai-usage',[])}
+function debitInfo(a){var m=a.t.match(/^(.*?)(?::|—).*?(\d+)\s*ACUs/)||a.t.match(/^(.*?) — (\d+)\s*ACUs/);return m?{feature:m[1].trim(),acus:+m[2]}:null}
+function drawDashboard(){
+  var us=uniqUsers();
+  var students=us.filter(function(u){return u.role==='student'});
+  $('k-students').textContent=students.length;
+  /* honest number: accounts with real activity in the last 30 days — no
+     flattering fallback to the total */
+  var active=us.filter(function(u){return (acct(u.email,'activity',[])||[]).some(function(a){return within(a.when,30)})}).length;
+  $('k-active').textContent=active;
+  var risk=0,sponsored=0;
+  students.forEach(function(u){
+    var d=(acct(u.email,'diagnostics',[])||[])[0];if(d&&String(d.risk).toUpperCase()==='HIGH')risk++;
+    if(acct(u.email,'nationalWinner',false))sponsored++;
+  });
+  $('k-risk').textContent=risk;$('k-sponsored').textContent=sponsored;
+  $('k-schools').textContent=schools().length;
+  var b30=billingEvents(30),b90=billingEvents(90);
+  var debits30=b30.map(debitInfo).filter(Boolean);
+  var acus30=debits30.reduce(function(n,x){return n+x.acus},0);
+  var log30=usageLog().filter(function(r){return within(r.when,30)});
+  var ok30=log30.filter(function(r){return r.ok});
+  var aiGbp=ok30.reduce(function(n,r){return n+(r.gbp||0)},0);
+  $('k-aispend').textContent='£'+aiGbp.toFixed(2);
+  var pay=function(list){var n=0,sum=0;list.forEach(function(a){var m=(a.t+' '+a.d).match(/£(\d+(?:\.\d+)?)/);if(/purchas|subscrib|payment/i.test(a.t)&&m){n++;sum+=+m[1]}});return{n:n,sum:sum}};
+  var p30=pay(b30),p90=pay(b90);
+  $('k-gross').textContent='£'+p30.sum.toFixed(2);
+  $('e-gross30').textContent='£'+p30.sum.toFixed(2);$('e-pay30').textContent=p30.n;
+  $('e-gross90').textContent='£'+p90.sum.toFixed(2);$('e-pay90').textContent=p90.n;
+  $('e-ai30').textContent='£'+aiGbp.toFixed(2);$('e-ai-usd').textContent='$'+(aiGbp/0.79).toFixed(2);
+  $('e-acus').textContent=acus30.toLocaleString();
+  $('e-acus-gbp').textContent=(acus30*0.01).toFixed(2);
+  $('e-calls').textContent=ok30.length;
+  /* roles distribution + recent accounts (preserved from the original console) */
+  var byRole={};us.forEach(function(u){byRole[u.role]=(byRole[u.role]||0)+1});
+  var roles=Object.keys(byRole).sort(function(a,b){return byRole[b]-byRole[a]});
+  var mx=roles.length?byRole[roles[0]]:1;
+  $('roles').innerHTML=roles.map(function(r){
+    return '<div style="margin:7px 0"><div style="display:flex;justify-content:space-between;font-size:12px"><span style="text-transform:capitalize">'+esc(r)+'</span><b style="color:var(--gold-300)">'+byRole[r]+'</b></div><div class="bar"><i style="width:'+Math.round(100*byRole[r]/mx)+'%"></i></div></div>';
+  }).join('')||'<div class="note">No accounts yet.</div>';
+  $('recent').innerHTML=us.slice(-8).reverse().map(function(u){
+    return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:12.5px"><span><b style="color:var(--ink)">'+esc(u.name||'N/A')+'</b> · '+esc(mask(u.email))+'</span><span class="pill role">'+esc(u.role)+'</span></div>';
+  }).join('')||'<div class="note">No accounts yet.</div>';
+}
+
+/* ---------- users ---------- */
+var editing=null;
+function planOptionsFor(role){
+  var map={student:['child_free','student_access','student_premium','student_premium_plus','student_max'],
+    parent:['child_free','parent_pro','parent_pro_plus','parent_elite'],
+    teacher:['child_free','teacher_pro','school'],tutor:['child_free','tutor_pro'],
+    school:['school'],authority:['school'],admin:['admin']};
+  return map[role]||Object.keys(PLAN_NAMES);
+}
+function drawUsers(){
+  var q=($('u-search').value||'').toLowerCase(),rf=$('u-role').value;
+  var us=uniqUsers().filter(function(u){
+    if(rf&&u.role!==rf)return false;
+    return !q||String(u.name||'').toLowerCase().indexOf(q)>=0||String(u.email||'').toLowerCase().indexOf(q)>=0;
+  });
+  $('u-count').textContent=us.length+' account'+(us.length===1?'':'s');
+  var tb=$('u-table').querySelector('tbody');
+  tb.innerHTML=us.map(function(u,i){
+    var w=acct(u.email,'wallet',null)||{plan:'child_free',acus:0};
+    var plan=PLAN_NAMES[w.plan]||PLAN_NAMES.child_free;
+    var student=u.role==='student';
+    return '<tr>'+
+      '<td><input type="checkbox" class="u-sel" data-i="'+i+'" style="width:auto" aria-label="Select '+esc(u.name||u.email)+'"></td>'+
+      '<td><b>'+esc(u.name||'N/A')+'</b>'+(u.demo?' <span class="pill ok">demo</span>':'')+(u.cloud?' <span class="pill role" title="Live platform account (Firebase)">☁</span>':'')+(u.disabled?' <span class="pill bad">banned</span>':'')+'</td>'+
+      '<td>'+esc(mask(u.email))+'</td>'+
+      '<td><span class="pill role">'+esc(u.role||'—')+'</span></td>'+
+      '<td><span class="pill plan">'+esc(plan)+'</span></td>'+
+      '<td>'+(w.acus||0).toLocaleString()+'</td>'+
+      '<td><div class="acts">'+
+        '<button class="btn ghost sm" data-act="edit" data-i="'+i+'">Edit</button>'+
+        (student?'<button class="btn ghost sm" data-act="parent" data-i="'+i+'">Link Parent</button>'+
+                 '<button class="btn ghost sm" data-act="school" data-i="'+i+'">Link School</button>':'')+
+        '<button class="btn ghost sm" data-act="acus" data-i="'+i+'">Adjust ACUs</button>'+
+        '<button class="btn ghost sm" data-act="grant" data-i="'+i+'">Grant free ACUs</button>'+
+        '<button class="btn ghost sm" data-act="view" data-i="'+i+'">View as User</button>'+
+        (u.cloud?'<button class="btn ghost sm" data-act="ban" data-i="'+i+'">'+(u.disabled?'Unban':'Ban')+'</button>':'')+
+        '<button class="btn danger sm" data-act="del" data-i="'+i+'">Delete</button>'+
+      '</div></td></tr>';
+  }).join('')||'<tr><td colspan="7" class="note">No accounts match.</td></tr>';
+  tb.querySelectorAll('button').forEach(function(b){b.onclick=function(){userAct(b.dataset.act,us[+b.dataset.i])}});
+  /* multi-select → bulk delete (for clearing imported/unwanted rows fast) */
+  function selCount(){var n=tb.querySelectorAll('.u-sel:checked').length;
+    $('u-selcount').textContent=n;$('u-delsel').style.display=n?'inline-block':'none';return n}
+  tb.querySelectorAll('.u-sel').forEach(function(c){c.addEventListener('change',selCount)});
+  $('u-all').checked=false;
+  $('u-all').onchange=function(){tb.querySelectorAll('.u-sel').forEach(function(c){c.checked=$('u-all').checked});selCount()};
+  $('u-delsel').onclick=function(){
+    var picked=[];tb.querySelectorAll('.u-sel:checked').forEach(function(c){var u=us[+c.dataset.i];if(u)picked.push(u)});
+    if(!picked.length)return;
+    if(!confirm('Delete '+picked.length+' account(s) and all their data?\n\n'+picked.slice(0,10).map(function(u){return '• '+(u.name||'?')+' <'+u.email+'>'}).join('\n')+(picked.length>10?'\n…and '+(picked.length-10)+' more':'')+'\n\nThis cannot be undone.'))return;
+    var all=users();
+    picked.forEach(function(u){
+      all=all.filter(function(x){return !(x.email===u.email&&x.role===u.role)});
+      var kill=[];for(var k=0;k<localStorage.length;k++){var key=localStorage.key(k);
+        if(key&&(key.indexOf('sy-u:'+u.email+':')===0||key==='sy-e2e:'+u.email))kill.push(key)}
+      kill.forEach(function(key){localStorage.removeItem(key)});
+    });
+    save('sy-users',all);
+    var hl=store('sy-support-log',[]);
+    hl.unshift({admin:SY.session.email,target:'bulk-delete',role:'—',reason:'Deleted '+picked.length+' selected account(s)',when:new Date().toISOString()});
+    save('sy-support-log',hl.slice(0,100));
+    toast(picked.length+' account(s) deleted');drawUsers();drawDashboard();
+  };
+}
+function userAct(act,u){
+  if(!u)return;
+  if(act==='edit'){
+    editing=u;
+    $('ud-email').textContent=mask(u.email);
+    $('ud-name').value=u.name||'';
+    $('ud-role').value=u.role||'student';
+    var w=acct(u.email,'wallet',null)||{plan:'child_free',acus:0};
+    var opts=planOptionsFor(u.role);
+    $('ud-plan').innerHTML=opts.map(function(p){return '<option value="'+p+'"'+(p===w.plan?' selected':'')+'>'+esc(PLAN_NAMES[p]||p)+'</option>'}).join('');
+    $('u-dialog').showModal();return;
+  }
+  if(act==='grant'){
+    var wg=acct(u.email,'wallet',null)||{plan:'child_free',acus:0};
+    var g=prompt('Grant FREE ACUs to '+mask(u.email)+' (current '+(wg.acus||0)+'):','250');
+    if(g===null)return;var gn=Math.abs(parseInt(g,10));if(isNaN(gn)||!gn){toast('Enter a number like 250');return}
+    wg.acus=(wg.acus||0)+gn;acctSet(u.email,'wallet',wg);
+    var gf=acct(u.email,'activity',[]);gf.unshift({k:'billing',t:'Free ACUs granted — +'+gn+' ACUs',d:'A gift from the StudYear team. Balance now '+wg.acus+' ACUs.',when:new Date().toISOString()});
+    acctSet(u.email,'activity',gf.slice(0,100));
+    toast('+'+gn+' free ACUs granted — wallet now '+wg.acus);drawUsers();drawDashboard();return;
+  }
+  if(act==='acus'){
+    var w2=acct(u.email,'wallet',null)||{plan:'child_free',acus:0};
+    var delta=prompt('Adjust ACUs for '+mask(u.email)+' (current '+(w2.acus||0)+'). Enter +/- amount:','+100');
+    if(delta===null)return;var n=parseInt(delta,10);if(isNaN(n)){toast('Enter a number like +100 or -50');return}
+    w2.acus=Math.max(0,(w2.acus||0)+n);acctSet(u.email,'wallet',w2);
+    var feed=acct(u.email,'activity',[]);feed.unshift({k:'billing',t:'Admin ACU adjustment — '+(n>0?'+':'')+n+' ACUs',d:'Balance now '+w2.acus+' ACUs.',when:new Date().toISOString()});
+    acctSet(u.email,'activity',feed.slice(0,100));
+    toast('Wallet now '+w2.acus+' ACUs');drawUsers();drawDashboard();return;
+  }
+  if(act==='parent'){
+    var parents=uniqUsers().filter(function(x){return x.role==='parent'});
+    if(!parents.length){toast('No parent accounts on this workspace');return}
+    var pick=prompt('Link '+mask(u.email)+' to which parent?\n'+parents.map(function(p,i){return (i+1)+'. '+(p.name||mask(p.email))}).join('\n'),'1');
+    if(pick===null)return;var p=parents[(+pick||0)-1];if(!p){toast('No such parent');return}
+    var kids=acct(p.email,'children',[]);
+    if(!kids.some(function(k){return k.email===u.email}))kids.push({email:u.email,name:u.name||'',when:new Date().toISOString()});
+    acctSet(p.email,'children',kids);toast('Linked to '+(p.name||mask(p.email)));return;
+  }
+  if(act==='school'){
+    var sch=schools();if(!sch.length){toast('No schools registered yet');return}
+    var pick2=prompt('Link '+mask(u.email)+' to which school?\n'+sch.map(function(s,i){return (i+1)+'. '+s.name+' ('+s.code+')'}).join('\n'),'1');
+    if(pick2===null)return;var s=sch[(+pick2||0)-1];if(!s){toast('No such school');return}
+    var roster=store('sy-school:'+s.code+':roster',[]);
+    if(!roster.some(function(r){return r.email===u.email}))roster.push({email:u.email,name:u.name||'',cohort:'',year:''});
+    save('sy-school:'+s.code+':roster',roster);toast('Added to '+s.name+' roster');drawSchools();return;
+  }
+  if(act==='view'){
+    if(!confirm('Open StudYear as '+(u.name||mask(u.email))+' ('+u.role+')? Sign out to return to admin.'))return;
+    save('sy-session',{role:u.role,name:u.name||'User',email:u.email,supportView:true});
+    location.href={student:'../study/',parent:'../parent/',teacher:'../teacher/',tutor:'../tutor/',school:'../school/',authority:'../authority/',admin:'./'}[u.role]||'../';
+    return;
+  }
+  if(act==='del'){
+    if(!confirm('Delete '+(u.name||mask(u.email))+' and ALL their data'+(u.cloud?' — INCLUDING their cloud account on the platform':' on this workspace')+'? This cannot be undone.'))return;
+    save('sy-users',users().filter(function(x){return !(x.email===u.email&&x.role===u.role)}));
+    var kill=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('sy-u:'+u.email+':')===0)kill.push(k)}
+    kill.forEach(function(k){localStorage.removeItem(k)});
+    if(u.cloud&&u.uid&&window.cloudUserOp)cloudUserOp('delete',u.uid,null,function(){drawUsers();drawDashboard()});
+    toast('Account deleted'+(u.cloud?' (cloud removal running)':''));drawUsers();drawDashboard();return;
+  }
+  if(act==='ban'){
+    if(!u.cloud||!u.uid){toast('Ban applies to cloud accounts');return}
+    cloudUserOp(u.disabled?'enable':'disable',u.uid,null,function(){u.disabled=!u.disabled;drawUsers()});
+    return;
+  }
+}
+$('ud-cancel').onclick=function(){$('u-dialog').close()};
+$('ud-role').onchange=function(){
+  var opts=planOptionsFor($('ud-role').value);
+  $('ud-plan').innerHTML=opts.map(function(p){return '<option value="'+p+'">'+esc(PLAN_NAMES[p]||p)+'</option>'}).join('');
+};
+$('ud-save').onclick=function(){
+  if(!editing)return;
+  var u=editing,nn=$('ud-name').value.trim(),nr=$('ud-role').value,np=$('ud-plan').value;
+  var all=users();all.forEach(function(x){if(x.email===u.email&&x.role===u.role){x.name=nn;x.role=nr}});save('sy-users',all);
+  var pf=acct(u.email,'profile',{});pf.name=nn;acctSet(u.email,'profile',pf);
+  var w=acct(u.email,'wallet',null)||{plan:'child_free',acus:0};
+  if(w.plan!==np){w.plan=np;if(np!=='child_free')w.planExpires=new Date(Date.now()+30*864e5).toISOString();acctSet(u.email,'wallet',w);
+    var feed=acct(u.email,'activity',[]);feed.unshift({k:'billing',t:'Admin plan change — '+(PLAN_NAMES[np]||np),d:'Subscription set by platform admin.',when:new Date().toISOString()});
+    acctSet(u.email,'activity',feed.slice(0,100));}
+  else{acctSet(u.email,'wallet',w)}
+  $('u-dialog').close();editing=null;
+  toast('Account updated');drawUsers();drawDashboard();
+};
+$('u-search').addEventListener('input',drawUsers);
+$('u-role').addEventListener('input',drawUsers);
+
+/* ---------- bulk import: migrate the existing user base ---------- */
+async function importHash(salt,pw){
+  var data=new TextEncoder().encode(salt+'·'+pw);
+  var buf=await crypto.subtle.digest('SHA-256',data);
+  return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
+}
+function tempPw(){
+  var a=new Uint8Array(9);crypto.getRandomValues(a);
+  return 'SY-'+Array.from(a).map(function(b){return 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'[b%56]}).join('');
+}
+var importedCreds=[];
+$('imp-go').onclick=async function(){
+  var lines=$('imp-csv').value.split('\n').map(function(l){return l.trim()}).filter(Boolean);
+  if(!lines.length){toast('Paste at least one user line');return}
+  var all=users(),added=0,skipped=0;importedCreds=[];
+  var ROLES2=['student','parent','teacher','tutor','school','authority'];
+  for(var i=0;i<lines.length;i++){
+    var parts=lines[i].split(/[,;\t]/).map(function(x){return x.trim()});
+    var nm=parts[0]||'',em=(parts[1]||'').toLowerCase(),role=(parts[2]||'student').toLowerCase(),plan=parts[3]||'';
+    if(!/^\S+@\S+\.\S+$/.test(em)||ROLES2.indexOf(role)<0){skipped++;continue}
+    if(all.some(function(u){return u.email===em&&u.role===role})){skipped++;continue}
+    var pw=tempPw();
+    var salt=Array.from(crypto.getRandomValues(new Uint8Array(12))).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
+    all.push({name:nm||em.split('@')[0],email:em,role:role,salt:salt,hash:await importHash(salt,pw),imported:true,created:new Date().toISOString()});
+    if(plan&&PLAN_NAMES[plan]){
+      var w=acct(em,'wallet',null)||{acus:0};w.plan=plan;
+      w.planExpires=new Date(Date.now()+30*864e5).toISOString();
+      acctSet(em,'wallet',w);
+    }
+    importedCreds.push([nm,em,role,plan||'child_free',pw]);
+    added++;
+  }
+  save('sy-users',all);
+  $('imp-note').textContent=added+' imported, '+skipped+' skipped (invalid or already exist). Download the credentials and email each user their invite — they sign in, set their profile, and their encryption keys mint automatically.';
+  $('imp-export').style.display=added?'inline-block':'none';
+  drawUsers();drawDashboard();drawSupport();
+  toast(added+' users imported');
+};
+$('imp-export').onclick=function(){
+  var csv='Name,Email,Role,Plan,Temporary password,Sign-in link\n'+importedCreds.map(function(r){
+    return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"'}).join(',')+',"https://www.studyear.com/auth/?role='+r[2]+'"';
+  }).join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='studyear-invites.csv';a.click();
+  toast('Credentials downloaded — send each user their invite');
+};
+
+/* ---------- data hygiene: remove test fixtures, duplicates & bot names ----------
+   Real customer accounts are never auto-deleted — only test/demo domains,
+   exact duplicates (same email+role) and gibberish bot-pattern names.
+   Anything else the admin removes individually with the Delete action. */
+$('u-clean').onclick=function(){
+  var TESTDOM=/@(local\.test|t\.test|e2e\.test|demo\.studyear|example\.(com|org|net|co\.uk))$/i;
+  function botName(s){s=String(s||'').trim();if(!s)return false;
+    return (s.length>=14&&!/[aeiou]/i.test(s))||/[bcdfghjklmnpqrstvwxz]{7,}/i.test(s)||/(.)\1{5,}/.test(s)}
+  var all=users(),seen={},keep=[],removed=[];
+  all.forEach(function(u){
+    var email=(u.email||'').toLowerCase();
+    if(!email){removed.push(u);return}
+    if(TESTDOM.test(email)){removed.push(u);return}
+    if(botName(u.name)&&botName(email.split('@')[0])){removed.push(u);return}
+    var k=email+'|'+(u.role||'');
+    if(seen[k]){removed.push(u);return}
+    seen[k]=1;keep.push(u);
+  });
+  if(!removed.length){alert('Nothing to clean — no test accounts, duplicates or bot patterns found.');return}
+  if(!confirm('Remove '+removed.length+' row(s)?\n\n'+removed.slice(0,12).map(function(u){return '• '+(u.name||'?')+' <'+u.email+'> ('+u.role+')'}).join('\n')+(removed.length>12?'\n…and '+(removed.length-12)+' more':'')+'\n\nReal customer accounts are kept. This cannot be undone.'))return;
+  save('sy-users',keep);
+  /* sweep the same test domains out of tutor marketplace profiles + statuses */
+  save('sy-tutors',store('sy-tutors',[]).filter(function(t){return !TESTDOM.test(String(t.email||''))}));
+  var st=store('sy-tutor-status',{});Object.keys(st).forEach(function(id){if(TESTDOM.test(id))delete st[id]});save('sy-tutor-status',st);
+  var hlog=store('sy-support-log',[]);
+  hlog.unshift({admin:SY.session.email,target:'data-hygiene',role:'—',reason:'Removed '+removed.length+' test/duplicate/bot rows',when:new Date().toISOString()});
+  save('sy-support-log',hlog.slice(0,100));
+  drawUsers();drawDashboard();try{drawTutors()}catch(e){}
+  alert(removed.length+' row(s) removed. Dashboard numbers now reflect real accounts only.');
+};
+
+/* ---------- tutor applications ---------- */
+function tutorApps(){
+  var reg=store('sy-tutors',[]);var st=store('sy-tutor-status',{});
+  var apps=reg.map(function(t){return{t:t,status:st[t.id]||'pending'}});
+  /* tutors registered as accounts but not yet published also count as applications */
+  uniqUsers().filter(function(u){return u.role==='tutor'}).forEach(function(u){
+    if(!apps.some(function(a){return (a.t.email||'').toLowerCase()===u.email.toLowerCase()})){
+      var tp=acct(u.email,'tutorProfile',{});
+      apps.push({t:{id:'acct:'+u.email,email:u.email,name:u.name||tp.name||'N/A',head:tp.subjects||'—',rate:tp.rate||32,subjects:tp.subjects||'—'},status:st['acct:'+u.email]||'pending'});
+    }
+  });
+  return apps;
+}
+function drawTutors(){
+  var apps=tutorApps();var order={pending:0,approved:1,rejected:2};
+  apps.sort(function(a,b){return (order[a.status]||0)-(order[b.status]||0)});
+  $('t-total').textContent=apps.length;
+  $('t-pending').textContent=apps.filter(function(a){return a.status==='pending'}).length;
+  $('t-approved').textContent=apps.filter(function(a){return a.status==='approved'}).length;
+  $('t-rejected').textContent=apps.filter(function(a){return a.status==='rejected'}).length;
+  $('t-empty').style.display=apps.length?'none':'block';
+  var fee=store('sy-tutor-fee',{});
+  var tb=$('t-table').querySelector('tbody');
+  tb.innerHTML=apps.map(function(a,i){
+    return '<tr><td><b>'+esc(a.t.name||'N/A')+'</b><div class="note">'+esc(mask(a.t.email||''))+'</div></td>'+
+      '<td>'+esc(a.t.subjects||a.t.head||'—')+'</td>'+
+      '<td>£'+(a.t.rate||32)+'/hr</td>'+
+      '<td><span class="pill '+(fee[a.t.id]?'ok':'warn')+'">'+(fee[a.t.id]?'Paid':'Unpaid')+'</span></td>'+
+      '<td><span class="pill '+(a.status==='approved'?'ok':a.status==='rejected'?'bad':'warn')+'">'+a.status.charAt(0).toUpperCase()+a.status.slice(1)+'</span></td>'+
+      '<td><div class="acts">'+
+      (a.status!=='approved'?'<button class="btn sm" data-st="approved" data-i="'+i+'">Approve</button>':'')+
+      (a.status!=='rejected'?'<button class="btn danger sm" data-st="rejected" data-i="'+i+'">Reject</button>':'')+
+      (a.status!=='pending'?'<button class="btn ghost sm" data-st="pending" data-i="'+i+'">Back to review</button>':'')+
+      '<button class="btn ghost sm" data-fee="'+i+'">'+(fee[a.t.id]?'Mark unpaid':'Mark fee paid')+'</button>'+
+      '</div></td></tr>';
+  }).join('');
+  tb.querySelectorAll('button[data-st]').forEach(function(b){b.onclick=function(){
+    var st=store('sy-tutor-status',{});st[apps[+b.dataset.i].t.id]=b.dataset.st;save('sy-tutor-status',st);
+    toast('Application '+b.dataset.st);drawTutors();
+  }});
+  tb.querySelectorAll('button[data-fee]').forEach(function(b){b.onclick=function(){
+    var f=store('sy-tutor-fee',{});var id=apps[+b.dataset.fee].t.id;if(f[id])delete f[id];else f[id]=1;save('sy-tutor-fee',f);drawTutors();
+  }});
+}
+
+/* ---------- schools ---------- */
+function drawSchools(){
+  var sch=schools();
+  $('s-empty').style.display=sch.length?'none':'block';
+  var tb=$('s-table').querySelector('tbody');
+  tb.innerHTML=sch.map(function(s,i){
+    return '<tr><td><b>'+esc(s.name)+'</b></td><td>'+esc(s.code)+'</td>'+
+      '<td>'+s.roster.length+'</td><td>'+s.staff.length+'</td>'+
+      '<td>'+(s.acu.balance||0).toLocaleString()+'</td>'+
+      '<td><span class="pill '+(s.rejected?'bad':s.verified?'ok':'warn')+'">'+(s.rejected?'rejected':s.verified?'approved':'pending')+'</span></td>'+
+      '<td><div class="acts">'+
+      '<button class="btn ghost sm" data-act="verify" data-i="'+i+'">'+(s.verified?'Revoke':'Approve')+'</button>'+
+      '<button class="btn danger sm" data-act="reject" data-i="'+i+'">'+(s.rejected?'Un-reject':'Reject')+'</button>'+
+      '<button class="btn ghost sm" data-act="pool" data-i="'+i+'">Credit pool</button></div></td></tr>';
+  }).join('');
+  tb.querySelectorAll('button').forEach(function(b){b.onclick=function(){
+    var s=schools()[+b.dataset.i];if(!s)return;
+    if(b.dataset.act==='verify'){save('sy-school:'+s.code+':verified',!s.verified);if(!s.verified)save('sy-school:'+s.code+':rejected',false);toast(s.verified?'Approval revoked':'School approved');drawSchools();drawDashboard();}
+    else if(b.dataset.act==='reject'){save('sy-school:'+s.code+':rejected',!s.rejected);if(!s.rejected)save('sy-school:'+s.code+':verified',false);toast(s.rejected?'Rejection lifted':'School rejected — their console is blocked');drawSchools();drawDashboard();}
+    else{var n=parseInt(prompt('Credit how many ACUs to '+s.name+' (pool '+(s.acu.balance||0)+')?','1000'),10);
+      if(isNaN(n))return;var pool=store('sy-school:'+s.code+':acu',{balance:0,burn:[]});pool.balance=Math.max(0,(pool.balance||0)+n);
+      save('sy-school:'+s.code+':acu',pool);toast('Pool now '+pool.balance.toLocaleString()+' ACUs');drawSchools();}
+  }});
+}
+
+/* ---------- support (all actions logged with a reason) ---------- */
+function drawSupport(){
+  var all=uniqUsers();var us=all;
+  function fill(){
+    var q=($('sup-search').value||'').toLowerCase();
+    us=all.filter(function(u){return !q||String(u.name||'').toLowerCase().indexOf(q)>=0||String(u.email||'').toLowerCase().indexOf(q)>=0});
+    $('sup-user').innerHTML=us.map(function(u,i){return '<option value="'+i+'">'+esc((u.name||'N/A')+' · '+mask(u.email)+' · '+u.role)+'</option>'}).join('');
+    paint();
+  }
+  $('f-user').innerHTML=all.map(function(u,i){return '<option value="'+i+'">'+esc((u.name||'N/A')+' · '+mask(u.email)+' · '+u.role)+'</option>'}).join('');
+  function paint(){
+    var u=us[+$('sup-user').value||0];if(!u){$('sup-wallet').textContent='No accounts match.';return}
+    var w=acct(u.email,'wallet',null)||{plan:'child_free',acus:0};
+    var bill=(acct(u.email,'activity',[])||[]).filter(function(a){return a.k==='billing'}).slice(0,5);
+    $('sup-wallet').innerHTML='<b style="color:var(--ink)">'+esc(PLAN_NAMES[w.plan]||'Child Free')+'</b> · '+(w.acus||0).toLocaleString()+' ACUs'+
+      (bill.length?'<div style="margin-top:8px">'+bill.map(function(a){return '<div style="margin:4px 0">· '+esc(a.t)+'</div>'}).join('')+'</div>':'<div style="margin-top:8px">No billing events.</div>');
+  }
+  $('sup-search').addEventListener('input',fill);
+  $('sup-user').onchange=paint;fill();
+  $('sup-view').onclick=function(){
+    var u=us[+$('sup-user').value||0];if(!u)return;
+    var reason=$('sup-reason').value.trim();
+    if(reason.length<8){toast('Add a reason for the session — all impersonations are logged');$('sup-reason').focus();return}
+    var log=store('sy-support-log',[]);
+    log.unshift({admin:SY.session.email,target:($('sup-uid').value.trim()||u.email),role:u.role,reason:reason,when:new Date().toISOString()});
+    save('sy-support-log',log.slice(0,100));
+    userAct('view',u);
+  };
+  $('sup-user').addEventListener('change',function(){
+    var u=uniqUsers().filter(function(x){return x.role!=='admin'})[+this.value||0];
+    if(u)$('sup-uid').value=u.email;
+  });
+  /* open tickets — live from the contact inbox, no fixtures */
+  function drawTickets(){
+    var msgs=store('sy-inbox',[]).map(function(m,i){m._i=i;return m})
+      .filter(function(m){return !(looksBot(m.from)||looksBot(m.body))});
+    var open=msgs.filter(function(m){return (m.status||'NEW')!=='REPLIED'});
+    $('sup-tickets').innerHTML=open.length?open.map(function(m){
+      return '<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(170,182,204,.08)">'+
+        '<span class="pill warn">T-'+(1000+m._i)+'</span>'+
+        '<div style="flex:1"><b style="color:var(--ink)">'+esc(String(m.body||'').slice(0,70))+(String(m.body||'').length>70?'…':'')+'</b>'+
+        '<div class="note">'+esc(m.from||'')+' · '+esc(mask(m.email||''))+' · '+esc(m.type||'support')+' · '+esc(fmtDate(m.when))+'</div></div>'+
+        '<button class="btn ghost sm" data-tres="'+m._i+'">Mark resolved</button></div>';
+    }).join(''):'<div class="note">No open tickets — every enquiry has been answered.</div>';
+    $('sup-tickets').querySelectorAll('button[data-tres]').forEach(function(b){b.onclick=function(){
+      var all=store('sy-inbox',[]);if(all[+b.dataset.tres])all[+b.dataset.tres].status='REPLIED';
+      save('sy-inbox',all);drawTickets();
+    }});
+  }
+  drawTickets();
+  var log2=store('sy-support-log',[]);
+  $('sup-log').innerHTML=log2.length?log2.slice(0,10).map(function(l){
+    return '<div style="padding:7px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:12.5px">'+
+      '<b style="color:var(--ink)">'+esc(mask(l.target))+'</b> <span class="pill role">'+esc(l.role)+'</span> · '+esc(fmtDate(l.when))+
+      '<div class="note">'+esc(l.reason)+' — by '+esc(mask(l.admin))+'</div></div>';
+  }).join(''):'<div class="note">No support sessions yet.</div>';
+}
+
+/* ---------- inbox: table, read/reply, spam quarantine ---------- */
+function looksBot(s){
+  s=String(s||'').trim();if(!s)return true;
+  var words=s.split(/\s+/);var weird=0;
+  words.forEach(function(w){
+    if(w.length>=12&&!/[aeiou]/i.test(w))weird++;
+    if(/[a-z][A-Z][a-z][A-Z]/.test(w))weird++;
+    if(/[bcdfghjklmnpqrstvwxz]{6,}/i.test(w))weird++;
+  });
+  if((s.match(/https?:\/\//gi)||[]).length>=2)return true; /* link-stuffing = bot */
+  return weird>=Math.max(1,Math.ceil(words.length*0.5));
+}
+function drawInbox(){
+  var msgs=store('sy-inbox',[]);
+  var live=[],spam=[];
+  msgs.forEach(function(m,idx){m._i=idx;(looksBot(m.from)||looksBot(m.body)?spam:live).push(m)});
+  $('inbox-count').textContent=live.length;
+  $('inbox-empty').style.display=live.length?'none':'block';
+  var tb=$('inbox-table').querySelector('tbody');
+  tb.innerHTML=live.map(function(m){
+    var st=m.status||'NEW';
+    return '<tr><td>'+esc(fmtDate(m.when))+'</td>'+
+      '<td><b>'+esc(m.from||'')+'</b><div class="note">'+esc(mask(m.email||''))+'</div></td>'+
+      '<td><span class="pill role">'+esc(m.type||'support')+'</span></td>'+
+      '<td style="max-width:280px">'+esc(String(m.body||'').slice(0,90))+(String(m.body||'').length>90?'…':'')+'</td>'+
+      '<td><span class="pill '+(st==='NEW'?'warn':st==='REPLIED'?'ok':'role')+'">'+st+'</span></td>'+
+      '<td><div class="acts">'+
+      '<button class="btn ghost sm" data-read="'+m._i+'">Read</button>'+
+      '<button class="btn sm" data-reply="'+m._i+'">Reply</button>'+
+      '<button class="btn danger sm" data-del="'+m._i+'">Delete</button></div></td></tr>';
+  }).join('');
+  function upd(i,patch){var all=store('sy-inbox',[]);Object.keys(patch).forEach(function(k){all[i][k]=patch[k]});save('sy-inbox',all);drawInbox()}
+  tb.querySelectorAll('button[data-read]').forEach(function(b){b.onclick=function(){
+    var m=store('sy-inbox',[])[+b.dataset.read];if(!m)return;
+    alert('From: '+m.from+' <'+m.email+'>\nType: '+(m.type||'support')+'\nDate: '+fmtDate(m.when)+'\n\n'+m.body);
+    upd(+b.dataset.read,{status:m.status==='REPLIED'?'REPLIED':'READ'});
+  }});
+  tb.querySelectorAll('button[data-reply]').forEach(function(b){b.onclick=function(){
+    var m=store('sy-inbox',[])[+b.dataset.reply];if(!m)return;
+    location.href='mailto:'+encodeURIComponent(m.email||'')+'?subject='+encodeURIComponent('Re: your StudYear '+(m.type||'support')+' enquiry')+'&body='+encodeURIComponent('Hi '+(m.from||'')+',\n\nThanks for getting in touch.\n\n> '+String(m.body||'').slice(0,300)+'\n\n');
+    upd(+b.dataset.reply,{status:'REPLIED'});
+  }});
+  tb.querySelectorAll('button[data-del]').forEach(function(b){b.onclick=function(){
+    var all=store('sy-inbox',[]);all.splice(+b.dataset.del,1);save('sy-inbox',all);drawInbox();
+  }});
+  $('spam-list').innerHTML=spam.length?spam.map(function(m){
+    return '<div style="padding:7px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:12.5px"><span class="pill bad">blocked</span> '+
+      '<b style="color:var(--ink)">'+esc(String(m.from||'').slice(0,30))+'</b> · '+esc(mask(m.email||''))+' · '+esc(fmtDate(m.when))+
+      '<div class="note">'+esc(String(m.body||'').slice(0,80))+'</div></div>';
+  }).join(''):'<div class="note">Quarantine is empty — the public form\'s honeypot, human check, time-trap, link filter and gibberish filter stop bots before they land here.</div>';
+  $('spam-purge').style.display=spam.length?'inline-flex':'none';
+  $('spam-purge').textContent='Empty quarantine ('+spam.length+')';
+  $('spam-purge').onclick=function(){
+    if(!confirm('Permanently delete '+spam.length+' quarantined bot message(s)?'))return;
+    save('sy-inbox',store('sy-inbox',[]).filter(function(m){return !(looksBot(m.from)||looksBot(m.body))}));
+    drawInbox();
+  };
+}
+$('mail-send').onclick=function(){
+  var to=$('mail-to').value.trim()||'contact@studyear.com';
+  location.href='mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent('StudYear admin — test email')+'&body='+encodeURIComponent('This is a test email from the StudYear admin console. If you received this, mail wiring works.');
+  toast('Test email opened in your mail client');
+};
+$('inbox-refresh').onclick=function(){drawInbox();toast('Inbox refreshed')};
+
+/* ---------- content: ingestion pipeline + moderation ---------- */
+(function fillCm(){
+  $('cm-subj').innerHTML='<option value="">Select subject…</option>'+SUBJECTS.map(function(s){return '<option>'+s+'</option>'}).join('');
+  $('cm-level').innerHTML='<option value="">Select level…</option>'+LEVELS.map(function(l){return '<option>'+l+'</option>'}).join('');
+})();
+$('cm-add').onclick=function(){
+  var title=$('cm-title').value.trim(),url=$('cm-url').value.trim();
+  if(!title||!url){toast('Add a title and a URL');return}
+  var pipe=store('sy-pipeline',[]);
+  pipe.unshift({id:'pl'+Date.now(),type:$('cm-type').value,title:title,src:url,subj:$('cm-subj').value,
+    level:$('cm-level').value,topic:$('cm-topic').value.trim(),license:$('cm-license').value,
+    attr:$('cm-attr').value.trim(),status:'pending',when:new Date().toISOString()});
+  save('sy-pipeline',pipe);
+  $('cm-title').value='';$('cm-url').value='';$('cm-topic').value='';$('cm-attr').value='';
+  toast('Added to the ingestion pipeline');drawContent();
+};
+function drawContent(){
+  var pipe=store('sy-pipeline',[]);
+  $('cm-empty').style.display=pipe.length?'none':'block';
+  var tb=$('cm-table').querySelector('tbody');
+  tb.innerHTML=pipe.map(function(r,i){
+    return '<tr><td><b>'+esc(r.title)+'</b><div class="note">'+esc(r.src)+'</div></td>'+
+      '<td>'+esc(r.type)+'</td><td>'+esc((r.subj||'—')+(r.level?' · '+r.level:''))+'</td>'+
+      '<td><span class="pill '+(r.status==='approved'?'ok':r.status==='rejected'?'bad':'warn')+'">'+r.status+'</span></td>'+
+      '<td><div class="acts">'+
+      (r.status!=='approved'?'<button class="btn sm" data-st="approved" data-i="'+i+'">Approve</button>':'')+
+      (r.status!=='rejected'?'<button class="btn danger sm" data-st="rejected" data-i="'+i+'">Reject</button>':'')+
+      '<button class="btn ghost sm" data-rm="'+i+'">Remove</button></div></td></tr>';
+  }).join('');
+  tb.querySelectorAll('button[data-st]').forEach(function(b){b.onclick=function(){
+    var pipe2=store('sy-pipeline',[]);var r=pipe2[+b.dataset.i];r.status=b.dataset.st;save('sy-pipeline',pipe2);
+    /* approved items publish into the shared curated library read by 🔎 Find resources */
+    var cur=store('sy-curated',[]).filter(function(x){return x.id!==r.id});
+    if(r.status==='approved')cur.push({id:r.id,type:r.type,title:r.title,src:r.src,subj:r.subj||'',level:r.level||'',
+      topic:r.topic||'',uses:0,rating:5,curated:true,body:r.attr?'<p>Source: '+esc(r.attr)+'</p>':''});
+    save('sy-curated',cur);
+    toast(r.status==='approved'?'Published to the student library':'Rejected');drawContent();
+  }});
+  tb.querySelectorAll('button[data-rm]').forEach(function(b){b.onclick=function(){
+    var pipe2=store('sy-pipeline',[]);var r=pipe2.splice(+b.dataset.rm,1)[0];save('sy-pipeline',pipe2);
+    save('sy-curated',store('sy-curated',[]).filter(function(x){return x.id!==(r&&r.id)}));
+    drawContent();
+  }});
+  /* user-generated pool */
+  var rows=[];
+  uniqUsers().forEach(function(u){(acct(u.email,'mine',[])||[]).forEach(function(r){rows.push({r:r,owner:u})})});
+  $('c-empty').style.display=rows.length?'none':'block';
+  var blocked=store('sy-moderation',{});
+  var tb2=$('c-table').querySelector('tbody');
+  tb2.innerHTML=rows.slice(0,120).map(function(x){
+    var key=x.owner.email+'|'+(x.r.id||x.r.title);
+    var hidden=!!blocked[key];
+    return '<tr><td><b>'+esc(x.r.title||'Untitled')+'</b></td><td>'+esc(x.r.type||'—')+'</td>'+
+      '<td>'+esc((x.r.subj||'—')+' · '+(x.r.level||'—'))+'</td>'+
+      '<td>'+esc(mask(x.owner.email))+'</td>'+
+      '<td><span class="pill '+(hidden?'bad':'ok')+'">'+(hidden?'hidden':'live')+'</span></td>'+
+      '<td><button class="btn '+(hidden?'ghost':'danger')+' sm" data-k="'+esc(key)+'">'+(hidden?'Restore':'Hide')+'</button></td></tr>';
+  }).join('');
+  tb2.querySelectorAll('button').forEach(function(b){b.onclick=function(){
+    var m=store('sy-moderation',{});if(m[b.dataset.k])delete m[b.dataset.k];else m[b.dataset.k]=1;
+    save('sy-moderation',m);toast('Moderation updated');drawContent();
+  }});
+}
+
+/* ---------- growth ---------- */
+/* tiers per owner terms (mirrors PARTNER_PROGRAMME in @studyear/shared):
+   ≥10k followers → 1% lifetime · 5k–9,999 → 0.25% · else 250-ACU referrer.
+   Lifetime cap: £20,000 income per referred user. */
+function gTier(followers){return followers>=10000?'partner_1pct':followers>=5000?'partner_quarter':'referrer'}
+function gTierLabel(t){return t==='partner_1pct'?'Influencer · 1%':t==='partner_quarter'?'Rising · 0.25%':'Referrer · 250 ACUs'}
+function partnerRefs(code){return store('sy-partner-refs',[]).filter(function(r){return String(r.code).toUpperCase()===String(code).toUpperCase()})}
+function drawGrowth(){
+  /* applications from the public /partners/ page */
+  var apps=store('sy-partner-apps',[]);
+  $('ga-empty').style.display=apps.length?'none':'block';
+  var ta=$('ga-table').querySelector('tbody');
+  ta.innerHTML=apps.map(function(a,i){
+    return '<tr><td><b>'+esc(a.name)+'</b><div class="note">'+esc(mask(a.email||''))+'</div></td>'+
+      '<td><a href="'+esc(a.social)+'" target="_blank" rel="noopener" style="color:var(--blue-300)">profile ↗</a></td>'+
+      '<td>'+(+a.followers||0).toLocaleString()+'</td>'+
+      '<td>'+gTierLabel(gTier(+a.followers||0))+'</td><td>'+esc(a.code)+'</td>'+
+      '<td><span class="pill '+(a.status==='approved'?'ok':a.status==='rejected'?'bad':'warn')+'">'+esc(a.status)+'</span></td>'+
+      '<td><div class="acts"><button class="btn ghost sm" data-app="'+i+'" data-do="approve">Approve</button>'+
+      '<button class="btn danger sm" data-app="'+i+'" data-do="reject">Reject</button></div></td></tr>';
+  }).join('');
+  ta.querySelectorAll('button').forEach(function(b){b.onclick=function(){
+    var as=store('sy-partner-apps',[]);var a=as[+b.dataset.app];if(!a)return;
+    a.status=b.dataset.do==='approve'?'approved':'rejected';
+    save('sy-partner-apps',as);
+    if(a.status==='approved'){
+      var ps=store('sy-partners',[]);
+      if(!ps.some(function(p){return p.code===a.code}))
+        ps.push({name:a.name,email:a.email,code:a.code,followers:+a.followers||0,tier:gTier(+a.followers||0),approved:true,when:new Date().toISOString()});
+      save('sy-partners',ps);
+    }
+    toast(a.status==='approved'?'Partner approved — code '+a.code+' is live':'Application rejected');
+    drawGrowth();
+  }});
+  /* approved partners with earnings vs the £20k per-referred-user cap */
+  var ps=store('sy-partners',[]);
+  $('g-empty').style.display=ps.length?'none':'block';
+  var tb=$('g-table').querySelector('tbody');
+  tb.innerHTML=ps.map(function(p,i){
+    var refs=partnerRefs(p.code);
+    var pct=p.tier==='partner_1pct'?0.01:p.tier==='partner_quarter'?0.0025:0;
+    /* earnings per referred user, each capped at £20,000 */
+    var per={};refs.forEach(function(r){per[r.email]=(per[r.email]||0)+((+r.gbp||0)*pct)});
+    var earned=Object.keys(per).reduce(function(n,k){return n+Math.min(per[k],20000)},0);
+    return '<tr><td><b>'+esc(p.name)+'</b></td><td>'+esc(p.code)+'</td>'+
+      '<td>'+gTierLabel(p.tier||gTier(+p.followers||0))+'</td>'+
+      '<td>'+refs.length+'</td>'+
+      '<td>'+(pct?('£'+earned.toFixed(2)+' / £20k per user'):(refs.length*250)+' ACUs')+'</td>'+
+      '<td><span class="pill '+(p.approved?'ok':'warn')+'">'+(p.approved?'active':'paused')+'</span></td>'+
+      '<td><div class="acts"><button class="btn ghost sm" data-act="ap" data-i="'+i+'">'+(p.approved?'Pause':'Activate')+'</button>'+
+      '<button class="btn danger sm" data-act="rm" data-i="'+i+'">Remove</button></div></td></tr>';
+  }).join('');
+  tb.querySelectorAll('button').forEach(function(b){b.onclick=function(){
+    var ps2=store('sy-partners',[]);
+    if(b.dataset.act==='rm')ps2.splice(+b.dataset.i,1);else ps2[+b.dataset.i].approved=!ps2[+b.dataset.i].approved;
+    save('sy-partners',ps2);drawGrowth();
+  }});
+}
+$('g-add').onclick=function(){
+  var name=$('g-name').value.trim(),code=$('g-code').value.trim().toUpperCase();
+  if(!name||!code){toast('Add a name and a referral code');return}
+  var fol=+$('g-cap').value||0;
+  var ps=store('sy-partners',[]);ps.push({name:name,code:code,followers:fol,tier:gTier(fol),approved:true,when:new Date().toISOString()});
+  save('sy-partners',ps);$('g-name').value='';$('g-code').value='';toast('Partner active — tier '+gTierLabel(gTier(fol)));drawGrowth();
+};
+
+/* ---------- revenue ---------- */
+function drawRevenue(){
+  /* Stripe connection status from the billing seam */
+  var cfg=null;try{cfg=JSON.parse(localStorage.getItem('sy-billing-live'))}catch(e){}
+  var links=cfg&&cfg.links?Object.keys(cfg.links).length:0;
+  $('stripe-status').innerHTML=links
+    ?'<div class="pill ok" style="margin-bottom:8px">Stripe payment links configured</div>'+
+     '<div class="note">'+links+' plan link'+(links===1?'':'s')+' set — checkout redirects buyers to Stripe hosted pages. '+
+     'Production adds server-side Checkout Sessions + webhook (secret key stays server-side, never in the browser).</div>'
+    :'<div class="pill warn" style="margin-bottom:8px">Stripe not connected on this deployment</div>'+
+     '<div class="note">No payment links configured — checkout runs in preview mode (plans activate locally, no money moves). '+
+     'Paste your Stripe Payment Links in the AI Gateway to go live; the server-side webhook attaches with the backend.</div>';
+  $('stripe-recheck').onclick=function(){drawRevenue();toast('Connection re-checked')};
+  /* payments + debits */
+  var bill=allActivity().filter(function(a){return a.k==='billing'});
+  var pays=bill.filter(function(a){return /purchas|subscrib|payment/i.test(a.t)&&/£\d/.test(a.t+a.d)}).slice(0,12);
+  $('r-pay').querySelector('tbody').innerHTML=pays.map(function(a){
+    var m=(a.t+' '+a.d).match(/£(\d+(?:\.\d+)?)/);
+    return '<tr><td><b>'+esc(a.name||'N/A')+'</b><div class="note">'+esc(mask(a.email))+'</div></td><td>£'+(m?(+m[1]).toFixed(2):'0.00')+'</td><td>'+esc(fmtDate(a.when).slice(0,10))+'</td></tr>';
+  }).join('')||'<tr><td colspan="3" class="note">No payment history found.</td></tr>';
+  var debs=bill.map(function(a){var d=debitInfo(a);return d?{a:a,d:d}:null}).filter(Boolean).slice(0,15);
+  $('r-deb').querySelector('tbody').innerHTML=debs.map(function(x){
+    return '<tr><td><b>'+esc(x.a.name||'N/A')+'</b><div class="note">'+esc(mask(x.a.email))+'</div></td>'+
+      '<td>'+esc(x.d.feature.toUpperCase())+'</td><td style="color:var(--crit)">-'+x.d.acus+'</td><td>'+esc(fmtDate(x.a.when).slice(0,10))+'</td></tr>';
+  }).join('')||'<tr><td colspan="4" class="note">No debits yet.</td></tr>';
+  /* margin */
+  var b30=billingEvents(30);
+  var gross=0;b30.forEach(function(a){var m=(a.t+' '+a.d).match(/£(\d+(?:\.\d+)?)/);if(/purchas|subscrib|payment/i.test(a.t)&&m)gross+=+m[1]});
+  var ai=usageLog().filter(function(r){return within(r.when,30)&&r.ok}).reduce(function(n,r){return n+(r.gbp||0)},0);
+  var margin=gross-ai;
+  $('r-margin').textContent=(margin<0?'-£':'£')+Math.abs(margin).toFixed(2);
+  $('r-margin').style.color=margin<0?'var(--crit)':'var(--good)';
+  /* discount codes */
+  var codes=store('sy-discounts',[]).map(function(c){return typeof c==='string'?{code:c,type:'pct',value:10,active:true,used:0}:c});
+  save('sy-discounts',codes);
+  $('dc-list').innerHTML=codes.length?codes.map(function(c,i){
+    var meta=(c.type==='pct'?c.value+'% off':'£'+c.value+' off')+(c.until?' · until '+c.until:'')+(c.max?' · '+(c.used||0)+'/'+c.max+' used':'');
+    return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(170,182,204,.08)">'+
+      '<span style="font-size:12.5px"><b style="color:var(--ink)">'+esc(c.code)+'</b> <span class="note">'+esc(meta)+'</span></span>'+
+      '<span style="display:flex;gap:6px;align-items:center"><span class="pill '+(c.active?'ok':'bad')+'">'+(c.active?'Active':'Inactive')+'</span>'+
+      '<button class="btn ghost sm" data-tog="'+i+'">'+(c.active?'Deactivate':'Activate')+'</button>'+
+      '<button class="btn danger sm" data-rm="'+i+'">Delete</button></span></div>';
+  }).join(''):'<div class="note">No discount codes yet.</div>';
+  $('dc-list').querySelectorAll('button[data-tog]').forEach(function(b){b.onclick=function(){
+    var cs=store('sy-discounts',[]);cs[+b.dataset.tog].active=!cs[+b.dataset.tog].active;save('sy-discounts',cs);drawRevenue();
+  }});
+  $('dc-list').querySelectorAll('button[data-rm]').forEach(function(b){b.onclick=function(){
+    var cs=store('sy-discounts',[]);cs.splice(+b.dataset.rm,1);save('sy-discounts',cs);drawRevenue();
+  }});
+}
+$('dc-add').onclick=function(){
+  var code=$('dc-code').value.trim().toUpperCase();if(!code){toast('Enter a code');return}
+  var cs=store('sy-discounts',[]);
+  if(cs.some(function(c){return (c.code||c)===code})){toast('That code already exists');return}
+  cs.push({code:code,type:$('dc-type').value,value:+$('dc-val').value||10,until:$('dc-until').value||null,
+    max:+$('dc-max').value||null,used:0,active:true,when:new Date().toISOString()});
+  save('sy-discounts',cs);$('dc-code').value='';
+  toast('Discount code created');drawRevenue();
+};
+
+/* ---------- AI usage ---------- */
+function drawAI(){
+  var log=usageLog();
+  var l30=log.filter(function(r){return within(r.when,30)});
+  var ok=l30.filter(function(r){return r.ok}),fail=l30.filter(function(r){return !r.ok});
+  $('ai-spend').textContent='£'+ok.reduce(function(n,r){return n+(r.gbp||0)},0).toFixed(2);
+  var acus30=billingEvents(30).map(debitInfo).filter(Boolean).reduce(function(n,x){return n+x.acus},0);
+  $('ai-acus').textContent=acus30.toLocaleString();
+  $('ai-ok').textContent=ok.length;$('ai-fail').textContent=fail.length;
+  $('ai-empty').style.display=log.length?'none':'block';
+  $('ai-table').querySelector('tbody').innerHTML=log.slice(0,60).map(function(r){
+    return '<tr><td><b>'+esc(r.name||'N/A')+'</b><div class="note">'+esc(mask(r.email||''))+'</div></td>'+
+      '<td>'+esc(r.model||'—')+'<div class="note">'+esc(r.provider||'')+'</div></td>'+
+      '<td>£'+(r.gbp||0).toFixed(4)+'<div class="note">($'+((r.gbp||0)/0.79).toFixed(4)+' USD hint)</div></td>'+
+      '<td><span class="pill '+(r.ok?'ok':'bad')+'">'+(r.ok?'success':'failed')+'</span></td>'+
+      '<td>'+(r.ms||0)+'ms</td><td>'+esc(fmtDate(r.when))+'</td></tr>';
+  }).join('');
+}
+
+/* ---------- analytics ---------- */
+var KIND_LABEL={lesson:'Interactive lessons',quiz:'Quizzes taken',review:'Assignment reviews',resource:'Resources created',
+  create:'Documents built',plan:'Plans generated',billing:'Billing events',diagnostic:'Diagnostics',profile:'Profile updates',family:'Family links'};
+function drawAnalytics(){
+  var acts=allActivity();
+  var us=uniqUsers();
+  $('an-total').textContent=us.length;
+  $('an-returning').textContent=us.filter(function(u){return (acct(u.email,'activity',[])||[]).some(function(a){return within(a.when,30)})}).length;
+  $('an-new').textContent=us.filter(function(u){return u.created&&within(u.created,30)}).length;
+  $('an-ai').textContent=usageLog().filter(function(r){return within(r.when,30)}).length;
+  /* new users per month this year */
+  var months={},mNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var y=new Date().getFullYear();
+  for(var mi=0;mi<=new Date().getMonth();mi++)months[mi]=0;
+  us.forEach(function(u){if(!u.created)return;var d=new Date(u.created);if(d.getFullYear()===y)months[d.getMonth()]=(months[d.getMonth()]||0)+1});
+  var mmax=Math.max.apply(null,Object.keys(months).map(function(k){return months[k]}).concat([1]));
+  $('a-months').innerHTML='<div style="display:flex;align-items:flex-end;gap:6px;height:120px">'+
+    Object.keys(months).map(function(k){var v=months[k];
+      return '<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%"><div title="'+mNames[k]+' '+y+' · '+v+'" style="height:'+Math.max(4,Math.round(100*v/mmax))+'%;border-radius:4px 4px 0 0;background:linear-gradient(180deg,#F2CE7B,#D9AE55)"></div><div class="note" style="text-align:center;margin-top:3px">'+mNames[k]+'</div></div>';
+    }).join('')+'</div>';
+  /* estimated avg study time per week: learning events × ~35 min, per active student */
+  var weeks={},wk;
+  for(var wi=7;wi>=0;wi--){var d0=new Date();d0.setDate(d0.getDate()-wi*7);wk=d0.toISOString().slice(0,10);weeks[wk]={n:0,students:{}}}
+  var wkKeys=Object.keys(weeks);
+  acts.forEach(function(a){
+    if(['lesson','quiz','plan','diagnostic','review','resource'].indexOf(a.k)<0)return;
+    var t=new Date(a.when).getTime();if(!t)return;
+    for(var i2=wkKeys.length-1;i2>=0;i2--){
+      var start=new Date(wkKeys[i2]).getTime();
+      if(t>=start&&t<start+7*864e5){weeks[wkKeys[i2]].n++;weeks[wkKeys[i2]].students[a.email]=1;break}
+    }
+  });
+  var hrs=wkKeys.map(function(k){var w=weeks[k];var s=Object.keys(w.students).length||1;return Math.round(w.n*35/60/s*10)/10});
+  var hmax=Math.max.apply(null,hrs.concat([1]));
+  $('a-study').innerHTML='<div style="display:flex;align-items:flex-end;gap:6px;height:120px">'+
+    wkKeys.map(function(k,i3){var v=hrs[i3];var lbl=new Date(k);
+      return '<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%"><div title="'+v+'h" style="height:'+Math.max(4,Math.round(100*v/hmax))+'%;border-radius:4px 4px 0 0;background:linear-gradient(180deg,#34D399,#22D3EE)"></div><div class="note" style="text-align:center;margin-top:3px">'+lbl.getDate()+'/'+(lbl.getMonth()+1)+'</div></div>';
+    }).join('')+'</div>';
+  var by={};acts.forEach(function(a){by[a.k]=(by[a.k]||0)+1});
+  var kinds=Object.keys(by).sort(function(a,b){return by[b]-by[a]});
+  var max=kinds.length?by[kinds[0]]:1;
+  $('a-kinds').innerHTML=kinds.map(function(k){
+    return '<div style="margin:7px 0"><div style="display:flex;justify-content:space-between;font-size:12px"><span>'+esc(KIND_LABEL[k]||k)+'</span><b style="color:var(--gold-300)">'+by[k]+'</b></div><div class="bar"><i style="width:'+Math.round(100*by[k]/max)+'%"></i></div></div>';
+  }).join('')||'<div class="note">No activity recorded yet.</div>';
+  var days={},d,i;
+  for(i=13;i>=0;i--){d=new Date();d.setDate(d.getDate()-i);days[d.toISOString().slice(0,10)]=0}
+  acts.forEach(function(a){var key=String(a.when||'').slice(0,10);if(key in days)days[key]++});
+  var vals=Object.keys(days).map(function(k){return days[k]});var mx=Math.max.apply(null,vals.concat([1]));
+  $('a-days').innerHTML='<div style="display:flex;align-items:flex-end;gap:4px;height:110px">'+
+    Object.keys(days).map(function(k){var v=days[k];
+      return '<div title="'+k+' · '+v+'" style="flex:1;height:'+Math.max(4,Math.round(100*v/mx))+'%;border-radius:4px 4px 0 0;background:linear-gradient(180deg,#8B5CF6,#2E6BC4)"></div>';
+    }).join('')+'</div><div class="note" style="margin-top:5px">'+vals.reduce(function(a,b){return a+b},0)+' events in 14 days</div>';
+  $('a-export').onclick=function(){
+    var rows=[['Metric','Count']].concat(kinds.map(function(k){return [KIND_LABEL[k]||k,by[k]]}));
+    window.SYExport.menu(this,{
+      excel:function(){SYExport.excel('studyear-analytics',[{name:'Volumes',rows:rows},{name:'Daily',rows:[['Day','Events']].concat(Object.keys(days).map(function(k){return [k,days[k]]}))}])},
+      word:function(){SYExport.word('studyear-analytics',{title:'StudYear — Analytics & Reporting',blocks:[{h:'Generation volumes'},{table:{headers:['Metric','Count'],rows:rows.slice(1)}}]})},
+      pdf:function(){SYExport.pdf('StudYear analytics','<h1>Analytics & Reporting</h1><table><tr><th>Metric</th><th>Count</th></tr>'+rows.slice(1).map(function(r){return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>'}).join('')+'</table>')},
+      ppt:function(){SYExport.ppt('studyear-analytics',[{title:'StudYear analytics',bullets:rows.slice(1,8).map(function(r){return r[0]+': '+r[1]})}])}
+    });
+  };
+}
+
+/* ---------- settings: comms copy · flags · pricing · providers ---------- */
+var FLAGS=[['tutor_marketplace','Tutor Marketplace',true],['parent_dashboard','Parent Dashboard',true],
+  ['school_portal','School Portal',true],['ai_feedback','AI Feedback Engine (Premium)',true],
+  ['registrations_open','New registrations open',true],['skillrush_national','SkillRush national test window',false],
+  ['maintenance_banner','Maintenance banner',false]];
+var CC_DEFAULTS={company:'StudYear Ltd.',address:'London, UK',support:'contact@studyear.com',inbox:'contact@studyear.com',
+  sender:'noreply@studyear.com',welcomeSubject:'Account created',welcomeBody:'You can now complete your profile.',
+  contactSuccess:'Thank you for contacting us. We will get back to you shortly.'};
+var PM_DEFAULTS={openai_cheap:'gpt-4o-mini',openai_perf:'gpt-4o',gemini_cheap:'gemini-2.0-flash',gemini_perf:'gemini-2.5-pro',
+  anthropic_cheap:'claude-haiku-4-5-20251001',anthropic_perf:'claude-sonnet-5'};
+function drawSettings(){
+  var f=store('sy-flags',{});
+  $('flag-list').innerHTML=FLAGS.map(function(x){
+    var on=(x[0] in f)?!!f[x[0]]:x[2];
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(170,182,204,.08)">'+
+      '<span style="font-size:13px">'+esc(x[1])+'</span>'+
+      '<button class="btn '+(on?'':'ghost')+' sm" data-f="'+x[0]+'">'+(on?'ON':'OFF')+'</button></div>';
+  }).join('');
+  $('flag-list').querySelectorAll('button').forEach(function(b){b.onclick=function(){
+    var f2=store('sy-flags',{});var key=b.dataset.f;var def=FLAGS.filter(function(x){return x[0]===key})[0][2];
+    f2[key]=!((key in f2)?f2[key]:def);save('sy-flags',f2);toast('Flag updated');drawSettings();
+  }});
+  var cc=store('sy-comms-copy',{});
+  document.querySelectorAll('[data-cc]').forEach(function(el){el.value=(el.dataset.cc in cc)?cc[el.dataset.cc]:(CC_DEFAULTS[el.dataset.cc]||'')});
+  $('cc-save').onclick=function(){
+    var out={};document.querySelectorAll('[data-cc]').forEach(function(el){out[el.dataset.cc]=el.value});
+    save('sy-comms-copy',out);toast('Communications saved');
+  };
+  var pr=store('sy-pricing',{mult:3,comm:20});
+  $('pr-mult').value=pr.mult;$('pr-comm').value=pr.comm;
+  var lim=store('sy-limits',{calls:200,acus:400});
+  $('lim-calls').value=lim.calls;$('lim-acus').value=lim.acus;
+  var pv=store('sy-ai-models',{default:'openai',fallback:'gemini',models:PM_DEFAULTS});
+  $('pv-default').value=pv.default||'openai';$('pv-fallback').value=pv.fallback||'gemini';
+  /* cost & users per provider from the usage log */
+  (function(){
+    var rows={},log30=usageLog().filter(function(r){return within(r.when,30)});
+    log30.forEach(function(r){
+      var k=r.provider||'unknown';rows[k]=rows[k]||{calls:0,users:{},gbp:0};
+      rows[k].calls++;if(r.email)rows[k].users[r.email]=1;rows[k].gbp+=(+r.gbp||0);
+    });
+    var ks=Object.keys(rows);
+    $('pv-costs-empty').style.display=ks.length?'none':'block';
+    $('pv-costs').querySelector('tbody').innerHTML=ks.map(function(k){
+      var r=rows[k];
+      return '<tr><td style="text-transform:capitalize"><b>'+esc(k)+'</b></td><td>'+r.calls+'</td>'+
+        '<td>'+Object.keys(r.users).length+'</td><td>£'+r.gbp.toFixed(2)+'</td>'+
+        '<td>£'+(r.calls?(r.gbp/r.calls):0).toFixed(3)+'</td></tr>';
+    }).join('');
+  })();
+  document.querySelectorAll('[data-pm]').forEach(function(el){el.value=(pv.models&&pv.models[el.dataset.pm])||PM_DEFAULTS[el.dataset.pm]||''});
+  $('set-save').onclick=function(){
+    save('sy-pricing',{mult:+$('pr-mult').value||3,comm:+$('pr-comm').value||20});
+    save('sy-limits',{calls:+$('lim-calls').value||200,acus:+$('lim-acus').value||400});
+    var models={};document.querySelectorAll('[data-pm]').forEach(function(el){models[el.dataset.pm]=el.value.trim()});
+    save('sy-ai-models',{default:$('pv-default').value,fallback:$('pv-fallback').value,models:models});
+    toast('All settings saved');
+  };
+}
+
+/* ---------- fraud ---------- */
+$('f-scan').onclick=function(){
+  var us=uniqUsers(),flags=store('sy-fraud-flags',[]),added=0;
+  function flag(u,reason){
+    if(flags.some(function(f){return f.email===u.email&&f.reason===reason}))return;
+    flags.unshift({email:u.email,name:u.name,reason:reason,status:'new',when:new Date().toISOString()});added++;
+  }
+  /* rule 1 — one free account per device */
+  var free=us.filter(function(u){return u.role==='student'&&((acct(u.email,'wallet',{})||{}).plan||'child_free')==='child_free'});
+  if(free.length>1)free.forEach(function(u){flag(u,'Multiple free student accounts on one device ('+free.length+')')});
+  /* rule 2 — top-up velocity: 4+ billing purchases in 24h */
+  us.forEach(function(u){
+    var buys=(acct(u.email,'activity',[])||[]).filter(function(a){return a.k==='billing'&&/purchas|subscrib/i.test(a.t)&&within(a.when,1)});
+    if(buys.length>=4)flag(u,'Top-up velocity: '+buys.length+' purchases in 24h');
+  });
+  /* rule 3 — bot-pattern account names */
+  us.forEach(function(u){if(looksBot(u.name)&&looksBot((u.email||'').split('@')[0]))flag(u,'Bot-pattern account name')});
+  save('sy-fraud-flags',flags);
+  $('f-scan-note').textContent=added?added+' account(s) flagged for review.':'Scan clean — no rule matched.';
+  drawFraud();
+};
+function drawFraud(){
+  var sig=[];
+  var thr=store('sy-auth-throttle',{n:0,until:0});
+  if(thr.n>0)sig.push({s:thr.n>=5?'bad':'warn',t:thr.n+' failed sign-in attempt'+(thr.n===1?'':'s')+' on this device'+(thr.until>Date.now()?' — throttle active':'')});
+  var emails={};users().forEach(function(u){if(!u.email)return;emails[u.email]=(emails[u.email]||0)+1});
+  Object.keys(emails).forEach(function(e){if(emails[e]>2)sig.push({s:'warn',t:mask(e)+' appears '+emails[e]+' times in the account list — possible duplicate signups'})});
+  allActivity().filter(function(a){return /Admin ACU adjustment/.test(a.t)&&within(a.when,7)}).slice(0,3).forEach(function(a){
+    sig.push({s:'warn',t:'Manual wallet adjustment on '+mask(a.email)+' ('+String(a.when).slice(0,10)+')'});
+  });
+  $('f-signals').innerHTML=sig.length?sig.map(function(x){
+    return '<div style="display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-bottom:1px solid rgba(170,182,204,.08)"><span class="pill '+x.s+'">'+(x.s==='bad'?'alert':'watch')+'</span><span style="font-size:12.5px;color:var(--ink-2)">'+esc(x.t)+'</span></div>';
+  }).join(''):'<div class="note">No suspicious activity signals right now. The sign-in defences (honeypot, human check, time-trap, throttling) report here.</div>';
+  var flags=store('sy-fraud-flags',[]);var us=uniqUsers();
+  $('f-empty').style.display=flags.length?'none':'block';
+  var tb=$('f-table').querySelector('tbody');
+  tb.innerHTML=flags.map(function(f2,i){
+    var st=f2.status||'new';
+    return '<tr><td><b>'+esc(f2.name||'N/A')+'</b><div class="note">'+esc(mask(f2.email))+'</div></td>'+
+      '<td>'+esc(f2.reason||'—')+'<div class="note">'+esc(fmtDate(f2.when))+'</div></td>'+
+      '<td><span class="pill '+(st==='new'?'warn':st==='suspended'?'bad':'ok')+'">'+st+'</span></td>'+
+      '<td><div class="acts">'+
+      (st!=='cleared'?'<button class="btn ghost sm" data-st="cleared" data-i="'+i+'">Clear</button>':'')+
+      (st!=='suspended'?'<button class="btn danger sm" data-st="suspended" data-i="'+i+'">Suspend</button>':'')+
+      '<button class="btn ghost sm" data-rm="'+i+'">Remove</button></div></td></tr>';
+  }).join('');
+  tb.querySelectorAll('button[data-st]').forEach(function(b){b.onclick=function(){
+    var fl=store('sy-fraud-flags',[]);fl[+b.dataset.i].status=b.dataset.st;save('sy-fraud-flags',fl);
+    toast('Account '+b.dataset.st);drawFraud();
+  }});
+  tb.querySelectorAll('button[data-rm]').forEach(function(b){b.onclick=function(){
+    var fl=store('sy-fraud-flags',[]);fl.splice(+b.dataset.rm,1);save('sy-fraud-flags',fl);drawFraud();
+  }});
+  $('f-add').onclick=function(){
+    var u=us[+$('f-user').value||0];if(!u)return;
+    var reason=$('f-reason').value.trim();
+    if(reason.length<5){toast('Add a reason for the flag');$('f-reason').focus();return}
+    var fl=store('sy-fraud-flags',[]);
+    if(!fl.some(function(x){return x.email===u.email}))fl.push({email:u.email,name:u.name,reason:reason,status:'new',when:new Date().toISOString()});
+    save('sy-fraud-flags',fl);$('f-reason').value='';
+    toast('Account flagged for review');drawFraud();
+  };
+}
+
+/* ---------- boot ---------- */
+function drawAll(){drawDashboard();drawUsers();drawTutors();drawSchools();drawSupport();drawInbox();drawContent();drawGrowth();drawRevenue();drawAI();drawAnalytics();drawSettings();drawFraud()}
+drawAll();
+show(location.hash.replace('#','')||'dashboard');
+
+/* ---------- cloud source of truth ----------
+   The console must show EVERY user on the platform, not just this device.
+   When the backend is live and this admin is signed in to the cloud, pull
+   /adminOverview (Firebase Auth accounts + users docs + contact inbox +
+   audit + AI usage) and merge it over the local view. Cloud rows carry a
+   ☁ marker; deletes/disables on them run server-side via /adminUserOp. */
+window.CLOUD=null;
+function cloudApi(){try{return ((JSON.parse(localStorage.getItem('sy-cloud-config'))||{}).apiBase||'').replace(/\/$/,'')}catch(e){return ''}}
+window.cloudUserOp=function(op,uid,value,done){
+  if(!window.SYCloud||!cloudApi())return;
+  SYCloud.token(SY.session.email).then(function(tk){
+    if(!tk){toast('Sign in again to act on cloud accounts');return}
+    return fetch(cloudApi()+'/adminUserOp',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+tk},
+      body:JSON.stringify({op:op,uid:uid,value:value})})
+      .then(function(r){return r.json()}).then(function(j){
+        toast(j.ok?('Cloud account '+op+' done'):('Cloud: '+(j.error||'failed')));
+        if(j.ok&&done)done();
+      });
+  }).catch(function(){toast('Cloud unreachable')});
+};
+(function cloudPull(){
+  if(!window.SYCloud||!cloudApi()){setTimeout(cloudPull,1500);return}
+  SYCloud.token(SY.session.email).then(function(tk){
+    if(!tk)return; /* admin not signed in to Firebase Auth (or mirror off) */
+    return fetch(cloudApi()+'/adminOverview',{headers:{Authorization:'Bearer '+tk}})
+      .then(function(r){return r.json()}).then(function(j){
+        if(!j||!j.ok)return;
+        window.CLOUD=j;
+        /* merge platform accounts into the registry (never duplicating) */
+        var us=store('sy-users',[]);var added=0;
+        (j.users||[]).forEach(function(cu){
+          if(!cu.email)return;
+          var roles=(cu.roles&&cu.roles.length)?cu.roles:['student'];
+          roles.forEach(function(role){
+            if(!us.some(function(x){return x.email===cu.email&&x.role===role})){
+              us.push({name:cu.name||cu.email.split('@')[0],email:cu.email,role:role,
+                cloud:true,uid:cu.uid,created:cu.created,plan:cu.plan,disabled:cu.disabled});added++;
+            }else{us.forEach(function(x){if(x.email===cu.email&&x.role===role){x.cloud=true;x.uid=cu.uid;x.disabled=cu.disabled}})}
+          });
+        });
+        save('sy-users',us);
+        /* merge the platform contact inbox */
+        var inbox=store('sy-inbox',[]);
+        (j.inbox||[]).forEach(function(m){
+          if(!inbox.some(function(x){return x.when===m.createdAt&&x.email===m.email&&x.body===m.body}))
+            inbox.push({from:m.from,email:m.email,type:m.type||'support',body:m.body,
+              status:m.status||'NEW',when:m.createdAt||new Date().toISOString(),cloud:true});
+        });
+        inbox.sort(function(a,b){return new Date(b.when)-new Date(a.when)});
+        save('sy-inbox',inbox.slice(0,300));
+        /* merge server AI usage into the local log for the cost panels */
+        var ulog=store('sy-ai-usage',[]);
+        (j.aiUsage||[]).forEach(function(r){
+          if(!ulog.some(function(x){return x.when===r.createdAt&&x.model===r.model}))
+            ulog.push({provider:r.provider,model:r.model,ms:r.ms,ok:r.ok,email:r.ownerId,
+              gbp:(r.outChars||0)/4000*0.0025*0.79,when:r.createdAt||new Date().toISOString()});
+        });
+        save('sy-ai-usage',ulog.slice(0,1000));
+        drawAll();
+        toast('☁ Platform sync: '+((j.users||[]).length)+' account(s), '+((j.inbox||[]).length)+' message(s) from the cloud'+(added?(' — '+added+' new'):''));
+      });
+  }).catch(function(){});
+})();
+})();
+</script>
+</body></html>

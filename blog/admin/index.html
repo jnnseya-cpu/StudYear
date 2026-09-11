@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — AI Blog Studio</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--gold-300:#A9CFF2;--gold-400:#5FA8E0;--gold-500:#3D8FD1;--good:#5CBB7B;--warn:#c98500;--crit:#e66767;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#8795AE;--line:rgba(77,157,224,.14);--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}body{background:radial-gradient(1200px 700px at 82% -12%,rgba(77,157,224,.13),transparent 60%),var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  .wrap{max-width:1080px;margin:0 auto;padding:26px 24px 90px}
+  a{color:inherit}.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}.top .logo{font-family:var(--serif);font-size:18px;text-decoration:none}.top .logo b{color:#4FA6E0}.top .sp{margin-left:auto;display:flex;gap:8px}
+  .chip{font-size:12px;color:var(--ink-2);border:1px solid rgba(170,182,204,.25);border-radius:20px;padding:6px 12px;text-decoration:none}
+  h1{font-family:var(--serif);font-weight:500;font-size:28px;margin-top:6px}.k{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-400)}p.lede{color:var(--ink-2);font-weight:300;margin-top:4px;max-width:75ch}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}@media(max-width:640px){.kpis{grid-template-columns:1fr 1fr}}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:18px 20px;margin-top:16px}
+  .card h3{font-family:var(--serif);font-weight:500;font-size:17px}.card .sub{font-size:12.5px;color:var(--ink-3);margin:4px 0 12px}
+  .stat .v{font-family:var(--serif);font-size:30px;color:var(--gold-300);line-height:1}.stat .k2{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}
+  label.f{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:12px 0 5px}
+  input,select,textarea{width:100%;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}input:focus,select:focus,textarea:focus{border-color:var(--gold-500)}select option{background:#101B33;color:#EDF1F8}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:640px){.two{grid-template-columns:1fr}}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12px var(--sans);border-radius:9px;padding:9px 15px;cursor:pointer;text-decoration:none;display:inline-block}.btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}.btn.sm{padding:6px 11px;font-size:11.5px}.btn.ghost{border-color:rgba(170,182,204,.3);background:transparent;color:var(--ink-2)}
+  .row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:13px}.row b{color:var(--ink)}
+  .badge{font-size:10px;border-radius:20px;padding:3px 9px;border:1px solid rgba(170,182,204,.25);color:var(--ink-2)}.badge.good{border-color:rgba(92,187,123,.45);color:var(--good)}.badge.warn{border-color:rgba(201,133,0,.45);color:#e0b566}
+  .seo{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .ring{--p:0;--c:var(--good);width:64px;height:64px;border-radius:50%;flex:none;background:conic-gradient(var(--c) calc(var(--p)*1%),rgba(170,182,204,.12) 0);display:grid;place-items:center;position:relative}
+  .ring::before{content:"";width:48px;height:48px;border-radius:50%;background:var(--navy-950);position:absolute}.ring b{position:relative;font-family:var(--serif);font-size:16px}
+  .checks div{font-size:12px;padding:3px 0;color:var(--ink-2)}.checks .ok{color:#89d3a2}.checks .no{color:var(--ink-3)}
+  .snippet{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px;background:rgba(6,11,24,.4);font-size:12.5px;color:var(--ink-2);white-space:pre-wrap}
+  .note{font-size:11.5px;color:var(--ink-3);margin-top:8px}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+</style></head><body>
+<script src="../../guard.js" data-role="admin" data-base="../../"></script>
+<div class="wrap">
+  <div class="top"><a class="logo" href="../../">⌂ <b class="wm">StudYear</b></a><div class="sp"><a class="chip" href="../">View blog</a><a class="chip" href="#" id="signout">Sign out</a></div></div>
+  <div class="k">Content operations · AI agents</div>
+  <h1>AI Blog Studio</h1>
+  <p class="lede">Two agents keep your blog alive and ranking: the <b>AI Writer</b> drafts and publishes posts, and the <b>AI SEO agent</b> optimises every one for search engines and social — titles, meta, keywords, structured data and social snippets.</p>
+
+  <div class="kpis">
+    <div class="card stat"><div class="v" id="k-pub">0</div><div class="k2">Published</div></div>
+    <div class="card stat"><div class="v" id="k-draft">0</div><div class="k2">Drafts</div></div>
+    <div class="card stat"><div class="v" id="k-total">0</div><div class="k2">Total posts</div></div>
+    <div class="card stat"><div class="v" id="k-seo">0</div><div class="k2">Avg SEO score</div></div>
+  </div>
+
+  <div class="card"><h3>🚀 SEO autopilot</h3><div class="sub">Keep the whole blog interlinked, cited and fresh — then publish the crawlable file search engines actually read.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+      <button class="btn solid" id="autopilot">Run SEO autopilot (all posts)</button>
+      <button class="btn" id="export-json">⬇ Export posts.json (to publish)</button>
+    </div>
+    <div class="note" id="autopilot-note">Autopilot re-injects internal links, authority citations &amp; structured data across every post, refreshes the “updated” date (freshness signal) and rescores SEO. Then export <code>posts.json</code> and commit it to <code>apps/web/public/blog/</code> so every visitor and Google can see your posts — localStorage-only posts are invisible to search.</div>
+  </div>
+
+  <div class="card"><h3>✍ AI Writer</h3><div class="sub">Give a topic — the agent writes a full, structured post.</div>
+    <div class="two"><div><label class="f">Topic</label><input id="topic" placeholder="e.g. How spaced repetition boosts GCSE results"></div>
+      <div><label class="f">Category</label><select id="cat"><option>Study science</option><option>Product</option><option>Parents</option><option>Schools</option><option>Teachers</option><option>Exam prep</option><option>Careers</option></select></div></div>
+    <label class="f">Focus keyword (SEO)</label><input id="kw" placeholder="e.g. spaced repetition">
+    <div style="margin-top:12px"><button class="btn solid" id="write">Write draft</button></div>
+    <div id="editor" style="display:none;margin-top:14px">
+      <label class="f">Title</label><input id="e-title">
+      <label class="f">Meta description</label><textarea id="e-meta" rows="2"></textarea>
+      <label class="f">Body</label><textarea id="e-body" rows="9"></textarea>
+      <label class="f">Tags (comma-separated)</label><input id="e-tags">
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="seo-run">Run SEO agent</button><button class="btn solid" id="publish">Publish</button><button class="btn ghost" id="savedraft">Save draft</button></div>
+    </div>
+  </div>
+
+  <div class="card" id="seo-card" style="display:none"><h3>🔍 AI SEO agent</h3><div class="sub">Optimised for first-page ranking and social sharing</div>
+    <div class="seo"><div class="ring" id="seo-ring"><b id="seo-val">0</b></div>
+      <div style="flex:1;min-width:220px"><div class="checks" id="seo-checks"></div></div></div>
+    <div class="two" style="margin-top:12px">
+      <div><label class="f">SEO title</label><input id="s-title" readonly></div>
+      <div><label class="f">URL slug</label><input id="s-slug" readonly></div>
+    </div>
+    <label class="f">Suggested keywords</label><div id="s-keywords"></div>
+    <label class="f">Social snippets</label>
+    <div class="snippet" id="s-x"></div><div class="snippet" id="s-li"></div>
+    <div class="note">The SEO agent re-reviews published posts on a schedule to keep them fresh and ranking (freshness signal + updated structured data).</div>
+  </div>
+
+  <div class="card"><h3>Published &amp; drafts</h3><div id="list"></div></div>
+</div>
+<div id="toast"></div>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;
+function $(id){return document.getElementById(id)}function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var e=$('toast');e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2400)}
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+function load(){try{return JSON.parse(localStorage.getItem('sy-blog'))||[]}catch(e){return[]}}
+function save(a){try{localStorage.setItem('sy-blog',JSON.stringify(a))}catch(e){toast('Storage full')}}
+var current=null;
+
+function slugify(s){return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').slice(0,60)}
+function words(s){return (s||'').trim().split(/\s+/).filter(Boolean).length}
+function readTime(body){return Math.max(1,Math.round(words(body)/200))}
+
+/* ---- SEO link engines (the ranking signal) ----------------------------------
+   INTERNAL links: phrases → real StudYear pages. Google rewards a dense, natural
+   internal-link graph. OUTBOUND: one authoritative citation per topic lifts
+   E-E-A-T. Both are injected once per phrase, first occurrence only, never
+   inside an existing [..](..) link. (Real off-site BACKLINKS are earned by other
+   sites — they can't be minted here; this builds the link-worthy asset that
+   attracts them: interlinked, cited, FAQ-schema content + a crawlable store.) */
+var SITE_LINKS=[
+  [/\b(spaced repetition|smart review|active recall|revision)\b/i,'/study/'],
+  [/\b(career passport|gcse options|post-16|apprenticeship|pathway)\b/i,'/career/'],
+  [/\b(fluency|times tables|number bonds|skillrush)\b/i,'/skillrush/'],
+  [/\b(find a tutor|tutor|tutoring)\b/i,'/tutors/'],
+  [/\b(gatsby|careers programme|work experience|employer encounter)\b/i,'/school/'],
+  [/\b(how studyear works|how it works)\b/i,'/how-it-works/'],
+  [/\b(plans?|pricing|subscription)\b/i,'/plans/'],
+  [/\b(phonics|times tables check|national check)\b/i,'/checks/'],
+  [/\b(free assessment|diagnostic|get started)\b/i,'/study/']
+];
+var AUTHORITY=[
+  [/\b(eef|evidence|research|effective|attainment)\b/i,'Education Endowment Foundation','https://educationendowmentfoundation.org.uk/'],
+  [/\b(gcse|ebacc|curriculum|options|dfe)\b/i,'GOV.UK — Department for Education','https://www.gov.uk/government/organisations/department-for-education'],
+  [/\b(gatsby|careers|benchmark|employer)\b/i,'The Careers & Enterprise Company','https://www.careersandenterprise.co.uk/'],
+  [/\b(ofsted|inspection)\b/i,'Ofsted','https://www.gov.uk/government/organisations/ofsted'],
+  [/\b(ucas|university|higher education)\b/i,'UCAS','https://www.ucas.com/'],
+  [/\b(wellbeing|mental health|anxiety)\b/i,'NHS — Every Mind Matters','https://www.nhs.uk/every-mind-matters/']
+];
+function alreadyLinked(body,idx){ /* is position idx inside an existing markdown link? */
+  var before=body.slice(0,idx);var open=(before.match(/\]\(/g)||[]).length;var close=(before.match(/\)/g)||[]).length;
+  return before.lastIndexOf('[')>before.lastIndexOf(']') || open>close;
+}
+function interlink(body,maxLinks){
+  var added=0,max=maxLinks||5;
+  SITE_LINKS.forEach(function(rule){ if(added>=max)return;
+    var re=new RegExp(rule[0].source,'i');var m=re.exec(body);
+    if(m&&!/\]\([^)]*$/.test(body.slice(0,m.index))&&body.indexOf('('+rule[1]+')')<0&&!alreadyLinked(body,m.index)){
+      body=body.slice(0,m.index)+'['+m[0]+']('+rule[1]+')'+body.slice(m.index+m[0].length);added++;
+    }});
+  return body;
+}
+function outbound(body){
+  for(var i=0;i<AUTHORITY.length;i++){var a=AUTHORITY[i];
+    if(a[0].test(body)&&body.indexOf(a[2])<0){
+      // append a citation sentence if the body has no external link yet
+      if(!/\]\(https?:/.test(body))return body.replace(/\n*$/,'')+'\n\nFor the evidence base, see the ['+a[1]+']('+a[2]+').';
+      return body;
+    }}
+  return body;
+}
+function seoEnhance(body){ return outbound(interlink(body)); }
+
+/* ---- AI Writer — live model when the gateway is up (admin AI is free),
+   with the on-device template as fallback. Posts are FIT-FOR-PURPOSE:
+   a hard sub-3-minute read (≤600 words), 3–5 subheadings, one CTA. ---- */
+$('write').onclick=function(){
+  var topic=$('topic').value.trim();if(!topic){toast('Enter a topic');return}
+  var cat=$('cat').value;var kw=$('kw').value.trim()||topic.split(' ').slice(0,2).join(' ');
+  var title=topic.replace(/^\w/,function(c){return c.toUpperCase()});
+  if(window.SYAI&&SYAI.ready()){
+    toast('AI Writer drafting with '+SYAI.provider()+'…');
+    var sys="You are StudYear's expert SEO blog writer. Write a publish-ready, search-optimised post for the category '"+cat+"' with focus keyword '"+kw+"'. Target 700–900 words. Structure: 4–6 '## ' subheadings, short practical paragraphs, evidence-based, UK education context. SEO REQUIREMENTS: (1) use the focus keyword in the first paragraph and in at least one subheading; (2) include 3–4 INTERNAL links to StudYear pages using markdown, choosing from /study/ (revision & Smart Review), /career/ (GCSE options & pathways), /skillrush/ (fluency), /tutors/ (find a tutor), /school/ (schools & Gatsby), /how-it-works/, /plans/ — link naturally on relevant phrases; (3) include ONE outbound link to an authoritative UK source (gov.uk, Education Endowment Foundation, Careers & Enterprise Company, Ofsted, UCAS or NHS); (4) END with a '## FAQ' section containing 3 questions, each as a '### <question ending in ?>' heading followed by a 1–2 sentence answer (this powers FAQ rich results); (5) end the main body with a one-line StudYear call-to-action. Output format exactly: first line 'TITLE: <compelling title, 30–60 characters, containing the keyword>'; second line 'META: <meta description, 120–160 characters, containing the keyword>'; then a blank line; then the post body in markdown.";
+    SYAI.ask(sys,'Topic: '+topic,{maxTokens:1600}).then(function(txt){
+      var mT=txt.match(/^TITLE:\s*(.+)$/mi),mM=txt.match(/^META:\s*(.+)$/mi);
+      var body=txt.replace(/^TITLE:.*$/mi,'').replace(/^META:.*$/mi,'').trim();
+      /* SEO agent guarantees links even if the model under-delivers */
+      body=seoEnhance(body);
+      var w=body.split(/\s+/);if(w.length>1100)body=w.slice(0,1100).join(' ')+'…';
+      $('editor').style.display='block';
+      $('e-title').value=(mT?mT[1].trim():title).slice(0,70);
+      $('e-meta').value=(mM?mM[1].trim():'').slice(0,170);
+      $('e-body').value=body;
+      $('e-tags').value=[kw,cat,'StudYear','study tips','revision'].join(', ');
+      current={id:'p'+Date.now(),keyword:kw,category:cat};
+      toast('Live AI draft ready — review, then run SEO');runSeo();
+      $('seo-card').scrollIntoView({behavior:'smooth',block:'nearest'});
+    }).catch(function(){toast('Live AI unavailable — using the built-in writer');writeTemplate(topic,cat,kw,title)});
+    return;
+  }
+  writeTemplate(topic,cat,kw,title);
+};
+function writeTemplate(topic,cat,kw,title){
+  var meta='Discover '+kw.toLowerCase()+' — practical, evidence-based guidance from StudYear on '+topic.toLowerCase()+' to help students, parents and teachers get results.';
+  var body='## Why '+kw+' matters\n'+kw.charAt(0).toUpperCase()+kw.slice(1)+' is one of the highest-impact things you can focus on. Here is what the data shows and how StudYear puts it to work.\n\n'+
+    '## The evidence\nStudents who apply '+kw.toLowerCase()+' consistently outperform those who don\'t. It works because it targets how memory and motivation actually function — not how we wish they did.\n\n'+
+    '## How to apply it this week\n1. Start small and specific — pick one topic, not a whole subject.\n2. Space it out across several short sessions rather than one long one; twenty focused minutes beats two distracted hours.\n3. Test yourself instead of re-reading — retrieval is what builds durable memory, and it tells you instantly what still needs work.\n4. Track progress so you can see it working; visible momentum is the strongest motivator a student has.\n\n## The mistakes to avoid\nMost students fall into the same traps: highlighting instead of recalling, cramming the night before, and practising only what already feels comfortable. '+kw.charAt(0).toUpperCase()+kw.slice(1)+' fixes all three — but only if it is planned, not left to willpower on a tired Tuesday evening.\n\n## How StudYear helps\nStudYear automates '+kw.toLowerCase()+' inside every study plan — the diagnostic finds the gaps, the planner schedules the right sessions at the right time, and parents and teachers can see it happening live on their own dashboards.\n\n## The bottom line\n'+title+' is not about working harder. It is about working the way learning actually works. Start your free assessment and let the plan build itself.';
+  body+='\n\n## FAQ\n### What is '+kw.toLowerCase()+'?\n'+kw.charAt(0).toUpperCase()+kw.slice(1)+' is an evidence-based approach that targets how memory and motivation actually work.\n### How quickly does it work?\nMost students notice a difference within two to three weeks of consistent, short daily sessions.\n### Does StudYear do this automatically?\nYes — StudYear builds it into every study plan, so the right sessions are scheduled for you.';
+  body=seoEnhance(body);
+  $('editor').style.display='block';
+  $('e-title').value=title;$('e-meta').value=meta;$('e-body').value=body;
+  $('e-tags').value=[kw,cat,'StudYear','study tips','revision'].join(', ');
+  current={id:'p'+Date.now(),keyword:kw,category:cat};
+  toast('Draft written — review, then run SEO');runSeo();
+  $('seo-card').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ---- AI SEO agent ---- */
+function analyse(){
+  var title=$('e-title').value.trim(),meta=$('e-meta').value.trim(),body=$('e-body').value,kw=(current&&current.keyword||'').toLowerCase();
+  var tags=$('e-tags').value.split(',').map(function(t){return t.trim()}).filter(Boolean);
+  var internal=(body.match(/\]\((\/[^)]*)\)/g)||[]).length;
+  var external=(body.match(/\]\((https?:[^)]*)\)/g)||[]).length;
+  var hasFaq=/##\s*FAQ/i.test(body)&&/###\s*.+\?/.test(body);
+  var checks=[
+    {ok:title.length>=30&&title.length<=62,t:'Title length 30–62 chars ('+title.length+')'},
+    {ok:kw&&title.toLowerCase().indexOf(kw)>=0,t:'Focus keyword in title'},
+    {ok:meta.length>=120&&meta.length<=160,t:'Meta description 120–160 ('+meta.length+')'},
+    {ok:kw&&meta.toLowerCase().indexOf(kw)>=0,t:'Keyword in meta description'},
+    {ok:words(body)>=600,t:'In-depth — 600+ words for ranking ('+words(body)+' · '+readTime(body)+' min)'},
+    {ok:(body.match(/^##\s/gm)||[]).length>=4,t:'Has 4+ subheadings'},
+    {ok:internal>=3,t:'3+ internal links ('+internal+')'},
+    {ok:external>=1,t:'Authoritative outbound citation ('+external+')'},
+    {ok:hasFaq,t:'FAQ section (FAQ rich-result schema)'},
+    {ok:tags.length>=3,t:'3+ tags'}
+  ];
+  var per=Math.round(100/checks.length);var score=Math.min(100,checks.filter(function(c){return c.ok}).length*per);
+  return {checks:checks,score:score,title:title,meta:meta,kw:kw,tags:tags,body:body};
+}
+function runSeo(){
+  var a=analyse();$('seo-card').style.display='block';
+  var ring=$('seo-ring');ring.style.setProperty('--p',a.score);ring.style.setProperty('--c',a.score>=75?'var(--good)':a.score>=50?'var(--warn)':'var(--crit)');$('seo-val').textContent=a.score;
+  $('seo-checks').innerHTML=a.checks.map(function(c){return '<div class="'+(c.ok?'ok':'no')+'">'+(c.ok?'✓ ':'○ ')+esc(c.t)+'</div>'}).join('');
+  $('s-title').value=a.title.length>60?a.title.slice(0,57)+'…':a.title;
+  $('s-slug').value='/blog/'+slugify(a.title);
+  var kws=[a.kw,a.kw+' tips','best '+a.kw,a.kw+' GCSE','how to '+a.kw].filter(Boolean);
+  $('s-keywords').innerHTML=kws.map(function(k){return '<span class="badge" style="margin:2px 4px 0 0">'+esc(k)+'</span>'}).join('');
+  $('s-x').textContent='𝕏 / X:\n'+a.title+'\n\n'+(a.meta.slice(0,120))+'\n#StudYear #'+(a.kw||'study').replace(/\s/g,'')+' #revision';
+  $('s-li').textContent='LinkedIn:\n'+a.title+'\n\n'+a.meta+'\n\nRead more on the StudYear blog.';
+  if(current){current.seoScore=a.score}
+}
+$('seo-run').onclick=runSeo;
+['e-title','e-meta','e-body','e-tags'].forEach(function(id){$(id).addEventListener('input',function(){if($('seo-card').style.display!=='none')runSeo()})});
+
+function collect(pub){
+  var a=analyse();
+  return {id:current?current.id:'p'+Date.now(),title:a.title,slug:slugify(a.title),category:(current&&current.category)||$('cat').value,
+    excerpt:a.meta.slice(0,150),metaDesc:a.meta,body:a.body,tags:a.tags,keyword:a.kw,readTime:readTime(a.body),
+    seoScore:a.score,published:pub,date:new Date().toISOString(),reviewed:new Date().toISOString()};
+}
+function upsert(post){var all=load();var i=all.findIndex(function(p){return p.id===post.id});if(i>=0)all[i]=post;else all.unshift(post);save(all);draw()}
+$('publish').onclick=function(){if(!$('e-title').value.trim()){toast('Write a draft first');return}var p=collect(true);upsert(p);SY.log('blog','Post published',p.title+' · SEO '+p.seoScore);toast('Published — live on the blog');$('editor').style.display='none';$('seo-card').style.display='none';current=null};
+$('savedraft').onclick=function(){if(!$('e-title').value.trim()){toast('Write a draft first');return}var p=collect(false);upsert(p);toast('Draft saved');};
+
+/* one-click LIVE publishing: mirror a publish/unpublish to the backend blog
+   overlay so the post appears on studyear.com/blog immediately, on every
+   device — no redeploy. Silent no-op if the cloud isn't reachable (the local
+   copy + committed posts.json remain the source of truth). */
+function myEmail(){try{return (window.SY&&SY.session&&SY.session.email)||null}catch(e){return null}}
+function syncLive(p){
+  if(!window.SYCloud)return; var em=myEmail(); if(!em)return;
+  if(p.published){ SYCloud.blogPublish(p,em).then(function(r){ if(r&&r.ok)toast('Live → studyear.com/blog'); else toast('Saved locally (cloud offline)'); }); }
+  else { SYCloud.blogRemove(p.id,em); }
+}
+function draw(){
+  var all=load();var pub=all.filter(function(p){return p.published});
+  $('k-pub').textContent=pub.length;$('k-draft').textContent=all.length-pub.length;$('k-total').textContent=all.length;
+  $('k-seo').textContent=all.length?Math.round(all.reduce(function(a,p){return a+(p.seoScore||0)},0)/all.length):0;
+  $('list').innerHTML=all.length?all.map(function(p,i){return '<div class="row"><b>'+esc(p.title)+'</b> <span class="badge '+(p.published?'good':'warn')+'">'+(p.published?'live':'draft')+'</span> <span class="badge">SEO '+(p.seoScore||0)+'</span> <span class="badge" data-bvslug="'+esc(p.slug||p.id)+'">— views</span><span style="margin-left:auto;display:flex;gap:6px">'+(p.published?'<a class="btn sm ghost" style="text-decoration:none" target="_blank" href="../#'+encodeURIComponent(p.slug||p.id)+'">View live</a><button class="btn sm ghost" data-share="'+p.id+'">Copy share link</button>':'')+'<button class="btn sm ghost" data-toggle="'+p.id+'">'+(p.published?'Unpublish':'Publish')+'</button><button class="btn sm ghost" data-del="'+p.id+'">Delete</button></span></div>'}).join(''):'<div class="note">No posts yet — write your first with the AI Writer above.</div>';
+  try{ if(window.SYCloud&&SYCloud.blogViews){ SYCloud.blogViews().then(function(v){ if(!v)return; document.querySelectorAll('#list [data-bvslug]').forEach(function(el){ var c=v[el.getAttribute('data-bvslug')]; el.textContent=(c||0).toLocaleString()+' view'+(c===1?'':'s'); }); }); } }catch(e){}
+  $('list').querySelectorAll('[data-toggle]').forEach(function(b){b.onclick=function(){var all=load();var p=all.find(function(x){return x.id===b.dataset.toggle});if(p){p.published=!p.published;p.reviewed=new Date().toISOString();save(all);draw();toast(p.published?'Published':'Unpublished');syncLive(p)}}});
+  $('list').querySelectorAll('[data-share]').forEach(function(btn){btn.onclick=function(){
+    var p=load().find(function(x){return x.id===btn.dataset.share});if(!p)return;
+    var url='https://www.studyear.com/blog/#'+encodeURIComponent(p.slug||p.id);
+    try{navigator.clipboard.writeText(url);toast('Share link copied — '+url)}catch(e){prompt('Share link:',url)}
+  }});
+  $('list').querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){if(!confirm('Delete this post?'))return;var em=myEmail();if(window.SYCloud&&em)SYCloud.blogRemove(b.dataset.del,em);save(load().filter(function(x){return x.id!==b.dataset.del}));draw()}});
+}
+/* Reconcile with the committed source of truth (apps/web/public/blog/posts.json).
+   The public blog renders every post in posts.json, so the admin MUST see them
+   all too — otherwise the list here (and the "Export posts.json" it produces)
+   silently omits the live catalogue. We merge by slug/id: committed posts are
+   pulled in, local-only drafts are kept, and when both exist the newer version
+   (by reviewed/date) wins so an unexported local edit isn't clobbered. */
+function keyOf(p){return String(p&&(p.slug||p.id)||'').toLowerCase()}
+function reconcile(committed){
+  var byKey={},order=[];
+  function put(p){var k=keyOf(p);if(!k)return;if(!byKey[k])order.push(k);byKey[k]=p;}
+  load().forEach(put);
+  /* posts.json is the single source of truth: a post that exists there always
+     wins (its committed body/SEO/date replace any local copy — this is what
+     retires the old thin seed stubs). Local-only entries with no committed
+     twin are kept as the owner's unpublished drafts. put() overwrites byKey AND
+     registers the key in `order`, so committed-only posts (no local twin) are
+     included in the rendered list — not just the ones already in localStorage. */
+  (committed||[]).forEach(put);
+  var merged=order.map(function(k){return byKey[k];})
+    .sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);});
+  save(merged);return merged;
+}
+function boot(){
+  fetch('../posts.json',{cache:'no-cache'})
+    .then(function(r){return r.ok?r.json():[]})
+    .catch(function(){return []})
+    .then(function(committed){reconcile(committed);draw();});
+}
+/* ---- SEO autopilot: batch-optimise every post ---- */
+function scoreOf(body,title,meta,tags){
+  var kw='';var internal=(body.match(/\]\((\/[^)]*)\)/g)||[]).length,external=(body.match(/\]\((https?:[^)]*)\)/g)||[]).length;
+  var c=[title.length>=30&&title.length<=62,meta.length>=120&&meta.length<=160,words(body)>=600,(body.match(/^##\s/gm)||[]).length>=4,internal>=3,external>=1,/##\s*FAQ/i.test(body)&&/###\s*.+\?/.test(body),(tags||[]).length>=3];
+  return Math.round(100*c.filter(Boolean).length/c.length);
+}
+$('autopilot').onclick=function(){
+  var all=load();if(!all.length){toast('No posts yet');return;}
+  var now=new Date().toISOString();
+  all.forEach(function(p){
+    p.body=seoEnhance(p.body||'');
+    p.readTime=readTime(p.body);
+    p.seoScore=scoreOf(p.body,p.title||'',p.metaDesc||p.excerpt||'',p.tags||[]);
+    p.reviewed=now;                        // freshness signal
+  });
+  save(all);draw();
+  toast('SEO autopilot done — '+all.length+' posts re-optimised. Now export posts.json to publish.');
+};
+$('export-json').onclick=function(){
+  var pub=load().filter(function(p){return p.published;}).map(function(p){
+    return {id:p.id,title:p.title,slug:p.slug||slugify(p.title),category:p.category,excerpt:p.excerpt||(p.metaDesc||'').slice(0,150),
+      metaDesc:p.metaDesc||p.excerpt||'',body:p.body,tags:p.tags||[],keyword:p.keyword||'',readTime:p.readTime||readTime(p.body),
+      seoScore:p.seoScore||0,published:true,date:p.date,reviewed:p.reviewed||p.date};
+  });
+  if(!pub.length){toast('Publish at least one post first');return;}
+  var blob=new Blob([JSON.stringify(pub,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='posts.json';document.body.appendChild(a);a.click();document.body.removeChild(a);
+  toast('posts.json downloaded ('+pub.length+' posts) — commit it to apps/web/public/blog/');
+};
+boot();
+})();
+</script>
+</body></html>

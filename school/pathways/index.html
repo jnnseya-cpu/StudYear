@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Careers &amp; Pathways (Gatsby / Ofsted)</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--gold-300:#A9CFF2;--gold-400:#5FA8E0;--gold-500:#3D8FD1;--good:#5CBB7B;--warn:#c98500;--crit:#e66767;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#8795AE;--line:rgba(77,157,224,.14);--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}body{background:radial-gradient(1200px 700px at 82% -12%,rgba(77,157,224,.13),transparent 60%),var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  .shell{display:flex;min-height:100vh;max-width:1440px;margin:0 auto}
+  aside{width:236px;flex:none;border-right:1px solid var(--line);padding:22px 14px 30px;position:sticky;top:0;align-self:flex-start;max-height:100vh;overflow-y:auto}
+  .slogo{font-family:var(--serif);font-size:19px;color:var(--ink);text-decoration:none;display:block;padding:4px 10px 14px}.slogo b{color:#4FA6E0;font-weight:600}
+  aside nav a{display:block;font-size:13px;color:var(--ink-2);text-decoration:none;padding:8px 10px;border-radius:8px;margin:1px 0}aside nav a:hover{color:var(--gold-300);background:rgba(77,157,224,.08)}aside nav a.on{color:var(--gold-300);background:rgba(77,157,224,.12)}
+  main{flex:1;padding:30px 30px 90px;min-width:0;max-width:940px}@media(max-width:960px){.shell{flex-direction:column}aside{width:100%;position:sticky;top:0;z-index:60;max-height:46vh;overflow-y:auto;background:#060B18;border-right:none;border-bottom:1px solid var(--line)}aside nav{display:flex;flex-wrap:wrap;gap:2px}main{padding:22px 18px 70px}}
+  a{color:inherit}h1{font-family:var(--serif);font-weight:500;font-size:28px}.k{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-400)}p.lede{color:var(--ink-2);font-weight:300;margin-top:6px;max-width:80ch}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:18px 20px;margin-top:16px}
+  .card h3{font-family:var(--serif);font-weight:500;font-size:17px}.card .sub{font-size:12.5px;color:var(--ink-3);margin:4px 0 12px}
+  label.f{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:10px 0 5px}
+  input,select{width:100%;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}select option{background:#101B33;color:#EDF1F8}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12px var(--sans);border-radius:9px;padding:9px 16px;cursor:pointer;text-decoration:none;display:inline-block}.btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}.btn.sm{padding:6px 11px;font-size:11px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:640px){.two{grid-template-columns:1fr}}
+  .badge{font-size:10px;border-radius:20px;padding:3px 9px;border:1px solid rgba(92,187,123,.45);color:var(--good)}
+  .hero{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center}
+  .ring{--p:0;width:104px;height:104px;border-radius:50%;background:conic-gradient(var(--good) calc(var(--p)*1%),rgba(170,182,204,.14) 0);display:grid;place-items:center}
+  .ring i{width:82px;height:82px;border-radius:50%;background:#0B1220;display:grid;place-items:center;font-family:var(--serif);font-size:24px;font-style:normal}
+  .ggrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}@media(max-width:640px){.ggrid{grid-template-columns:1fr}}
+  .gb{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:rgba(6,11,24,.32)}
+  .gb .dot{width:24px;height:24px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:13px;font-weight:700}
+  .gb.met .dot{background:rgba(92,187,123,.18);color:var(--good);border:1px solid rgba(92,187,123,.5)}
+  .gb.no .dot{background:rgba(201,133,0,.14);color:var(--warn);border:1px solid rgba(201,133,0,.45)}
+  .gb .t{font-size:13px;font-weight:600}.gb .e{font-size:11.5px;color:var(--ink-3);margin-top:2px}
+  .chk{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:9px;padding:9px 12px;margin-top:8px;background:rgba(6,11,24,.32);font-size:13px;cursor:pointer}
+  .chk input{width:auto;accent-color:var(--gold-500)}
+  .row{display:flex;gap:10px;align-items:center;border-bottom:1px solid rgba(170,182,204,.08);padding:9px 0;font-size:13px}
+  .row .del{margin-left:auto}
+  .stat{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:6px}@media(max-width:640px){.stat{grid-template-columns:1fr 1fr}}
+  .st{border:1px solid var(--line);border-radius:11px;padding:12px;background:rgba(6,11,24,.32);text-align:center}.st .v{font-family:var(--serif);font-size:22px}.st .l{font-size:11px;color:var(--ink-3)}
+  .empty{font-size:12.5px;color:var(--ink-3);padding:10px 0}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+</style></head><body>
+<script src="../../guard.js" data-role="school" data-base="../../"></script>
+<script src="../../pathways.js"></script>
+<script src="../../export.js"></script>
+<div class="shell">
+<aside><a class="slogo" href="../../">⌂ <b class="wm">StudYear</b></a><nav>
+  <a href="../">Command Centre</a><a href="../people/">People management</a><a href="../analytics/">Analytics</a><a href="./" class="on">Careers &amp; Pathways</a><a href="../community/">Community network</a><a href="../resources/">Knowledge hub</a><a href="../settings/">Registration &amp; settings</a><a href="#" id="signout">Sign out</a>
+</nav></aside>
+<main>
+  <div class="k">Careers &amp; Technical Pathways</div>
+  <h1>Gatsby &amp; Ofsted — evidenced automatically.</h1>
+  <p class="lede">The 14+ technical-education reform makes Ofsted reward high-quality careers provision. This turns the
+    statutory <b>Gatsby Benchmarks</b> and your employer engagement into a live, inspection-ready evidence pack — built
+    from what your school and students already do here.</p>
+
+  <div class="card"><div class="hero">
+    <div class="ring" id="ring"><i id="ring-n">0/8</i></div>
+    <div>
+      <h3 style="margin:0">Gatsby Benchmark coverage</h3>
+      <div class="sub" style="margin:4px 0 0">Benchmarks 1–3, 7, 8 come from your careers provision below; 4, 5, 6 are
+        evidenced automatically from the employer encounters and work experience you log.</div>
+      <div style="margin-top:12px"><button class="btn solid" id="pack-word">Download evidence pack (Word)</button>
+        <button class="btn" id="pack-pdf" style="margin-left:8px">PDF</button></div>
+    </div>
+  </div>
+    <div class="ggrid" id="gatsby"></div>
+  </div>
+
+  <div class="card"><h3>Your careers provision</h3><div class="sub">Tick what your school delivers — this evidences the provision-based benchmarks.</div>
+    <div id="provision"></div>
+  </div>
+
+  <div class="card"><h3>Work experience &amp; employer encounters</h3>
+    <div class="sub">Log mentoring, workplace visits, business-set projects and work experience. Each one strengthens
+      benchmarks 4–6 and every linked student's Skills &amp; Experience Passport. 🔒 Safeguarding: record the activity,
+      never a student's or employer's private contact details.</div>
+    <div class="stat" id="enc-stat"></div>
+    <div class="two" style="margin-top:12px">
+      <div><label class="f">Student / group</label><input id="e-student" placeholder="e.g. Year 10 · Aisha K"></div>
+      <div><label class="f">Employer / organisation</label><input id="e-emp" placeholder="e.g. Siemens"></div>
+      <div><label class="f">Type</label><select id="e-type"></select></div>
+      <div><label class="f">Sector</label><select id="e-sector"></select></div>
+      <div><label class="f">Date</label><input id="e-date" type="date"></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn solid" id="e-add" style="width:100%">Log encounter</button></div>
+    </div>
+    <div style="margin-top:8px"><button class="btn sm" id="e-demo">Load sample encounters</button></div>
+    <div id="enc-list" style="margin-top:12px"></div>
+  </div>
+</main>
+</div>
+<div id="toast"></div>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;var PW=window.SYPathways;
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var e=$('toast');e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2200)}
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+var code=SY.get('schoolCode',null);
+function get(k,d){return code?SY.schoolGet(code,k,d):SY.get(k,d)}
+function set(k,v){if(code)SY.schoolSet(code,k,v);else SY.set(k,v)}
+
+var PROV=[
+  ['programme','A published, stable careers programme (Benchmark 1)'],
+  ['lmi','Students use the Career Passport &amp; local labour-market information (Benchmark 2)'],
+  ['perPupil','Per-pupil careers records &amp; planning (Benchmark 3)'],
+  ['fehe','Encounters with colleges, universities &amp; apprenticeship providers (Benchmark 7)'],
+  ['guidance','Personal careers guidance interviews (Benchmark 8)']
+];
+function provision(){return get('gatsbyProvision',{})}
+function encounters(){return get('pathwaysEncounters',[])}
+
+function signals(){
+  var p=provision(),enc=encounters();var byType={};
+  enc.forEach(function(e){byType[e.type]=(byType[e.type]||0)+1});
+  return {programme:!!p.programme,lmi:!!p.lmi,perPupil:!!p.perPupil,feheEncounters:!!p.fehe,guidance:!!p.guidance,
+    careerPassport:!!p.lmi,routePlanner:!!p.fehe,byType:byType,
+    employerEncounters:(byType.mentoring||0),workplaceExperiences:(byType.visit||0)+(byType.workexp||0)};
+}
+function gatsby(){return PW?PW.gatsbyStatus(signals()):[]}
+
+function drawGatsby(){
+  var g=gatsby();var met=g.filter(function(b){return b.met}).length;
+  var ring=$('ring');ring.style.setProperty('--p',Math.round(100*met/8));$('ring-n').textContent=met+'/8';
+  $('gatsby').innerHTML=g.map(function(b){
+    return '<div class="gb '+(b.met?'met':'no')+'"><div class="dot">'+(b.met?'✓':b.n)+'</div><div><div class="t">Benchmark '+b.n+': '+esc(b.title)+'</div><div class="e">'+esc(b.evidence)+'</div></div></div>';
+  }).join('');
+}
+function drawProvision(){
+  var p=provision();
+  $('provision').innerHTML=PROV.map(function(r){return '<label class="chk"><input type="checkbox" data-k="'+r[0]+'"'+(p[r[0]]?' checked':'')+'> '+r[1]+'</label>'}).join('');
+  [].slice.call($('provision').querySelectorAll('input')).forEach(function(cb){cb.onchange=function(){var pv=provision();pv[cb.getAttribute('data-k')]=cb.checked;set('gatsbyProvision',pv);drawGatsby();toast('Provision updated');}});
+}
+function drawStat(){
+  var enc=encounters();var byType={};enc.forEach(function(e){byType[e.type]=(byType[e.type]||0)+1});
+  $('enc-stat').innerHTML=PW.ENCOUNTERS.map(function(t){return '<div class="st"><div class="v">'+(byType[t.k]||0)+'</div><div class="l">'+t.ic+' '+t.label+'</div></div>'}).join('');
+}
+function drawEnc(){
+  var enc=encounters();
+  $('enc-list').innerHTML=enc.length?enc.map(function(e){var t=PW.encType(e.type)||{ic:'•',label:'Encounter'};var s=e.sector?(PW.sector(e.sector)||{}).name:'';
+    return '<div class="row"><span>'+t.ic+' <b>'+esc(e.student||'Student')+'</b> — '+esc(t.label)+' · '+esc(e.employer||'')+(s?' <span class="badge" style="border-color:rgba(77,157,224,.3);color:var(--gold-300)">'+esc(s)+'</span>':'')+' <span style="color:var(--ink-3);font-size:11px">'+esc(e.date||'')+'</span></span><button class="btn sm del" data-id="'+e.id+'">Remove</button></div>';
+  }).join(''):'<div class="empty">No encounters logged yet. Log one above, or load samples to see how the evidence builds.</div>';
+  [].slice.call($('enc-list').querySelectorAll('.del')).forEach(function(b){b.onclick=function(){set('pathwaysEncounters',encounters().filter(function(x){return x.id!==b.getAttribute('data-id')}));redraw();toast('Removed')}});
+}
+function redraw(){drawGatsby();drawProvision();drawStat();drawEnc();}
+
+$('e-type').innerHTML=PW.ENCOUNTERS.map(function(t){return '<option value="'+t.k+'">'+t.ic+' '+t.label+'</option>'}).join('');
+$('e-sector').innerHTML='<option value="">— sector —</option>'+PW.SECTORS.map(function(s){return '<option value="'+s.k+'">'+s.ic+' '+esc(s.name)+'</option>'}).join('');
+$('e-add').onclick=function(){
+  var stu=$('e-student').value.trim(),emp=$('e-emp').value.trim();
+  if(!stu||!emp){toast('Add the student/group and employer');return;}
+  var enc=encounters();
+  enc.unshift({id:'x'+Math.floor(Math.random()*1e9)+Date.now().toString(36).slice(-3),student:stu.slice(0,120),employer:emp.slice(0,120),type:$('e-type').value,sector:$('e-sector').value||null,date:$('e-date').value||new Date().toISOString().slice(0,10)});
+  set('pathwaysEncounters',enc);$('e-student').value='';$('e-emp').value='';redraw();toast('Encounter logged');
+};
+$('e-demo').onclick=function(){
+  var seed=[
+    {student:'Year 10 · Digital group',employer:'Local software studio',type:'visit',sector:'digital'},
+    {student:'Year 10 · Aisha K',employer:'NHS Trust',type:'mentoring',sector:'healthcare'},
+    {student:'Year 11 · Engineering set',employer:'Siemens',type:'project',sector:'manufacturing'},
+    {student:'Year 10 · Jordan P',employer:'Regional housebuilder',type:'workexp',sector:'construction'}
+  ];
+  var enc=encounters();seed.forEach(function(s){enc.unshift({id:'x'+Math.floor(Math.random()*1e9)+Date.now().toString(36).slice(-3),student:s.student,employer:s.employer,type:s.type,sector:s.sector,date:new Date().toISOString().slice(0,10)})});
+  set('pathwaysEncounters',enc);redraw();toast('Sample encounters loaded');
+};
+
+function packBlocks(){
+  var g=gatsby();var met=g.filter(function(b){return b.met}).length;var enc=encounters();
+  var byType={};enc.forEach(function(e){byType[e.type]=(byType[e.type]||0)+1});
+  var blocks=[{p:'Generated by StudYear · '+new Date().toLocaleDateString()},
+    {h:'Gatsby Benchmark coverage: '+met+'/8'}];
+  blocks.push({table:{headers:['#','Benchmark','Status','Evidence'],rows:g.map(function(b){return [String(b.n),b.title,b.met?'Met':'In progress',b.evidence]})}});
+  blocks.push({h:'Employer engagement summary'});
+  blocks.push({table:{headers:['Activity','Count'],rows:PW.ENCOUNTERS.map(function(t){return [t.label,String(byType[t.k]||0)]})}});
+  if(enc.length){blocks.push({h:'Logged encounters'});
+    blocks.push({table:{headers:['Student / group','Activity','Employer','Sector','Date'],rows:enc.map(function(e){var t=PW.encType(e.type)||{label:''};return [e.student||'',t.label,e.employer||'',e.sector?(PW.sector(e.sector)||{}).name:'',e.date||'']})}});}
+  return blocks;
+}
+$('pack-word').onclick=function(){if(!window.SYExport){toast('Export unavailable');return;}SYExport.word('StudYear-Gatsby-Evidence.docx',{title:'Careers & Technical Pathways — Evidence Pack',blocks:packBlocks()});toast('Evidence pack downloaded');};
+$('pack-pdf').onclick=function(){if(!window.SYExport){toast('Export unavailable');return;}
+  var g=gatsby();var met=g.filter(function(b){return b.met}).length;
+  var html='<h1>Careers &amp; Technical Pathways — Evidence Pack</h1><p>Gatsby coverage: <b>'+met+'/8</b> · '+new Date().toLocaleDateString()+'</p><table border="1" cellpadding="6" style="border-collapse:collapse"><tr><th>#</th><th>Benchmark</th><th>Status</th><th>Evidence</th></tr>'+g.map(function(b){return '<tr><td>'+b.n+'</td><td>'+esc(b.title)+'</td><td>'+(b.met?'Met':'In progress')+'</td><td>'+esc(b.evidence)+'</td></tr>'}).join('')+'</table>';
+  SYExport.pdf('StudYear Gatsby Evidence',html);toast('Opening print view');};
+
+redraw();
+})();
+</script>
+</body></html>

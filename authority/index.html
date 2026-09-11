@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>StudYear — Local Authority</title><link rel="manifest" href="../manifest.json"><link rel="icon" href="../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--gold-300:#A9CFF2;--gold-400:#5FA8E0;--gold-500:#3D8FD1;--good:#5CBB7B;--warn:#c98500;--crit:#e66767;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#8795AE;--line:rgba(77,157,224,.14);--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}body{background:radial-gradient(1200px 700px at 82% -12%,rgba(77,157,224,.13),transparent 60%),var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  .shell{display:flex;min-height:100vh;max-width:1460px;margin:0 auto}
+  aside{width:224px;flex:none;border-right:1px solid var(--line);padding:22px 14px 30px;position:sticky;top:0;align-self:flex-start;max-height:100vh;overflow-y:auto}
+  .slogo{font-family:var(--serif);font-size:19px;color:var(--ink);text-decoration:none;display:block;padding:4px 10px 6px}.slogo b{color:#4FA6E0;font-weight:600}
+  aside .role{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);padding:0 10px 14px}
+  aside nav a{display:block;font-size:13px;color:var(--ink-2);text-decoration:none;padding:8px 10px;border-radius:8px;margin:1px 0}aside nav a:hover{color:var(--gold-300);background:rgba(77,157,224,.08)}aside nav a.on{color:var(--gold-300);background:rgba(77,157,224,.12)}
+  main{flex:1;padding:30px 30px 90px;min-width:0;max-width:1120px}@media(max-width:960px){.shell{flex-direction:column}aside{width:100%;position:sticky;top:0;z-index:60;max-height:46vh;overflow-y:auto;background:#060B18;border-right:none;border-bottom:1px solid var(--line)}aside nav{display:flex;flex-wrap:wrap;gap:2px}main{padding:22px 18px 70px}}
+  a{color:inherit}h1{font-family:var(--serif);font-weight:500;font-size:28px}.k{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-400)}p.lede{color:var(--ink-2);font-weight:300;margin-top:6px;max-width:82ch}
+  .live{font-size:11px;color:var(--good);border:1px solid rgba(92,187,123,.4);border-radius:20px;padding:3px 10px}
+  .code{font-family:var(--serif);font-size:24px;letter-spacing:.16em;color:var(--gold-300)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:16px}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-top:16px}.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}@media(max-width:960px){.grid>*{grid-column:span 6}}@media(max-width:600px){.grid>*{grid-column:span 12}}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:18px 20px}.card h3{font-family:var(--serif);font-weight:500;font-size:16px}.card .sub{font-size:12px;color:var(--ink-3);margin:4px 0 10px}
+  .stat .v{font-family:var(--serif);font-size:29px;color:var(--gold-300);line-height:1}.stat .k2{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}.stat .d{font-size:11px;margin-top:3px}.up{color:var(--good)}.down{color:var(--crit)}
+  label.f{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:12px 0 5px}
+  input,select{width:100%;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}select option{background:#101B33;color:#EDF1F8}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}@media(max-width:640px){.two,.three{grid-template-columns:1fr}}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12px var(--sans);border-radius:9px;padding:9px 15px;cursor:pointer;text-decoration:none;display:inline-block}.btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}.btn.sm{padding:6px 11px;font-size:11.5px}.btn.ghost{border-color:rgba(170,182,204,.3);background:transparent;color:var(--ink-2)}
+  .row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:13px}.row b{color:var(--ink)}
+  .th{color:var(--ink-3);font-size:11px;letter-spacing:.04em}
+  .badge{font-size:10px;border-radius:20px;padding:3px 9px;border:1px solid rgba(77,157,224,.35);color:var(--gold-300)}.badge.good{border-color:rgba(92,187,123,.45);color:var(--good)}.badge.warn{border-color:rgba(201,133,0,.45);color:#e0b566}.badge.crit{border-color:rgba(230,103,103,.45);color:#f0a0a0}
+  .rag{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+  .bar{height:9px;border-radius:5px;background:rgba(170,182,204,.12);overflow:hidden}.bar i{display:block;height:100%}
+  .rank{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:12.5px}
+  .prog{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px;background:rgba(6,11,24,.32)}
+  .prog .pt{font-size:14px;font-weight:600;color:var(--ink)}.prog .pm{font-size:11.5px;color:var(--ink-3);margin-top:3px}
+  .impact{font-family:var(--serif);font-size:20px;color:var(--good)}
+  .empty{color:var(--ink-3);font-style:italic;padding:12px 0}.note{font-size:11.5px;color:var(--ink-3);margin-top:8px}
+  .trust{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}.tb{font-size:11.5px;color:var(--ink-2);border:1px solid var(--line);border-radius:20px;padding:6px 12px}.tb b{color:var(--gold-300)}
+  .sa-lbl{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:6px 0 6px}
+  .sa-chips{display:flex;flex-wrap:wrap;gap:8px}
+  .sa-chip{appearance:none;font:600 12px var(--sans);border:1px solid var(--line);background:rgba(6,11,24,.4);color:var(--ink-2);border-radius:20px;padding:7px 13px;cursor:pointer}
+  .sa-chip.on{border-color:var(--gold-500);background:rgba(77,157,224,.14);color:var(--gold-300)}
+  .sa-net{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}@media(max-width:640px){.sa-net{grid-template-columns:1fr 1fr}}
+  .sa-ct{border:1px solid var(--line);border-radius:11px;padding:12px;background:rgba(6,11,24,.32);text-align:center}
+  .sa-ct .v{font-family:var(--serif);font-size:24px}.sa-ct .l{font-size:11px;color:var(--ink-3);margin-top:2px}
+  .sa-btns{display:flex;gap:6px;justify-content:center;margin-top:8px}
+  .sa-inc{appearance:none;width:30px;height:28px;border:1px solid rgba(170,182,204,.3);background:transparent;color:var(--ink-2);border-radius:8px;cursor:pointer;font-size:15px}
+  .sa-status{font-size:12.5px;color:var(--ink-2);margin-top:14px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:rgba(6,11,24,.32)}
+  .sa-status.ok{border-color:rgba(92,187,123,.4);background:rgba(92,187,123,.06);color:var(--ink)}
+  .intel-rows{margin-top:14px;display:grid;gap:8px}
+  .intel-row{border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:rgba(6,11,24,.32)}
+  .intel-row .ir-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px}
+  .intel-row .ir-m{font-size:12px;color:var(--ink-3);margin-top:3px}.intel-row .ir-a{font-size:12px;color:var(--ink-2);margin-top:4px}
+  .flow{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.flow .fb{flex:1;min-width:220px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:rgba(6,11,24,.3)}.flow .fb b{color:var(--gold-300);font-size:12px}.flow .fb span{display:block;font-size:11.5px;color:var(--ink-3);margin-top:3px}
+  .demobar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid rgba(201,133,0,.35);background:rgba(201,133,0,.07);border-radius:12px;padding:11px 15px;margin-top:14px;font-size:12.5px;color:#e0b566}
+  .drill{background:rgba(6,11,24,.4);border-left:2px solid var(--gold-500);padding:10px 14px;margin:2px 0 8px;border-radius:0 8px 8px 0;font-size:12px;display:none}
+  .drill.open{display:block}
+  .drill .dg{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+  .drill .dg div{color:var(--ink-2)}.drill .dg b{color:var(--ink);display:block;font-family:var(--serif);font-size:16px}
+  .clk{cursor:pointer}.clk:hover{background:rgba(77,157,224,.05)}
+  .spark text{fill:var(--ink-3);font-size:10px}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+  .stat.clik{cursor:pointer;transition:border-color .12s,transform .12s}.stat.clik:hover{border-color:var(--gold-500);transform:translateY(-2px)}.stat .more{font-size:10px;color:var(--gold-400);margin-top:4px;opacity:.7}
+  .clik{cursor:pointer}
+  #modal{position:fixed;inset:0;background:rgba(4,8,18,.72);display:none;align-items:flex-start;justify-content:center;z-index:120;padding:40px 16px;overflow-y:auto}
+  #modal.open{display:flex}
+  #modal .box{background:linear-gradient(180deg,#101b33,#0b1220);border:1px solid var(--gold-500);border-radius:16px;max-width:720px;width:100%;padding:22px 24px;box-shadow:0 24px 70px rgba(0,0,0,.6)}
+  #modal h3{font-family:var(--serif);font-weight:500;font-size:20px;display:flex;align-items:center;gap:10px}
+  #modal .x{margin-left:auto;cursor:pointer;color:var(--ink-3);font-size:22px;line-height:1;background:none;border:0}
+  #modal .msub{font-size:12px;color:var(--ink-3);margin:4px 0 14px}
+</style></head><body>
+<script src="../guard.js" data-role="authority" data-base="../"></script>
+<script src="../growth.js"></script>
+<script src="../readiness.js"></script>
+<script src="../pathways.js"></script>
+<script src="../export.js"></script>
+<div class="shell">
+<aside><a class="slogo" href="../">⌂ <b>StudYear</b></a><div class="role">Local Authority</div><nav>
+  <a href="./" class="on">Overview</a><a href="#boroughs">Structure</a><a href="#schools">Schools</a><a href="#equity">Equity &amp; gap</a><a href="#attendance">Attendance</a><a href="#programmes">Programmes &amp; funding</a><a href="#impact">Impact evidence</a><a href="#youth">Youth Guarantee</a><a href="#skills">Skills fund</a><a href="#inclusion">Digital inclusion</a><a href="#" id="signout">Sign out</a>
+</nav></aside>
+<main>
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span class="live">● Live</span><span class="k" style="margin:0">Your schools · youth programmes · intervention funds</span><button class="btn" id="demo-btn" style="margin-left:auto">Load demo</button></div>
+  <h1>Local Authority command centre</h1>
+  <p class="lede">Measurable outcomes at cohort scale — verified progress evidence per pound spent. Catch-up and premium
+    programmes reported with before/after mastery, not attendance sheets. Data flows both ways: schools feed anonymised
+    cohort data up; you push programmes and funding back down.</p>
+  <div class="demobar" id="demobar" style="display:none"></div>
+
+  <div class="card" style="margin-top:16px"><h3>Authority connection code</h3><div class="sub">Schools enter this in their Command Centre to feed you anonymised cohort data.</div>
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span class="code" id="la-code">------</span><button class="btn sm" id="copy-code">Copy</button></div>
+    <div class="flow">
+      <div class="fb"><b>▲ Fed up from schools</b><span id="flow-up">Anonymised attainment, attendance, disadvantage gap, destinations, wellbeing.</span></div>
+      <div class="fb"><b>▼ Pushed down to schools</b><span id="flow-down">No programmes pushed yet.</span></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px"><h3>Team &amp; access</h3><div class="sub">One authority, many colleagues. Everyone who signs in with a Local Authority account and joins this code shares the same live data.</div>
+    <div class="two"><div><label class="f">Join an existing authority</label><div style="display:flex;gap:8px"><input id="join-code" placeholder="Paste an authority code (LA-XXXXX)"><button class="btn" id="join-btn">Join</button></div></div>
+      <div><label class="f">Your team on this authority</label><div id="team-list" class="note" style="margin-top:6px"></div></div></div>
+  </div>
+
+  <div class="kpis">
+    <div class="card stat"><div class="v" id="k-schools">0</div><div class="k2">Connected schools</div></div>
+    <div class="card stat"><div class="v" id="k-students">0</div><div class="k2">Students (cohort)</div></div>
+    <div class="card stat"><div class="v" id="k-attain">0%</div><div class="k2">Avg attainment</div><div class="d" id="k-attain-d"></div></div>
+    <div class="card stat"><div class="v" id="k-p8">—</div><div class="k2">Avg Progress 8</div></div>
+    <div class="card stat"><div class="v" id="k-gap">—</div><div class="k2">Disadvantage gap</div></div>
+    <div class="card stat"><div class="v" id="k-pa">—</div><div class="k2">Persistent absence</div></div>
+    <div class="card stat"><div class="v" id="k-progs">0</div><div class="k2">Active programmes</div></div>
+    <div class="card stat"><div class="v" id="k-fund">£0</div><div class="k2">Funding deployed</div></div>
+    <div class="card stat"><div class="v" id="k-roi">—</div><div class="k2">Avg mastery gain</div></div>
+    <div class="card stat"><div class="v" id="k-eff">—</div><div class="k2">Avg pts per £1k</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="card c7"><h3>Area attainment trend</h3><div class="sub">Rolling average across connected schools, by term</div><div id="trend"></div></div>
+    <div class="card c5"><h3>Ofsted-style RAG distribution</h3><div class="sub">Schools by performance band</div><div id="rag-dist"></div></div>
+
+    <div class="card c12" id="schools"><h3>Cohort benchmarking across schools</h3><div class="sub">Anonymised at student level · click a school to drill into its cohort · ranked by attainment</div>
+      <div style="display:flex;gap:8px;margin:0 0 6px"><button class="btn sm ghost" data-sort="avg">Sort: attainment</button><button class="btn sm ghost" data-sort="progress">Progress</button><button class="btn sm ghost" data-sort="ppGap">Gap</button><button class="btn sm ghost" data-sort="attendance">Attendance</button></div>
+      <div id="school-table"></div></div>
+
+    <div class="card c6" id="equity"><h3>Equity &amp; disadvantage gap</h3><div class="sub">Attainment gap between disadvantaged and non-disadvantaged pupils</div><div id="equity-list"></div></div>
+    <div class="card c6" id="attendance"><h3>Attendance &amp; persistent absence</h3><div class="sub">Live from school registers · persistent absence = below 90%</div><div id="attend-list"></div></div>
+
+    <div class="card c6" id="programmes"><h3>Programmes &amp; funding</h3><div class="sub">Create a catch-up or premium programme — pushed to your schools</div>
+      <div id="target-hint" class="note" style="margin-top:0"></div>
+      <div class="two"><div><label class="f">Programme name</label><input id="p-name" placeholder="e.g. Year 11 Maths catch-up"></div><div><label class="f">Type</label><select id="p-type"><option>Catch-up</option><option>Premium</option><option>Intervention fund</option><option>NEET prevention</option><option>Attendance recovery</option></select></div></div>
+      <div class="three"><div><label class="f">Funding (£)</label><input id="p-cost" placeholder="40000"></div><div><label class="f">Students</label><input id="p-students" placeholder="120"></div><div><label class="f">Target cohort</label><select id="p-cohort"><option>Whole area</option><option>Disadvantaged (PP)</option><option>SEND</option><option>EAL</option><option>Lowest-attaining schools</option><option>Persistent absentees</option></select></div></div>
+      <div style="margin-top:10px"><button class="btn solid" id="p-add">Create &amp; push to schools</button></div>
+      <div id="prog-list" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card c6" id="impact"><h3>Funding-impact evidence</h3><div class="sub">Before/after mastery per programme · verified impact per £ · ranked by cost-effectiveness</div>
+      <div style="margin:0 0 6px"><button class="btn sm" id="export-pack">⬇ Export evidence pack — Excel · Word · PDF · PowerPoint</button></div>
+      <div id="impact-list"></div></div>
+
+    <div class="card c12" id="boroughs"><h3>🏛 Your authority structure</h3>
+      <div class="sub">You oversee your own schools directly. Group them the way <b>your</b> authority works —
+        by phase, locality, district, area team or school-improvement cluster/pyramid — or run flat with no
+        sub-units. Assign each connected school to its group for per-group rollups.
+        <span style="color:var(--ink-3)">Running a combined authority over several councils? Use a regional preset instead.</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+        <select id="b-preset" style="background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 13px var(--sans);padding:8px 10px">
+          <option value="">Quick-start preset…</option>
+          <optgroup label="Single local authority">
+            <option value="phase">By phase (Primary · Secondary · Special · EY · AP · Post-16)</option>
+            <option value="area">By locality (North · South · East · West · Central)</option>
+            <option value="clear">Flat — no sub-units</option>
+          </optgroup>
+          <optgroup label="Combined authority (groups several councils)">
+            <option value="wmca">West Midlands CA (7 boroughs)</option>
+            <option value="gmca">Greater Manchester CA (10)</option>
+            <option value="wyca">West Yorkshire CA (5)</option>
+            <option value="lcr">Liverpool City Region (6)</option>
+            <option value="syca">South Yorkshire CA (4)</option>
+            <option value="neca">North East CA (7)</option>
+          </optgroup>
+        </select>
+        <input id="b-new" placeholder="Add a locality, district, cluster or pyramid…" style="flex:1;min-width:180px;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 13px var(--sans);padding:8px 10px">
+        <button class="btn sm" id="b-add">Add</button>
+      </div>
+      <div id="borough-roll"></div>
+      <div id="borough-assign" style="margin-top:12px"></div>
+    </div>
+    <div class="card c6" id="youth"><h3>Youth Guarantee — destinations</h3><div class="sub">Employability through attainment, across the area · apprenticeship-first</div><div id="destinations"></div></div>
+    <div class="card c6" id="skills"><h3>🎓 Skills &amp; adult education pipeline</h3><div class="sub">Adult Skills Fund lens — post-16 destinations and the adult-skills handoff, live from school data</div><div id="skills-pipe"></div></div>
+    <div class="card c6" id="inclusion"><h3>📶 Digital inclusion &amp; funded learning</h3><div class="sub">Digital-poverty priorities by area/group + learners funded through sponsor gift codes</div><div id="inclusion-body"></div></div>
+    <div class="card c6"><h3>Wellbeing &amp; safeguarding</h3><div class="sub">Aggregate signals (KCSIE workflows in the secure backend)</div><div id="safeguard"></div></div>
+
+    <div class="card c12" id="sa-pathways"><h3>🧭 Strategic Authority — technical-pathway coordination</h3>
+      <div class="sub">Shape 14+ education around the industries growing in your area: set local priority sectors, convene schools, colleges &amp; employers, and secure work experience — the MBacc-style, place-based model. Priorities publish to every connected school.</div>
+      <div id="sa-body"></div>
+    </div>
+
+    <div class="card c12" id="skills-intel"><h3>📊 Skills supply &amp; demand — regional intelligence</h3>
+      <div class="sub">Match your priority sectors against the real opportunities employers and colleges are posting in your area — so you can see where to convene more employers, and where demand is running ahead of strategy.</div>
+      <div id="intel-body"></div>
+    </div>
+
+    <div class="card c12"><h3>Compliance &amp; licensing</h3>
+      <div class="trust">
+        <span class="tb"><b>Verified impact</b> · before/after mastery</span>
+        <span class="tb"><b>GDPR &amp; AADC</b> conformant by design</span>
+        <span class="tb"><b>KCSIE</b>-aligned safeguarding</span>
+        <span class="tb"><b>Area-wide licensing</b></span>
+        <span class="tb"><b>Anonymised</b> cohort benchmarking</span>
+        <span class="tb"><b>UK Youth Guarantee</b> aligned</span>
+      </div>
+    </div>
+  </div>
+  <section id="readiness-root" style="margin:16px 0"></section>
+  <section id="growth-root" style="margin:16px 0"></section>
+</main>
+</div>
+<div id="modal"><div class="box"><h3><span id="m-title">Detail</span><button class="x" id="m-close">×</button></h3><div class="msub" id="m-sub"></div><div id="m-body"></div></div></div>
+<div id="toast"></div>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;
+function $(id){return document.getElementById(id)}function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var e=$('toast');e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2400)}
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+function money(n){return '£'+(Math.round(n||0)).toLocaleString()}
+function avg(a){return a.length?Math.round(a.reduce(function(x,y){return x+y},0)/a.length):0}
+function avg1(a){return a.length?Math.round(a.reduce(function(x,y){return x+y},0)/a.length*10)/10:0}
+function ragColor(v){return v>=65?'var(--good)':v>=50?'var(--warn)':'var(--crit)'}
+
+var code=SY.get('authorityCode',null);if(!code){code='LA-'+(Math.random().toString(36).slice(2,7)).toUpperCase();SY.set('authorityCode',code)}
+$('la-code').textContent=code;
+$('copy-code').onclick=function(){(navigator.clipboard?navigator.clipboard.writeText(code):Promise.reject()).then(function(){toast('Code copied')},function(){toast('Code: '+code)})};
+
+function laGet(k,d){try{var v=JSON.parse(localStorage.getItem('sy-la:'+code+':'+k));return v==null?d:v}catch(e){return d}}
+function laSet(k,v){try{localStorage.setItem('sy-la:'+code+':'+k,JSON.stringify(v))}catch(e){}}
+
+/* ---- modal (drill-down) ---- */
+function openModal(title,sub,html){$('m-title').textContent=title;$('m-sub').textContent=sub||'';$('m-body').innerHTML=html;$('modal').classList.add('open')}
+$('m-close').onclick=function(){$('modal').classList.remove('open')};
+$('modal').onclick=function(e){if(e.target===$('modal'))$('modal').classList.remove('open')};
+
+/* ---- team & multi-user access ---- */
+var team=laGet('team',[]);var meEmail=(SY.session.email||'').toLowerCase();
+if(meEmail&&!team.some(function(t){return t.email===meEmail})){team.push({email:meEmail,name:SY.session.name||meEmail,at:new Date().toISOString()});laSet('team',team)}
+function renderTeam(){var t=laGet('team',[]);$('team-list').innerHTML=t.length?t.map(function(m){return '<div>'+esc(m.name||m.email)+(m.email===meEmail?' <span style="color:var(--gold-400)">(you)</span>':'')+'</div>'}).join(''):'Just you so far — share your code with colleagues.'}
+$('join-btn').onclick=function(){var c=($('join-code').value||'').trim().toUpperCase();if(c.length<4){toast('Enter an authority code');return}SY.set('authorityCode',c);toast('Joined authority '+c+' — loading shared data');setTimeout(function(){location.reload()},600)};
+renderTeam();
+function schools(){var out=[];var re=new RegExp('^sy-la:'+code+':school:(.+)$');for(var i=0;i<localStorage.length;i++){var key=localStorage.key(i);if(re.test(key)){try{out.push(JSON.parse(localStorage.getItem(key)))}catch(e){}}}return out}
+
+var sortKey='avg';var open={};
+
+function sparkline(series,w,h){
+  if(!series||series.length<2)return '<div class="empty" style="padding:6px 0">Not enough history yet.</div>';
+  w=w||420;h=h||90;var pad=8,max=Math.max.apply(null,series),min=Math.min.apply(null,series);var rng=Math.max(1,max-min);
+  var pts=series.map(function(v,i){var x=pad+(w-2*pad)*i/(series.length-1);var y=h-pad-(h-2*pad)*(v-min)/rng;return [x,y]});
+  var d=pts.map(function(p,i){return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)}).join(' ');
+  var area=d+' L'+pts[pts.length-1][0].toFixed(1)+' '+(h-pad)+' L'+pad+' '+(h-pad)+' Z';
+  var dots=pts.map(function(p){return '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="2.6" fill="#A9CFF2"/>'}).join('');
+  var labs=series.map(function(v,i){var x=pad+(w-2*pad)*i/(series.length-1);return '<text x="'+x.toFixed(1)+'" y="'+(h-1)+'" text-anchor="middle">T'+(i+1)+'</text>'}).join('');
+  return '<svg class="spark" viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" preserveAspectRatio="none">'+
+    '<defs><linearGradient id="gsp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(79,166,224,.35)"/><stop offset="1" stop-color="rgba(79,166,224,0)"/></linearGradient></defs>'+
+    '<path d="'+area+'" fill="url(#gsp)"/><path d="'+d+'" fill="none" stroke="#4FA6E0" stroke-width="2"/>'+dots+labs+'</svg>';
+}
+
+/* ---- Strategic Authority pathway coordination: set local priority sectors,
+   convene the network, secure work experience. Priorities persist to the
+   authority (regionSectors) so connected schools can adopt them. ---- */
+function renderSAPathways(S){
+  var PW=window.SYPathways;if(!PW){var b0=document.getElementById('sa-body');if(b0)b0.style.display='none';return;}
+  var body=document.getElementById('sa-body');if(!body)return;
+  var pri=laGet('regionSectors',[]);
+  var net=laGet('saNetwork',{schools:0,colleges:0,employers:0,pledges:0});
+  if(!net.schools&&S&&S.length)net.schools=S.length; // seed schools from connected roll
+  var chips=PW.SECTORS.map(function(s){var on=pri.indexOf(s.k)>=0;
+    return '<button type="button" class="sa-chip'+(on?' on':'')+'" data-s="'+s.k+'">'+s.ic+' '+s.name.replace(/&/g,'&amp;')+'</button>';
+  }).join('');
+  var counters=[['schools','🏫','Schools convened'],['colleges','🏫','Colleges'],['employers','💼','Employers engaged'],['pledges','🗓️','Work-experience pledges']].map(function(c){
+    return '<div class="sa-ct"><div class="v" id="sa-'+c[0]+'">'+(net[c[0]]||0)+'</div><div class="l">'+c[1]+' '+c[2]+'</div>'+
+      '<div class="sa-btns"><button type="button" class="sa-inc" data-k="'+c[0]+'" data-d="-1">–</button><button type="button" class="sa-inc" data-k="'+c[0]+'" data-d="1">+</button></div></div>';
+  }).join('');
+  var priNames=pri.map(function(k){var s=PW.sector(k);return s?s.ic+' '+s.name:k});
+  var ready=pri.length&&net.employers>0&&net.pledges>0;
+  body.innerHTML=
+    '<div class="sa-lbl">Local growth sectors — your area\'s priorities</div>'+
+    '<div class="sa-chips">'+chips+'</div>'+
+    '<div class="sa-net">'+counters+'</div>'+
+    '<div class="sa-status '+(ready?'ok':'')+'">'+(ready
+      ? '✅ Coordination live: '+pri.length+' priority sector'+(pri.length>1?'s':'')+' set, '+net.employers+' employers engaged, '+net.pledges+' work-experience pledges secured across '+(net.schools||0)+' schools.'
+      : '◻︎ To go live: set at least one priority sector, engage employers, and secure work-experience pledges. '+(pri.length?'Priorities: '+priNames.join(' · '):'No sectors set yet.'))+'</div>'+
+    '<div style="margin-top:12px"><button class="btn solid" id="sa-export">Download coordination summary (Word)</button></div>';
+  Array.prototype.forEach.call(body.querySelectorAll('.sa-chip'),function(btn){btn.onclick=function(){
+    var k=btn.getAttribute('data-s'),cur=laGet('regionSectors',[]);var i=cur.indexOf(k);
+    if(i>=0)cur.splice(i,1);else cur.push(k);laSet('regionSectors',cur);renderSAPathways(S);toast('Local priorities updated');
+  }});
+  Array.prototype.forEach.call(body.querySelectorAll('.sa-inc'),function(btn){btn.onclick=function(){
+    var k=btn.getAttribute('data-k'),d=+btn.getAttribute('data-d');var n=laGet('saNetwork',{schools:0,colleges:0,employers:0,pledges:0});
+    n[k]=Math.max(0,(n[k]||0)+d);laSet('saNetwork',n);renderSAPathways(S);
+  }});
+  var ex=document.getElementById('sa-export');if(ex)ex.onclick=function(){
+    if(!window.SYExport){toast('Export unavailable');return;}
+    var n=laGet('saNetwork',{}),pr=laGet('regionSectors',[]);
+    SYExport.word('StudYear-Pathway-Coordination.docx',{title:'Strategic Authority — Technical-Pathway Coordination',blocks:[
+      {p:'Authority '+code+' · '+new Date().toLocaleDateString()},
+      {h:'Local priority sectors'},
+      {table:{headers:['Sector','Routes in'],rows:pr.length?pr.map(function(k){var s=PW.sector(k)||{name:k,routes:[]};return [s.name,(s.routes||[]).join(', ')]}):[['None set yet','—']]}},
+      {h:'Convened network'},
+      {table:{headers:['Partner type','Count'],rows:[['Schools',String(n.schools||0)],['Colleges',String(n.colleges||0)],['Employers',String(n.employers||0)],['Work-experience pledges',String(n.pledges||0)]]}}
+    ]});toast('Coordination summary downloaded');
+  };
+}
+/* ---- Skills supply & demand: strategic priority sectors vs the opportunities
+   employers & colleges are actually posting. Surfaces gaps (priority, no
+   supply) and unfocused supply (opportunities, no priority). ---- */
+function renderSkillsIntel(){
+  var PW=window.SYPathways;var body=document.getElementById('intel-body');if(!PW||!body)return;
+  var pri=laGet('regionSectors',[]);
+  var market=PW.marketList?PW.marketList():[];
+  var rows=PW.SECTORS.map(function(s){
+    var os=market.filter(function(o){return o.sector===s.k;});
+    var places=os.reduce(function(a,o){return a+(+o.capacity||0);},0);
+    var appr=os.filter(function(o){return o.kind==='apprenticeship';}).length;
+    var priority=pri.indexOf(s.k)>=0;
+    var status,cls,act;
+    if(priority&&os.length===0){status='Gap — priority, no employers yet';cls='gap';act='Convene employers in this sector and secure work-experience pledges.';}
+    else if(priority&&os.length>0){status='Aligned';cls='ok';act='On track — keep growing placements to meet pupil demand.';}
+    else if(!priority&&os.length>0){status='Supply without focus';cls='warn';act='Employers are active here — consider making it a priority sector.';}
+    else{status='No activity';cls='';act='Not a priority and no opportunities posted.';}
+    return {s:s,opps:os.length,places:places,appr:appr,priority:priority,status:status,cls:cls,act:act};
+  });
+  var gaps=rows.filter(function(r){return r.cls==='gap';}).length;
+  var aligned=rows.filter(function(r){return r.cls==='ok';}).length;
+  var totalOpps=market.length,totalPlaces=market.reduce(function(a,o){return a+(+o.capacity||0);},0);
+  body.innerHTML=
+    '<div class="sa-net" style="grid-template-columns:repeat(4,1fr)">'+
+      '<div class="sa-ct"><div class="v">'+totalOpps+'</div><div class="l">Opportunities in area</div></div>'+
+      '<div class="sa-ct"><div class="v">'+totalPlaces+'</div><div class="l">Places offered</div></div>'+
+      '<div class="sa-ct"><div class="v" style="color:'+(aligned?'var(--good)':'var(--ink)')+'">'+aligned+'</div><div class="l">Sectors aligned</div></div>'+
+      '<div class="sa-ct"><div class="v" style="color:'+(gaps?'var(--warn)':'var(--ink)')+'">'+gaps+'</div><div class="l">Priority gaps</div></div>'+
+    '</div>'+
+    '<div class="intel-rows">'+rows.map(function(r){
+      var col=r.cls==='ok'?'var(--good)':r.cls==='gap'?'var(--warn)':r.cls==='warn'?'var(--gold-400)':'var(--ink-3)';
+      return '<div class="intel-row"><div class="ir-h"><b>'+r.s.ic+' '+r.s.name.replace(/&/g,'&amp;')+'</b>'+(r.priority?' <span class="pill" style="border-color:rgba(77,157,224,.4);color:var(--gold-300)">★ priority</span>':'')+
+        '<span style="margin-left:auto;color:'+col+';font-size:12px;font-weight:600">'+r.status+'</span></div>'+
+        '<div class="ir-m">'+r.opps+' opportunit'+(r.opps===1?'y':'ies')+' · '+r.places+' places'+(r.appr?' · '+r.appr+' apprenticeship'+(r.appr>1?'s':''):'')+'</div>'+
+        '<div class="ir-a">→ '+r.act+'</div></div>';
+    }).join('')+'</div>'+
+    '<div style="margin-top:12px"><button class="btn solid" id="intel-export">Download skills-intelligence report (Word)</button></div>';
+  var ex=document.getElementById('intel-export');if(ex)ex.onclick=function(){
+    if(!window.SYExport){toast('Export unavailable');return;}
+    SYExport.word('StudYear-Skills-Intelligence.docx',{title:'Regional Skills Supply & Demand',blocks:[
+      {p:'Authority '+code+' · '+new Date().toLocaleDateString()},
+      {p:'Opportunities in area: '+totalOpps+' · Places: '+totalPlaces+' · Aligned sectors: '+aligned+' · Priority gaps: '+gaps},
+      {h:'Sector analysis'},
+      {table:{headers:['Sector','Priority','Opportunities','Places','Status','Action'],rows:rows.map(function(r){return [r.s.name,r.priority?'Yes':'No',String(r.opps),String(r.places),r.status,r.act]})}}
+    ]});toast('Report downloaded');
+  };
+}
+function draw(){
+  var S=schools();
+  try{renderSAPathways(S);renderSkillsIntel();}catch(e){}
+  var totalStudents=S.reduce(function(a,s){return a+(s.students||0)},0);
+  var attain=S.length?avg(S.map(function(s){return s.avg||0})):0;
+  var prevAttain=S.length?avg(S.map(function(s){return s.prevAvg||s.avg||0})):0;
+  var progs=laGet('programmes',[]);
+  var active=progs.filter(function(p){return p.status!=='closed'});
+  var p8vals=S.map(function(s){return s.p8}).filter(function(x){return x!=null});
+  var gapVals=S.map(function(s){return s.ppGap}).filter(function(x){return x!=null});
+  var paVals=S.map(function(s){return s.persistentAbs}).filter(function(x){return x!=null});
+  var fund=progs.reduce(function(a,p){return a+(p.cost||0)},0);
+
+  $('k-schools').textContent=S.length;$('k-students').textContent=totalStudents.toLocaleString();$('k-attain').textContent=attain+'%';
+  var delta=attain-prevAttain;$('k-attain-d').innerHTML=S.length&&delta?('<span class="'+(delta>0?'up':'down')+'">'+(delta>0?'▲ +':'▼ ')+delta+' pts vs last term</span>'):'';
+  $('k-p8').textContent=p8vals.length?((avg1(p8vals)>0?'+':'')+avg1(p8vals)):'—';
+  $('k-gap').textContent=gapVals.length?(avg(gapVals)+' pts'):'—';
+  $('k-pa').textContent=paVals.length?(avg(paVals)+'%'):'—';
+  $('k-progs').textContent=active.length;$('k-fund').textContent=money(fund);
+  var gains=progs.filter(function(p){return p.current!=null&&p.baseline!=null}).map(function(p){return p.current-p.baseline});
+  $('k-roi').textContent=gains.length?('+'+avg(gains)+' pts'):'—';
+  var effs=progs.filter(function(p){return p.cost&&p.current!=null&&p.baseline!=null}).map(function(p){return (p.current-p.baseline)/(p.cost/1000)});
+  $('k-eff').textContent=effs.length?('+'+avg1(effs)):'—';
+
+  /* two-way flow status */
+  var pushed=laGet('pushed',[]);
+  $('flow-down').textContent=pushed.length?(pushed.length+' programme'+(pushed.length>1?'s':'')+' pushed — latest: '+pushed[pushed.length-1].name):'No programmes pushed yet.';
+
+  /* area trend */
+  var terms=Math.max.apply(null,[2].concat(S.map(function(s){return (s.series||[]).length})));
+  var areaSeries=[];for(var t=0;t<terms;t++){var col=S.map(function(s){var ser=s.series||[];return ser.length?ser[Math.min(t,ser.length-1)]:s.avg}).filter(function(x){return x!=null});if(col.length)areaSeries.push(avg(col))}
+  $('trend').innerHTML=S.length?sparkline(areaSeries):'<div class="empty">Connect schools to chart area attainment over time.</div>';
+
+  /* RAG distribution */
+  var g=S.filter(function(s){return (s.avg||0)>=65}).length,a=S.filter(function(s){return (s.avg||0)>=50&&(s.avg||0)<65}).length,r=S.filter(function(s){return (s.avg||0)<50}).length;
+  var tot=S.length||1;
+  $('rag-dist').innerHTML=S.length?(
+    [['Strong (≥65%)','var(--good)',g],['Requires support (50–64%)','var(--warn)',a],['Priority (<50%)','var(--crit)',r]].map(function(x){
+      return '<div class="rank"><span class="rag" style="background:'+x[1]+'"></span><span style="flex:1">'+x[0]+'</span><span class="bar" style="width:90px"><i style="width:'+Math.round(100*x[2]/tot)+'%;background:'+x[1]+'"></i></span><b style="width:24px;text-align:right">'+x[2]+'</b></div>';
+    }).join('')
+  ):'<div class="empty">No schools connected.</div>';
+
+  /* benchmarking table with drill-down + rank movement */
+  var ranked=S.slice().sort(function(a,b){return (b[sortKey]||0)-(a[sortKey]||0)});
+  if(sortKey==='ppGap'||sortKey==='persistentAbs')ranked=S.slice().sort(function(a,b){return (a[sortKey]||0)-(b[sortKey]||0)});
+  var prevRank=S.slice().sort(function(a,b){return (b.prevAvg||b.avg||0)-(a.prevAvg||a.avg||0)}).map(function(s){return s.schoolCode});
+  $('school-table').innerHTML=S.length?('<div class="row th"><span style="flex:1">School</span><span style="width:52px">Roll</span><span style="width:100px">Attainment</span><span style="width:52px">P8</span><span style="width:46px">Gap</span><span style="width:58px">Attend.</span><span style="width:40px"></span></div>'+
+    ranked.map(function(s){var c=ragColor(s.avg||0);var idx=ranked.indexOf(s);var was=prevRank.indexOf(s.schoolCode);var mv=(was>=0)?(was-idx):0;
+      var mvh=mv>0?'<span class="up">▲'+mv+'</span>':mv<0?'<span class="down">▼'+(-mv)+'</span>':'<span style="color:var(--ink-3)">—</span>';
+      var isOpen=open[s.schoolCode];
+      var dest=s.dest||{};var destKeys=Object.keys(dest);
+      return '<div class="row clk" data-sc="'+esc(s.schoolCode)+'"><span style="flex:1"><span class="rag" style="background:'+c+';margin-right:7px"></span><b>'+esc(s.name||s.schoolCode)+'</b> '+mvh+'</span>'+
+        '<span style="width:52px">'+(s.students||0)+'</span>'+
+        '<span style="width:100px"><span class="bar" style="display:inline-block;width:46px;vertical-align:middle"><i style="width:'+(s.avg||0)+'%;background:'+c+'"></i></span> '+(s.avg||0)+'%</span>'+
+        '<span style="width:52px">'+(s.p8!=null?(s.p8>0?'+':'')+s.p8:'—')+'</span>'+
+        '<span style="width:46px">'+(s.ppGap!=null?s.ppGap:'—')+'</span>'+
+        '<span style="width:58px">'+(s.attendance||0)+'%</span>'+
+        '<span style="width:40px;text-align:right;color:var(--gold-300)">'+(isOpen?'▲':'▼')+'</span></div>'+
+        '<div class="drill'+(isOpen?' open':'')+'" id="drill-'+esc(s.schoolCode)+'"><div class="dg">'+
+          '<div>Disadvantaged<b>'+(s.ppGap!=null?s.ppGap+' pt gap':'—')+'</b></div>'+
+          '<div>SEND<b>'+(s.send!=null?s.send+'%':'—')+'</b></div>'+
+          '<div>EAL<b>'+(s.eal!=null?s.eal+'%':'—')+'</b></div>'+
+          '<div>Persistent absence<b>'+(s.persistentAbs!=null?s.persistentAbs+'%':'—')+'</b></div>'+
+          '<div>Wellbeing<b>'+(s.wellbeing!=null?s.wellbeing+'%':'—')+'</b></div>'+
+          '<div>Safeguarding alerts<b>'+(s.safeguard||0)+'</b></div>'+
+        '</div>'+(destKeys.length?'<div class="note" style="margin-top:8px">Destinations: '+destKeys.map(function(k){return esc(k)+' '+dest[k]}).join(' · ')+'</div>':'')+'</div>';
+    }).join('')):'<div class="empty">No schools connected yet. Share your authority code — schools connect from their Command Centre.</div>';
+  Array.prototype.forEach.call($('school-table').querySelectorAll('[data-sc]'),function(rowEl){rowEl.onclick=function(){var sc=rowEl.getAttribute('data-sc');open[sc]=!open[sc];draw()}});
+
+  /* equity / gap */
+  var gapSchools=S.filter(function(s){return s.ppGap!=null}).sort(function(a,b){return b.ppGap-a.ppGap});
+  $('equity-list').innerHTML=gapSchools.length?('<div class="row th"><span style="flex:1">School</span><span style="width:150px">Gap (disadvantaged)</span></div>'+gapSchools.map(function(s){var w=Math.min(100,(s.ppGap/30)*100);
+    return '<div class="row"><span style="flex:1"><b>'+esc(s.name||s.schoolCode)+'</b></span><span style="width:150px"><span class="bar" style="display:inline-block;width:96px;vertical-align:middle"><i style="width:'+w+'%;background:'+(s.ppGap>=18?'var(--crit)':s.ppGap>=10?'var(--warn)':'var(--good)')+'"></i></span> '+s.ppGap+' pts</span></div>';
+  }).join('')+'<div class="note">Area gap: <b style="color:var(--gold-300)">'+(gapVals.length?avg(gapVals):0)+' pts</b>. Target a Premium programme at the widest gaps.</div>'):'<div class="empty">No disadvantage-gap data fed yet.</div>';
+
+  /* attendance / persistent absence */
+  var attSchools=S.filter(function(s){return s.attendance!=null}).sort(function(a,b){return (a.attendance||0)-(b.attendance||0)});
+  $('attend-list').innerHTML=attSchools.length?('<div class="row th"><span style="flex:1">School</span><span style="width:80px">Attend.</span><span style="width:90px">Persist. abs.</span></div>'+attSchools.map(function(s){var c=(s.attendance||0)>=95?'var(--good)':(s.attendance||0)>=92?'var(--warn)':'var(--crit)';
+    return '<div class="row"><span style="flex:1"><b>'+esc(s.name||s.schoolCode)+'</b></span><span style="width:80px;color:'+c+'">'+(s.attendance||0)+'%</span><span style="width:90px">'+(s.persistentAbs!=null?s.persistentAbs+'%':'—')+'</span></div>';
+  }).join('')+'<div class="note">Persistent absence flags a case for an Attendance-recovery programme. Registers feed live from teachers.</div>'):'<div class="empty">No attendance data fed yet — schools share it once teachers take registers.</div>';
+
+  /* target hint for new programme */
+  var worst=S.slice().sort(function(a,b){return (a.avg||0)-(b.avg||0)})[0];
+  $('target-hint').innerHTML=worst?('Suggested priority: <b style="color:var(--gold-300)">'+esc(worst.name||worst.schoolCode)+'</b> ('+(worst.avg||0)+'% attainment, '+(worst.ppGap!=null?worst.ppGap+'pt gap':'gap n/a')+').'):'';
+
+  /* programmes list */
+  $('prog-list').innerHTML=progs.length?progs.map(function(p,i){return '<div class="row"><span style="flex:1"><b>'+esc(p.name)+'</b> <span class="badge">'+esc(p.type)+'</span>'+(p.cohort&&p.cohort!=='Whole area'?' <span class="badge warn">'+esc(p.cohort)+'</span>':'')+'</span><span style="color:var(--ink-3);font-size:11.5px">'+money(p.cost)+' · '+(p.students||0)+'</span> '+(p.status==='closed'?'<span class="badge good">closed</span>':'<button class="btn sm ghost" data-adv="'+i+'">+ report</button> <button class="btn sm ghost" data-close="'+i+'">close</button>')+'</div>'}).join(''):'<div class="empty">No programmes yet.</div>';
+  Array.prototype.forEach.call($('prog-list').querySelectorAll('[data-adv]'),function(b){b.onclick=function(e){e.stopPropagation();var pr=laGet('programmes',[]);var p=pr[+b.dataset.adv];p.current=Math.min(100,(p.current||p.baseline||50)+4);(p.reports=p.reports||[]).push({at:new Date().toISOString(),v:p.current});laSet('programmes',pr);toast('Progress reported — impact updated');draw()}});
+  Array.prototype.forEach.call($('prog-list').querySelectorAll('[data-close]'),function(b){b.onclick=function(e){e.stopPropagation();var pr=laGet('programmes',[]);pr[+b.dataset.close].status='closed';laSet('programmes',pr);toast('Programme closed — impact locked for the record');draw()}});
+
+  /* impact evidence, ranked by cost-effectiveness */
+  var withImpact=progs.map(function(p){var gain=(p.current!=null&&p.baseline!=null)?(p.current-p.baseline):0;var perK=p.cost?Math.round(gain/(p.cost/1000)*10)/10:0;return {p:p,gain:gain,perK:perK}}).sort(function(a,b){return b.perK-a.perK});
+  $('impact-list').innerHTML=progs.length?withImpact.map(function(o,i){var p=o.p;
+    return '<div class="prog"><div style="display:flex;align-items:baseline;gap:8px"><div class="pt" style="flex:1">'+esc(p.name)+(i===0&&o.perK>0?' <span class="badge good">best value</span>':'')+'</div><span class="note" style="margin:0">#'+(i+1)+'</span></div><div class="pm">'+esc(p.type)+' · '+money(p.cost)+' · '+(p.students||0)+' students'+(p.status==='closed'?' · closed':'')+'</div>'+
+      '<div class="rank" style="margin-top:8px"><span style="width:64px">Before</span><span class="bar" style="flex:1"><i style="width:'+(p.baseline||0)+'%;background:var(--ink-3)"></i></span><span style="width:40px;text-align:right">'+(p.baseline||0)+'%</span></div>'+
+      '<div class="rank"><span style="width:64px">After</span><span class="bar" style="flex:1"><i style="width:'+(p.current||p.baseline||0)+'%;background:var(--good)"></i></span><span style="width:40px;text-align:right">'+(p.current||p.baseline||0)+'%</span></div>'+
+      '<div style="margin-top:6px"><span class="impact">+'+o.gain+' pts</span> <span class="note" style="margin:0">mastery · '+o.perK+' pts per £1k'+(p.cost?' · '+money(p.cost/Math.max(1,p.students||1))+'/student':'')+'</span></div></div>';
+  }).join(''):'<div class="empty">Create a programme to generate funding-impact evidence.</div>';
+
+  /* destinations aggregate + NEET */
+  var dest={};S.forEach(function(s){var d=s.dest||{};Object.keys(d).forEach(function(k){dest[k]=(dest[k]||0)+d[k]})});
+  var dk=Object.keys(dest);var dtot=dk.reduce(function(a,k){return a+dest[k]},0)||1;
+  var neet=dk.filter(function(k){return /support|neet|unknown/i.test(k)}).reduce(function(a,k){return a+dest[k]},0);
+  $('destinations').innerHTML=dk.length?(dk.sort(function(a,b){return dest[b]-dest[a]}).map(function(d){var pc=Math.round(100*dest[d]/dtot);var pos=/support|neet|unknown/i.test(d);
+    return '<div class="rank"><span style="width:150px;flex:none">'+esc(d)+'</span><span class="bar" style="flex:1"><i style="width:'+pc+'%;background:'+(pos?'var(--crit)':'var(--good)')+'"></i></span><span style="width:66px;text-align:right">'+dest[d].toLocaleString()+' · '+pc+'%</span></div>';
+  }).join('')+'<div class="note">NEET / needs-support rate: <b style="color:'+(Math.round(100*neet/dtot)>10?'var(--crit)':'var(--gold-300)')+'">'+Math.round(100*neet/dtot)+'%</b> — aligned to the UK Youth Guarantee. Apprenticeship pathways prioritised.</div>'):'<div class="empty">Connect schools to see area destinations.</div>';
+
+  /* wellbeing/safeguarding */
+  var well=S.length?avg(S.map(function(s){return s.wellbeing||0})):0;var alerts=S.reduce(function(a,s){return a+(s.safeguard||0)},0);
+  $('safeguard').innerHTML=S.length?('<div class="row"><span class="rag" style="background:'+(well>=70?'var(--good)':well>=55?'var(--warn)':'var(--crit)')+'"></span><span style="flex:1">Average wellbeing</span><b>'+well+'%</b></div><div class="row"><span class="rag" style="background:'+(alerts?'var(--crit)':'var(--good)')+'"></span><span style="flex:1">Safeguarding alerts (area)</span><b style="color:'+(alerts?'var(--crit)':'var(--good)')+'">'+alerts+'</b></div><div class="note">Case detail stays in each school under KCSIE; the authority sees counts only.</div>'):'<div class="empty">No data yet.</div>';
+
+  /* ---- Region structure: any combined authority's councils, any single
+     authority's districts. Rollups per unit from the same live school feed. */
+  var units=SY.get('laUnits',[]);
+  var assign=SY.get('laAssign',{});
+  var byU={};units.forEach(function(u){byU[u]=[]});var unassigned=[];
+  S.forEach(function(s){var u=assign[s.schoolCode];if(u&&byU[u])byU[u].push(s);else unassigned.push(s)});
+  function wavg(list,f){var t=0,n=0;list.forEach(function(s){var w=s.students||1;t+=f(s)*w;n+=w});return n?Math.round(t/n):0}
+  $('borough-roll').innerHTML=units.length?(
+    '<div class="row th"><span style="flex:1">Group / unit</span><span style="width:64px;text-align:right">Schools</span><span style="width:80px;text-align:right">Students</span><span style="width:92px;text-align:right">Attainment</span><span style="width:72px;text-align:right">PP gap</span><span style="width:88px;text-align:right">NEET risk</span></div>'+
+    units.map(function(u){var L=byU[u]||[];var st=L.reduce(function(a,s){return a+(s.students||0)},0);
+      var at=L.length?wavg(L,function(s){return s.avg||0}):0;
+      var gap=L.length?avg(L.map(function(s){return s.ppGap||0})):0;
+      var neetR=L.length?Math.min(35,Math.round(avg(L.map(function(s){return s.persistentAbs||0}))*0.7+Math.max(0,55-at)*0.4)):0;
+      return '<div class="row"><span style="flex:1">'+esc(u)+' <a href="#" data-bdel="'+esc(u)+'" style="font-size:10px;color:var(--ink-3);text-decoration:none;margin-left:6px" title="remove unit">✕</a></span>'+
+        '<span style="width:64px;text-align:right">'+L.length+'</span>'+
+        '<span style="width:80px;text-align:right">'+st.toLocaleString()+'</span>'+
+        '<span style="width:92px;text-align:right;color:'+(L.length?(at>=60?'var(--good)':'var(--warn)'):'var(--ink-3)')+'">'+(L.length?at+'%':'—')+'</span>'+
+        '<span style="width:72px;text-align:right">'+(L.length?gap+' pts':'—')+'</span>'+
+        '<span style="width:88px;text-align:right;color:'+(neetR>15?'var(--crit)':'var(--ink-2)')+'">'+(L.length?'≈'+neetR+'%':'—')+'</span></div>';
+    }).join('')+
+    (unassigned.length?'<div class="note">'+unassigned.length+' school'+(unassigned.length>1?'s':'')+' not yet assigned — use the selectors below.</div>':'')
+  ):'<div class="empty">Running flat (no sub-units). Pick a combined-authority preset above, or add your own districts.</div>';
+  $('borough-assign').innerHTML=(units.length&&S.length)?('<div class="sub" style="margin-bottom:6px">Assign each school to its group</div>'+S.map(function(s){
+    return '<div class="row"><span style="flex:1">'+esc(s.name||s.schoolCode)+'</span><select data-bassign="'+esc(s.schoolCode)+'" style="width:200px;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:8px;color:var(--ink);font:400 12.5px var(--sans);padding:6px 8px"><option value="">— group —</option>'+
+      units.map(function(u){return '<option'+((assign[s.schoolCode]||'')===u?' selected':'')+'>'+esc(u)+'</option>'}).join('')+'</select></div>';
+  }).join('')):'';
+  Array.prototype.forEach.call(document.querySelectorAll('[data-bassign]'),function(sel){sel.onchange=function(){assign[sel.dataset.bassign]=sel.value;SY.set('laAssign',assign);draw()}});
+  Array.prototype.forEach.call(document.querySelectorAll('[data-bdel]'),function(a){a.onclick=function(e){e.preventDefault();SY.set('laUnits',units.filter(function(u){return u!==a.dataset.bdel}));draw()}});
+
+  /* ---- Skills & adult education pipeline (Adult Skills Fund lens) ---- */
+  var appr=0,needsN=0;Object.keys(dest).forEach(function(k){if(/apprentice/i.test(k))appr+=dest[k];if(/support|neet|unknown/i.test(k))needsN+=dest[k]});
+  $('skills-pipe').innerHTML=Object.keys(dest).length?(
+    '<div class="row"><span style="flex:1">Post-16 apprenticeship pipeline</span><b style="color:var(--gold-300)">'+appr.toLocaleString()+' learners · '+Math.round(100*appr/dtot)+'%</b></div>'+
+    '<div class="row"><span style="flex:1">Adult-skills handoff (needs support post-16)</span><b style="color:'+(needsN?'var(--crit)':'var(--good)')+'">'+needsN.toLocaleString()+' learners</b></div>'+
+    '<div class="row"><span style="flex:1">Career Passports live in schools</span><b style="color:var(--good)">employer-matched by results</b></div>'+
+    '<div class="note">The needs-support cohort is the authority’s devolved adult-education pipeline — target skills funding here; Career Passports feed sector demand (health, engineering, digital) per area.</div>'
+  ):'<div class="empty">Connect schools to build the skills pipeline.</div>';
+
+  /* ---- Digital inclusion & funded learning ---- */
+  var gifts=[];try{gifts=JSON.parse(localStorage.getItem('sy-gifts'))||[]}catch(e){}
+  var redeemedG=gifts.filter(function(g){return g.redeemed}).length;
+  var priority=units.map(function(u){var L=byU[u]||[];return L.length?{u:u,gap:avg(L.map(function(s){return s.ppGap||0}))}:null})
+    .filter(Boolean).sort(function(a,b){return b.gap-a.gap}).slice(0,3);
+  $('inclusion-body').innerHTML=
+    '<div class="row"><span style="flex:1">Learners funded via gift codes</span><b style="color:var(--gold-300)">'+redeemedG.toLocaleString()+'</b></div>'+
+    '<div class="row"><span style="flex:1">Gift codes issued (area)</span><b>'+gifts.length.toLocaleString()+'</b></div>'+
+    (priority.length?('<div class="row th" style="margin-top:6px"><span style="flex:1">Digital-poverty priority areas</span><span style="width:80px;text-align:right">PP gap</span></div>'+
+      priority.map(function(x){return '<div class="row"><span style="flex:1">'+esc(x.u)+'</span><span style="width:80px;text-align:right;color:var(--crit)">'+x.gap+' pts</span></div>'}).join('')):'')+
+    '<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><a class="btn sm" href="../fund/">Open Fund-a-Student →</a><span class="note" style="margin:0">Sponsors, employers and diaspora fund named learners: www.studyear.com/fund/</span></div>';
+
+  wireDrilldowns(S,progs,dest,dtot);
+}
+
+/* ---- make every headline metric clickable to see more ---- */
+function tableFrom(headers,rows){return '<div class="row th">'+headers.map(function(h,i){return '<span style="'+(i===0?'flex:1':'width:110px;text-align:right')+'">'+esc(h)+'</span>'}).join('')+'</div>'+rows.map(function(r){return '<div class="row">'+r.map(function(c,i){return '<span style="'+(i===0?'flex:1':'width:110px;text-align:right')+'">'+c+'</span>'}).join('')+'</div>'}).join('')}
+function wireDrilldowns(S,progs,dest,dtot){
+  function tile(id,title,sub,builder){var el=$(id);if(!el)return;var card=el.closest('.card');if(!card)return;card.classList.add('clik');if(!card.querySelector('.more')){var m=document.createElement('div');m.className='more';m.textContent='click to see more →';el.parentNode.appendChild(m)}card.onclick=function(){openModal(title,sub,builder())}}
+  var byAttain=S.slice().sort(function(a,b){return (b.avg||0)-(a.avg||0)});
+  tile('k-schools','Connected schools',S.length+' schools feeding anonymised data',function(){return tableFrom(['School','Roll','Attainment'],byAttain.map(function(s){return [esc(s.name||s.schoolCode),(s.students||0).toLocaleString(),(s.avg||0)+'%']}))});
+  tile('k-students','Students in cohort','Across all connected schools',function(){return tableFrom(['School','Students'],byAttain.map(function(s){return [esc(s.name||s.schoolCode),(s.students||0).toLocaleString()]}))});
+  tile('k-attain','Average attainment','Per-school attainment, ranked',function(){return tableFrom(['School','Attainment','vs last term'],byAttain.map(function(s){var d=(s.avg||0)-(s.prevAvg||s.avg||0);return [esc(s.name||s.schoolCode),(s.avg||0)+'%',(d>0?'+':'')+d+' pts']}))});
+  tile('k-p8','Average Progress 8','Per-school Progress 8 estimate',function(){return tableFrom(['School','Progress 8'],S.slice().sort(function(a,b){return (b.p8||0)-(a.p8||0)}).map(function(s){return [esc(s.name||s.schoolCode),s.p8!=null?((s.p8>0?'+':'')+s.p8):'—']}))});
+  tile('k-gap','Disadvantage gap','Attainment gap, widest first',function(){return tableFrom(['School','Gap (pts)'],S.filter(function(s){return s.ppGap!=null}).sort(function(a,b){return b.ppGap-a.ppGap}).map(function(s){return [esc(s.name||s.schoolCode),s.ppGap+' pts']}))});
+  tile('k-pa','Persistent absence','Below-90% attendance, highest first',function(){return tableFrom(['School','Persistent abs.','Attendance'],S.filter(function(s){return s.persistentAbs!=null}).sort(function(a,b){return b.persistentAbs-a.persistentAbs}).map(function(s){return [esc(s.name||s.schoolCode),s.persistentAbs+'%',(s.attendance||0)+'%']}))});
+  tile('k-progs','Active programmes','Programmes pushed to your schools',function(){return tableFrom(['Programme','Funding','Students'],progs.map(function(p){return [esc(p.name)+' — '+esc(p.type),money(p.cost),(p.students||0)]}))});
+  tile('k-fund','Funding deployed','Across all programmes',function(){return tableFrom(['Programme','Funding','£/student'],progs.map(function(p){return [esc(p.name),money(p.cost),money(p.cost/Math.max(1,p.students||1))]}))});
+  tile('k-roi','Average mastery gain','Before/after per programme',function(){return tableFrom(['Programme','Before','After','Gain'],progs.map(function(p){return [esc(p.name),(p.baseline||0)+'%',(p.current||p.baseline||0)+'%','+'+((p.current||0)-(p.baseline||0))+' pts']}))});
+  tile('k-eff','Cost-effectiveness','Points of mastery gained per £1,000',function(){return tableFrom(['Programme','Pts / £1k'],progs.map(function(p){var g=(p.current||0)-(p.baseline||0);return [esc(p.name),(p.cost?Math.round(g/(p.cost/1000)*10)/10:0)]}))});
+  /* destinations rows → per-school breakdown */
+  Array.prototype.forEach.call($('destinations').querySelectorAll('.rank'),function(rowEl){var key=(rowEl.querySelector('span')||{}).textContent;if(!key||!dest[key])return;rowEl.classList.add('clik');rowEl.onclick=function(){openModal(key+' — destinations',key+' across the area',tableFrom(['School',key],S.filter(function(s){return s.dest&&s.dest[key]}).sort(function(a,b){return (b.dest[key]||0)-(a.dest[key]||0)}).map(function(s){return [esc(s.name||s.schoolCode),(s.dest[key]||0).toLocaleString()]})))}});
+  /* wellbeing/safeguarding → per-school */
+  var sg=$('safeguard');if(sg&&S.length){var rows=sg.querySelectorAll('.row');if(rows[0]){rows[0].classList.add('clik');rows[0].onclick=function(){openModal('Wellbeing by school','Average wellbeing index per school',tableFrom(['School','Wellbeing'],S.slice().sort(function(a,b){return (a.wellbeing||0)-(b.wellbeing||0)}).map(function(s){return [esc(s.name||s.schoolCode),(s.wellbeing||0)+'%']})))}}if(rows[1]){rows[1].classList.add('clik');rows[1].onclick=function(){openModal('Safeguarding alerts by school','Counts only — case detail stays in schools under KCSIE',tableFrom(['School','Alerts'],S.filter(function(s){return s.safeguard}).sort(function(a,b){return (b.safeguard||0)-(a.safeguard||0)}).map(function(s){return [esc(s.name||s.schoolCode),(s.safeguard||0)]})))}}}
+}
+
+/* structure controls. The PRIMARY user is an individual local authority grouping
+   its OWN schools (by phase, locality, cluster/pyramid) — those presets come
+   first. Combined authorities (grouping several councils) are the secondary case.
+   Free-text add covers any bespoke grouping; clear = flat single authority. */
+var CA_PRESETS={
+  phase:['Primary','Secondary','Special','Early Years','Alternative Provision','Post-16'],
+  area:['North locality','South locality','East locality','West locality','Central locality'],
+  wmca:['Birmingham','Coventry','Dudley','Sandwell','Solihull','Walsall','Wolverhampton'],
+  gmca:['Bolton','Bury','Manchester','Oldham','Rochdale','Salford','Stockport','Tameside','Trafford','Wigan'],
+  wyca:['Bradford','Calderdale','Kirklees','Leeds','Wakefield'],
+  lcr:['Halton','Knowsley','Liverpool','Sefton','St Helens','Wirral'],
+  syca:['Barnsley','Doncaster','Rotherham','Sheffield'],
+  neca:['County Durham','Gateshead','Newcastle upon Tyne','North Tyneside','Northumberland','South Tyneside','Sunderland']
+};
+$('b-preset').onchange=function(){var v=this.value;this.value='';if(!v)return;
+  if(v==='clear'){SY.set('laUnits',[]);toast('Running flat — no sub-units');draw();return}
+  SY.set('laUnits',CA_PRESETS[v].slice());toast('Structure loaded — now assign your schools to their groups');draw();
+};
+$('b-add').onclick=function(){var v=$('b-new').value.trim();if(!v)return;
+  var u=SY.get('laUnits',[]);if(u.indexOf(v)<0)u.push(v);SY.set('laUnits',u);$('b-new').value='';toast('Added '+v);draw();
+};
+$('p-add').onclick=function(){
+  var name=$('p-name').value.trim();if(!name){toast('Name the programme');return}
+  var S=schools();var baseline=S.length?avg(S.map(function(s){return s.avg||0})):55;
+  var progs=laGet('programmes',[]);
+  var cohort=$('p-cohort').value;
+  progs.push({id:'p'+Date.now(),name:name,type:$('p-type').value,cohort:cohort,cost:parseFloat($('p-cost').value)||0,students:parseInt($('p-students').value,10)||0,baseline:baseline,current:baseline,status:'active',startedAt:new Date().toISOString(),reports:[]});
+  laSet('programmes',progs);
+  laSet('pushed',(laGet('pushed',[])).concat([{name:name,type:$('p-type').value,cohort:cohort,when:new Date().toISOString()}]));
+  SY.log('la','Programme created & pushed',name+' · '+cohort);
+  $('p-name').value='';$('p-cost').value='';$('p-students').value='';toast('Programme created and pushed to schools');draw();
+};
+
+/* funding-impact evidence pack — Excel / Word / PDF / PowerPoint */
+function packData(){
+  var S=schools().slice().sort(function(a,b){return (b.avg||0)-(a.avg||0)});var progs=laGet('programmes',[]);
+  var fund=progs.reduce(function(a,p){return a+(p.cost||0)},0);
+  var progRows=progs.map(function(p){var gain=(p.current!=null&&p.baseline!=null)?(p.current-p.baseline):0;var perK=p.cost?Math.round(gain/(p.cost/1000)*10)/10:0;
+    return [p.name,p.type,p.cohort||'Whole area',p.cost||0,p.students||0,(p.baseline||0)+'%',(p.current||p.baseline||0)+'%','+'+gain+' pts',perK]});
+  var schRows=S.map(function(s){return [s.name||s.schoolCode,s.students||0,(s.avg||0)+'%',s.p8!=null?s.p8:'—',s.ppGap!=null?s.ppGap+' pts':'—',(s.attendance||0)+'%']});
+  return {S:S,progs:progs,fund:fund,progRows:progRows,schRows:schRows,
+    progHead:['Programme','Type','Cohort','Funding (£)','Students','Before','After','Gain','Pts/£1k'],
+    schHead:['School','Roll','Attainment','Progress 8','Disadvantage gap','Attendance']};
+}
+$('export-pack').onclick=function(e){
+  if(!schools().length&&!laGet('programmes',[]).length){toast('Load or connect data first');return}
+  var fname='StudYear-evidence-pack-'+code;
+  SYExport.menu(e.currentTarget,{
+    excel:function(){var d=packData();SYExport.excel(fname,[
+      {name:'Programmes',rows:[d.progHead].concat(d.progRows)},
+      {name:'Schools',rows:[d.schHead].concat(d.schRows)},
+      {name:'Summary',rows:[['Metric','Value'],['Authority',code],['Schools',d.S.length],['Funding deployed',d.fund],['Active programmes',d.progs.filter(function(p){return p.status!=='closed'}).length]]}
+    ]);toast('Excel workbook downloaded')},
+    word:function(){var d=packData();SYExport.word(fname,{title:'Funding-Impact Evidence Pack',blocks:[
+      {p:'Authority '+code+' · StudYear — the AI Academic Operating System'},
+      {p:d.S.length+' schools · £'+d.fund.toLocaleString()+' deployed · '+d.progs.filter(function(p){return p.status!=='closed'}).length+' active programmes'},
+      {h:'Programmes — before/after mastery & cost-effectiveness'},{table:{headers:d.progHead,rows:d.progRows.map(function(r){return r.map(function(c,i){return i===3?'£'+Number(c).toLocaleString():String(c)})})}},
+      {h:'School benchmarking (anonymised)'},{table:{headers:d.schHead,rows:d.schRows}},
+      {p:'Verified impact · GDPR & AADC conformant · KCSIE-aligned · anonymised at student level. Prepared for governors, inspectors and funding bodies.'}
+    ]});toast('Word document downloaded')},
+    pdf:function(){var d=packData();var t=function(head,rows){return '<table><tr>'+head.map(function(h){return '<th>'+esc(h)+'</th>'}).join('')+'</tr>'+rows.map(function(r){return '<tr>'+r.map(function(c,i){return '<td>'+esc(i===3&&head[3].indexOf('£')>=0?'£'+Number(c).toLocaleString():c)+'</td>'}).join('')+'</tr>'}).join('')+'</table>'};
+      SYExport.pdf('StudYear Evidence Pack','<h1>Funding-Impact Evidence Pack</h1><p class="meta">Authority '+esc(code)+' · '+d.S.length+' schools · £'+d.fund.toLocaleString()+' deployed</p><h2>Programmes</h2>'+t(d.progHead,d.progRows)+'<h2>School benchmarking (anonymised)</h2>'+t(d.schHead,d.schRows)+'<p class="meta">Verified impact · GDPR &amp; AADC conformant · KCSIE-aligned.</p>')},
+    ppt:function(){var d=packData();var slides=[
+      {title:'Funding-Impact Evidence Pack',subtitle:'Authority '+code+' · StudYear — the AI Academic Operating System'},
+      {title:'Headlines',bullets:[d.S.length+' connected schools',
+        '£'+d.fund.toLocaleString()+' funding deployed',
+        d.progs.filter(function(p){return p.status!=='closed'}).length+' active programmes',
+        'Avg mastery gain +'+(function(){var g=d.progs.filter(function(p){return p.current!=null&&p.baseline!=null}).map(function(p){return p.current-p.baseline});return g.length?Math.round(g.reduce(function(a,b){return a+b},0)/g.length):0})()+' pts']},
+      {title:'Programmes — impact per £',bullets:d.progs.map(function(p){var g=(p.current||0)-(p.baseline||0);return p.name+': +'+g+' pts ('+(p.cost?Math.round(g/(p.cost/1000)*10)/10:0)+' pts per £1k)'})},
+      {title:'School benchmarking',bullets:d.S.slice(0,8).map(function(s){return (s.name||s.schoolCode)+': '+(s.avg||0)+'% · P8 '+(s.p8!=null?s.p8:'—')+' · gap '+(s.ppGap!=null?s.ppGap:'—')})},
+      {title:'Assurance',bullets:['Verified impact · before/after mastery','GDPR & AADC conformant by design','KCSIE-aligned safeguarding','Anonymised at student level','Aligned to the UK Youth Guarantee']}
+    ];SYExport.ppt(fname,slides);toast('PowerPoint downloaded')}
+  });
+};
+
+/* sort buttons */
+Array.prototype.forEach.call(document.querySelectorAll('[data-sort]'),function(b){b.onclick=function(){sortKey=b.dataset.sort;toast('Sorted by '+b.dataset.sort);draw()}});
+
+if(laGet('demo',false)){var db=$('demobar');db.style.display='flex';db.innerHTML='🎓 <b style="color:#e0b566">Demo authority loaded</b> — sample connected schools &amp; programmes. <b>No AI cost.</b> <button class="btn sm" id="clr" style="margin-left:auto;padding:5px 11px">Clear demo</button>';
+  $('clr').onclick=function(){var re=new RegExp('^sy-la:'+code+':');var rm=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(re.test(k))rm.push(k)}rm.forEach(function(k){localStorage.removeItem(k)});location.reload()};}
+if(!(SY.session&&SY.session.demo)){$('demo-btn').style.display='none'}
+else $('demo-btn').onclick=function(){
+  var names=['Elmwood High','Northgate Academy','Riverside College','St Aidan\'s','Parkview Secondary','Meadow Trust'];
+  function rnd(a,b){return Math.round(a+Math.random()*(b-a))}
+  names.forEach(function(nm,i){
+    var avgv=rnd(46,80);var students=rnd(400,1200);var prev=Math.max(35,avgv-rnd(-3,8));
+    var series=[Math.max(35,prev-rnd(2,7)),prev,Math.max(35,avgv-rnd(1,4)),avgv];
+    laSet('school:DEMO'+i,{schoolCode:'DEMO'+i,name:nm,students:students,avg:avgv,prevAvg:prev,series:series,progress:rnd(2,14),
+      p8:Math.round((rnd(-60,75)/100)*10)/10,ppGap:rnd(6,26),send:rnd(9,22),eal:rnd(6,38),
+      attendance:rnd(87,97),persistentAbs:rnd(6,24),wellbeing:rnd(58,86),safeguard:rnd(0,3),demo:true,
+      dest:{University:Math.round(students*0.28),'Sixth Form / College':Math.round(students*0.34),Apprenticeship:Math.round(students*0.22),'Needs support':Math.round(students*0.16)},updatedAt:new Date().toISOString()});
+  });
+  laSet('programmes',[
+    {id:'p0',name:'KS4 Maths catch-up',type:'Catch-up',cohort:'Lowest-attaining schools',cost:42000,students:180,baseline:52,current:61,status:'active',reports:[],demo:true},
+    {id:'p1',name:'Pupil Premium literacy',type:'Premium',cohort:'Disadvantaged (PP)',cost:65000,students:240,baseline:48,current:59,status:'active',reports:[],demo:true},
+    {id:'p2',name:'NEET-prevention fund',type:'NEET prevention',cohort:'Whole area',cost:38000,students:90,baseline:44,current:50,status:'active',reports:[],demo:true},
+    {id:'p3',name:'Attendance recovery drive',type:'Attendance recovery',cohort:'Persistent absentees',cost:22000,students:140,baseline:82,current:89,status:'active',reports:[],demo:true}
+  ]);
+  laSet('pushed',[{name:'KS4 Maths catch-up',type:'Catch-up',cohort:'Lowest-attaining schools',when:new Date().toISOString()},{name:'Pupil Premium literacy',type:'Premium',cohort:'Disadvantaged (PP)',when:new Date().toISOString()}]);
+  laSet('demo',true);SY.log('demo','LA demo loaded','6 schools, 4 programmes — no AI cost');location.reload();
+};
+draw();
+/* pull the live cross-device opportunities marketplace, then refresh the
+   supply/demand intelligence + coordination readiness */
+try{if(window.SYPathways&&SYPathways.marketSync)SYPathways.marketSync().then(function(){try{draw();}catch(e){}});}catch(e){}
+})();
+</script>
+</body></html>

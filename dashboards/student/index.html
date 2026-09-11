@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Student Dashboard</title>
+<link rel="manifest" href="../../manifest.json">
+<link rel="icon" href="../../icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#060B18">
+<style>
+  :root{
+    --navy-950:#060B18; --navy-900:#0B1220; --navy-800:#101B33;
+    --gold-300:#A9CFF2; --gold-400:#5FA8E0; --gold-500:#3D8FD1;
+    --ink:#EDF1F8; --ink-2:#AAB6CC; --ink-3:#8795AE;
+    --good:#5CBB7B; --warn:#c98500; --crit:#e66767;
+    --line:rgba(77,157,224,.14);
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:
+    radial-gradient(1100px 600px at 80% -10%, rgba(77,157,224,.10), transparent 60%),
+    radial-gradient(900px 700px at -10% 30%, rgba(22,37,74,.85), transparent 65%),
+    var(--navy-950);
+    color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .shell{display:flex;min-height:100vh;max-width:1400px;margin:0 auto}
+  aside.side{width:230px;flex:none;border-right:1px solid var(--line);padding:22px 14px 30px;position:sticky;top:0;align-self:flex-start;max-height:100vh;overflow-y:auto}
+  .slogo{font-family:var(--serif);font-size:19px;color:var(--ink);text-decoration:none;display:block;padding:4px 10px 14px}
+  .slogo b{color:#4FA6E0;font-weight:600}
+  aside.side nav a{display:block;font-size:13px;color:var(--ink-2);text-decoration:none;padding:7px 10px;border-radius:8px;margin:1px 0}
+  aside.side nav a:hover{color:var(--gold-300);background:rgba(77,157,224,.08)}
+  aside.side nav a.on{color:var(--gold-300);background:rgba(77,157,224,.12)}
+  aside.side nav a i{font-style:normal;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--warn);border:1px solid rgba(201,133,0,.5);border-radius:8px;padding:1px 6px;margin-left:6px;vertical-align:1px}
+  .sgroup{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);padding:16px 10px 5px}
+  main.content{flex:1;padding:36px 36px 90px;min-width:0}
+  @media(max-width:900px){.shell{flex-direction:column}aside.side{width:100%;position:sticky;top:0;z-index:60;max-height:46vh;overflow-y:auto;background:#060B18;border-right:none;border-bottom:1px solid var(--line);padding-bottom:12px}
+    aside.side nav{display:flex;flex-wrap:wrap;gap:2px}aside.side nav a{font-size:12px}.sgroup{width:100%}main.content{padding:26px 20px 70px}}
+
+  header.page h1{font-family:var(--serif);font-weight:500;font-size:34px;letter-spacing:-.01em}
+  header.page p{color:var(--ink-2);margin-top:6px;font-weight:300}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.62),rgba(11,18,32,.9));padding:20px 22px}
+  .card h3{font-family:var(--serif);font-weight:500;font-size:18px}
+  .card .sub{font-size:12px;color:var(--ink-2);margin:5px 0 12px;font-weight:300}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-top:20px}
+  .c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+  @media(max-width:1050px){.grid>*{grid-column:span 12}}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);
+    font:600 12px var(--sans);border-radius:8px;padding:8px 14px;cursor:pointer;text-decoration:none;display:inline-block}
+  .btn:hover{background:rgba(77,157,224,.22)}
+  .btn.ghost{border-color:rgba(170,182,204,.25);background:none;color:var(--ink-2)}
+
+  .plink{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+  .plink canvas{background:#fff;border-radius:10px;padding:8px;width:116px;height:116px}
+  .pcode{font-family:var(--serif);font-size:32px;letter-spacing:.14em;color:var(--gold-300)}
+  .pk{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:20px}
+  @media(max-width:760px){.tiles{grid-template-columns:repeat(2,1fr)}}
+  .tile{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:rgba(16,27,51,.5)}
+  .tile .v{font-family:var(--serif);font-size:28px;color:var(--gold-300);line-height:1.1}
+  .tile .v small{font-size:13px;color:var(--ink-2);font-family:var(--sans)}
+  .tile .k{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}
+
+  /* calendar */
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:12px}
+  .cal .dow{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);text-align:center;padding-bottom:4px}
+  .cal .day{min-height:64px;border:1px solid var(--line);border-radius:8px;padding:5px 6px;font-size:11px;background:rgba(6,11,24,.35)}
+  .cal .day.empty{background:none;border-color:transparent}
+  .cal .day .n{color:var(--ink-3);font-size:11px}
+  .cal .day.today{border-color:var(--gold-500)}
+  .cal .sess{margin-top:3px;font-size:9.5px;color:var(--gold-300);line-height:1.25;border-left:2px solid var(--gold-500);padding-left:4px}
+  .cal .subj{font-weight:600}
+  .calbar{display:flex;align-items:center;gap:12px;margin-top:8px}
+  .calbar b{font-family:var(--serif);font-size:16px}
+
+  /* activity feed */
+  .feed{max-height:420px;overflow-y:auto}
+  .fev{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(170,182,204,.08)}
+  .fev .ic{width:30px;height:30px;border-radius:8px;flex:none;display:grid;place-items:center;background:rgba(77,157,224,.12);font-size:14px}
+  .fev b{font-size:13px;display:block}
+  .fev .d{font-size:11.5px;color:var(--ink-2)}
+  .fev .t{font-size:11px;color:var(--ink-3);margin-top:2px}
+  .brief p{font-size:13px;color:var(--ink-2);margin:8px 0}
+  .empty{color:var(--ink-3);font-style:italic;padding:16px 0}
+</style>
+</head>
+<body>
+<script src="../../guard.js" data-role="student" data-base="../../"></script>
+<script src="../../qrcode.min.js"></script>
+<div class="shell">
+
+<aside class="side">
+  <a class="slogo" href="../../">⌂ <b class="wm">StudYear</b></a>
+  <nav>
+    <a href="./" class="on">Dashboard</a>
+    <a href="../../tutors/">Find tutors</a>
+    <a href="../../account/#parent-link">Parent link code</a>
+    <a href="../../study/#diag">Academic Diagnostic</a>
+    <a href="../../study/#diag-results">Diagnostic Results</a>
+    <a href="../../study/#recovery">Personal Recovery Plan</a>
+    <a href="../../study/#planner">AI Study Planner</a>
+    <a href="../../study/#tutor">AI Tutor</a>
+    <a href="../../study/#lesson">Interactive Lesson</a>
+    <a href="../../study/#course">AI Course</a>
+    <a href="../../study/#progress">My Progress</a>
+    <a href="../../study/#predict">Predicted Grade</a>
+    <a href="../../career/">Career Passport</a>
+    <a href="../../account/achievements/">Achievements</a>
+    <a href="../../write/">Handwriting practice</a>
+    <a href="../../study/#smartreview">Smart Review</a>
+    <a href="../../study/#review">Assignment Review</a>
+    <a href="../../account/library/">Saved Resources</a>
+    <a href="../../study/#create">Create Resource</a>
+    <a href="../../study/#search">Find Resources</a>
+    <a href="../../study/#create">Submit a Resource</a>
+    <div class="sgroup">Account</div>
+    <a href="../../account/">My Account</a>
+    <a href="../../account/profile/">Edit Profile</a>
+    <a href="../../account/topup/">Plans &amp; top-up</a>
+    <a href="#" id="signout">Sign out</a>
+  </nav>
+</aside>
+
+<main class="content">
+<header class="page">
+  <h1>Welcome back, <span id="hi-name">student</span>!</h1>
+  <p>Here's your academic command centre. Let's make today productive.</p>
+</header>
+
+<div class="grid">
+  <div class="card c12" id="revise-spine" style="border:1px solid rgba(79,166,224,.45);background:linear-gradient(180deg,rgba(79,166,224,.12),rgba(11,18,32,.55))">
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:230px">
+        <h3 style="margin:0">🔁 Revise now</h3>
+        <div class="sub" id="revise-sub">Retrieval practice beats re-reading. Jump straight into your revision loop.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn" href="../../study/#smartreview" style="text-decoration:none">Smart review →</a>
+        <a class="btn ghost" href="../../study/#today" style="text-decoration:none">Today's plan</a>
+        <a class="btn ghost" href="../../study/#diag" style="text-decoration:none">Diagnostic</a>
+      </div>
+    </div>
+  </div>
+  <div class="card c12" id="parent-link">
+    <h3>Connect a parent</h3>
+    <div class="sub">Works on Free and Premium — your plan does not affect linking. Share this code so a parent can
+      connect in their Command Centre (they subscribe separately to view your progress).</div>
+    <div class="plink">
+      <canvas id="qr" width="232" height="232" aria-label="QR code for Parent Link Code"></canvas>
+      <div>
+        <div class="pk">Your Parent Link Code</div>
+        <div class="pcode" id="pcode">········</div>
+        <div style="margin-top:8px"><button class="btn" id="copy-code">Copy code for parent</button></div>
+        <div class="sub" style="margin-top:8px"><b>Parent:</b> scan this QR with your phone camera — it opens StudYear with the code ready. Or type the code in Command Centre → Link a child. Free students can link too.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tiles">
+  <div class="tile"><div class="v" id="t-grade">–</div><div class="k" id="t-grade-k">Predicted grade</div></div>
+  <div class="tile"><div class="v" id="t-streak">0 <small>days</small></div><div class="k">Study streak</div></div>
+  <div class="tile"><div class="v" id="t-lessons">0</div><div class="k">Lessons completed</div></div>
+  <div class="tile"><div class="v" id="t-weak">–</div><div class="k">Weakest subject</div></div>
+</div>
+
+<div class="grid" id="primary-checks-wrap" style="display:none">
+  <div class="card c12" id="primary-checks">
+    <h3>🎯 Your practice checks</h3>
+    <div class="sub">The real Year 1 and Year 4 national checks — practise them any time, with a grown-up.</div>
+    <div class="grid" style="margin-top:12px">
+      <div class="card c6" style="margin:0">
+        <h3 style="font-size:16px">📣 Phonics Screening</h3>
+        <div class="sub" id="pc-phonics">40 words · pass mark 32</div>
+        <div style="margin-top:10px"><a class="btn solid" href="../../checks/phonics/" style="text-decoration:none">Start phonics check →</a></div>
+      </div>
+      <div class="card c6" style="margin:0">
+        <h3 style="font-size:16px">✖️ Times Tables Check</h3>
+        <div class="sub" id="pc-mtc">25 questions · 6 seconds each</div>
+        <div style="margin-top:10px"><a class="btn solid" href="../../checks/mtc/" style="text-decoration:none">Start tables check →</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card c12" id="standing-card">
+    <h3>Your subjects — working at &amp; target</h3>
+    <div class="sub">Your real standing from the quizzes, diagnostics and checks you have done — shown in your stage's grading. Nothing is invented.</div>
+    <div id="standing" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card c8">
+    <h3>How are you feeling today?</h3>
+    <div class="sub">A quick check-in — StudYear adapts today's plan to your energy and stress. No one else sees this.</div>
+    <div id="mood-row" style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end">
+      <div><div style="font-size:11px;color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">Mood</div>
+        <div id="mood-faces" style="display:flex;gap:8px"></div></div>
+      <div style="flex:1;min-width:150px"><div style="font-size:11px;color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">Energy</div>
+        <input type="range" id="mood-energy" min="1" max="5" step="1" value="3" style="width:100%;accent-color:var(--gold-500)"></div>
+      <div style="flex:1;min-width:150px"><div style="font-size:11px;color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">Stress</div>
+        <input type="range" id="mood-stress" min="1" max="5" step="1" value="2" style="width:100%;accent-color:var(--gold-500)"></div>
+      <button class="btn ghost" id="mood-save">Save check-in</button>
+    </div>
+    <div class="note" id="mood-note" style="font-style:normal;margin-top:8px"></div>
+  </div>
+  <div class="card c4">
+    <h3>Adapted to you</h3>
+    <div class="sub">Your Learning Profile shapes the whole app.</div>
+    <div id="adapt-list"></div>
+    <div style="margin-top:8px"><a class="btn ghost" href="../../account/profile/#learning">Edit learning profile</a></div>
+  </div>
+  <div class="card c8">
+    <h3>Study Calendar</h3>
+    <div class="sub">Sessions from your latest AI study plan appear here by date. Generate or refresh a plan in AI Study Planner.</div>
+    <div class="calbar"><b id="cal-title"></b>
+      <a class="btn ghost" href="../../study/#planner" style="margin-left:auto">Open planner</a>
+      <button class="btn ghost" id="cal-clear">Clear calendar</button></div>
+    <div class="cal" id="cal"></div>
+  </div>
+  <div class="card c4">
+    <h3>Intelligence Briefing</h3>
+    <div class="sub">System-generated insights to optimise your progress.</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <span class="pk" id="brief-stamp"></span>
+      <button class="btn ghost" id="brief-regen" style="margin-left:auto">Regenerate</button>
+    </div>
+    <div class="brief" id="brief"></div>
+  </div>
+  <div class="card c12">
+    <h3>Activity Feed</h3>
+    <div class="sub">A log of your recent actions on the platform.</div>
+    <div class="feed" id="feed"></div>
+  </div>
+</div>
+</main>
+</div>
+
+<script>
+(function(){
+'use strict';
+var SY=window.SY; if(!SY) return;
+var S=SY.session;
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var profile=SY.get('profile',{});
+$('hi-name').textContent=(profile.name||S.name||'student').split(' ')[0];
+
+/* ---------- parent link code + QR ---------- */
+var code=SY.get('parentCode',null);
+if(!code){code=String(Math.floor(10000000+Math.random()*90000000));SY.set('parentCode',code)}
+/* publish to the backend directory so a parent on ANY device/account can
+   resolve this code (this is the page students actually read the code from) */
+try{SY.publishCode(code,'account')}catch(e){}
+$('pcode').textContent=code;
+/* Encode a LINK (not the bare number) so a parent scanning with their phone
+   camera lands on the parent page with the code pre-filled and ready — the
+   canonical production site, so it always opens the working app. */
+var qrUrl='https://www.studyear.com/parent/?link='+encodeURIComponent(code);
+try{
+  var qr=qrcode(0,'M');qr.addData(qrUrl);qr.make();
+  var n=qr.getModuleCount(),cv=$('qr'),ctx=cv.getContext('2d'),pad=12,cell=(cv.width-2*pad)/n;
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);ctx.fillStyle='#0B1220';
+  for(var r=0;r<n;r++)for(var c=0;c<n;c++)if(qr.isDark(r,c))ctx.fillRect(pad+c*cell,pad+r*cell,Math.ceil(cell),Math.ceil(cell));
+}catch(e){}
+$('copy-code').onclick=function(){
+  (navigator.clipboard?navigator.clipboard.writeText(code):Promise.reject()).then(function(){$('copy-code').textContent='Copied ✓';setTimeout(function(){$('copy-code').textContent='Copy code for parent'},1500)},function(){});
+  /* sharing moment: make sure the code is registered on the backend so a
+     parent on another device can resolve it. If this session lost its cloud
+     token (first sign-in happened while the network blocked the servers),
+     reconnect inline, then publish — so the code always works cross-device. */
+  try{
+    if(SY.cloudAuthed)SY.cloudAuthed().then(function(ok){
+      if(ok){try{SY.publishCode(code,'account')}catch(e){}}
+      else if(SY.ensureCloud)SY.ensureCloud().then(function(done){if(done){try{SY.publishCode(code,'account')}catch(e){}}});
+    });
+  }catch(e){}
+};
+
+/* ---------- tiles ---------- */
+var quizzes=SY.get('quizzes',[]), diag=SY.get('diagnostics',[])[0]||null, activity=SY.get('activity',[]);
+/* Revise-now spine: surface how many missed items are due for spaced review. */
+try{var _ri=SY.get('reviewItems',{})||{},_now=Date.now(),_due=0;for(var _k in _ri){var _it=_ri[_k];if(_it&&(_it.due||0)<=_now&&((_it.kind==='card'&&_it.front)||(_it.q&&_it.o)))_due++;}
+  var _rs=document.getElementById('revise-sub');if(_rs){_rs.innerHTML=_due?('<b style="color:#f0a0a0">'+_due+' question'+(_due>1?'s':'')+'</b> you missed '+(_due>1?'are':'is')+' due — a 2-minute retrieval locks '+(_due>1?'them':'it')+' back in.'):'Retrieval practice beats re-reading. Take a quiz or run the diagnostic — your misses come back here right before you forget them.';}
+}catch(e){}
+function gradeFor(m){return Math.max(1,Math.min(9,Math.round(1+8*m/100)))}
+/* subject mastery blend */
+var by={};quizzes.forEach(function(q){(by[q.subj]=by[q.subj]||[]).push(q.pct)});
+var mastery={};Object.keys(by).forEach(function(s){mastery[s]=Math.round(by[s].reduce(function(a,b){return a+b},0)/by[s].length)});
+if(diag)diag.list.forEach(function(x){mastery[x.s]=mastery[x.s]!=null?Math.round((mastery[x.s]+x.mastery)/2):x.mastery});
+var subjKeys=Object.keys(mastery);
+var overall=subjKeys.length?Math.round(subjKeys.reduce(function(a,s){return a+mastery[s]},0)/subjKeys.length):null;
+/* REALITY: a predicted grade and 'weakest subject' only exist once the
+   student has real evidence (a quiz or a diagnostic) — never invented from
+   the profile subject list */
+var weakest=subjKeys.length?subjKeys.reduce(function(a,b){return mastery[a]<mastery[b]?a:b}):null;
+if(overall!=null){
+  /* primary children get Working Towards / Expected / Greater Depth (+ scaled
+     score), NOT a GCSE 1–9 grade; secondary keeps the predicted grade */
+  var att=SY.attainment(profile.level,overall);
+  $('t-grade').textContent=att.short;
+  $('t-grade').style.fontSize=att.system==='gcse'?'':'22px';
+  $('t-grade-k').textContent=att.caption+(weakest?' · '+weakest:'');
+  $('t-grade').title=att.label+' — based on '+quizzes.length+' quiz'+(quizzes.length===1?'':'zes')+(diag?' + your diagnostic':'');
+}else{
+  var isPrim=SY.attainment(profile.level,0).system!=='gcse';
+  $('t-grade').textContent='–';
+  $('t-grade-k').textContent=(isPrim?'Attainment':'Predicted grade')+' — take a quiz or diagnostic';
+}
+/* primary practice checks (Phonics Screening + Times Tables Check) — shown to
+   KS1/KS2 learners, with their most recent scores */
+(function(){
+  var sys=SY.attainment(profile.level,0).system;
+  if(!(sys==='eyfs'||sys==='ks1'||sys==='ks2'))return;
+  document.getElementById('primary-checks-wrap').style.display='';
+  var ph=SY.get('check:phonics',null);
+  if(ph)$('pc-phonics').innerHTML='Last: <b style="color:'+(ph.met?'var(--good)':'var(--gold-300)')+'">'+ph.score+'/'+ph.of+'</b>'+(ph.full?(ph.met?' — met the standard 🎉':' — keep practising'):' (practice)');
+  var mt=SY.get('check:mtc',null);
+  if(mt)$('pc-mtc').innerHTML='Last: <b style="color:'+(mt.score>=22?'var(--good)':'var(--gold-300)')+'">'+mt.score+'/'+mt.of+'</b> · '+(mt.avgMs/1000).toFixed(1)+'s avg';
+})();
+/* streak */
+(function(){var s=SY.get('streak',{days:[]}),set={};(s.days||[]).forEach(function(d){set[d]=1});
+  var nn=0,d=new Date();while(set[d.toISOString().slice(0,10)]){nn++;d.setDate(d.getDate()-1)}
+  $('t-streak').innerHTML=nn+' <small>days</small>';})();
+$('t-lessons').textContent=activity.filter(function(a){return a.k==='lesson'||a.k==='course'}).length;
+$('t-weak').textContent=weakest||'–';
+if(!weakest)$('t-weak').nextElementSibling.textContent='Weakest subject — run a diagnostic';
+
+/* ---------- subject standing: real working-at vs target, in this stage's
+   grading (Working Towards/Expected/Greater Depth, 9–1, 1st/2:1…) ---------- */
+(function(){
+  var lvl=profile.level, subs=(profile.subjects||[]);
+  function barCol(m){return m>=80?'var(--good)':m>=50?'#F2CE7B':'var(--crit)'}
+  function row(name,waHtml,tgtHtml,pct,evidence){
+    return '<div style="display:grid;grid-template-columns:minmax(120px,1.4fr) 1.5fr 1.2fr;gap:10px 14px;align-items:center;padding:10px 0;border-top:1px solid var(--line)">'+
+      '<div style="font-weight:600">'+esc(name)+'</div>'+
+      '<div style="font-size:13.5px">'+waHtml+
+        (pct!=null?'<div style="height:7px;border-radius:6px;background:rgba(170,182,204,.18);margin-top:6px;overflow:hidden"><i style="display:block;height:100%;width:'+pct+'%;background:'+barCol(pct)+'"></i></div>':'')+
+      '</div>'+
+      '<div style="font-size:13.5px;text-align:right">'+tgtHtml+'</div>'+
+      '</div>';
+  }
+  var rows=subs.map(function(sub){
+    var m=mastery[sub.s];
+    var wa=(m!=null)?('Working at <b style="color:var(--ink)">'+esc(SY.attainment(lvl,m).short)+'</b> <span style="color:var(--ink-3)">· '+m+'%</span>')
+                    :'<span style="color:var(--ink-3)">Not assessed yet — take a quiz or diagnostic</span>';
+    var tgt=sub.target?('Target <b style="color:var(--gold-300)">'+esc(sub.target)+'</b>'):'<span style="color:var(--ink-3)">—</span>';
+    return row(sub.s,wa,tgt,(m!=null?m:null));
+  });
+  /* primary practice checks appear as their own standing rows when taken */
+  var att0=SY.attainment(lvl,0);
+  if(att0.system==='ks1'||att0.system==='ks2'||att0.system==='eyfs'){
+    var ph=SY.get('check:phonics',null);
+    if(ph)rows.push(row('Phonics screening','Scored <b style="color:var(--ink)">'+ph.score+'/'+ph.of+'</b>'+(ph.full?(ph.met?' <span style="color:var(--good)">· met</span>':' <span style="color:#F2CE7B">· keep practising</span>'):''),'Pass mark <b style="color:var(--gold-300)">32/40</b>',ph.full?Math.round(ph.score/40*100):null));
+    var mt=SY.get('check:mtc',null);
+    if(mt)rows.push(row('Times tables check','Scored <b style="color:var(--ink)">'+mt.score+'/'+mt.of+'</b> <span style="color:var(--ink-3)">· '+(mt.avgMs/1000).toFixed(1)+'s avg</span>','Target <b style="color:var(--gold-300)">25/25</b>',Math.round(mt.score/25*100)));
+  }
+  $('standing').innerHTML=rows.length?rows.join(''):
+    '<div class="empty" style="padding:6px 0">Add your subjects in <a href="../../account/profile/" style="color:var(--gold-300)">Edit Profile</a> to see your standing here.</div>';
+})();
+
+/* ---------- study calendar ---------- */
+var plan=SY.get('plan',null);
+var sessByDate={};
+if(plan&&plan.plan)plan.plan.forEach(function(w){w.days.forEach(function(s){if(s.date){(sessByDate[s.date]=sessByDate[s.date]||[]).push(s)}})});
+var now=new Date(), yr=now.getFullYear(), mo=now.getMonth();
+$('cal-title').textContent=['January','February','March','April','May','June','July','August','September','October','November','December'][mo]+' '+yr;
+function drawCal(){
+  var first=new Date(yr,mo,1).getDay(), days=new Date(yr,mo+1,0).getDate();
+  var html=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(function(d){return '<div class="dow">'+d+'</div>'}).join('');
+  for(var i=0;i<first;i++)html+='<div class="day empty"></div>';
+  var todayStr=now.toISOString().slice(0,10);
+  for(var dnum=1;dnum<=days;dnum++){
+    var iso=yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(dnum).padStart(2,'0');
+    var ss=sessByDate[iso]||[];
+    html+='<div class="day'+(iso===todayStr?' today':'')+'"><div class="n">'+dnum+'</div>'+
+      ss.slice(0,2).map(function(s){return '<div class="sess"><span class="subj">'+esc(s.subj)+'</span><br>'+esc((s.time||'')+' '+(s.topic||s.mode||'')).slice(0,44)+'</div>'}).join('')+
+      (ss.length>2?'<div class="sess">+'+(ss.length-2)+' more</div>':'')+'</div>';
+  }
+  $('cal').innerHTML=html;
+}
+drawCal();
+$('cal-clear').onclick=function(){SY.remove('plan');sessByDate={};drawCal();};
+
+/* ---------- intelligence briefing (saved + regenerate) ---------- */
+function buildBrief(){
+  var t=[];
+  if(weakest&&weakest!=='–')t.push('Your weakest area is <b>'+esc(weakest)+'</b> — book two short sessions on it this week and retest.');
+  t.push('Use active recall and spaced repetition: make flashcards for key terms and quiz yourself without notes.');
+  t.push('Prioritise problem-solving over re-reading — attempt past-paper questions before checking the answers.');
+  if(diag)t.push('Your latest diagnostic flagged '+(diag.weak.length||0)+' area'+(diag.weak.length===1?'':'s')+' under 60%. Your recovery plan targets them — follow it in the planner.');
+  else t.push('Run an <b>Academic Diagnostic</b> to pinpoint exactly what to fix first.');
+  return t;
+}
+function fmtStamp(iso){var d=new Date(iso);return d.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getFullYear()+', '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+function renderBrief(saved,fresh){
+  $('brief').innerHTML=saved.tips.map(function(t){return '<p>'+t+'</p>'}).join('');
+  $('brief-stamp').textContent=(fresh?'Generated':'Showing saved briefing')+' · '+fmtStamp(saved.when);
+}
+var brief=SY.get('brief',null);
+if(!brief){brief={tips:buildBrief(),when:new Date().toISOString()};SY.set('brief',brief);renderBrief(brief,true)}
+else renderBrief(brief,false);
+$('brief-regen').onclick=function(){brief={tips:buildBrief(),when:new Date().toISOString()};SY.set('brief',brief);renderBrief(brief,true)};
+
+/* ---------- activity feed ---------- */
+var ICON={diagnostic:'🩺',plan:'🗓',tutor:'🤖',resource:'✍️',quiz:'❓',lesson:'📖',course:'🎓',review:'📝',billing:'💳',profile:'👤',account:'⚙️',booking:'📅'};
+$('feed').innerHTML=activity.length?activity.slice(0,40).map(function(a){
+  return '<div class="fev"><span class="ic">'+(ICON[a.k]||'•')+'</span><span><b>'+esc(a.t)+'</b>'+
+    (a.d?'<span class="d">'+esc(a.d)+'</span>':'')+'<div class="t">'+SY.timeAgo(a.when)+'</div></span></div>';
+}).join(''):'<div class="empty">No activity yet — generate a plan, run a diagnostic or take a quiz and it logs here.</div>';
+
+/* ---------- mood check-in (feeds the planner's adaptation) ---------- */
+var FACES=[['great','😀'],['ok','🙂'],['meh','😐'],['low','😟'],['stressed','😣']];
+var moodPick='ok';
+function drawFaces(){
+  $('mood-faces').innerHTML=FACES.map(function(f){var on=f[0]===moodPick;
+    return '<button type="button" data-m="'+f[0]+'" style="font-size:22px;border:1px solid '+(on?'var(--gold-500)':'rgba(170,182,204,.25)')+';border-radius:10px;background:'+(on?'rgba(77,157,224,.14)':'none')+';padding:5px 9px;cursor:pointer">'+f[1]+'</button>';
+  }).join('');
+  $('mood-faces').querySelectorAll('[data-m]').forEach(function(b){b.onclick=function(){moodPick=b.dataset.m;drawFaces()}});
+}
+drawFaces();
+var lastMood=SY.get('moods',[])[0]||null;
+if(lastMood&&lastMood.when&&lastMood.when.slice(0,10)===new Date().toISOString().slice(0,10)){
+  moodPick=lastMood.mood||'ok';$('mood-energy').value=lastMood.energy||3;$('mood-stress').value=lastMood.stress||2;drawFaces();
+  $('mood-note').textContent='Checked in today — your plan is adapting to how you feel.';
+}
+$('mood-save').onclick=function(){
+  var m={mood:moodPick,energy:+$('mood-energy').value,stress:+$('mood-stress').value,when:new Date().toISOString()};
+  var arr=SY.get('moods',[]);arr.unshift(m);SY.set('moods',arr.slice(0,60));
+  var low=m.energy<=2||m.stress>=4;
+  $('mood-note').textContent=low?'Thanks — StudYear will keep today lighter and shorter. Be kind to yourself.':'Thanks — logged. Your planner factors this in.';
+  SY.log('account','Daily check-in saved','Mood: '+m.mood+' · energy '+m.energy+'/5 · stress '+m.stress+'/5.');
+};
+
+/* ---------- learning adaptations panel ---------- */
+var L=SY.get('learning',{})||{};
+var chips=[];
+if(L.dyslexiaFont)chips.push('Dyslexia-friendly text');
+if(L.textScale==='large')chips.push('Large text');if(L.textScale==='xlarge')chips.push('Extra-large text');
+if(L.spacing)chips.push('Extra spacing');
+if(L.overlay)chips.push(L.overlay.charAt(0).toUpperCase()+L.overlay.slice(1)+' overlay');
+if(L.reduceMotion)chips.push('Reduced motion');
+if(L.style)chips.push(L.style+' activities');
+if(L.pace&&L.pace!=='steady')chips.push(L.pace==='gentle'?'Gentle pace + recap':'Faster pace');
+if(L.session&&L.session!==40)chips.push(L.session+'-min sessions');
+(L.needs||[]).filter(function(n){return n!=='none'}).forEach(function(n){var lab={dyslexia:'Dyslexia',adhd:'ADHD support',dyscalculia:'Dyscalculia',visual:'Visual-stress',processing:'Processing',eal:'EAL',hearing:'Hearing'}[n];if(lab)chips.push(lab)});
+$('adapt-list').innerHTML=chips.length?('<div style="display:flex;flex-wrap:wrap;gap:7px">'+chips.map(function(c){return '<span class="badge" style="font-size:11px;border:1px solid rgba(95,168,224,.4);color:var(--gold-300);border-radius:20px;padding:3px 10px">'+esc(c)+'</span>'}).join('')+'</div>')
+  :'<div class="note" style="font-style:normal">No adaptations set yet — tell StudYear how you learn best and it tailors everything to you.</div>';
+
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+})();
+</script>
+</body>
+</html>

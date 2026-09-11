@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Sign in</title>
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../theme.css">
+<script src="../sentinel.js"></script>
+<script src="../vendor/nacl-fast.min.js"></script>
+<script src="../e2e.js"></script>
+<script src="../cloud.js"></script>
+<script src="../pweye.js" defer></script>
+<meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--navy-800:#101B33;--blue-300:#A9CFF2;--blue-400:#5FA8E0;--blue-500:#3D8FD1;
+    --ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#8795AE;--good:#5CBB7B;--crit:#e66767;--line:rgba(77,157,224,.16);
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:
+    radial-gradient(1100px 600px at 80% -10%, rgba(77,157,224,.12), transparent 60%),
+    radial-gradient(900px 700px at -10% 30%, rgba(22,37,74,.85), transparent 65%),
+    var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;
+    min-height:100vh;display:flex;flex-direction:column;align-items:center;-webkit-font-smoothing:antialiased}
+  .top{width:100%;max-width:520px;padding:26px 24px 0}
+  .logo{font-family:var(--serif);font-size:22px;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;gap:10px}
+  .logo img{height:34px;width:34px;filter:drop-shadow(0 0 12px rgba(79,166,224,.45))}
+  .logo b{color:#4FA6E0;font-weight:600}
+  .box{width:100%;max-width:520px;margin:26px 24px 60px;border:1px solid var(--line);border-radius:18px;
+    background:linear-gradient(180deg,rgba(16,27,51,.72),rgba(11,18,32,.94));padding:30px 32px 26px}
+  h1{font-family:var(--serif);font-weight:500;font-size:27px;letter-spacing:-.01em}
+  .sub{color:var(--ink-2);font-size:13.5px;margin-top:6px;font-weight:300}
+  .tabs{display:flex;gap:6px;margin:22px 0 18px;border-bottom:1px solid var(--line)}
+  .tabs button{appearance:none;background:none;border:none;border-bottom:2px solid transparent;color:var(--ink-2);
+    font:600 13.5px var(--sans);padding:10px 14px;cursor:pointer}
+  .tabs button.on{color:var(--blue-300);border-bottom-color:var(--blue-500)}
+  label{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:14px 0 6px}
+  input{width:100%;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;
+    color:var(--ink);font:400 14.5px var(--sans);padding:11px 13px;outline:none}
+  input:focus{border-color:var(--blue-500)}
+  .roles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+  .roles button{appearance:none;border:1px solid rgba(170,182,204,.22);border-radius:10px;background:rgba(6,11,24,.5);
+    color:var(--ink-2);font:600 12.5px var(--sans);padding:11px 6px;cursor:pointer}
+  .roles button.on{border-color:var(--blue-500);color:var(--blue-300);background:rgba(77,157,224,.1)}
+  .cta{width:100%;margin-top:22px;appearance:none;border:none;border-radius:10px;padding:13px;cursor:pointer;
+    background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff;font:700 14.5px var(--sans);letter-spacing:.03em}
+  .cta:hover{filter:brightness(1.1)}
+  .msg{border-radius:10px;padding:11px 14px;font-size:13px;margin-top:16px;display:none}
+  .msg.err{display:block;border:1px solid rgba(230,103,103,.5);background:rgba(230,103,103,.1);color:#f0b3b3}
+  .msg.ok{display:block;border:1px solid rgba(92,187,123,.5);background:rgba(92,187,123,.1);color:#a9dfbc}
+  .msg.info{display:block;border:1px solid rgba(77,157,224,.5);background:rgba(77,157,224,.1);color:var(--blue-300)}
+  .msg a{color:inherit;font-weight:600}
+  .fine{font-size:11.5px;color:var(--ink-3);margin-top:18px;font-style:italic}
+  .alt{display:flex;gap:14px;margin-top:14px;font-size:12.5px}
+  .alt a{color:var(--ink-2);text-decoration:none}
+  .alt a:hover{color:var(--blue-300)}
+</style>
+</head>
+<body>
+<div class="top"><a class="logo" href="../"><img src="../logo.svg" alt=""><b class="wm">StudYear</b></a></div>
+<div class="box" role="main">
+  <h1 id="title">Sign in to your console</h1>
+  <p class="sub" id="subtitle">Every account type has its own console and dashboard — access is matched to your account category.</p>
+  <div class="msg" id="msg"></div>
+  <div class="tabs">
+    <button id="t-in" class="on">Sign in</button>
+    <button id="t-up">Create account</button>
+  </div>
+  <form id="f" novalidate data-sy-human>
+    <div id="row-name" style="display:none">
+      <label for="name">Full name</label>
+      <input id="name" type="text" autocomplete="name" placeholder="e.g. Amara Okafor">
+    </div>
+    <div id="row-dob" style="display:none">
+      <label for="dob">Date of birth</label>
+      <input id="dob" type="date" autocomplete="bday" max="2025-12-31">
+      <div class="note" style="font-size:12px;margin-top:2px">Used to keep the experience age-appropriate. Under-13s must be set up by a parent, guardian or school.</div>
+    </div>
+    <label for="email">Email</label>
+    <input id="email" type="email" autocomplete="email" placeholder="you@example.com">
+    <label for="pw">Password</label>
+    <input id="pw" type="password" autocomplete="current-password" placeholder="min 8 characters">
+    <div id="row-role" style="display:none">
+      <label>Account type</label>
+      <div class="roles" id="roles"></div>
+    </div>
+    <div id="row-invite" style="display:none">
+      <label for="invite">Admin invite code</label>
+      <input id="invite" type="password" autocomplete="off" placeholder="provided by platform ops">
+    </div>
+    <div id="row-consent" style="display:none;margin-top:8px">
+      <label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer;font-weight:400;font-size:13px;line-height:1.5">
+        <input type="checkbox" id="agree-ck" style="width:auto;margin-top:3px;accent-color:#4FA6E0">
+        <span>I agree to the <a href="../terms/" target="_blank" rel="noopener">Terms</a> and
+        <a href="../privacy/" target="_blank" rel="noopener">Privacy&nbsp;Policy</a>, and I am <b>18 or over</b> —
+        or a parent, guardian or school creating/approving this account for a child.</span>
+      </label>
+    </div>
+    <!-- honeypot: real people never see or fill this; automated bots do -->
+    <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden">
+      <label>Company website</label>
+      <input id="hp" type="text" tabindex="-1" autocomplete="off">
+    </div>
+    <div id="row-human" style="margin-top:6px">
+      <label style="display:flex;gap:9px;align-items:center;cursor:pointer;font-weight:400">
+        <input type="checkbox" id="human-ck" style="width:auto;accent-color:#4FA6E0"> I'm a human, not a bot</label>
+      <div id="human-challenge" style="display:none;margin-top:8px">
+        <label for="chal-a">Quick human check: <b id="chal-q"></b></label>
+        <input id="chal-a" type="text" inputmode="numeric" autocomplete="off" placeholder="type the answer">
+      </div>
+    </div>
+    <button class="cta" id="go" type="submit">Sign in →</button>
+  </form>
+  <div class="alt">
+    <a href="../">← Back to home</a>
+    <a href="#" id="forgot" style="margin-left:auto">Forgot password?</a>
+  </div>
+  <p class="fine">Your account runs on secure cloud sign-in (Firebase Authentication) with end-to-end-encrypted sync —
+    passwords are salted &amp; hashed and your learning data is sealed with keys only you hold.
+    Admin accounts are provisioned internally.</p>
+</div>
+
+<script>
+(function(){
+'use strict';
+var PUBLIC_ROLES=[['student','Student'],['parent','Parent'],['teacher','Teacher'],['school','School'],['tutor','Tutor'],['authority','Local Authority'],['employer','Employer'],['college','College / Provider']];
+var ALL_ROLES=PUBLIC_ROLES.concat([['admin','Admin']]);
+var LABELS={}; ALL_ROLES.forEach(function(r){LABELS[r[0]]=r[1]});
+var q=new URLSearchParams(location.search);
+var wantRole=q.get('role'), next=q.get('next'), mismatch=q.get('mismatch');
+var mode='in', pickedRole=wantRole&&LABELS[wantRole]&&wantRole!=='admin'?wantRole:'student';
+
+var $=function(id){return document.getElementById(id)};
+var msg=$('msg');
+function say(t,cls){msg.className='msg '+cls;msg.innerHTML=t}
+
+function store(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
+
+async function hash(salt,pw){
+  var data=new TextEncoder().encode(salt+'·'+pw);
+  var buf=await crypto.subtle.digest('SHA-256',data);
+  return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
+}
+var CONSOLE={student:'../study/',parent:'../parent/',teacher:'../teacher/',school:'../school/',tutor:'../tutor/',authority:'../authority/',employer:'../employer/',college:'../college/',admin:'../admin/'};
+function destination(role){
+  /* Only ever redirect to a SAME-ORIGIN console path. The previous substring
+     test let ?next=javascript:...//account/ through (executed same-origin =
+     token theft) and ?next=//evil.com/account/ (open redirect). Resolve the
+     value against our origin and require a known console path prefix; reject
+     anything with a scheme or protocol-relative host. */
+  if(next){
+    try{
+      var u=new URL(decodeURIComponent(next),location.origin);
+      if(u.origin===location.origin && /\/(study|account|myschool|parent|teacher|school|tutor|authority|employer|college)\//.test(u.pathname))
+        return u.pathname+u.search+u.hash;
+    }catch(e){}
+  }
+  return CONSOLE[role]||'../study/';
+}
+
+// role picker
+var rolesEl=$('roles');
+PUBLIC_ROLES.forEach(function(r){
+  var b=document.createElement('button');b.type='button';b.textContent=r[1];b.dataset.r=r[0];
+  if(r[0]===pickedRole)b.classList.add('on');
+  b.onclick=function(){pickedRole=r[0];rolesEl.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',x===b)})};
+  rolesEl.appendChild(b);
+});
+
+function setMode(m){
+  mode=m;
+  var adminFlow=wantRole==='admin';
+  $('t-in').classList.toggle('on',m==='in');$('t-up').classList.toggle('on',m==='up');
+  $('row-name').style.display=m==='up'?'block':'none';
+  $('row-dob').style.display=m==='up'?'block':'none';
+  $('row-role').style.display=m==='up'&&!adminFlow?'block':'none';
+  $('row-invite').style.display=m==='up'&&adminFlow?'block':'none';
+  $('row-consent').style.display=m==='up'?'block':'none';
+  $('go').textContent=m==='up'?'Create my account →':'Sign in →';
+  $('pw').autocomplete=m==='up'?'new-password':'current-password';
+}
+$('t-in').onclick=function(){setMode('in')};
+$('t-up').onclick=function(){setMode('up')};
+
+// context banners
+var session=store('sy-session',null);
+if(mismatch&&wantRole){
+  say('You are signed in as a <b>'+(LABELS[mismatch]||mismatch)+'</b>. This area is for <b>'+(LABELS[wantRole]||wantRole)+
+      '</b> accounts only. <a href="'+(CONSOLE[mismatch]||'../study/')+'">Go to my console</a> or sign in below with a '+
+      (LABELS[wantRole]||wantRole)+' account.','info');
+}else if(wantRole&&LABELS[wantRole]){
+  if(wantRole==='admin'){say('Admin consoles are restricted. Sign in with a provisioned admin account, or create one with your ops invite code.','info')}
+  else{$('title').textContent='Sign in — '+LABELS[wantRole]+' console';
+       $('subtitle').textContent='This area is for '+LABELS[wantRole].toLowerCase()+' accounts. Sign in, or create a '+LABELS[wantRole].toLowerCase()+' account.'}
+}else if(session){
+  say('Signed in as <b>'+String(session.name||'').replace(/[<>&]/g,function(c){return{'<':'&lt;','>':'&gt;','&':'&amp;'}[c]})+'</b> ('+(LABELS[session.role]||session.role)+'). <a href="'+(CONSOLE[session.role]||'../study/')+'">Open my console</a> or switch accounts below.','ok');
+}
+
+/* ---- human verification / anti-bot (preview-grade; the backend swaps in a
+   server-verified challenge such as Cloudflare Turnstile + IP rate-limiting) ---- */
+var _formLoaded=Date.now();
+function _ri(a,b){return Math.floor(a+Math.random()*(b-a+1))}
+var _chalA=0;
+function newChallenge(){var a=_ri(2,9),b=_ri(2,9);_chalA=a+b;var el=$('chal-q');if(el)el.textContent='what is '+a+' + '+b+'?'}
+newChallenge();
+$('human-ck').addEventListener('change',function(){$('human-challenge').style.display=this.checked?'block':'none';if(this.checked){newChallenge();var a=$('chal-a');if(a)a.focus()}});
+function _thr(){try{return JSON.parse(localStorage.getItem('sy-auth-throttle'))||{n:0,until:0}}catch(e){return {n:0,until:0}}}
+function _setThr(t){try{localStorage.setItem('sy-auth-throttle',JSON.stringify(t))}catch(e){}}
+function _fail(){var t=_thr();t.n=(t.n||0)+1;if(t.n>=5)t.until=Date.now()+Math.min(300000,15000*Math.pow(2,t.n-5));_setThr(t)}
+function _pass(){_setThr({n:0,until:0})}
+function _resetHuman(){newChallenge();var a=$('chal-a');if(a)a.value='';$('human-ck').checked=false;$('human-challenge').style.display='none'}
+function botGuard(evt){
+  var t=_thr(),now=Date.now();
+  if(t.until&&now<t.until){say('Too many attempts detected. Please wait '+Math.ceil((t.until-now)/1000)+' seconds before trying again.','err');return false}
+  if($('hp').value){_fail();say('Automated request blocked. Reload the page and try again.','err');return false}      /* honeypot */
+  if(now-_formLoaded<1200){_fail();say('That was too fast — please take a moment and try again.','err');return false}  /* time-trap */
+  /* Sentinel: human-only gate — blocks automated browsers and synthetic submits */
+  if(window.SYSentinel){var g=SYSentinel.humanGate({event:evt});if(!g.ok){_fail();say(g.reason,'err');return false}}
+  if(!$('human-ck').checked){say('Please confirm you are a human to continue.','err');$('human-ck').focus();return false}
+  if(parseInt($('chal-a').value,10)!==_chalA){_fail();_resetHuman();say('Human check failed — please answer the new question.','err');return false}
+  return true;
+}
+
+$('f').addEventListener('submit',async function(e){
+  e.preventDefault();
+  if(!botGuard(e))return;
+  var email=$('email').value.trim().toLowerCase(), pw=$('pw').value;
+  if(!/^\S+@\S+\.\S+$/.test(email)){say('Enter a valid email address.','err');return}
+  if(pw.length<8){say('Password must be at least 8 characters.','err');return}
+  var users=store('sy-users',[]);
+  if(mode==='up'){
+    var name=$('name').value.trim();
+    if(name.length<2){say('Enter your name.','err');return}
+    var dob=$('dob').value;
+    if(!dob){say('Enter your date of birth.','err');$('dob').focus();return}
+    var age=(function(d){var t=new Date(),b=new Date(d);if(isNaN(b))return -1;var a=t.getFullYear()-b.getFullYear();var m=t.getMonth()-b.getMonth();if(m<0||(m===0&&t.getDate()<b.getDate()))a--;return a;})(dob);
+    if(age<0||age>120){say('Enter a valid date of birth.','err');$('dob').focus();return}
+    if(!$('agree-ck').checked){say('Please accept the Terms &amp; Privacy Policy and confirm you are 18+ or a parent/guardian.','err');$('agree-ck').focus();return}
+    // UK Children's Code / GDPR-K: an under-13 account must be set up with a
+    // parent/guardian/school — the consent checkbox is that attestation.
+    if(age<13&&!$('agree-ck').checked){say('An under-13 account must be created by a parent, guardian or school — please confirm the consent box.','err');return}
+    var parentalConsent=$('agree-ck').checked;
+    var role=pickedRole;
+    if(wantRole==='admin'){
+      var inv=$('invite').value.trim();
+      if(await hash('sy-admin',inv)!=='83a38e5bf7454013c6a5452b458dc59b2543b2ce20d61175702f7364419c53b6'){
+        say('Invalid invite code — admin accounts are provisioned internally.','err');return}
+      role='admin';
+    }else if(pickedRole==='admin'){say('Admin accounts are provisioned internally.','err');return}
+    if(users.some(function(u){return u.email===email&&u.role===role})){
+      say('An account with this email already exists for that category — use Sign in.','err');return}
+    var salt=Array.from(crypto.getRandomValues(new Uint8Array(12))).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
+    users.push({name:name,email:email,role:role,salt:salt,hash:await hash(salt,pw),termsAcceptedAt:new Date().toISOString(),ageAttested:true});
+    save('sy-users',users);
+    _pass();
+    /* end-to-end encryption: mint the account's data key, wrapped by a
+       password-derived key — servers only ever see ciphertext */
+    try{if(window.SYE2E)await SYE2E.setupAccount(email,pw)}catch(err){}
+    /* go-live: mirror the account into Firebase Auth and start encrypted
+       cloud sync (silent no-op until firebase-config.json is filled in) */
+    try{if(window.SYCloud)await SYCloud.signUp(email,pw,name,role,{dob:dob,parentalConsent:parentalConsent})}catch(err){}
+    /* referral attribution: ?ref=CODE from a share link sticks to this account
+       (drives the Growth Partner Programme's 250-ACU / % tiers) */
+    try{
+      var refCode=(q.get('ref')||'').trim().toUpperCase();
+      if(refCode){
+        localStorage.setItem('sy-u:'+email+':promo',JSON.stringify(refCode));
+        var rf=JSON.parse(localStorage.getItem('sy-partner-refs')||'[]');
+        rf.unshift({code:refCode,email:email,gbp:0,signup:true,when:new Date().toISOString()});
+        localStorage.setItem('sy-partner-refs',JSON.stringify(rf));
+      }
+    }catch(err){}
+    save('sy-session',{name:name,email:email,role:role,ts:new Date().toISOString()});
+    try{if(window.SYTrack)SYTrack.signup({method:role});}catch(e){}
+    // new students onboard by building their personalised profile first
+    if(role==='student'&&!next){location.replace('../account/profile/?welcome=1');return}
+    location.replace(destination(role));
+  }else{
+    var matches=users.filter(function(u){return u.email===email});
+    if(!matches.length&&window.SYCloud){
+      /* new device? pull the account (encrypted blobs + wrapped key) from the cloud */
+      try{await SYCloud.whenReady()}catch(err){}
+      if(SYCloud.ready()){
+        say('Checking your cloud account…','info');
+        var cloudUser=null;
+        try{cloudUser=await SYCloud.restore(email,pw)}catch(err){}
+        users=store('sy-users',[]);
+        matches=users.filter(function(u){return u.email===email});
+        /* Cross-device sign-in: the account can be valid in the cloud (Firebase
+           Auth) even when restore couldn't rebuild the local record — a missing
+           profile blob, or an account created before cloud mirroring. Instead of
+           the misleading "no account found", authenticate against the cloud
+           directly; on success provision the local sign-in record so THIS device
+           works, and surface the REAL reason (wrong password / offline) if not. */
+        if(!matches.length&&SYCloud.reauth){
+          var rr=null;try{rr=await SYCloud.reauth(email,pw)}catch(err){}
+          if(rr&&rr.ok){
+            var rl=(cloudUser&&(cloudUser.role||(cloudUser.roles&&cloudUser.roles[0])))||wantRole||'student';
+            var nm=(cloudUser&&cloudUser.name)||email.split('@')[0];
+            var salt=Array.from(crypto.getRandomValues(new Uint8Array(12))).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
+            users.push({name:nm,email:email,role:rl,salt:salt,hash:await hash(salt,pw)});
+            save('sy-users',users);
+            matches=users.filter(function(u){return u.email===email});
+          }else if(rr&&rr.reason==='wrong_password'){
+            say('Wrong password for that account.','err');_fail();_resetHuman();return;
+          }else if(rr&&(rr.reason==='network'||rr.reason==='offline')){
+            say('Couldn’t reach cloud sign-in right now — check your connection and try again.','err');return;
+          }
+        }
+      }else{
+        /* no local account and the cloud is unreachable — say so honestly rather
+           than claiming the account doesn't exist */
+        say('Couldn’t reach cloud sign-in right now — check your connection and try again.','err');return;
+      }
+    }
+    if(!matches.length){say('No account found for that email. Create one with the tab above.','err');return}
+    var authed=null;
+    for(var i=0;i<matches.length;i++){
+      if(matches[i].hash===await hash(matches[i].salt,pw)){authed=matches[i];
+        if(wantRole&&matches[i].role===wantRole)break}
+    }
+    if(!authed){
+      /* The local password hash didn't match — but the password may have been
+         CHANGED or RESET in the cloud on another device (e.g. via the reset email).
+         The record on THIS device still carries the OLD hash, so the check above
+         fails even though the new password is correct — this is exactly the
+         "changed my password, now it won't sign in on my other device" trap.
+         Before rejecting, ask Firebase Auth (the source of truth for resets): if
+         it confirms this password, adopt it locally — rewrite the salt+hash so this
+         device works now and every future sign-in is instant and offline. */
+      if(window.SYCloud){
+        try{await SYCloud.whenReady();}catch(err){}
+        if(SYCloud.ready()&&SYCloud.reauth){
+          say('Checking your account…','info');
+          var rr2=null;try{rr2=await SYCloud.reauth(email,pw);}catch(err){}
+          if(rr2&&rr2.ok){
+            var rec=(wantRole&&matches.filter(function(u){return u.role===wantRole})[0])||matches[0];
+            var nsalt=Array.from(crypto.getRandomValues(new Uint8Array(12))).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
+            rec.salt=nsalt;rec.hash=await hash(nsalt,pw);
+            save('sy-users',users);
+            authed=rec;
+          }else if(rr2&&rr2.reason==='wrong_password'){
+            say('Wrong password.','err');_fail();_resetHuman();return;
+          }else if(rr2&&(rr2.reason==='network'||rr2.reason==='offline')){
+            say('Couldn’t reach sign-in right now — check your connection and try again.','err');return;
+          }
+        }
+      }
+      if(!authed){say('Wrong password.','err');_fail();_resetHuman();return}
+    }
+    _pass();
+    /* unlock (or backfill) the account's end-to-end encryption keys */
+    try{if(window.SYE2E)await SYE2E.setupAccount(email,pw)}catch(err){}
+    /* establish the cloud session BEFORE leaving this page — awaited (with its
+       own 6s internal timeout) so the Firebase token is saved to this device.
+       Without it, cross-account features (parent/school linking, sync) silently
+       fail on the next page because there is no token yet. */
+    try{if(window.SYCloud){await SYCloud.whenReady();if(SYCloud.ready()){
+      /* Accounts created locally while the cloud was blocked were never mirrored
+         into Firebase Auth, so signIn fails and no token is ever obtained —
+         which silently breaks linking/sync. Provision the cloud account now
+         (same email + password) so this device gets a real token. Time-boxed so
+         login never hangs when the cloud is genuinely unreachable (no token to
+         get anyway); on a working network both calls resolve well within it. */
+      await Promise.race([
+        (async function(){ var _ok=await SYCloud.signIn(email,pw);
+          if(!_ok&&SYCloud.signUp)await SYCloud.signUp(email,pw,authed.name,authed.role); })(),
+        new Promise(function(r){setTimeout(r,4500);})
+      ]);
+    }}}catch(err){}
+    if(wantRole&&authed.role!==wantRole){
+      save('sy-session',{name:authed.name,email:authed.email,role:authed.role,ts:new Date().toISOString()});
+      say('Signed in — but this account is a <b>'+(LABELS[authed.role]||authed.role)+'</b> account, and this area needs a <b>'+
+          (LABELS[wantRole]||wantRole)+'</b> account. <a href="'+(CONSOLE[authed.role]||'../study/')+'">Go to my console</a>','info');
+      return;
+    }
+    save('sy-session',{name:authed.name,email:authed.email,role:authed.role,ts:new Date().toISOString()});
+    try{if(window.SYTrack)SYTrack.login({method:authed.role});}catch(e){}
+    location.replace(destination(authed.role));
+  }
+});
+if(wantRole&&!mismatch&&!session)setMode(q.get('signup')==='1'?'up':'in');
+
+/* Forgot password — Firebase sends the reset email via Google's mail
+   infrastructure (works whenever Email/Password auth is enabled). */
+var fg=document.getElementById('forgot');
+if(fg)fg.onclick=async function(e){
+  e.preventDefault();
+  var email=$('email').value.trim();
+  if(!/^\S+@\S+\.\S+$/.test(email)){say('Type your email above first, then click Forgot password.','err');$('email').focus();return}
+  say('Sending your reset link…','info');
+  try{
+    if(window.SYCloud){await SYCloud.whenReady();
+      if(SYCloud.ready()){
+        /* Neutral response whether or not the email exists (no account-existence
+           oracle). Fire the reset best-effort and always show the same message. */
+        try{await SYCloud.resetPassword(email);}catch(e){}
+        say('If an account exists for <b>'+email.replace(/[<>&]/g,'')+'</b>, a password reset link is on its way — check your inbox and spam. It expires in 1 hour.','ok');return;}
+    }
+    say('Cloud sign-in is offline right now — try again shortly, or contact contact@studyear.com.','err');
+  }catch(err){
+    say('If an account exists for that email, a password reset link is on its way — check your inbox and spam.','ok');
+  }
+};
+})();
+</script>
+<script src="../consent.js" defer></script>
+</body>
+</html>
