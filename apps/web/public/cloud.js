@@ -216,6 +216,12 @@
     });
   }
   async function token(email) {
+    /* Wait for the config to finish loading before deciding there is no token.
+       Otherwise a caller that runs on page load (admin sync, parent linking,
+       the student's code card) races the async config fetch and gets a false
+       null — reading a fully signed-in session as "not signed in to the cloud".
+       Every other cloud call awaits whenReady(); token() must too. */
+    try { await whenReady(); } catch (e) {}
     if (!CFG) return null;
     var t = findTok(email);
     if (!t || !t.refreshToken) return null;
