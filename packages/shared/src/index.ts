@@ -31,6 +31,8 @@ export const STUDY_LEVELS = [
   'IGCSE',
   'National 5',
   'BTEC National',
+  'NVQ',
+  'Level 2 Engineering',
   'AS',
   'A2/A-level',
   'Scottish Highers',
@@ -52,6 +54,8 @@ export const SUBJECTS = [
   'Computer Science',
   'Computing',
   'Economics',
+  'Electrical Engineering (Level 2)',
+  'Electrical Wiring and Testing',
   'English',
   'English Language',
   'English Literature',
@@ -79,7 +83,7 @@ export const SUBJECTS = [
 export type Subject = (typeof SUBJECTS)[number];
 
 /** Exam boards served UK-wide (incl. NI's CCEA, Scotland's SQA, and international CIE). */
-export const EXAM_BOARDS = ['AQA', 'CCEA', 'CIE', 'Edexcel', 'ICAAE', 'OCR', 'SQA', 'WJEC', 'Other'] as const;
+export const EXAM_BOARDS = ['AQA', 'CCEA', 'CIE', 'Edexcel', 'EAL', 'OCR', 'SQA', 'WJEC', 'Other'] as const;
 export type ExamBoard = (typeof EXAM_BOARDS)[number];
 
 /** Curriculum topic taxonomy — the provided catalogue, searchable across resources. */

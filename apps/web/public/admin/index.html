@@ -235,7 +235,8 @@
       <span class="note" id="imp-note"></span></div>
   </div>
   <div class="card">
-    <h3>All Users</h3><div class="sub">A real-time list of all registered users from this workspace's database.</div>
+    <h3>All Users</h3><div class="sub">All registered users. New signups from other devices appear only when this console is synced to the platform backend (status below).</div>
+    <div id="u-cloud-status" class="note" style="margin:0 0 10px;padding:8px 12px;border-radius:8px;background:rgba(77,157,224,.08);border:1px solid rgba(77,157,224,.2)">Checking platform sync…</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
       <input id="u-search" placeholder="Search name or email…" style="min-width:220px">
       <select id="u-role"><option value="">All roles</option><option>student</option><option>parent</option><option>teacher</option><option>tutor</option><option>school</option><option>authority</option><option>admin</option></select>
@@ -1489,13 +1490,20 @@ window.cloudUserOp=function(op,uid,value,done){
       });
   }).catch(function(){toast('Cloud unreachable')});
 };
-(function cloudPull(){
-  if(!window.SYCloud||!cloudApi()){setTimeout(cloudPull,1500);return}
+function cloudStatus(msg,kind){var e=document.getElementById('u-cloud-status');if(!e)return;
+  e.textContent=msg;
+  var c=kind==='ok'?['rgba(92,187,123,.10)','rgba(92,187,123,.35)']:kind==='warn'?['rgba(224,169,63,.10)','rgba(224,169,63,.4)']:['rgba(230,103,103,.10)','rgba(230,103,103,.4)'];
+  e.style.background=c[0];e.style.borderColor=c[1];}
+(function cloudPull(retries){retries=retries||0;
+  if(!window.SYCloud||!cloudApi()){
+    if(retries>3)cloudStatus('⚠ Platform sync not configured on this device — showing THIS device’s accounts only. New signups made elsewhere will not appear here until the backend connection is set up.','warn');
+    setTimeout(function(){cloudPull(retries+1)},1500);return;}
   SYCloud.token(SY.session.email).then(function(tk){
-    if(!tk)return; /* admin not signed in to Firebase Auth (or mirror off) */
+    if(!tk){cloudStatus('⚠ Not signed in to the cloud on this device — showing local accounts only. Sign in with your admin Firebase account (verified + allow-listed) to pull every platform signup.','warn');return;}
     return fetch(cloudApi()+'/adminOverview',{headers:{Authorization:'Bearer '+tk}})
-      .then(function(r){return r.json()}).then(function(j){
-        if(!j||!j.ok)return;
+      .then(function(r){return r.json().then(function(j){return {status:r.status,j:j}})}).then(function(res){
+        var j=res.j;
+        if(!j||!j.ok){cloudStatus('⚠ Platform sync failed (HTTP '+res.status+')'+(res.status===403?' — this admin account is not verified or not allow-listed for the backend.':(' — '+((j&&j.error)||'backend unreachable'))),'err');return;}
         window.CLOUD=j;
         /* merge platform accounts into the registry (never duplicating) */
         var us=store('sy-users',[]);var added=0;
@@ -1528,9 +1536,10 @@ window.cloudUserOp=function(op,uid,value,done){
         });
         save('sy-ai-usage',ulog.slice(0,1000));
         drawAll();
+        cloudStatus('✓ Synced to platform backend — '+((j.users||[]).length)+' account(s) live'+(added?(', '+added+' new this sync'):'')+'. New signups appear here automatically.','ok');
         toast('☁ Platform sync: '+((j.users||[]).length)+' account(s), '+((j.inbox||[]).length)+' message(s) from the cloud'+(added?(' — '+added+' new'):''));
       });
-  }).catch(function(){});
+  }).catch(function(){cloudStatus('⚠ Could not reach the platform backend — showing local accounts only. Check the network and that the backend is deployed.','err');});
 })();
 })();
 </script>
