@@ -151,6 +151,7 @@
         <div class="pk">Your Parent Link Code</div>
         <div class="pcode" id="pcode">········</div>
         <div style="margin-top:8px"><button class="btn" id="copy-code">Copy code for parent</button></div>
+        <div class="sub" id="code-status" style="margin-top:8px;padding:7px 11px;border-radius:8px;background:rgba(77,157,224,.08);border:1px solid rgba(77,157,224,.2)">Checking whether your code is ready for a parent on another device…</div>
         <div class="sub" style="margin-top:8px"><b>Parent:</b> scan this QR with your phone camera — it opens StudYear with the code ready. Or type the code in Command Centre → Link a child. Free students can link too.</div>
       </div>
     </div>
@@ -255,6 +256,28 @@ if(!code){code=String(Math.floor(10000000+Math.random()*90000000));SY.set('paren
    resolve this code (this is the page students actually read the code from) */
 try{SY.publishCode(code,'account')}catch(e){}
 $('pcode').textContent=code;
+/* Cross-device readiness: a code only works for a parent on ANOTHER device
+   once it has actually reached the backend directory (shareCodes/{code}).
+   Publishing needs a live cloud token — if the child never synced to the
+   cloud, the code lives only in this browser and a parent elsewhere gets
+   "no account found". Surface that plainly instead of failing silently. */
+(function codeStatus(){
+  var el=$('code-status');
+  function set(msg,kind){if(!el)return;el.innerHTML=msg;
+    var c=kind==='ok'?['rgba(92,187,123,.10)','rgba(92,187,123,.35)']:kind==='warn'?['rgba(224,169,63,.10)','rgba(224,169,63,.4)']:['rgba(77,157,224,.08)','rgba(77,157,224,.2)'];
+    el.style.background=c[0];el.style.borderColor=c[1];}
+  if(!SY.cloudAuthed){set('This code is saved on this device. Cross-device linking needs the platform backend to be connected.','warn');return;}
+  SY.cloudAuthed().then(function(ok){
+    if(!ok){set('⚠ Your account isn’t synced to the cloud yet, so this code only works on <b>this</b> device. <a href="#" id="code-sync" style="color:var(--gold-300)">Sync it now</a> so a parent on their own phone can link.','warn');
+      var sy=$('code-sync');if(sy)sy.onclick=function(ev){ev.preventDefault();set('Syncing…');SY.ensureCloud().then(function(done){if(!done){set('⚠ Sync cancelled — confirm your password to make this code work across devices.','warn');return;}try{SY.publishCode(code,'account');}catch(e){}setTimeout(codeStatus,1200);});};
+      return;}
+    /* authed — confirm the code truly landed in the backend directory */
+    SY.resolveCodeAsync(code).then(function(r){
+      if(r&&r.uid)set('✓ Ready — a parent on <b>any</b> device can link with this code now.','ok');
+      else set('Saving your code to the servers… reopen this page in a moment if a parent still can’t find it.','warn');
+    }).catch(function(){set('Saving your code to the servers…','warn');});
+  }).catch(function(){set('This code is saved on this device.','warn');});
+})();
 /* Encode a LINK (not the bare number) so a parent scanning with their phone
    camera lands on the parent page with the code pre-filled and ready — the
    canonical production site, so it always opens the working app. */
