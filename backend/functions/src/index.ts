@@ -1258,14 +1258,23 @@ export const publicStats = onRequest({ region: 'europe-west2', cors: true }, asy
 // ----------------------------------------------------------- admin (cloud view) ----
 /** Platform administrators — the only accounts the admin endpoints serve.
     Override with the ADMIN_EMAILS env (comma-separated). */
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? 'jnnseya@gmail.com,jnbankwa@gmail.com')
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? 'jnnseya@gmail.com,jnbankwa@gmail.com,admin@studyear.com')
+  .toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
+/** Allow-listed admin addresses that are LOGIN-ONLY (no reachable inbox), so
+    email verification can never complete for them. For these the closed
+    allow-list itself is the guard; every other admin must still be verified.
+    Keep this set as small as possible. Override with ADMIN_VERIFY_EXEMPT. */
+const ADMIN_VERIFY_EXEMPT = (process.env.ADMIN_VERIFY_EXEMPT ?? 'admin@studyear.com')
   .toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
 async function requireAdmin(authHeader: string | undefined) {
   const u = await requireUser(authHeader);
+  const email = (u.email ?? '').toLowerCase();
+  if (!email || !ADMIN_EMAILS.includes(email)) throw httpError(403, 'admin only');
   // Require a VERIFIED email: Firebase lets anyone register an arbitrary
   // unverified address, so an allow-list match alone would let someone claim an
-  // admin address that isn't yet a real account and pass this gate.
-  if (!u.email || !u.email_verified || !ADMIN_EMAILS.includes(u.email.toLowerCase())) throw httpError(403, 'admin only');
+  // admin address that isn't yet a real account and pass this gate. Exempt only
+  // the explicitly listed login-only admin addresses, which cannot be verified.
+  if (!u.email_verified && !ADMIN_VERIFY_EXEMPT.includes(email)) throw httpError(403, 'admin email not verified');
   return u;
 }
 
