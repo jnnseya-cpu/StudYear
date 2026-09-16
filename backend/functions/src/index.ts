@@ -1278,6 +1278,52 @@ async function requireAdmin(authHeader: string | undefined) {
   return u;
 }
 
+/** SHA-256 of the admin invite code, computed exactly as the auth page does
+    (`SHA-256('sy-admin' + '·' + code)`, hex). Overridable via ADMIN_INVITE_HASH.
+    The default matches the code the owner already uses to provision admins. */
+const ADMIN_INVITE_HASH = (process.env.ADMIN_INVITE_HASH ??
+  '83a38e5bf7454013c6a5452b458dc59b2543b2ce20d61175702f7364419c53b6').toLowerCase();
+
+/**
+ * POST /adminBootstrap { email, password, code }
+ * Set (or create) the CLOUD password for a LOGIN-ONLY admin address that has no
+ * inbox — so the owner can establish or repair it without the Firebase console
+ * or a verification email. Deliberately unauthenticated (the admin can't sign
+ * in yet), but gated three ways: (1) the email must be on BOTH the admin
+ * allow-list and the login-only ADMIN_VERIFY_EXEMPT list — it can never touch a
+ * normal user or an inbox-backed admin; (2) the caller must present the admin
+ * invite code (same shared secret that provisions admins), compared in constant
+ * time; (3) hard per-day rate limit. Marks the account emailVerified so it
+ * needs no inbox. Same threat model as the existing invite-code admin signup.
+ */
+export const adminBootstrap = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const email = String(req.body?.email ?? '').trim().toLowerCase();
+    const password = String(req.body?.password ?? '');
+    const code = String(req.body?.code ?? '');
+    await enforceRate('adminBootstrap', 'adminBootstrap', 20);
+    if (!ADMIN_EMAILS.includes(email) || !ADMIN_VERIFY_EXEMPT.includes(email))
+      throw httpError(403, 'not a login-only admin address');
+    if (password.length < 6) throw httpError(400, 'password must be at least 6 characters');
+    const codeHash = createHash('sha256').update('sy-admin' + '·' + code).digest('hex');
+    const a = Buffer.from(codeHash), b = Buffer.from(ADMIN_INVITE_HASH);
+    if (a.length !== b.length || !timingSafeEqual(a, b)) throw httpError(403, 'invalid admin code');
+    let uid: string; let created = false;
+    try {
+      uid = (await getAuth().getUserByEmail(email)).uid;
+      await getAuth().updateUser(uid, { password, emailVerified: true });
+    } catch (e) {
+      uid = (await getAuth().createUser({ email, password, emailVerified: true })).uid;
+      created = true;
+    }
+    await audit('ADMIN_BOOTSTRAP', uid, { email, created });
+    res.json({ ok: true, email, created });
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
 /**
  * GET /adminOverview — the platform-wide truth for the Admin console:
  * every Firebase Auth account (merged with its users/ doc), the contact

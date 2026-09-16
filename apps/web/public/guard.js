@@ -958,7 +958,14 @@
     } catch (e) {}
     // register the offline/install service worker (scope-relative so / and /StudYear/ both work)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register(base + 'sw.js', { scope: base }).catch(function () {});
+      navigator.serviceWorker.register(base + 'sw.js', { scope: base }).then(function (reg) {
+        // ACTIVELY check for a new worker now, on refocus, and hourly — otherwise
+        // an installed PWA can sit on a stale deploy for up to a day.
+        try { reg.update(); } catch (e) {}
+        document.addEventListener('visibilitychange', function () {
+          if (document.visibilityState === 'visible') { try { reg.update(); } catch (e) {} } });
+        setInterval(function () { try { reg.update(); } catch (e) {} }, 30 * 60 * 1000);
+      }).catch(function () {});
       // when a NEW worker replaces the one that was controlling this page, the
       // markup on screen was styled by the previous deploy's cached CSS —
       // refresh once so HTML+CSS match. hadController distinguishes an update

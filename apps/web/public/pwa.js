@@ -10,7 +10,25 @@
   meta('apple-mobile-web-app-title','StudYear');
   meta('apple-mobile-web-app-status-bar-style','black-translucent');
   if(!document.querySelector('link[rel="apple-touch-icon"]')){var l=document.createElement('link');l.rel='apple-touch-icon';l.href=base+'apple-touch-icon.png';document.head.appendChild(l);}
-  if('serviceWorker' in navigator){navigator.serviceWorker.register(base+'sw.js',{scope:base}).catch(function(){});}
+  if('serviceWorker' in navigator){
+    /* Register, then ACTIVELY check for a new service worker on load, whenever
+       the app regains focus, and hourly — an installed PWA otherwise sits on a
+       stale worker for up to a day and never shows a deploy. When a new worker
+       takes control, reload ONCE so the page runs the new code (never on first
+       install, never in a loop). This is what makes website/admin updates
+       actually reach an installed PWA. */
+    var hadController=!!navigator.serviceWorker.controller, reloaded=false;
+    navigator.serviceWorker.register(base+'sw.js',{scope:base}).then(function(reg){
+      try{reg.update();}catch(e){}
+      document.addEventListener('visibilitychange',function(){
+        if(document.visibilityState==='visible'){try{reg.update();}catch(e){}}});
+      setInterval(function(){try{reg.update();}catch(e){}},30*60*1000);
+    }).catch(function(){});
+    navigator.serviceWorker.addEventListener('controllerchange',function(){
+      if(reloaded||!hadController)return; // first-ever install → no reload
+      reloaded=true; try{location.reload();}catch(e){}
+    });
+  }
   /* premium webfonts (Fraunces + Inter), loaded NON-BLOCKING: preconnect + a
      print-media stylesheet flipped to all on load, so a slow or firewalled fonts
      host never delays first paint — pub.css falls back to Georgia/Inter-system
