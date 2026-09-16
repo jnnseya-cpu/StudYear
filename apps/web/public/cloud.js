@@ -315,9 +315,17 @@
       return { ok: true, reason: 'signed_in' };
     } catch (e) {
       var m = String((e && e.message) || '');
-      if (/INVALID_PASSWORD|INVALID_LOGIN_CREDENTIALS|MISSING_PASSWORD/.test(m)) return { ok: false, reason: 'wrong_password' };
-      if (/EMAIL_NOT_FOUND/.test(m)) {
-        // account exists locally but was never created in the cloud — make it now
+      if (/MISSING_PASSWORD/.test(m)) return { ok: false, reason: 'wrong_password' };
+      /* INVALID_LOGIN_CREDENTIALS is returned for BOTH a wrong password AND a
+         non-existent account — Firebase's Email Enumeration Protection (on by
+         default) deliberately hides which. EMAIL_NOT_FOUND / INVALID_PASSWORD are
+         the legacy signals. In every one of these cases the account may simply
+         never have been mirrored to the cloud, so try to PROVISION it; the signUp
+         result then disambiguates. This is what lets a first-time (or never-
+         cloud-synced) admin sign in with their own password instead of being
+         wrongly refused. Provisioning only creates the Firebase Auth identity —
+         admin authority is still enforced server-side by the allow-list. */
+      if (/INVALID_PASSWORD|INVALID_LOGIN_CREDENTIALS|EMAIL_NOT_FOUND/.test(m)) {
         try {
           saveTok(email, await race(idp('signUp', { email: email, password: pw, returnSecureToken: true })));
           try { await race(api('/register', 'POST', { name: '', role: '' }, email)); } catch (e2) {}
@@ -325,8 +333,9 @@
           return { ok: true, reason: 'provisioned' };
         } catch (e4) {
           var m2 = String((e4 && e4.message) || '');
-          if (/EMAIL_EXISTS/.test(m2)) return { ok: false, reason: 'wrong_password' }; // race: exists w/ another pw
+          if (/EMAIL_EXISTS/.test(m2)) return { ok: false, reason: 'wrong_password' }; // account really exists → password was wrong
           if (/WEAK_PASSWORD/.test(m2)) return { ok: false, reason: 'weak_password' };
+          if (/EMAIL_NOT_FOUND|INVALID_LOGIN_CREDENTIALS|INVALID_PASSWORD/.test(m2)) return { ok: false, reason: 'wrong_password' };
           return { ok: false, reason: 'network' };
         }
       }
