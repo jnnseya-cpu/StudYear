@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — SkillRush™</title><link rel="manifest" href="../manifest.json"><link rel="icon" href="../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--gold-300:#A9CFF2;--gold-400:#5FA8E0;--gold-500:#3D8FD1;--good:#5CBB7B;--warn:#c98500;--crit:#e66767;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#8795AE;--line:rgba(77,157,224,.14);--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}body{background:radial-gradient(1100px 600px at 82% -12%,rgba(77,157,224,.13),transparent 60%),var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  body.bigfont{font-size:19px}body.bigfont .q-big{font-size:64px !important}
+  body.dyslexic{font-family:Verdana,Tahoma,var(--sans);letter-spacing:.03em;word-spacing:.12em}
+  .wrap{max-width:1080px;margin:0 auto;padding:26px 22px 90px}
+  .top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}.top .logo{font-family:var(--serif);font-size:18px;text-decoration:none;color:var(--ink)}.top .logo b{color:#4FA6E0}.top .sp{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .chip{font-size:12px;color:var(--ink-2);border:1px solid rgba(170,182,204,.25);border-radius:20px;padding:6px 12px;text-decoration:none;background:none;cursor:pointer;font-family:var(--sans)}
+  a{color:inherit}h1{font-family:var(--serif);font-weight:500;font-size:30px}.k{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-400)}p.lede{color:var(--ink-2);font-weight:300;margin-top:4px;max-width:78ch}
+  .idrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:14px}
+  .av{width:54px;height:54px;border-radius:14px;display:grid;place-items:center;font-size:30px;background:linear-gradient(135deg,rgba(79,166,224,.25),rgba(46,107,196,.25));border:1px solid var(--gold-500);cursor:pointer}
+  .heroid{font-family:var(--serif);font-size:18px;color:var(--gold-300)}
+  .heroid small{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-family:var(--sans)}
+  #avpick{display:none;gap:6px;flex-wrap:wrap}#avpick button{font-size:22px;background:none;border:1px solid var(--line);border-radius:10px;padding:5px 8px;cursor:pointer}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:10px;margin-top:16px}
+  .stat{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:rgba(16,27,51,.5)}.stat .v{font-family:var(--serif);font-size:22px;color:var(--gold-300);line-height:1}.stat .l{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-top:5px}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:18px 20px;margin-top:16px}.card h3{font-family:var(--serif);font-weight:500;font-size:17px}.card .sub{font-size:12px;color:var(--ink-3);margin:4px 0 10px}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12.5px var(--sans);border-radius:9px;padding:10px 16px;cursor:pointer;text-decoration:none;display:inline-block}.btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}.btn.sm{padding:6px 11px;font-size:11.5px}.btn.ghost{border-color:rgba(170,182,204,.3);background:transparent;color:var(--ink-2)}
+  .skills{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}.skills .sk{font-size:12.5px;color:var(--ink-2);border:1px solid var(--line);border-radius:20px;padding:7px 14px;min-height:40px;cursor:pointer;background:none;font-family:var(--sans)}.skills .sk.on{color:var(--gold-300);border-color:var(--gold-500);background:rgba(77,157,224,.1)}
+  .modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:10px}
+  .mode{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:rgba(6,11,24,.35);cursor:pointer;transition:border-color .12s,transform .12s}.mode:hover{border-color:var(--gold-500);transform:translateY(-2px)}
+  .mode b{color:var(--ink);font-size:14px}.mode span{display:block;font-size:11.5px;color:var(--ink-3);margin-top:4px}
+  .mode .tag{display:inline-block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;border:1px solid rgba(92,187,123,.5);color:#8ee0a5;border-radius:8px;padding:1px 7px;margin-top:7px}
+  #arena{display:none}
+  .q-big{font-family:var(--serif);font-size:48px;color:var(--ink);text-align:center;margin:22px 0 8px}
+  .a-line{display:flex;gap:10px;justify-content:center;margin-top:10px}
+  .a-line input{width:260px;background:rgba(6,11,24,.75);border:2px solid var(--gold-500);border-radius:12px;color:var(--ink);font:600 26px var(--sans);padding:12px 16px;outline:none;text-align:center}
+  .hud{display:flex;gap:14px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:6px;font-size:13px;color:var(--ink-2)}
+  .hud b{color:var(--gold-300)}
+  .timerbar{height:8px;border-radius:5px;background:rgba(170,182,204,.12);overflow:hidden;max-width:420px;margin:14px auto 0}.timerbar i{display:block;height:100%;background:linear-gradient(90deg,#5CBB7B,#c98500,#e66767);transition:width .2s linear}
+  .fb{text-align:center;font-size:15px;margin-top:10px;min-height:24px}
+  .row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:13px}.row b{color:var(--ink)}
+  .empty{color:var(--ink-3);font-style:italic;padding:12px 0}.note{font-size:11.5px;color:var(--ink-3);margin-top:8px}
+  .acc{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:12.5px;color:var(--ink-2)}
+  .acc label{display:flex;gap:7px;align-items:center;cursor:pointer}
+  .duel-splash{text-align:center;padding:30px 10px;font-family:var(--serif);font-size:26px;color:var(--gold-300)}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+  @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.25)}100%{transform:scale(1)}}
+  .pop{animation:pop .3s ease}
+</style></head><body>
+<script src="../guard.js" data-role="student" data-base="../"></script>
+<script src="../ai.js"></script>
+<div class="wrap" role="main">
+  <div class="top"><a class="logo" href="../">⌂ <b class="wm">StudYear</b></a>
+    <div class="sp"><a class="chip" href="#" id="lang-toggle" title="Switch language / Changer de langue">FR</a><a class="chip" href="../study/">Study workspace</a><a class="chip" href="../dashboards/student/">Dashboard</a><a class="chip" href="../account/achievements/">Achievements</a><a class="chip" href="#" id="signout">Sign out</a></div></div>
+  <div class="k">SkillRush™ · the 5-minute daily academic workout</div>
+  <h1>Fluency Arena</h1>
+  <p class="lede">Fast, focused practice that turns weak skills into automatic ones — from Year 1 (age 4) to university. Earn coins and XP, keep your streak, climb the leaderboard — five minutes a day.</p>
+
+  <div class="idrow">
+    <div class="av" id="avatar" title="Change avatar">🦊</div>
+    <div class="heroid"><span id="heroname">—</span><small>Your hero name · anonymous on leaderboards · <a href="#" id="edit-name" style="color:var(--gold-400)">edit</a></small></div>
+    <div id="avpick"></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="v" id="s-coins">0</div><div class="l">Coins</div></div>
+    <div class="stat"><div class="v" id="s-xp">0</div><div class="l">XP</div></div>
+    <div class="stat"><div class="v" id="s-streak">0</div><div class="l">Day streak</div></div>
+    <div class="stat"><div class="v" id="s-best">—</div><div class="l">Best speed</div></div>
+    <div class="stat"><div class="v" id="s-acc">—</div><div class="l">Accuracy</div></div>
+    <div class="stat"><div class="v" id="s-conf">—</div><div class="l">Confidence</div></div>
+    <div class="stat"><div class="v" id="s-improve">—</div><div class="l">Best improvement</div></div>
+    <div class="stat"><div class="v" id="s-rank">—</div><div class="l">League rank</div></div>
+  </div>
+
+  <div class="card" id="rescue-card" style="display:none;border-color:rgba(201,133,0,.45)"><h3>🛟 Streak Rescue</h3>
+    <div class="sub">You've been away a few days — that's fine. Here's a gentle 8-question comeback to restart the habit, no timer.</div>
+    <button class="btn solid sm" id="rescue-go">Rescue my streak →</button></div>
+
+  <div class="card" id="mission-card"><h3>🎯 Today's mission</h3><div class="sub" id="mission-sub">Your daily workout — teacher-set when your class has a focus, otherwise your weakest skill</div>
+    <div id="mission"></div></div>
+
+  <div class="card" id="heroes-card"><h3>🦸 Maths Heroes™ <span style="font-size:11px;color:var(--ink-3);letter-spacing:.08em">· FOUR-OPERATION MASTERY</span></h3>
+    <div class="sub">The four-operation arithmetic fluency module. Addition. Subtraction. Multiplication. Division. <b>Mastered.</b> From counting mistakes to confident maths mastery — one smart question at a time.</div>
+    <div id="heroes" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:6px"></div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="btn sm solid" id="diag-go">🩺 2-minute arithmetic diagnostic →</button>
+      <span class="note" id="diag-note" style="margin:0">12 quick questions across the four operations — sets your Ready / At-risk / Critical status and your mission.</span>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span class="note" style="margin:0">My fact map:</span>
+      <select id="fm-op" style="width:auto;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:8px;color:var(--ink);padding:5px 8px;font-size:12px">
+        <option value="add">➕ Addition</option><option value="sub">➖ Subtraction</option><option value="mul" selected>✖️ Multiplication</option><option value="div">➗ Division</option>
+      </select>
+    </div>
+    <div id="factmap"></div></div>
+
+  <div class="card" id="setup">
+    <h3>Choose your skill</h3>
+    <div class="skills" id="skills"></div>
+    <h3 style="margin-top:16px">Choose your mode</h3>
+    <div class="modes">
+      <div class="mode" data-mode="focus"><b>⚡ Focus Mode</b><span>Your weakest micro-skill · 3 minutes · adaptive difficulty</span><span class="tag">AI-picked</span></div>
+      <div class="mode" data-mode="confidence"><b>🌱 Confidence Mode</b><span>No timer, calm pace, hints — rebuild self-belief first</span><span class="tag">No pressure</span></div>
+      <div class="mode" data-mode="exam"><b>⏱ Exam Pressure Mode</b><span>25 questions · 6 seconds each — mirrors the real check</span><span class="tag">MTC-style</span></div>
+      <div class="mode" data-mode="comeback"><b>🚀 Comeback Mode</b><span>Starts easy, builds up — for getting back on track</span><span class="tag">Recovery</span></div>
+      <div class="mode" data-mode="battle"><b>⚔️ Class Battle</b><span>Every correct answer scores for your class this week</span><span class="tag">Team</span></div>
+      <div class="mode" data-mode="duel"><b>👨‍👧 Parent Challenge</b><span>Pass the device — you vs your parent, 6 questions each</span><span class="tag">Family</span></div>
+    </div>
+    <div class="acc" id="acc">
+      <label><input type="checkbox" id="acc-font"> Huge font</label>
+      <label><input type="checkbox" id="acc-dys"> Dyslexia-friendly font</label>
+      <label><input type="checkbox" id="acc-timer"> Hide timer (reduce anxiety)</label>
+      <label><input type="checkbox" id="acc-read"> Read questions aloud</label>
+      <label><input type="checkbox" id="acc-voice"> Voice answers <span id="voice-supp" class="note" style="margin:0"></span></label>
+    </div>
+    <div class="note">Accessibility-first: no ads, no chat, anonymous on leaderboards. Results feed 📈 My Progress, your parent's view and your teacher's fluency heatmap.<br>Run by your AI team: the <b>AI Coach</b> picks your mission, the <b>Progress Analyst</b> tracks improvement, and the <b>Motivation Engine™</b> manages coins, streaks &amp; leagues.</div>
+  </div>
+
+  <div class="card" id="coach-card"><h3>🤖 AI Coach</h3><div class="sub">Stuck on a skill? The coach explains <i>why</i> and gives you one targeted mini-lesson.</div>
+    <button class="btn sm" id="coach-go">Coach my weakest skill →</button>
+    <div id="coach-out" style="margin-top:10px;font-size:13.5px;color:var(--ink-2);line-height:1.7"></div></div>
+
+  <div class="card" id="arena">
+    <div class="hud"><span>Skill: <b id="h-skill"></b></span><span>Mode: <b id="h-mode"></b></span><span>Q <b id="h-n">1</b>/<b id="h-total">20</b></span><span>✓ <b id="h-right">0</b></span><span>Coins <b id="h-coins">0</b></span><span id="h-duel" style="display:none">Player <b id="h-player">1</b></span></div>
+    <div class="timerbar" id="tb"><i id="tbi" style="width:100%"></i></div>
+    <div class="q-big" id="q">—</div>
+    <div class="a-line"><input id="ans" autocomplete="off" autocapitalize="off" placeholder="?"></div>
+    <div class="fb" id="fb"></div>
+    <div style="text-align:center;margin-top:14px"><button class="btn ghost sm" id="quit">End session</button> <button class="btn sm" id="hint" style="display:none">Hint</button></div>
+  </div>
+
+  <div class="card" id="national-card" style="display:none;border-color:rgba(230,199,102,.5);background:linear-gradient(120deg,rgba(230,199,102,.08),rgba(11,18,32,.8))"><h3>🇬🇧 National SkillRush Championship</h3>
+    <div class="sub" id="national-sub">Live now — one official attempt, pitched at your education level. The <b>top 5 in each education level</b> win a full year of free access for them AND their parent.</div>
+    <button class="btn solid sm" id="national-go">Enter the National Test →</button>
+    <span class="note" id="national-state" style="margin-left:8px"></span></div>
+
+  <div class="card" id="result" style="display:none"></div>
+
+  <div class="card"><h3>⚔️ Class battle — this week</h3><div class="sub" id="battle-sub">Every player's correct answers add to the class total</div><div id="battle"></div></div>
+  <div class="card"><h3>🏆 League — this week</h3><div class="sub" id="lb-sub">Anonymous hero names · your school when linked, this device otherwise</div><div id="board"></div></div>
+</div>
+<div id="toast"></div>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var e=$('toast');e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2200)}
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+function ri(a,b){return Math.floor(a+Math.random()*(b-a+1))}
+function pick(arr){return arr[ri(0,arr.length-1)]}
+function todayKey(){return new Date().toISOString().slice(0,10)}
+function weekKey(){var d=new Date();var on=new Date(d.getFullYear(),0,1);var wk=Math.ceil((((d-on)/864e5)+on.getDay()+1)/7);return d.getFullYear()+'-W'+wk}
+
+/* ---- state & identity ---- */
+var SR=SY.get('skillrush',{coins:0,xp:0,days:[],history:[],skill:{},heroName:null,avatar:null});
+if(!SR.heroName){var A=['Turbo','Mega','Rocket','Neon','Cosmic','Blaze','Quantum','Thunder'],B=['Fox','Falcon','Panda','Tiger','Comet','Wolf','Dragon','Otter'];SR.heroName=pick(A)+' '+pick(B)+' '+ri(10,99);SY.set('skillrush',SR)}
+if(!SR.avatar)SR.avatar='🦊';
+var AVATARS=['🦊','🐼','🦁','🐯','🐸','🦉','🐙','🦄','🤖','👾','🚀','🧠','⚡','🔥','🌟','🎧'];
+$('avatar').textContent=SR.avatar;$('heroname').textContent=SR.heroName;
+$('avpick').innerHTML=AVATARS.map(function(a){return '<button data-av="'+a+'">'+a+'</button>'}).join('');
+$('avatar').onclick=function(){var p=$('avpick');p.style.display=p.style.display==='flex'?'none':'flex'};
+$('avpick').querySelectorAll('button').forEach(function(b){b.onclick=function(){SR.avatar=b.dataset.av;$('avatar').textContent=SR.avatar;SY.set('skillrush',SR);$('avpick').style.display='none';toast('Avatar updated')}});
+$('edit-name').onclick=function(e){e.preventDefault();var n=prompt('Choose your hero name (shown anonymously on leaderboards):',SR.heroName);if(n&&n.trim().length>=3){SR.heroName=n.trim().slice(0,24);SY.set('skillrush',SR);$('heroname').textContent=SR.heroName;toast('Hero name updated')}};
+
+/* ---- fluency engine: 14 skills ---- */
+/* ---- localisation seam: keep the engine, localise the wrapper. LANG swaps the
+   motivational shell + language-sensitive banks; the adaptive engine, modes,
+   economy and boards are identical. Owned by the Localisation agent; FR is the
+   first pack for the DRC/francophone corridor. */
+var LANG=SR.lang||'en';
+var SPELL_FR=[['recevior','recevoir'],['boujour','bonjour'],['ecolle','école'],['mersi','merci'],['famile','famille'],['toujour','toujours'],['apres','après'],['tres','très'],['garcon','garçon'],['francais','français']];
+var GRAMMAR_FR=[['le / la — ___ maison','la'],['le / la — ___ livre','le'],['un / une — ___ pomme','une'],['un / une — ___ chien','un'],['est / sont — Ils ___ contents.','sont'],['est / sont — Elle ___ ici.','est'],['a / à — Il ___ un vélo.','a'],['a / à — Je vais ___ Paris.','à']];
+var SPELL=[['recieve','receive'],['seperate','separate'],['definately','definitely'],['becuase','because'],['wich','which'],['freind','friend'],['tommorow','tomorrow'],['enviroment','environment'],['goverment','government'],['occured','occurred'],['neccessary','necessary'],['begining','beginning']];
+if(LANG==='fr')SPELL=SPELL_FR;
+var GRAMMAR=[['much / many — How ___ water is left?','much'],['much / many — How ___ apples are there?','many'],['is / are — The team ___ winning.','is'],['was / were — They ___ late yesterday.','were'],['its / it’s — The dog wagged ___ tail.','its'],['your / you’re — ___ going to love this.','you’re'],['a / an — I ate ___ orange.','an'],['who / whom — ___ wrote this book?','who']];
+if(LANG==='fr')GRAMMAR=GRAMMAR_FR;
+var VOCAB=[['Opposite of "ancient" (m…)','modern'],['Synonym of "begin" (s…)','start'],['Opposite of "expand" (c…)','contract'],['Synonym of "rapid" (f…)','fast'],['Opposite of "scarce" (p…)','plentiful'],['Synonym of "brave" (c…)','courageous'],['Opposite of "victory" (d…)','defeat'],['Synonym of "angry" (f…)','furious']];
+var SCIFACT=[['Chemical symbol for iron','fe'],['Chemical formula for water','h2o'],['Planet closest to the Sun','mercury'],['Unit of force','newton'],['The powerhouse of the cell','mitochondria'],['Largest organ of the human body','skin'],['Gas plants absorb (formula)','co2'],['Chemical symbol for gold','au']];
+var GEOFACT=[['Capital of France','paris'],['Capital of Spain','madrid'],['Capital of Japan','tokyo'],['Capital of Italy','rome'],['Capital of Egypt','cairo'],['Longest river in the world','nile'],['Largest ocean','pacific'],['Highest mountain in the UK','ben nevis']];
+var HISTDATE=[['Year WW2 began in Europe',1939],['Year WW1 began',1914],['Battle of Hastings',1066],['Great Fire of London',1666],['Magna Carta signed',1215],['Year WW2 ended',1945],['Titanic sank',1912],['First Moon landing',1969]];
+function bankGen(bank,text){return function(){var it=pick(bank);return {q:it[0],a:it[1],text:text!==false}}}
+/* ---- Maths Heroes™ fact engine: every core fact (≈530: 0+0…20+20,
+   within-20 differences, 1×1…12×12 and exact quotients) is a tracked node.
+   biasPair() re-weights toward the learner's weakest/slowest facts in Focus &
+   Comeback (the adaptive practice loop); inverse pairs (+↔−, ×↔÷) are linked nodes. ---- */
+function biasPair(op,rand){
+  try{
+    if(S&&(S.mode==='focus'||S.mode==='comeback')&&SR.facts){
+      var cands=Object.keys(SR.facts).filter(function(k){return k.indexOf(op+':')===0}).map(function(k){var f=SR.facts[k];return {k:k,m:f.t?f.r/f.t:0,ms:f.ms||9,t:f.t}}).filter(function(x){return x.t>=2&&(x.m<0.85||x.ms>4)});
+      if(cands.length>=3){
+        cands.sort(function(a,b){return (a.m-b.m)||(b.ms-a.ms)});
+        var pickFrom=cands.slice(0,6);var c=pickFrom[ri(0,pickFrom.length-1)];
+        var nums=c.k.split(':')[1].split(/[^0-9]+/).map(Number).filter(function(n){return !isNaN(n)});
+        if(nums.length>=2)return nums;
+      }
+    }
+  }catch(e){}
+  return rand();
+}
+var SKILLS=[
+  ['addition','Addition',function(lv){var m=lv===0?10:lv===1?20:99;var p=biasPair('add',function(){return [ri(0,m),ri(0,m)]});var a=p[0],b=p[1];return {q:a+' + '+b,a:a+b,fk:'add:'+a+'+'+b,inv:'sub:'+(a+b)+'-'+b}}],
+  ['subtraction','Subtraction',function(lv){var m=lv===0?10:lv===1?20:99;var p=biasPair('sub',function(){var x=ri(0,m),y=ri(0,m);return [Math.max(x,y),Math.min(x,y)]});var hi=p[0],lo=p[1];return {q:hi+' − '+lo,a:hi-lo,fk:'sub:'+hi+'-'+lo,inv:'add:'+(hi-lo)+'+'+lo}}],
+  ['tables','Times tables',function(lv){var mx=Math.min(12,4+lv*2);var p=biasPair('mul',function(){return [ri(1,mx),ri(1,12)]});var a=p[0],b=p[1];return {q:a+' × '+b,a:a*b,fk:'mul:'+a+'x'+b,inv:'div:'+(a*b)+'/'+b}}],
+  ['division','Division',function(lv){var p=biasPair('div',function(){var b=ri(1,12),ans=ri(1,12);return [b*ans,b]});var d=p[0],b2=p[1];if(!b2||d%b2)return {q:'12 ÷ 3',a:4,fk:'div:12/3',inv:'mul:4x3'};return {q:d+' ÷ '+b2,a:d/b2,fk:'div:'+d+'/'+b2,inv:'mul:'+(d/b2)+'x'+b2}}],
+  ['bonds','Number bonds',function(lv){var t=lv===0?20:lv===1?100:1000;var a=lv===2?ri(1,99)*10:ri(1,t-1);return {q:'What adds to '+t+' with '+a+'?',a:t-a}}],
+  ['inverse','Inverse operations',function(lv){var k=ri(0,3);
+    if(k===0){var b=ri(2,9+lv*3),ans=ri(2,9+lv*3);return {q:'? × '+b+' = '+(b*ans),a:ans}}
+    if(k===1){var b2=ri(2,12),ans2=ri(2,12);return {q:'? ÷ '+b2+' = '+ans2,a:b2*ans2}}
+    if(k===2){var b3=ri(5,40+lv*40),ans3=ri(5,40+lv*40);return {q:'? + '+b3+' = '+(b3+ans3),a:ans3}}
+    var b4=ri(3,30+lv*30),ans4=ri(3,30+lv*30);return {q:'? − '+b4+' = '+ans4,a:ans4+b4}}],
+  ['word','Word problems',function(lv){var k=ri(0,3);var n1=ri(3,10+lv*15),n2=ri(2,9+lv*6);
+    if(k===0)return {q:'Ava has '+n1+' stickers and buys '+n2+' more. How many now?',a:n1+n2};
+    if(k===1)return {q:'A box holds '+n2+' eggs. How many eggs in '+n1+' boxes?',a:n1*n2};
+    if(k===2)return {q:'Leo had '+(n1+n2)+' marbles and lost '+n2+'. How many left?',a:n1};
+    return {q:n1*n2+' sweets are shared equally between '+n2+' friends. How many each?',a:n1}}],
+  ['mental','Mental arithmetic',function(lv){var a=ri(10,50+lv*40),b=ri(10,50+lv*30);return Math.random()<0.5?{q:a+' + '+b,a:a+b}:{q:(a+b)+' − '+a,a:b}}],
+  ['fractions','Fractions',function(lv){var d=[2,4,5,10,20][ri(0,Math.min(4,1+lv))];var n=ri(1,d-1);var whole=d*ri(1,4+lv*4);return {q:n+'/'+d+' of '+whole,a:whole*n/d}}],
+  ['decimals','Decimals',function(lv){var a=ri(1,9),b=ri(1,9);if(lv<2)return {q:'0.'+a+' + 0.'+b,a:Math.round((a/10+b/10)*100)/100};var m=ri(2,9);return {q:'0.'+a+' × '+m,a:Math.round(a*m)/10}}],
+  ['percent','Percentages',function(lv){var p=[50,25,10,20,5,75][ri(0,Math.min(5,1+lv))];var base=ri(1,8+lv*8)*10;return {q:p+'% of '+base,a:base*p/100}}],
+  ['algebra','Algebra basics',function(lv){var x=ri(2,5+lv*5),b=ri(1,10),m=ri(2,Math.min(9,2+lv*2));return {q:m+'x '+(Math.random()<0.5?'+ '+b+' = '+(m*x+b):'− '+b+' = '+(m*x-b))+',  x = ?',a:x}}],
+  ['squares','Squares & roots',function(lv){var n=ri(2,8+lv*4);return Math.random()<0.5?{q:n+'²',a:n*n}:{q:'√'+(n*n),a:n}}],
+  ['formulas','GCSE formula recall',function(){var f=pick([['Area of a triangle = ½ × base × … ?','h'],['Speed = distance ÷ … ?','t'],['Circumference = 2 × π × … ?','r'],['Density = mass ÷ … ?','v']]);return {q:f[0],a:f[1],text:true}}],
+  ['spelling','Spelling',function(){var it=pick(SPELL);return {q:'Fix the spelling: “'+it[0]+'”',a:it[1],text:true}}],
+  ['grammar','Grammar',bankGen(GRAMMAR)],
+  ['vocab','Vocabulary',bankGen(VOCAB)],
+  ['science','Science facts',bankGen(SCIFACT)],
+  ['geography','Geography facts',bankGen(GEOFACT)],
+  ['history','History dates',function(){var it=pick(HISTDATE);return {q:it[0]+' (year)',a:it[1]}}],
+  ['french','Language vocab (FR)',bankGen([['French for "hello"','bonjour'],['French for "thank you"','merci'],['French for "cat"','chat'],['French for "dog"','chien'],['French for "water"','eau'],['French for "school"','école'],['French for "book"','livre'],['French for "red"','rouge']])]
+];
+
+/* ---- education-level pitch: difficulty and skill emphasis follow the profile ---- */
+var PROFILE=SY.get('profile',{})||{};
+var LEVEL=PROFILE.level||'GCSE';
+/* StudYear spans Reception (age 4) to university. Map the profile's education
+   level to a difficulty band EXPLICITLY, so an EYFS/KS1/KS2 child is never given
+   exam-grade questions (the old regex missed "Key Stage 2…", "Reception", "EYFS"
+   and silently fell through to band 2 — the reported bug):
+     0 gentle     — EYFS · Reception · KS1 · Years 1–2
+     1 core       — KS2 · Years 3–6 · 11+ · KS3 · Years 7–9 · National 5 · Fun/NEET
+     2 exam-grade — GCSE · IGCSE · AS/A-level · IB · BTEC · university */
+var _LVL=String(LEVEL).toLowerCase();
+var LV_BOOST=
+  /universit|undergrad|degree|postgrad|master|\bphd\b|doctora/.test(_LVL)?2:  /* tertiary before year-N so "University Year 2" isn't read as Reception */
+  /eyfs|reception|nursery|early years|key stage 1|\bks1\b|infant|year ?1\b|year ?2\b/.test(_LVL)?0:
+  /key stage 2|\bks2\b|junior|11 ?\+|eleven plus|year ?[3-6]\b|years? ?[3-6]|key stage 3|\bks3\b|year ?[789]\b|years? ?[789]|national 5|\bfun\b|all.?level|neet|lifelong/.test(_LVL)?1:
+  2;
+var LEVEL_SKILLS={0:['addition','subtraction','tables','division','bonds','word','spelling'],1:['tables','division','mental','inverse','fractions','decimals','percent','word','grammar','science'],2:['mental','inverse','fractions','percent','algebra','squares','formulas','vocab','science','geography','history']};
+var recommended=LEVEL_SKILLS[LV_BOOST]||LEVEL_SKILLS[2];
+document.querySelector('.lede').innerHTML+=' <span style="color:var(--gold-400)">Pitched at '+esc(LEVEL)+'.</span>';
+/* a primary child (EYFS/KS1/KS2/11+) must not even SEE exam-grade skills
+   (algebra, squares & roots, GCSE formula recall) — hide them for that tier. */
+var IS_PRIMARY=!/universit|undergrad|degree|postgrad|master|\bphd\b|doctora/.test(_LVL)&&/eyfs|reception|nursery|early years|key stage [12]|\bks[12]\b|infant|junior|primary|11 ?\+|eleven plus|year ?[1-6]\b|years? ?[1-6]/.test(_LVL);
+var HIDE_PRIMARY={algebra:1,squares:1,formulas:1};
+var VISIBLE_SKILLS=SKILLS.filter(function(s){return !(IS_PRIMARY&&HIDE_PRIMARY[s[0]]);});
+
+var curSkill=recommended[0]||'tables';
+$('skills').innerHTML=VISIBLE_SKILLS.map(function(s){var rec=recommended.indexOf(s[0])>=0;return '<button class="sk'+(s[0]===curSkill?' on':'')+'" data-sk="'+s[0]+'" title="'+(rec?'Recommended for '+esc(LEVEL):'')+'">'+(rec?'★ ':'')+esc(s[1])+'</button>'}).join('');
+$('skills').querySelectorAll('.sk').forEach(function(b){b.onclick=function(){curSkill=b.dataset.sk;$('skills').querySelectorAll('.sk').forEach(function(x){x.classList.toggle('on',x===b)})}});
+
+/* ---- accessibility ---- */
+$('acc-font').onchange=function(){document.body.classList.toggle('bigfont',this.checked)};
+$('acc-dys').onchange=function(){document.body.classList.toggle('dyslexic',this.checked)};
+/* read aloud (SpeechSynthesis) + voice answers (SpeechRecognition where the browser supports it) */
+function speak(txt){try{if(!$('acc-read').checked)return;var u=new SpeechSynthesisUtterance(String(txt).replace('×',' times ').replace('−',' minus ').replace('÷',' divided by ').replace('²',' squared ').replace('√',' square root of '));u.rate=0.95;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+var Rec=window.SpeechRecognition||window.webkitSpeechRecognition;var recog=null;
+if(!Rec){$('voice-supp').textContent='(not supported in this browser)';$('acc-voice').disabled=true}
+$('acc-voice').onchange=function(){
+  if(!this.checked){if(recog){try{recog.stop()}catch(e){}recog=null}return}
+  try{recog=new Rec();recog.continuous=true;recog.interimResults=false;recog.lang='en-GB';
+    recog.onresult=function(ev){var txt=ev.results[ev.results.length-1][0].transcript.trim();$('ans').value=txt.replace(/[^\w\s.\-']/g,'');mark($('ans').value)};
+    recog.start();toast('Voice answers on — say your answer after each question');
+  }catch(e){toast('Voice input unavailable')}
+};
+
+/* ---- curfew (parent-set, safeguarding): block play during quiet hours ---- */
+function curfewBlocked(){
+  var c=SY.get('skillrushCurfew',null);if(!c||!c.from||!c.to)return false;
+  var h=new Date().getHours();var f=+c.from,t=+c.to;
+  return f>t?(h>=f||h<t):(h>=f&&h<t);
+}
+
+/* ---- plan gating: free / paid / premium (one account per category) ---- */
+var wallet=SY.get('wallet',{plan:'child_free'})||{plan:'child_free'};
+var PLAN_TIER=/max|premium_plus/.test(wallet.plan||'')?2:/premium|access/.test(wallet.plan||'')?1:0; /* 0 free · 1 paid · 2 premium */
+var MODE_TIER={focus:0,confidence:0,comeback:0,battle:0,exam:1,duel:1};    /* AI Coach = premium (2) */
+function gate(need,label){
+  if(PLAN_TIER>=need)return true;
+  toast(label+' is on the '+(need===2?'Premium+':'paid')+' plans — 100 free ACUs still renew every 3 months');
+  setTimeout(function(){if(confirm(label+' unlocks with a plan upgrade. See plans & top-up?'))location.href='../account/topup/'},400);
+  return false;
+}
+
+/* ---- mission: teacher/class focus > streak rescue > weakest skill ---- */
+function skillStats(k){return SR.skill[k]||{right:0,total:0,bestSpeed:null}}
+function weakestSkill(){var worst=null,worstAcc=2;SKILLS.forEach(function(s){var st=skillStats(s[0]);var acc=st.total?st.right/st.total:0.5;if(acc<worstAcc){worstAcc=acc;worst=s[0]}});return worst||'tables'}
+function classFocus(){var link=SY.get('schoolLink',null);if(!link||!link.code)return null;var f=SY.schoolGet(link.code,'skillrush-focus',null);return (f&&f.skill&&SKILLS.some(function(s){return s[0]===f.skill}))?f:null}
+function daysSinceActive(){if(!SR.days.length)return null;var last=SR.days.slice().sort().pop();return Math.round((new Date(todayKey())-new Date(last))/864e5)}
+function renderMission(){
+  var doneToday=SR.days.indexOf(todayKey())>=0;
+  var focus=classFocus();var wk=focus?focus.skill:weakestSkill();
+  var nm=(SKILLS.find(function(s){return s[0]===wk})||[])[1];
+  $('mission').innerHTML='<div class="row" style="border:0"><span style="flex:1">'+
+    (doneToday?'✅ Mission complete — your next 5-minute win: one <b>'+esc(nm)+'</b> session in Exam Pressure Mode.'
+    :(focus?'🏫 Your teacher set the class focus: <b style="color:var(--gold-300)">'+esc(nm)+'</b>. A 3-minute Focus session scores for the class battle too.'
+      :'Today: a 3-minute <b>Focus</b> session on <b style="color:var(--gold-300)">'+esc(nm)+'</b> — your weakest skill right now.'))+
+    '</span>'+(doneToday?'':'<button class="btn solid sm" id="mission-go">Start mission →</button>')+'</div>';
+  var g=$('mission-go');if(g)g.onclick=function(){curSkill=wk;$('skills').querySelectorAll('.sk').forEach(function(x){x.classList.toggle('on',x.dataset.sk===wk)});startSession('focus')};
+  /* streak rescue */
+  var gap=daysSinceActive();
+  $('rescue-card').style.display=(gap!=null&&gap>=2&&!doneToday)?'block':'none';
+}
+$('rescue-go').onclick=function(){curSkill=weakestSkill();startSession('comeback',8)};
+
+/* ---- AI Coach Mode ---- */
+$('coach-go').onclick=function(){
+  if(!gate(2,'AI Coach Mode'))return;
+  var wk=weakestSkill();var nm=(SKILLS.find(function(s){return s[0]===wk})||[])[1];var st=skillStats(wk);
+  var acc=st.total?Math.round(100*st.right/st.total):null;
+  var out=$('coach-out');
+  if(window.SYAI&&SYAI.ready()){
+    out.innerHTML='<span style="opacity:.6">Your coach is thinking…</span>';
+    SYAI.ask("You are SkillRush's AI Coach for a school student. In under 150 words: explain in a kind, plain way WHY students typically get stuck on this skill, then give ONE targeted mini-lesson (the key method in 3 short steps), then one practice question with the answer hidden as 'Answer: ...' at the end. Markdown.",
+      "Skill: "+nm+(acc!=null?". Student's accuracy so far: "+acc+"%":"")+".",{maxTokens:400})
+      .then(function(t){out.innerHTML='<div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:4px">Live AI coach · '+esc(nm)+'</div>'+SYAI.render(t)})
+      .catch(function(){out.innerHTML=coachStatic(wk,nm)});
+    return;
+  }
+  out.innerHTML=coachStatic(wk,nm);
+};
+function coachStatic(wk,nm){
+  var tips={tables:'Most students rush the 6s, 7s and 8s. Mini-lesson: anchor on what you know — 7×8 = 7×4 doubled (28 → 56). Say the whole fact out loud (“seven eights are fifty-six”), not just the answer.',
+    fractions:'The trap is jumping to the answer. Mini-lesson: always find ONE part first (divide by the bottom), then multiply by the top. 3/5 of 40 → one fifth is 8 → three fifths is 24.',
+    percent:'Build every percentage from 10%. Mini-lesson: 10% = divide by 10. Then 5% is half of that, 20% is double, 25% is 10%+10%+5%.',
+    algebra:'Students forget to do the same thing to both sides. Mini-lesson: undo the + or − first, then divide by the number in front of x. Check by substituting back.',
+    spelling:'Trace the tricky part. Mini-lesson: find the danger zone (the double letter or vowel pair), say it in chunks — nec-ES-sary — and write it 3 times.'};
+  return '<div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:4px">Coach · '+esc(nm)+'</div>'+esc(tips[wk]||('Slow down and get 5 right in a row in Confidence Mode before adding the timer — accuracy first, speed second.'))+'<div class="note">Turn on live AI in the Gateway for a personalised coach.</div>';
+}
+
+/* ---- session engine ---- */
+var S=null,timerIv=null;
+var MODES={focus:{n:20,perQ:8,label:'Focus',lv:1},confidence:{n:12,perQ:0,label:'Confidence',lv:0},exam:{n:25,perQ:6,label:'Exam Pressure',lv:2},comeback:{n:15,perQ:12,label:'Comeback',lv:0},battle:{n:20,perQ:7,label:'Class Battle',lv:1},duel:{n:12,perQ:10,label:'Parent Challenge',lv:1},national:{n:25,perQ:6,label:'National Test',lv:2},diagnostic:{n:12,perQ:10,label:'Arithmetic Diagnostic',lv:1}};
+
+/* ---- Maths Heroes: four-operation mastery, trophies & readiness ---- */
+var HERO_OPS=[['addition','Addition','Addition Hero','➕','add','#5CBB7B'],['subtraction','Subtraction','Subtraction Sniper','➖','sub','#5FA8E0'],['tables','Multiplication','Multiplication Boss','✖️','mul','#b48fe0'],['division','Division','Division Master','➗','div','#e0a75f']];
+/* Number Rank ladder — speed-derived per operation */
+var NR_RANKS=[[1,'Lightning Hero'],[2,'Number Legend'],[3,'Number Star'],[4,'Champion'],[5,'Challenger'],[6,'Climber'],[7,'Riser'],[8,'Improver'],[9,'Explorer'],[10,'Starter'],[1e9,'Newcomer']];
+function opFacts(pre){var out=[];Object.keys(SR.facts||{}).forEach(function(k){if(k.indexOf(pre+':')===0)out.push(SR.facts[k])});return out}
+function opRank(pre){
+  var fs=opFacts(pre).filter(function(f){return f.ms!=null&&f.t>=1});
+  if(fs.length<10)return 'Unranked';
+  var avg=fs.reduce(function(a,f){return a+f.ms},0)/fs.length;
+  for(var i=0;i<NR_RANKS.length;i++)if(avg<=NR_RANKS[i][0])return NR_RANKS[i][1];
+  return 'Newcomer';
+}
+function opStatus(k){
+  var d=SR.mathsDiag&&SR.mathsDiag.ops&&SR.mathsDiag.ops[k];
+  var st=skillStats(k);var a=st.total?Math.round(100*st.right/st.total):null;
+  var v=d!=null?d:a;
+  if(v==null)return ['—','var(--ink-3)'];
+  return v>=80?['Ready','var(--good)']:v>=50?['At risk','var(--warn)']:['Critical','var(--crit)'];
+}
+function renderHeroes(){
+  $('heroes').innerHTML=HERO_OPS.map(function(o){
+    var st=skillStats(o[0]);var a=st.total?Math.round(100*st.right/st.total):null;
+    var trophy=st.total>=20&&a>=90;
+    var s=opStatus(o[0]);var rank=opRank(o[4]);
+    return '<div class="stat" style="border-left:3px solid '+o[5]+';border-color:'+(trophy?'rgba(230,199,102,.5)':'var(--line)')+'">'+
+      '<div style="font-size:20px">'+o[3]+(trophy?' 🏆':'')+'</div>'+
+      '<div class="v" style="font-size:18px;margin-top:4px">'+(a==null?'—':a+'%')+'</div>'+
+      '<div class="l">'+esc(o[1])+'</div>'+
+      '<div style="font-size:10px;margin-top:4px;color:'+o[5]+'">♪ '+esc(rank)+'</div>'+
+      '<div style="font-size:10px;margin-top:3px;color:'+s[1]+'">● '+s[0]+(trophy?' · '+esc(o[2]):'')+'</div></div>';
+  }).join('');
+  renderFactMap();
+}
+/* red→green fact heatmaps — one per operation ("gone green" per op) */
+function renderFactMap(){
+  var box=$('factmap');if(!box)return;
+  var pre=$('fm-op').value;
+  var isMul=pre==='mul'||pre==='div';
+  var N=isMul?12:10,off=isMul?1:0;
+  var html='<div style="overflow-x:auto"><table style="border-collapse:collapse;margin-top:6px">';
+  for(var r=off;r<=N;r++){html+='<tr>';
+    for(var c=off;c<=N;c++){
+      var k=pre==='add'?('add:'+r+'+'+c):pre==='sub'?('sub:'+(r+c)+'-'+c):pre==='mul'?('mul:'+r+'x'+c):('div:'+(r*c)+'/'+c);
+      var f=(SR.facts||{})[k];var m=f&&f.t?f.r/f.t:null;
+      var col=m==null?'rgba(107,122,150,.15)':m>=0.8?'rgba(92,187,123,.55)':m>=0.5?'rgba(201,133,0,.5)':'rgba(230,103,103,.55)';
+      var lbl=pre==='add'?(r+'+'+c):pre==='sub'?((r+c)+'−'+c):pre==='mul'?(r+'×'+c):((r*c)+'÷'+c);
+      html+='<td title="'+lbl+(m!=null?' · '+Math.round(m*100)+'%':' · not practised')+'" style="width:15px;height:15px;background:'+col+';border:1px solid rgba(6,11,24,.6)"></td>';
+    }
+    html+='</tr>';}
+  html+='</table></div><div class="note" style="margin-top:6px">Red → green, one cell per fact. Goal: gone green. Inverse pairs (+↔−, ×↔÷) share credit automatically.</div>';
+  box.innerHTML=html;
+}
+$('diag-go').onclick=function(){startSession('diagnostic')};
+$('fm-op').onchange=renderFactMap;
+
+/* ---- National Championship (admin-triggered; one attempt; top 5 per education level win) ---- */
+function nationalCfg(){try{return JSON.parse(localStorage.getItem('sy-national'))||null}catch(e){return null}}
+function renderNational(){
+  var nat=nationalCfg();var card=$('national-card');
+  if(!nat||!nat.active){card.style.display='none';return}
+  card.style.display='block';
+  var board=[];try{board=JSON.parse(localStorage.getItem('sy-national-board:'+nat.id))||[]}catch(e){}
+  var mine=board.find(function(x){return x.email===(SY.session.email||'')});
+  if(mine){$('national-go').style.display='none';$('national-state').innerHTML='<span style="color:var(--good)">✓ Your official attempt: '+mine.right+'/25 — results announced when the championship closes.</span>'}
+  else{$('national-go').style.display='inline-block';$('national-state').textContent='Level group: '+LEVEL}
+}
+$('national-go').onclick=function(){
+  var nat=nationalCfg();if(!nat||!nat.active){toast('The championship is not open right now');return}
+  var board=[];try{board=JSON.parse(localStorage.getItem('sy-national-board:'+nat.id))||[]}catch(e){}
+  if(board.some(function(x){return x.email===(SY.session.email||'')})){toast('You have already made your official attempt');return}
+  if(!confirm('This is your ONE official National Test attempt — 25 questions, 6 seconds each, pitched at '+LEVEL+'. Ready?'))return;
+  curSkill=(LEVEL_SKILLS[LV_BOOST]||['tables'])[0];
+  startSession('national');
+};
+document.querySelectorAll('.mode').forEach(function(m){m.onclick=function(){startSession(m.dataset.mode)}});
+function gen(){
+  /* the diagnostic rotates through the four operations, 3 questions each */
+  if(S.mode==='diagnostic')curSkill=HERO_OPS[S.n%4][0];
+  var sk=SKILLS.find(function(s){return s[0]===curSkill});
+  /* blend the mode's pressure with the student's education level (LV_BOOST) */
+  var lv=S.mode==='comeback'?Math.min(LV_BOOST,Math.floor(S.n/5)):Math.max(0,Math.min(2,MODES[S.mode].lv+LV_BOOST-1));
+  return sk[2](lv);
+}
+function startSession(mode,nOverride){
+  if(curfewBlocked()){toast('SkillRush is paused during your quiet hours (set by your parent) — see you tomorrow! 🌙');return}
+  if(!gate(MODE_TIER[mode]||0,MODES[mode].label+' Mode'))return;
+  S={mode:mode,n:0,right:0,coins:0,times:[],total:nOverride||MODES[mode].n,cur:null,t0:0,duel:mode==='duel'?{p1:0,p2:0,phase:1}:null};
+  $('setup').style.display='none';$('result').style.display='none';$('arena').style.display='block';
+  $('h-skill').textContent=(SKILLS.find(function(s){return s[0]===curSkill})||[])[1];
+  $('h-mode').textContent=MODES[mode].label;$('h-total').textContent=S.total;
+  $('hint').style.display=(mode==='confidence'||mode==='comeback')?'inline-block':'none';
+  $('h-duel').style.display=mode==='duel'?'inline':'none';if(mode==='duel')$('h-player').textContent='1';
+  $('tb').style.display=(MODES[mode].perQ&&!$('acc-timer').checked)?'block':'none';
+  next();
+  setTimeout(function(){$('ans').focus()},50);
+}
+function next(){
+  if(S.n>=S.total){finish();return}
+  /* parent challenge: halfway hand-over */
+  if(S.duel&&S.n===S.total/2&&S.duel.phase===1){
+    S.duel.phase=2;$('h-player').textContent='2';
+    $('q').innerHTML='<span class="duel-splash">🤝 Pass the device!<br><span style="font-size:15px;color:var(--ink-2);font-family:var(--sans)">Player 2 (parent) — your '+(S.total/2)+' questions start now.</span></span>';
+    $('fb').innerHTML='<button class="btn solid sm" id="duel-ready">Player 2 ready →</button>';
+    $('ans').style.display='none';
+    document.getElementById('duel-ready').onclick=function(){$('ans').style.display='';$('fb').textContent='';nextReal()};
+    return;
+  }
+  nextReal();
+}
+function nextReal(){
+  S.cur=gen();S.n++;S.t0=Date.now();
+  $('h-n').textContent=S.n;$('q').textContent=S.cur.q+(S.cur.text?'':' =');$('ans').value='';$('fb').textContent='';
+  speak(S.cur.q);
+  $('ans').setAttribute('inputmode',S.cur.text?'text':'numeric');
+  $('ans').focus();
+  clearInterval(timerIv);
+  var perQ=MODES[S.mode].perQ;
+  if(perQ){var left=perQ*1000;$('tbi').style.width='100%';
+    timerIv=setInterval(function(){left-=200;$('tbi').style.width=Math.max(0,100*left/(perQ*1000))+'%';
+      if(left<=0){clearInterval(timerIv);mark(null)}},200);}
+}
+function norm(s){return String(s==null?'':s).trim().toLowerCase().replace(/['’]/g,'’')}
+function mark(val){
+  clearInterval(timerIv);
+  var t=(Date.now()-S.t0)/1000;S.times.push(t);
+  var correct=S.cur.text?norm(val)===norm(S.cur.a):Math.abs(parseFloat(val)-S.cur.a)<0.001;
+  var st=SR.skill[curSkill]=SR.skill[curSkill]||{right:0,total:0,bestSpeed:null};
+  st.total++;
+  if(S.mode==='diagnostic'){S.perOp=S.perOp||{};var po=S.perOp[curSkill]=S.perOp[curSkill]||{right:0,total:0};po.total++;if(S.cur.text?norm(val)===norm(S.cur.a):Math.abs(parseFloat(val)-S.cur.a)<0.001)po.right++;}
+  /* fact-level mastery: latency+accuracy per fact node, with inverse-pair credit */
+  if(S.cur.fk){
+    SR.facts=SR.facts||{};
+    var okF=S.cur.text?norm(val)===norm(S.cur.a):Math.abs(parseFloat(val)-S.cur.a)<0.001;
+    var f=SR.facts[S.cur.fk]=SR.facts[S.cur.fk]||{r:0,t:0,ms:null};
+    f.t++;if(okF)f.r++;f.ms=f.ms==null?t:Math.round((f.ms*0.7+t*0.3)*10)/10;
+    if(okF&&S.cur.inv){var g=SR.facts[S.cur.inv]=SR.facts[S.cur.inv]||{r:0,t:0,ms:null};g.r+=0.5;g.t+=0.5}
+  }
+  if(correct){S.right++;st.right++;if(S.duel)S.duel['p'+S.duel.phase]++;
+    /* mode-weighted coins: adaptive Focus pays most (steers volume to smart practice),
+       assessment modes pay least so status stays honest */
+    var c=S.mode==='focus'?4:S.mode==='exam'||S.mode==='battle'?3:S.mode==='national'||S.mode==='diagnostic'?1:2;S.coins+=c;$('h-right').textContent=S.right;$('h-coins').textContent=S.coins;$('h-coins').classList.add('pop');setTimeout(function(){$('h-coins').classList.remove('pop')},300);
+    if(!st.bestSpeed||t<st.bestSpeed)st.bestSpeed=Math.round(t*10)/10;
+    $('fb').innerHTML='<span style="color:var(--good)">✓ Correct'+(t<3?' — fast!':'')+'</span>';}
+  else{$('fb').innerHTML='<span style="color:#f0a0a0">✗ '+(val==null?'Time!':'Not quite')+' — answer: <b>'+esc(String(S.cur.a))+'</b></span>';}
+  setTimeout(next,correct?350:900);
+}
+$('ans').addEventListener('keydown',function(e){if(e.key==='Enter'&&this.value.trim()!=='')mark(this.value)});
+$('hint').onclick=function(){var a=String(S.cur.a);$('fb').innerHTML='<span style="color:var(--gold-300)">💡 Starts with “'+esc(a[0])+'” — '+a.length+' character'+(a.length>1?'s':'')+'</span>'};
+$('quit').onclick=function(){finish(true)};
+function finish(quit){
+  clearInterval(timerIv);$('arena').style.display='none';$('setup').style.display='block';$('ans').style.display='';
+  if(!S||!S.times.length){S=null;return}
+  var acc=Math.round(100*S.right/S.times.length);
+  var avg=Math.round(S.times.reduce(function(a,b){return a+b},0)/S.times.length*10)/10;
+  var xp=S.right*3+(acc>=90?15:acc>=70?8:0);
+  SR.coins+=S.coins;SR.xp+=xp;
+  if(SR.days.indexOf(todayKey())<0)SR.days.push(todayKey());SR.days=SR.days.slice(-90);
+  SR.history.unshift({d:todayKey(),skill:curSkill,mode:S.mode,acc:acc,avg:avg,n:S.times.length});SR.history=SR.history.slice(0,100);
+  SY.set('skillrush',SR);
+  try{var qz=SY.get('quizzes',[]);qz.push({t:todayKey(),subj:'Mathematics',title:'SkillRush '+curSkill,pct:acc,when:new Date().toISOString()});SY.set('quizzes',qz)}catch(e){}
+  try{SY.set('points',SY.get('points',0)+Math.round(xp/2))}catch(e){}
+  try{var stk=SY.get('streak',{days:[],best:0});if(stk.days.indexOf(todayKey())<0)stk.days.push(todayKey());SY.set('streak',stk)}catch(e){}
+  SY.log('skillrush','SkillRush session',(SKILLS.find(function(s){return s[0]===curSkill})||[])[1]+' · '+acc+'% · '+avg+'s avg');
+  var link=SY.get('schoolLink',null);var wk=weekKey();
+  var entry={name:SR.heroName,av:SR.avatar,xp:SR.xp,coins:SR.coins,acc:acc,week:wk};
+  if(link&&link.code){var bd=SY.schoolGet(link.code,'skillrush-board',[]);bd=bd.filter(function(x){return x.name!==SR.heroName});bd.push(entry);SY.schoolSet(link.code,'skillrush-board',bd)}
+  else{var bd2=[];try{bd2=JSON.parse(localStorage.getItem('sy-skillrush-board'))||[]}catch(e){}bd2=bd2.filter(function(x){return x.name!==SR.heroName});bd2.push(entry);try{localStorage.setItem('sy-skillrush-board',JSON.stringify(bd2))}catch(e){}}
+  /* class battle: correct answers score for the class this week */
+  if(S.mode==='battle'&&link&&link.code){
+    var bt=SY.schoolGet(link.code,'skillrush-battle',[]);
+    bt.push({name:SR.heroName,right:S.right,week:wk,when:new Date().toISOString()});
+    SY.schoolSet(link.code,'skillrush-battle',bt);
+  }
+  /* arithmetic diagnostic: per-operation readiness (Ready / At risk / Critical) */
+  if(S.mode==='diagnostic'&&S.perOp){
+    var ops={};Object.keys(S.perOp).forEach(function(k){var po=S.perOp[k];ops[k]=po.total?Math.round(100*po.right/po.total):null});
+    SR.mathsDiag={when:todayKey(),ops:ops};SY.set('skillrush',SR);
+    var crit=HERO_OPS.filter(function(o){return ops[o[0]]!=null&&ops[o[0]]<50}).map(function(o){return o[1]});
+    toast(crit.length?('Diagnostic done — focus on '+crit.join(' & ')+' first'):'Diagnostic done — check your Maths Heroes statuses');
+  }
+  /* national championship: one official attempt, grouped by education level */
+  if(S.mode==='national'){
+    var nat=nationalCfg();
+    if(nat&&nat.active){
+      var nb=[];try{nb=JSON.parse(localStorage.getItem('sy-national-board:'+nat.id))||[]}catch(e){}
+      if(!nb.some(function(x){return x.email===(SY.session.email||'')})){
+        nb.push({email:SY.session.email||'',name:SR.heroName,av:SR.avatar,level:LEVEL,right:S.right,acc:acc,when:new Date().toISOString()});
+        try{localStorage.setItem('sy-national-board:'+nat.id,JSON.stringify(nb))}catch(e){}
+      }
+      toast('Official attempt recorded: '+S.right+'/25 — good luck! 🏆');
+    }
+    renderNational();
+  }
+  var duelHtml='';
+  if(S.duel){var p1=S.duel.p1,p2=S.duel.p2;
+    duelHtml='<div class="stats" style="margin-top:10px"><div class="stat"><div class="v">'+p1+'</div><div class="l">You (P1)</div></div><div class="stat"><div class="v">'+p2+'</div><div class="l">Parent (P2)</div></div></div>'+
+    '<p style="font-family:var(--serif);font-size:20px;color:var(--gold-300);margin-top:10px">'+(p1>p2?'🏆 You win!':p2>p1?'👏 Parent wins — rematch?':'🤝 A draw!')+'</p>';}
+  $('result').style.display='block';
+  $('result').innerHTML='<h3>'+(quit?'Session ended':'Session complete! 🏁')+'</h3>'+duelHtml+
+    '<div class="stats" style="margin-top:10px">'+
+    '<div class="stat"><div class="v">'+S.right+'/'+S.times.length+'</div><div class="l">Correct</div></div>'+
+    '<div class="stat"><div class="v">'+acc+'%</div><div class="l">Accuracy</div></div>'+
+    '<div class="stat"><div class="v">'+avg+'s</div><div class="l">Avg speed</div></div>'+
+    '<div class="stat"><div class="v" style="color:var(--good)">+'+S.coins+'</div><div class="l">Coins</div></div>'+
+    '<div class="stat"><div class="v" style="color:var(--good)">+'+xp+'</div><div class="l">XP</div></div></div>'+
+    (S.mode==='battle'?'<p class="note">⚔️ +'+S.right+' points scored for your class battle this week.</p>':'')+
+    '<p class="note">'+(acc>=90?'Solid — try Exam Pressure Mode next.':acc>=70?'Good work — one more session locks it in.':'Keep going — Comeback Mode will rebuild this step by step.')+'</p>'+
+    '<div style="margin-top:10px"><button class="btn solid sm" id="again">Go again →</button></div>';
+  var savedMode=S.mode;$('again').onclick=function(){startSession(savedMode)};
+  S=null;renderTop();renderBoard();renderBattle();renderMission();renderHeroes();
+}
+
+/* ---- stats / boards ---- */
+function streakLen(){var set={};(SR.days||[]).forEach(function(d){set[d]=1});var n=0,d=new Date();while(set[d.toISOString().slice(0,10)]){n++;d.setDate(d.getDate()-1)}return n}
+var TITLES=[[0,'Rookie'],[100,'Rising Star'],[300,'Performer'],[700,'Achiever'],[1500,'Virtuoso'],[3000,'Legend'],[6000,'Grandmaster']];
+function titleFor(xp){var t=TITLES[0][1];TITLES.forEach(function(x){if(xp>=x[0])t=x[1]});return t}
+function renderTop(){
+  $('s-coins').textContent=SR.coins.toLocaleString();$('s-xp').textContent=SR.xp.toLocaleString();$('s-streak').textContent=streakLen();
+  $('heroname').textContent=SR.heroName+' · '+titleFor(SR.xp);
+  var best=null,tot=0,right=0;Object.keys(SR.skill).forEach(function(k){var st=SR.skill[k];tot+=st.total;right+=st.right;if(st.bestSpeed&&(!best||st.bestSpeed<best))best=st.bestSpeed});
+  $('s-best').textContent=best?best+'s':'—';$('s-acc').textContent=tot?Math.round(100*right/tot)+'%':'—';
+  /* confidence = accuracy in no-pressure modes */
+  var conf=SR.history.filter(function(h){return h.mode==='confidence'||h.mode==='comeback'});
+  $('s-conf').textContent=conf.length?Math.round(conf.reduce(function(a,h){return a+h.acc},0)/conf.length)+'%':'—';
+  /* best improvement: skill with biggest first→latest accuracy gain */
+  var bySkill={};SR.history.slice().reverse().forEach(function(h){(bySkill[h.skill]=bySkill[h.skill]||[]).push(h.acc)});
+  var bestImp=null,bestName=null;Object.keys(bySkill).forEach(function(k){var v=bySkill[k];if(v.length>=2){var d=v[v.length-1]-v[0];if(bestImp==null||d>bestImp){bestImp=d;bestName=k}}});
+  $('s-improve').textContent=bestImp!=null?((bestImp>=0?'+':'')+bestImp+'%'):'—';
+  if(bestName)$('s-improve').title=(SKILLS.find(function(s){return s[0]===bestName})||[])[1];
+}
+function renderBoard(){
+  var link=SY.get('schoolLink',null);var bd=[];
+  if(link&&link.code){bd=SY.schoolGet(link.code,'skillrush-board',[]);$('lb-sub').textContent='Anonymous hero names · your class at '+(SY.schoolGet(link.code,'name','your school'))}
+  else{try{bd=JSON.parse(localStorage.getItem('sy-skillrush-board'))||[]}catch(e){}}
+  bd=bd.slice().sort(function(a,b){return (b.xp||0)-(a.xp||0)});
+  var myIdx=bd.findIndex(function(x){return x.name===SR.heroName});
+  $('s-rank').textContent=myIdx>=0?('#'+(myIdx+1)):'—';
+  $('board').innerHTML=bd.length?bd.slice(0,10).map(function(x,i){return '<div class="row"><b style="width:30px">'+(i+1)+'</b><span style="width:26px">'+esc(x.av||'🦸')+'</span><span style="flex:1">'+esc(x.name)+(x.name===SR.heroName?' <span style="color:var(--gold-400)">(you)</span>':'')+'</span><span>'+(x.xp||0).toLocaleString()+' XP</span></div>'}).join(''):'<div class="empty">No sessions yet this week — be first on the board!</div>';
+}
+function renderBattle(){
+  var link=SY.get('schoolLink',null);
+  if(!link||!link.code){$('battle').innerHTML='<div class="empty">Link your school (My Account → Link to your school) to battle for your class.</div>';return}
+  var wk=weekKey();var bt=SY.schoolGet(link.code,'skillrush-battle',[]).filter(function(x){return x.week===wk});
+  var total=bt.reduce(function(a,x){return a+(x.right||0)},0);
+  var mine=bt.filter(function(x){return x.name===SR.heroName}).reduce(function(a,x){return a+(x.right||0)},0);
+  $('battle-sub').textContent='Week '+wk+' · '+SY.schoolGet(link.code,'name','your school');
+  $('battle').innerHTML='<div class="stats"><div class="stat"><div class="v">'+total.toLocaleString()+'</div><div class="l">Class points</div></div><div class="stat"><div class="v">'+mine.toLocaleString()+'</div><div class="l">Your points</div></div><div class="stat"><div class="v">'+bt.length+'</div><div class="l">Battle sessions</div></div></div>'+
+    (total?'':'<div class="note">Play ⚔️ Class Battle mode — every correct answer adds a point for your class.</div>');
+}
+/* ---- FR wrapper: translate the motivational shell (engine untouched) ---- */
+$('lang-toggle').textContent=LANG==='fr'?'EN':'FR';
+$('lang-toggle').onclick=function(e){e.preventDefault();SR.lang=LANG==='fr'?'en':'fr';SY.set('skillrush',SR);location.reload()};
+if(LANG==='fr'){
+  var FR={'.k':'SkillRush™ · l’entraînement académique de 5 minutes par jour',
+    'h1':'Arène de Fluidité'};
+  document.querySelector('.k').textContent=FR['.k'];
+  document.querySelector('h1').textContent=FR['h1'];
+  document.querySelector('.lede').innerHTML='Un entraînement rapide et ciblé qui transforme les points faibles en automatismes — de la 1<sup>re</sup> année (4 ans) à l’université. Gagne des pièces et de l’XP, garde ta série, grimpe au classement — cinq minutes par jour. <span style="color:var(--gold-400)">Niveau : '+esc(LEVEL)+'</span>';
+  document.querySelector('#mission-card h3').textContent='🎯 Mission du jour';
+  document.querySelector('#mission-card .sub').textContent='Ton entraînement quotidien — choisi par ton enseignant quand la classe a un objectif, sinon ta compétence la plus faible';
+  var hs=document.querySelectorAll('#setup h3');if(hs[0])hs[0].textContent='Choisis ta compétence';if(hs[1])hs[1].textContent='Choisis ton mode';
+  var FRMODES={focus:['⚡ Mode Concentration','Ta micro-compétence la plus faible · 3 minutes · difficulté adaptative'],confidence:['🌱 Mode Confiance','Sans chrono, rythme calme, indices — reconstruis la confiance d’abord'],exam:['⏱ Mode Examen','25 questions · 6 secondes chacune — comme la vraie épreuve'],comeback:['🚀 Mode Remontée','Commence facile, monte en puissance — pour se remettre en selle'],battle:['⚔️ Bataille de classe','Chaque bonne réponse marque des points pour ta classe cette semaine'],duel:['👨‍👧 Défi Parent','Passe l’appareil — toi contre ton parent, 6 questions chacun']};
+  document.querySelectorAll('.mode').forEach(function(m){var f=FRMODES[m.dataset.mode];if(f){m.querySelector('b').textContent=f[0];m.querySelector('span').textContent=f[1]}});
+  document.querySelector('#coach-card h3').textContent='🤖 Coach IA';
+  document.querySelector('#coach-card .sub').textContent='Bloqué sur une compétence ? Le coach explique pourquoi et te donne une mini-leçon ciblée.';
+  $('coach-go').textContent='Coache ma compétence la plus faible →';
+  $('diag-go').textContent='🩺 Diagnostic arithmétique de 2 minutes →';
+  $('quit').textContent='Terminer';$('hint').textContent='Indice';
+  document.querySelector('#heroes-card .sub').innerHTML='Addition. Soustraction. Multiplication. Division. <b>Maîtrisées.</b> Des erreurs de calcul à la maîtrise confiante — une question intelligente à la fois.';
+}
+renderTop();renderBoard();renderBattle();renderMission();renderNational();renderHeroes();
+})();
+</script>
+</body></html>

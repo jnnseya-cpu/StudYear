@@ -1,0 +1,95 @@
+/* StudYear public-page premium finish — the shared look for marketing / legal /
+   directory pages (consoles get theme.css from guard.js). Linked at the END of
+   <head> so it wins over each page's inline <style>. Additive on shared classes:
+   nothing breaks if a class is absent. Goal: editorial, "real product" — a
+   premium serif display, one restrained accent, realistic depth and a fine
+   grain, instead of rainbow accents and multi-hue gradient soup.
+   Fonts (Fraunces + Inter) are injected NON-BLOCKING by pwa.js/guard.js — not
+   @import'd here — so a slow/firewalled fonts host never delays first paint;
+   the serif/sans stacks below fall back to Georgia/system until they load. */
+
+:root{
+  --sy-serif:'Fraunces','Hoefler Text',Georgia,'Times New Roman',serif;
+  --sy-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --sy-gold:#E7C67A; --sy-blue:#5FA8E0; --sy-line:rgba(150,170,214,.15);
+}
+
+/* quiet, deep ground — one cool glow + a low warm glow, not four hues */
+body{
+  background:
+    radial-gradient(1200px 760px at 82% -16%, rgba(69,120,196,.16), transparent 62%),
+    radial-gradient(1000px 720px at -8% 108%, rgba(120,96,180,.11), transparent 60%),
+    linear-gradient(180deg,#0A1026 0%,#080D1F 52%,#070B1A 100%) !important;
+  font-family:var(--sy-sans);
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.stage{
+  background:
+    radial-gradient(1200px 760px at 82% -16%, rgba(69,120,196,.16), transparent 62%),
+    radial-gradient(1000px 720px at -8% 108%, rgba(120,96,180,.11), transparent 60%),
+    linear-gradient(180deg,#0A1026 0%,#080D1F 52%,#070B1A 100%) !important;
+}
+/* fine grain so the dark reads as a real surface, not flat fill */
+body::after{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.03;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.wrap,header,nav,main,footer,section,.box{position:relative;z-index:1}
+
+/* premium display type on headings + existing serif hooks */
+h1,h2,h3,.serif,.hl,.display{ font-family:var(--sy-serif) !important; font-weight:500; letter-spacing:-.012em; }
+h1{ letter-spacing:-.02em; }
+
+/* card surfaces: real material — soft gradient face, hairline border, ONE
+   restrained centred gold accent (no rainbow), layered shadow + inner top light */
+.card,.step,.tool,.role,.loop-card,.sys,.aud,.price,.pick,.tele,.tut,.box{
+  position:relative;
+  border:1px solid var(--sy-line) !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 24px 48px -30px rgba(0,0,0,.85) !important;
+}
+.card::before,.step::before,.tool::before,.role::before,.loop-card::before,
+.sys::before,.aud::before,.price::before,.pick::before,.tele::before,
+.tut::before,.box::before{
+  content:"";position:absolute;left:16px;right:16px;top:0;height:1.5px;border-radius:2px;
+  background:linear-gradient(90deg,transparent,var(--sy-gold),transparent) !important;
+  opacity:.5;pointer-events:none;
+}
+.card:hover,.step:hover,.tool:hover,.role:hover,.loop-card:hover,.sys:hover,
+.aud:hover,.price:hover,.pick:hover,.tut:hover,.box:hover{
+  border-color:rgba(170,192,235,.32) !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 30px 60px -28px rgba(0,0,0,.9) !important;
+}
+/* the highlighted pricing tier keeps a warm gold frame */
+.price.hot{border-color:rgba(231,198,122,.5) !important}
+
+/* big numbers: quiet warm→cool, set in the serif */
+.tele .num,.tile .v,.agent-band .big-num,.role .g{
+  font-family:var(--sy-serif);
+  background:linear-gradient(92deg,#F0D79B 8%,#9CC8EE 92%);
+  -webkit-background-clip:text;background-clip:text;color:transparent !important;
+}
+
+/* chips & tags: one restrained tint (no rotating rainbow) */
+.chip,.tag{border-color:rgba(150,170,214,.28) !important;color:#B9CBEA !important;background:rgba(95,168,224,.07) !important}
+
+/* section kickers: restrained gold with a short underline */
+.sec-kicker,header .k,header.page .k,.wrap>.k{color:var(--sy-gold) !important;letter-spacing:.22em}
+.sec-kicker::after{content:"";display:block;width:52px;height:1.5px;margin-top:8px;
+  background:linear-gradient(90deg,var(--sy-gold),transparent)}
+
+/* primary buttons: tactile fill with inner top light + real shadow */
+.btn:not(.ghost):not(.sm),.cta,button.primary,.btn-primary,.hero-cta{
+  background:linear-gradient(180deg,#5AA6E6,#2E63BC) !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.28) inset, 0 10px 22px -10px rgba(46,99,188,.7) !important;
+  border:0 !important;
+}
+
+/* dividers: a single quiet hairline */
+.divider{background:linear-gradient(90deg,transparent,rgba(150,170,214,.35),transparent) !important}
+
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:2px solid var(--sy-blue);outline-offset:2px;
+}
+::-webkit-scrollbar{width:11px;height:11px}
+::-webkit-scrollbar-track{background:rgba(9,14,32,.6)}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#3A5C93,#2E63BC);border-radius:8px;border:2px solid rgba(9,14,32,.6)}

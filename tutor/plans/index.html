@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Top up ACUs</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  .packs{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:16px}@media(max-width:900px){.packs{grid-template-columns:1fr 1fr}}@media(max-width:520px){.packs{grid-template-columns:1fr}}
+  .pack{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:18px;text-align:center}
+  .pack.best{border-color:rgba(92,187,123,.4)}
+  .pack .a{font-family:var(--serif);font-size:30px;color:var(--gold-300)}.pack .p{font-size:20px;margin:6px 0}.pack .save{font-size:11px;color:var(--good)}
+</style></head><body>
+<script src="../../guard.js" data-role="tutor" data-base="../../"></script>
+<script src="../../billing.js"></script>
+<div class="shell"><main>
+  <div class="k">Teaching operator</div><h1>Top up your ACU wallet</h1>
+  <p class="lede">One-off packs from £3 to £30 — ACUs power the AI Teaching Assistant, diagnostics, planner, interactive lessons, predictions and other metered tools. Premium unlocks tools; usage is always metered (no unlimited AI).</p>
+  <div class="card" style="margin-top:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <div class="stat"><div class="v" id="bal">0</div><div class="k">Current ACU balance</div></div>
+    <div class="note" style="margin:0">30-day validity · no auto-renewal · top up any time.</div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>Have a discount or promo code?</h3><div class="sub">Enter it here first — it's passed to Stripe when you click Purchase, appearing as a line-item reduction before you pay.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;max-width:420px"><input id="promo" placeholder="Discount code"><button class="btn" id="applycode">Apply code</button></div>
+    <div class="note" id="promo-note"></div>
+  </div>
+  <div class="packs" id="packs"></div>
+  <div class="note">ACU packs are one-time payments. Secure payments processed by Stripe. Preview: top-ups credit your balance instantly for testing.</div>
+</main></div>
+<script src="../nav.js" data-base="../" data-cur="plans/"></script>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;
+function $(id){return document.getElementById(id)}
+var tt;function toast(t){var e=$('toast');if(!e)return;e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2200)}
+/* ids MUST match the shared TOPUPS catalogue (packages/shared) so the Stripe
+   webhook recognises the purchase and credits the ACUs — a bare index like
+   "tutor_pack_0" is not in the catalogue and would be paid-but-not-credited. */
+var PACKS=[{id:'mini_boost',n:'Mini Boost',a:250,p:3},{id:'core_boost',n:'Core Boost',a:450,p:5,best:1},{id:'growth_boost',n:'Growth Boost',a:900,p:10},{id:'exam_boost',n:'Exam Boost',a:1800,p:20},{id:'power_boost',n:'Power Boost',a:2600,p:30}];
+var promo=0;
+function bal(){return SY.get('acus',0)}
+function draw(){$('bal').textContent=bal().toLocaleString();
+  $('packs').innerHTML=PACKS.map(function(p,i){var price=(p.p*(1-promo)).toFixed(2);return '<div class="pack'+(p.best?' best':'')+'">'+(p.best?'<div class="save" style="margin-bottom:4px">Most popular</div>':'<div style="height:17px"></div>')+'<div style="font-size:12px;color:var(--ink-2);margin-bottom:6px">'+p.n+'</div><div class="a">'+p.a.toLocaleString()+'</div><div class="k">ACUs</div><div class="p">£'+price+'</div><div class="save">'+(promo?'code applied':'one-time')+'</div><button class="btn solid" data-buy="'+i+'" style="margin-top:12px;width:100%">Purchase</button></div>'}).join('');
+  $('packs').querySelectorAll('[data-buy]').forEach(function(b){b.onclick=function(){var p=PACKS[+b.dataset.buy];
+    var act=function(){SY.set('acus',bal()+p.a);SY.log('acu','ACU top-up',p.n+' · +'+p.a+' ACUs · £'+(p.p*(1-promo)).toFixed(2));toast('Added '+p.a.toLocaleString()+' ACUs');draw()};
+    if(window.SYBill){SYBill.checkout(p.id,{promo:($('promo').value||'').trim(),email:(SY.session&&SY.session.email),ref:(SY.session&&SY.session.email),activate:act})}else act();}});
+}
+$('applycode').onclick=function(){var c=($('promo').value||'').trim().toUpperCase();if(!c){return}
+  /* the real discount is applied and validated by Stripe at checkout (the code is
+     prefilled there) — we don't fabricate a percentage client-side. */
+  $('promo-note').textContent='Code “'+c+'” will be checked and applied on the Stripe payment page.';
+  $('promo-note').style.color='';
+};
+draw();
+})();
+</script>
+</body></html>

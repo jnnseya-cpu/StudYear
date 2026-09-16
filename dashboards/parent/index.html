@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Parent Dashboard</title>
+<link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{
+    --navy-950:#060B18; --navy-900:#0B1220; --navy-800:#101B33;
+    --gold-300:#A9CFF2; --gold-400:#5FA8E0; --gold-500:#3D8FD1;
+    --ink:#EDF1F8; --ink-2:#AAB6CC; --ink-3:#8795AE;
+    /* validated categorical slots (dark, surface #0B1220 — all checks pass) */
+    --s1:#3987e5; --s2:#199e70; --s3:#c98500;
+    --good:#5CBB7B; --warn:#c98500; --crit:#e66767;
+    --line:rgba(77,157,224,.14);
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:
+    radial-gradient(1100px 600px at 80% -10%, rgba(77,157,224,.10), transparent 60%),
+    radial-gradient(900px 700px at -10% 30%, rgba(22,37,74,.85), transparent 65%),
+    var(--navy-950);
+    color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1240px;margin:0 auto;padding:56px 32px 90px}
+  header.page h1{font-family:var(--serif);font-weight:500;font-size:44px;letter-spacing:-.01em}
+  header.page .k{font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold-500);margin-bottom:14px}
+  header.page p{color:var(--ink-2);max-width:70ch;margin-top:12px;font-weight:300}
+
+  section{margin-top:64px}
+  .sec-head{display:flex;align-items:baseline;gap:16px;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:22px}
+  .sec-head h2{font-family:var(--serif);font-weight:500;font-size:27px}
+  .sec-head .who{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-400)}
+  .sec-head .tag{margin-left:auto;font-size:12px;color:var(--ink-3)}
+
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+  .tile{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:rgba(16,27,51,.5)}
+  .tile .v{font-family:var(--serif);font-size:30px;color:var(--gold-300);line-height:1.1}
+  .tile .v small{font-size:14px;color:var(--ink-2);font-family:var(--sans)}
+  .tile .k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}
+  .tile .d{font-size:12px;margin-top:4px}
+  .up{color:var(--good)} .down{color:var(--crit)}
+
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.62),rgba(11,18,32,.9));padding:20px 22px;position:relative}
+  .card h3{font-size:13px;font-weight:600;letter-spacing:.02em}
+  .card .sub{font-size:11.5px;color:var(--ink-3);margin:3px 0 12px}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;position:absolute;top:20px;right:22px}
+  .legend span{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--ink-2)}
+  .legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+  .c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+  svg{display:block;width:100%}
+  svg text{font-family:var(--sans)}
+  .axis{stroke:rgba(170,182,204,.14);stroke-width:1}
+  .tick{fill:#6B7A96;font-size:10.5px}
+  .dlabel{fill:#EDF1F8;font-size:11px;font-weight:600}
+  .hover-rect{fill:transparent;cursor:crosshair}
+
+  #tip{position:fixed;z-index:99;pointer-events:none;background:#101B33;border:1px solid rgba(77,157,224,.4);
+    border-radius:8px;padding:8px 12px;font-size:12px;color:var(--ink);box-shadow:0 10px 30px rgba(0,0,0,.5);
+    opacity:0;transition:opacity .12s;max-width:240px}
+  #tip b{color:var(--gold-300)}
+  .note{font-size:11.5px;color:var(--ink-3);margin-top:10px;font-style:italic}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}.grid>*{grid-column:auto}.tiles{grid-template-columns:repeat(2,1fr)}}
+
+  .dnav{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+  .dnav a{font-size:12px;letter-spacing:.05em;color:var(--ink-2);text-decoration:none;
+    border:1px solid rgba(170,182,204,.25);border-radius:20px;padding:6px 14px}
+  .dnav a:hover{border-color:var(--gold-500);color:var(--gold-300)}
+  .dnav a.on{border-color:var(--gold-500);color:var(--gold-300);background:rgba(77,157,224,.1)}
+</style>
+</head>
+<body>
+<script src="../../guard.js" data-role="parent" data-base="../../"></script>
+<script src="../../homework.js"></script>
+<div id="tip"></div>
+<div class="wrap">
+
+<header class="page">
+  <div class="k"><a href="../../" style="color:inherit;text-decoration:none">⌂ StudYear</a> · Command Centre Analytics · <a href="../../app/parent/" style="color:inherit;text-decoration:none">Open the OS →</a></div>
+  <h1>Parent dashboard.</h1>
+  <p>Momentum and risk for every child, weeks early. All charts read the live mastery record — hover any mark.</p>
+  <nav class="dnav"><a href="../student/" class="">Student</a><a href="../parent/" class="on">Parent</a><a href="../teacher/" class="">Teacher</a><a href="../school/" class="">School & Trust</a><a href="../tutor/" class="">Tutor</a><a href="../../app/?switch=1">Switch account</a><a href="#" onclick="localStorage.removeItem('sy-session');location.href='../../';return false">Sign out</a></nav>
+<script>
+// a signed-in user sees only THEIR dashboard link, not the whole list
+(function(){try{var s=JSON.parse(localStorage.getItem('sy-session'));
+if(s&&s.role){document.querySelectorAll('.dnav a').forEach(function(a){
+var h=a.getAttribute('href')||'';
+if(h.indexOf('../')===0&&h.indexOf('app/')===-1&&h!=='../'+s.role+'/')a.remove();});}}catch(e){}})();
+</script>
+</header>
+
+<!-- ============================== LIVE: LINK A CHILD ============================== -->
+<section id="family-live">
+  <div class="sec-head"><span class="who">Command Centre</span><h2>Your children — live.</h2><span class="tag">“Support, don't micromanage”</span></div>
+  <div style="margin-bottom:14px"><a class="btn" href="../../parent/" style="border:1px solid var(--gold-500);background:rgba(77,157,224,.14);color:var(--gold-300);font:600 13px var(--sans);border-radius:10px;padding:11px 20px;text-decoration:none">✨ Open the Parent Command Centre →</a></div>
+  <div class="card c12" style="margin-bottom:18px">
+    <h3>Link a child</h3>
+    <div class="sub">Ask your child for their Parent Link Code (My Account → Connect a parent) and enter it here.
+      You see exactly what they choose to share; if their school allows it and they consent, you also see their school work.</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+      <input id="link-code" type="text" placeholder="8-digit link code" style="flex:1;min-width:180px;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px">
+      <button class="btn" id="link-go" style="border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 13px var(--sans);border-radius:9px;padding:10px 18px;cursor:pointer">Link a child</button>
+    </div>
+  </div>
+  <div id="children"></div>
+  <div class="card c12" id="hw-parent-card" style="margin-top:14px;display:none">
+    <h3 style="font-family:var(--serif)">📥 Homework</h3>
+    <div class="note" style="font-style:normal;margin-bottom:4px">What your child's teachers have set, whether it's submitted, and the grades &amp; feedback.</div>
+    <div id="hw-parent-mount"></div>
+  </div>
+</section>
+
+<!-- ============================== PARENT (sample analytics) ============================== -->
+<section id="parent">
+  <div class="sec-head"><span class="who">02 · Parent</span><h2>Momentum and risk, early.</h2><span class="tag">Sample analytics · preview</span></div>
+  <div class="tiles">
+    <div class="tile"><div class="v">3</div><div class="k">Children linked</div><div class="d">2 on track · 1 watch</div></div>
+    <div class="tile"><div class="v">1</div><div class="k">Open risk alert</div><div class="d down">History · missed 3 deadlines</div></div>
+    <div class="tile"><div class="v">92%</div><div class="k">Family adherence</div><div class="d up">▲ 6% vs last month</div></div>
+    <div class="tile"><div class="v">£10 <small>/mo</small></div><div class="k">Family wallet burn</div><div class="d">no surprise bills, ever</div></div>
+  </div>
+  <div class="grid">
+    <div class="card c7"><h3>Mastery trend by child — 12 weeks</h3><div class="sub">one line per child · same mastery record their teachers see</div>
+      <div class="legend"><span><i style="background:var(--s1)"></i>Amara</span><span><i style="background:var(--s2)"></i>Ben</span><span><i style="background:var(--s3)"></i>Chloé</span></div>
+      <div id="ch-par-trend"></div></div>
+    <div class="card c5"><h3>Risk alerts by week</h3><div class="sub">alerts fired before grades collapse — not after</div><div id="ch-par-alerts"></div><div class="note">⚠ 1 unresolved: History deadline pattern (Ben) → suggested action: 15-min recovery lesson</div></div>
+  </div>
+</section>
+
+</div>
+
+<script>
+/* ============ micro chart factory — thin marks, tooltips, direct labels ============ */
+const tip=document.getElementById('tip');
+function showTip(html,x,y){tip.innerHTML=html;tip.style.opacity=1;
+  tip.style.left=Math.min(x+14,innerWidth-260)+'px';tip.style.top=(y+14)+'px'}
+function hideTip(){tip.style.opacity=0}
+const NS='http://www.w3.org/2000/svg';
+function el(t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e}
+function mount(id,w,h){const s=el('svg',{viewBox:`0 0 ${w} ${h}`});document.getElementById(id).appendChild(s);return s}
+const GOLD='#5FA8E0',S1='#3987e5',S2='#199e70',S3='#c98500';
+
+/* line chart: series=[{name,color,values}], labels[] */
+function lineChart(id,labels,series,opts={}){
+  const w=560,h=opts.h||190,p={l:34,r:70,t:14,b:26},s=mount(id,w,h);
+  const all=series.flatMap(x=>x.values), max=opts.max??Math.max(...all)*1.15, min=opts.min??0;
+  const X=i=>p.l+i*(w-p.l-p.r)/(labels.length-1), Y=v=>h-p.b-(v-min)/(max-min)*(h-p.t-p.b);
+  for(let g=0;g<=3;g++){const y=p.t+g*(h-p.t-p.b)/3;
+    s.appendChild(el('line',{x1:p.l,x2:w-p.r,y1:y,y2:y,class:'axis'}));
+    const t=el('text',{x:p.l-8,y:y+4,'text-anchor':'end',class:'tick'});t.textContent=Math.round(max-g*(max-min)/3)+(opts.unit||'');s.appendChild(t)}
+  labels.forEach((L,i)=>{if(i%Math.ceil(labels.length/6)===0||i===labels.length-1){
+    const t=el('text',{x:X(i),y:h-8,'text-anchor':'middle',class:'tick'});t.textContent=L;s.appendChild(t)}});
+  if(opts.target){const y=Y(opts.target);
+    s.appendChild(el('line',{x1:p.l,x2:w-p.r,y1:y,y2:y,stroke:'rgba(77,157,224,.5)','stroke-dasharray':'5 6','stroke-width':1}));
+    const t=el('text',{x:w-p.r+6,y:y+4,class:'tick',fill:GOLD});t.textContent=opts.targetLabel||('target '+opts.target);s.appendChild(t)}
+  series.forEach(sr=>{
+    if(sr.band){const up=sr.values.map((v,i)=>`${X(i)},${Y(v+sr.band)}`).join(' ');
+      const dn=sr.values.map((v,i)=>`${X(i)},${Y(Math.max(v-sr.band,min))}`).reverse().join(' ');
+      s.appendChild(el('polygon',{points:up+' '+dn,fill:sr.color,opacity:.12}))}
+    s.appendChild(el('polyline',{points:sr.values.map((v,i)=>`${X(i)},${Y(v)}`).join(' '),
+      fill:'none',stroke:sr.color,'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'}));
+    const li=sr.values.length-1;
+    s.appendChild(el('circle',{cx:X(li),cy:Y(sr.values[li]),r:4.5,fill:sr.color,stroke:'#0B1220','stroke-width':2}));
+    const dl=el('text',{x:X(li)+9,y:Y(sr.values[li])+4,class:'dlabel',fill:sr.color});dl.textContent=sr.name;s.appendChild(dl);
+  });
+  const hov=el('rect',{x:p.l,y:p.t,width:w-p.l-p.r,height:h-p.t-p.b,class:'hover-rect'});s.appendChild(hov);
+  const dot=el('circle',{r:4,fill:'none',stroke:GOLD,'stroke-width':2,opacity:0});s.appendChild(dot);
+  hov.addEventListener('mousemove',e=>{const r=s.getBoundingClientRect();
+    const i=Math.max(0,Math.min(labels.length-1,Math.round((e.clientX-r.left)/(r.width)*(w)/( (w-p.l-p.r)/(labels.length-1) ) - p.l/((w-p.l-p.r)/(labels.length-1)) )));
+    dot.setAttribute('opacity',1);dot.setAttribute('cx',X(i));dot.setAttribute('cy',Y(series[0].values[i]));
+    showTip(`<b>${labels[i]}</b><br>`+series.map(sr=>`${sr.name}: <b>${sr.values[i]}${opts.unit||''}</b>`).join('<br>'),e.clientX,e.clientY)});
+  hov.addEventListener('mouseleave',()=>{hideTip();dot.setAttribute('opacity',0)});
+}
+
+/* bar chart: rounded data-end, 2px gaps, per-bar hover */
+function barChart(id,labels,values,opts={}){
+  const w=560,h=opts.h||190,p={l:36,r:12,t:12,b:40},s=mount(id,w,h);
+  const max=opts.max??Math.max(...values)*1.18;
+  const bw=(w-p.l-p.r)/values.length, Y=v=>h-p.b-(v/max)*(h-p.t-p.b);
+  for(let g=0;g<=3;g++){const y=p.t+g*(h-p.t-p.b)/3;
+    s.appendChild(el('line',{x1:p.l,x2:w-p.r,y1:y,y2:y,class:'axis'}));
+    const t=el('text',{x:p.l-7,y:y+4,'text-anchor':'end',class:'tick'});t.textContent=Math.round(max-g*max/3)+(opts.unit||'');s.appendChild(t)}
+  values.forEach((v,i)=>{
+    const x=p.l+i*bw+2, wd=bw-4, y=Y(v), color=(opts.colors&&opts.colors[i])||opts.color||S1;
+    const bar=el('path',{d:`M${x},${h-p.b} L${x},${y+4} Q${x},${y} ${x+4},${y} L${x+wd-4},${y} Q${x+wd},${y} ${x+wd},${y+4} L${x+wd},${h-p.b} Z`,fill:color});
+    s.appendChild(bar);
+    if(opts.dlabels){const t=el('text',{x:x+wd/2,y:y-6,'text-anchor':'middle',class:'dlabel'});t.textContent=v+(opts.unit||'');s.appendChild(t)}
+    const lb=el('text',{x:x+wd/2,y:h-p.b+16,'text-anchor':'middle',class:'tick'});lb.textContent=labels[i];s.appendChild(lb);
+    if(opts.sublabels){const t2=el('text',{x:x+wd/2,y:h-p.b+30,'text-anchor':'middle',class:'tick',fill:'#4d5a75'});t2.textContent=opts.sublabels[i];s.appendChild(t2)}
+    bar.addEventListener('mousemove',e=>showTip(`<b>${labels[i]}</b><br>${opts.tipName||'value'}: <b>${v}${opts.unit||''}</b>${opts.tips?('<br>'+opts.tips[i]):''}`,e.clientX,e.clientY));
+    bar.addEventListener('mouseleave',hideTip);
+  });
+  if(opts.target){const y=Y(opts.target);
+    s.appendChild(el('line',{x1:p.l,x2:w-p.r,y1:y,y2:y,stroke:'rgba(77,157,224,.55)','stroke-dasharray':'5 6'}));
+    const t=el('text',{x:w-p.r-4,y:y-6,'text-anchor':'end',class:'tick',fill:GOLD});t.textContent=opts.targetLabel;s.appendChild(t)}
+}
+
+/* grouped bars (2 series) */
+function groupBars(id,labels,a,b,opts={}){
+  const w=560,h=opts.h||190,p={l:36,r:12,t:12,b:28},s=mount(id,w,h);
+  const max=Math.max(...a,...b)*1.18, g=(w-p.l-p.r)/labels.length, bw=(g-10)/2, Y=v=>h-p.b-(v/max)*(h-p.t-p.b);
+  for(let k=0;k<=3;k++){const y=p.t+k*(h-p.t-p.b)/3;s.appendChild(el('line',{x1:p.l,x2:w-p.r,y1:y,y2:y,class:'axis'}))}
+  labels.forEach((L,i)=>{
+    const x0=p.l+i*g+4;
+    [[a[i],S1,opts.na||'A',x0],[b[i],S3,opts.nb||'B',x0+bw+2]].forEach(([v,c,n,x])=>{
+      const y=Y(v);
+      const bar=el('path',{d:`M${x},${h-p.b} L${x},${y+4} Q${x},${y} ${x+4},${y} L${x+bw-4},${y} Q${x+bw},${y} ${x+bw},${y+4} L${x+bw},${h-p.b} Z`,fill:c});
+      s.appendChild(bar);
+      bar.addEventListener('mousemove',e=>showTip(`<b>${L}</b><br>${n}: <b>${v}${opts.unit||''}</b>`,e.clientX,e.clientY));
+      bar.addEventListener('mouseleave',hideTip)});
+    const t=el('text',{x:x0+bw,y:h-8,'text-anchor':'middle',class:'tick'});t.textContent=L;s.appendChild(t)});
+}
+
+/* heatmap: sequential single-hue gold ramp (monotonic lightness on dark) */
+const RAMP=['#0E1E33','#13294B','#18355B','#1E4270','#245086','#2B5F9C','#3370B3','#4283C6','#63A0D8','#8FBFE9'];
+function heat(id,rows,cols,data,opts={}){
+  const w=560, cell=Math.min((w-120)/cols.length, 26), h=rows.length*(cell+3)+46, s=mount(id,w,h);
+  rows.forEach((r,ri)=>{
+    const t=el('text',{x:112,y:ri*(cell+3)+cell/2+5,'text-anchor':'end',class:'tick'});t.textContent=r;s.appendChild(t);
+    cols.forEach((c,ci)=>{
+      const v=data[ri][ci];
+      const rc=el('rect',{x:120+ci*(cell+3),y:ri*(cell+3),width:cell,height:cell,rx:4,
+        fill:RAMP[Math.max(0,Math.min(9,Math.round(v/100*9)))]});
+      s.appendChild(rc);
+      rc.addEventListener('mousemove',e=>showTip(`<b>${r} × ${c}</b><br>mastery: <b>${v}%</b>${v<45?'<br>⚠ intervention suggested':''}`,e.clientX,e.clientY));
+      rc.addEventListener('mouseleave',hideTip)});
+  });
+  cols.forEach((c,ci)=>{const t=el('text',{x:120+ci*(cell+3)+cell/2,y:rows.length*(cell+3)+16,'text-anchor':'middle',class:'tick'});
+    t.textContent=c;s.appendChild(t)});
+  const cap=el('text',{x:120,y:rows.length*(cell+3)+38,class:'tick'});cap.textContent='weak ◄';s.appendChild(cap);
+  const cap2=el('text',{x:120+cols.length*(cell+3)-6,y:rows.length*(cell+3)+38,'text-anchor':'end',class:'tick'});cap2.textContent='► mastered';s.appendChild(cap2);
+}
+
+/* horizontal funnel bars */
+function funnel(id,stages,values){
+  const w=560,h=stages.length*44+10,s=mount(id,w,h),max=values[0];
+  stages.forEach((st,i)=>{
+    const y=i*44+6, bw=(values[i]/max)*(w-190);
+    const bar=el('rect',{x:150,y:y,width:bw,height:26,rx:5,fill:S1,opacity:1-(i*0.14)});
+    s.appendChild(bar);
+    const t=el('text',{x:142,y:y+18,'text-anchor':'end',class:'tick'});t.textContent=st;s.appendChild(t);
+    const v=el('text',{x:158+bw,y:y+18,class:'dlabel'});v.textContent=values[i]+(i>0?`  (${Math.round(values[i]/values[i-1]*100)}%)`:'');s.appendChild(v);
+    bar.addEventListener('mousemove',e=>showTip(`<b>${st}</b><br>count: <b>${values[i]}</b>${i>0?`<br>conversion: <b>${Math.round(values[i]/values[i-1]*100)}%</b>`:''}`,e.clientX,e.clientY));
+    bar.addEventListener('mouseleave',hideTip)});
+}
+
+// PARENT
+lineChart('ch-par-trend',['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12'],
+  [{name:'Amara',color:S1,values:[55,56,58,60,63,64,66,68,70,72,73,75]},
+   {name:'Ben',color:S2,values:[48,49,50,50,49,48,47,46,47,48,50,52]},
+   {name:'Chloé',color:S3,values:[60,62,64,66,68,71,73,75,78,80,82,84]}],
+  {min:40,max:95,unit:'%'});
+barChart('ch-par-alerts',['W7','W8','W9','W10','W11','W12'],[0,1,0,2,1,1],
+  {color:S3,tipName:'alerts',dlabels:true,h:170,
+   tips:['—','missed deadline','—','deadline + quiz fail','confidence drop','deadline pattern']});
+</script>
+
+<script>
+/* ============ LIVE family command centre (consent-gated cross-account reads) ============ */
+(function(){
+'use strict';
+var SY=window.SY; if(!SY) return;
+function el(id){return document.getElementById(id)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function gradeFor(m){return Math.max(1,Math.min(9,Math.round(1+8*m/100)))}
+/* One-time cleanup: strip any demo child (*@demo.studyear) leaked into a REAL
+   parent account, so this analytics view never renders seeded demo data. */
+(function(){try{if(SY.session&&!SY.session.demo&&SY.isDemoAccount){var ch=SY.get('children',[])||[];var cl=ch.filter(function(k){return !SY.isDemoAccount(k.email)});if(cl.length!==ch.length)SY.set('children',cl);}}catch(e){}})();
+/* The static "sample analytics" block (Amara/Ben/Chloé, "3 children linked") is a
+   marketing preview. A REAL parent must NEVER see a fake family on their own
+   dashboard — it reads as a demo account. Hide it for real accounts; only the
+   /demo showcase keeps it. Real parents see their own linked children above. */
+(function(){try{if(SY.session&&!SY.session.demo){var ps=document.getElementById('parent');if(ps)ps.style.display='none';}}catch(e){}})();
+
+function childData(email){
+  var profile=SY.readAccount(email,'profile',{});
+  var quizzes=SY.readAccount(email,'quizzes',[]);
+  var diag=(SY.readAccount(email,'diagnostics',[])||[])[0]||null;
+  var plan=SY.readAccount(email,'plan',null);
+  var activity=SY.readAccount(email,'activity',[]);
+  var consent=SY.readAccount(email,'consent',{parent:true,schoolToParent:true});
+  var school=SY.readAccount(email,'schoolLink',null);
+  /* mastery blend */
+  var by={};quizzes.forEach(function(q){(by[q.subj]=by[q.subj]||[]).push(q.pct)});
+  var mastery={};Object.keys(by).forEach(function(s){mastery[s]=Math.round(by[s].reduce(function(a,b){return a+b},0)/by[s].length)});
+  if(diag)diag.list.forEach(function(x){mastery[x.s]=mastery[x.s]!=null?Math.round((mastery[x.s]+x.mastery)/2):x.mastery});
+  var subs=Object.keys(mastery);
+  var overall=subs.length?Math.round(subs.reduce(function(a,s){return a+mastery[s]},0)/subs.length):null;
+  var weakest=subs.length?subs.reduce(function(a,b){return mastery[a]<mastery[b]?a:b}):null;
+  /* streak */
+  var st=SY.readAccount(email,'streak',{days:[]}),set={};(st.days||[]).forEach(function(d){set[d]=1});
+  var streak=0,dd=new Date();while(set[dd.toISOString().slice(0,10)]){streak++;dd.setDate(dd.getDate()-1)}
+  return {profile:profile,mastery:mastery,overall:overall,weakest:weakest,streak:streak,
+    lessons:activity.filter(function(a){return a.k==='lesson'||a.k==='course'}).length,
+    activity:activity,diag:diag,plan:plan,consent:consent,school:school};
+}
+
+function render(){
+  var kids=SY.get('children',[]);
+  if(!kids.length){el('children').innerHTML='<div class="card c12"><div class="note" style="font-style:normal">No children linked yet. Enter your child\'s Parent Link Code above to see their live progress.</div></div>';return}
+  el('children').innerHTML=kids.map(function(kid,ki){
+    var name=SY.accountName(kid.email)||kid.name||kid.email;
+    var d=childData(kid.email);
+    if(d.consent.parent===false){
+      return '<div class="card c12" style="margin-bottom:14px"><h3>'+esc(name)+'</h3>'+
+        '<div class="note" style="font-style:normal">'+esc(name)+' has paused progress sharing. Ask them to re-enable it in My Account → Family &amp; school.</div>'+
+        '<div style="margin-top:10px"><button class="btn" data-unlink="'+ki+'" style="border:1px solid rgba(170,182,204,.25);background:none;color:var(--ink-2);font:600 12px var(--sans);border-radius:8px;padding:7px 13px;cursor:pointer">Unlink</button></div></div>';
+    }
+    var subjRows=Object.keys(d.mastery).sort(function(a,b){return d.mastery[a]-d.mastery[b]}).map(function(s){
+      var m=d.mastery[s];var tgt=(d.profile.subjects||[]).find(function(x){return x.s===s});
+      return '<div style="display:grid;grid-template-columns:150px 1fr 90px;gap:12px;align-items:center;margin:7px 0;font-size:13px">'+
+        '<span>'+esc(s)+'</span><div class="bar" style="height:8px;border-radius:5px;background:rgba(170,182,204,.12);overflow:hidden">'+
+        '<i style="display:block;height:100%;width:'+m+'%;background:'+(m<60?'var(--crit)':m<80?'var(--warn)':'var(--good)')+'"></i></div>'+
+        '<span style="text-align:right;color:var(--ink-2);font-size:12px">'+m+'% · '+((window.SY&&SY.attainment)?esc(SY.attainment(d.profile.level,m).short):('G'+gradeFor(m)))+(tgt&&tgt.target?' /'+esc(String(tgt.target)):'')+'</span></div>';
+    }).join('')||'<div class="note">No recorded activity yet.</div>';
+    var acts=d.activity.slice(0,5).map(function(a){return '<div style="font-size:12.5px;color:var(--ink-2);padding:4px 0"><b style="color:var(--ink)">'+esc(a.t)+'</b> · <span style="color:var(--ink-3)">'+SY.timeAgo(a.when)+'</span></div>'}).join('')||'<div class="note">No recent activity.</div>';
+    /* school block, only if the child linked a school AND consents to share it */
+    var schoolBlock='';
+    if(d.school){
+      if(d.consent.schoolToParent!==false){
+        var board=SY.schoolGet(d.school.code,'board',[]);
+        schoolBlock='<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">'+
+          '<div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-400)">School · '+esc(d.school.name||d.school.code)+'</div>'+
+          (board.length?board.slice(0,4).map(function(it){return '<div style="font-size:12.5px;color:var(--ink-2);padding:4px 0">📌 <b style="color:var(--ink)">'+esc(it.title)+'</b>'+(it.detail?' — '+esc(it.detail):'')+(it.subj?' <span style="color:var(--ink-3)">('+esc(it.subj)+')</span>':'')+'</div>'}).join('')
+            :'<div class="note" style="font-style:normal">No class work posted yet.</div>')+'</div>';
+      }else{
+        schoolBlock='<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px"><div class="note" style="font-style:normal">'+esc(name)+' is linked to '+esc(d.school.name||d.school.code)+' but has not shared school data with you.</div></div>';
+      }
+    }
+    /* post-16 & subject choices — the compact summary the child generated in
+       their Career Passport (GCSE-stage only; nothing shown for younger children) */
+    var career=SY.readAccount(kid.email,'careerSummary',null);
+    var careerBlock='';
+    if(career&&career.stage==='gcse'){
+      var onTrack=(career.routes||[]).filter(function(r){return r.status==='On track';}).map(function(r){return r.t;});
+      var chip=function(s){return '<span style="display:inline-block;background:rgba(77,157,224,.12);color:var(--gold-300);border-radius:20px;padding:2px 9px;margin:2px 4px 2px 0;font-size:11.5px">'+esc(s)+'</span>';};
+      careerBlock='<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">'+
+        '<div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-400)">Post-16 &amp; subject choices</div>'+
+        '<div style="font-size:12.5px;color:var(--ink-2);margin-top:6px">Best-fit route: <b style="color:var(--ink)">'+esc(career.bestRoute||'—')+'</b> · <b>'+(career.routesOpen||0)+'</b> routes on track'+(onTrack.length?' <span style="color:var(--ink-3)">('+esc(onTrack.slice(0,3).join(', '))+')</span>':'')+'</div>'+
+        (career.gcseOptions&&career.gcseOptions.length?'<div style="font-size:12.5px;color:var(--ink-2);margin-top:6px">Suggested GCSE options: '+career.gcseOptions.map(chip).join('')+'</div>':'')+
+        (career.post16&&career.post16.length?'<div style="font-size:12.5px;color:var(--ink-2);margin-top:4px">Post-16 subjects: '+career.post16.map(chip).join('')+'</div>':'')+
+        '<div class="note" style="font-style:normal;margin-top:6px">From '+esc(name.split(' ')[0])+'’s Career Passport — based on their strengths &amp; interests.</div>'+
+        '</div>';
+    }
+    /* 14+ technical pathway + real-world experience the child is building */
+    var pw=SY.readAccount(kid.email,'pathwaysSummary',null);
+    if(pw&&(pw.sectorName||pw.encounters)){
+      careerBlock+='<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">'+
+        '<div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-400)">Technical pathway &amp; experience</div>'+
+        (pw.sectorName?'<div style="font-size:12.5px;color:var(--ink-2);margin-top:6px">Focus sector: <b style="color:var(--ink)">'+esc(pw.sectorName)+'</b>'+(pw.technicalRoute?' · '+esc(pw.technicalRoute):'')+'</div>':'')+
+        '<div style="font-size:12.5px;color:var(--ink-2);margin-top:4px"><b>'+(pw.encounters||0)+'</b> employer encounter'+((pw.encounters||0)===1?'':'s')+' logged'+(pw.gatsby?' · evidences '+pw.gatsby+'/8 careers standards':'')+'</div>'+
+        '<div class="note" style="font-style:normal;margin-top:6px">Real-world experience — mentoring, workplace visits, business projects &amp; work experience — builds '+esc(name.split(' ')[0])+'’s CV and confidence.</div>'+
+        '</div>';
+    }
+    if(!career&&((window.SY&&SY.attainment&&d.profile.level)?SY.attainment(d.profile.level,60).system==='gcse':false)&&!pw){
+      /* GCSE-stage child who hasn't run their passport yet — gentle nudge so the
+         parent isn't left wondering why the summary is missing */
+      careerBlock='<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">'+
+        '<div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-400)">Post-16 &amp; subject choices</div>'+
+        '<div class="note" style="font-style:normal;margin-top:6px">Not generated yet — nudge '+esc(name.split(' ')[0])+' to open their <b>Career Passport</b> (in their study workspace) and tap “Generate my pathways”. It maps their post-16 routes and best-fit GCSE options, and the summary will appear here automatically.</div>'+
+        '</div>';
+    }
+    return '<div class="card c12" style="margin-bottom:14px">'+
+      '<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><h3 style="font-size:18px;font-family:var(--serif)">'+esc(name)+'</h3>'+
+      '<span class="note" style="margin:0;font-style:normal">'+esc(d.profile.level||'—')+(d.profile.board?' · '+esc(d.profile.board):'')+'</span>'+
+      '<button class="btn" data-unlink="'+ki+'" style="margin-left:auto;border:1px solid rgba(170,182,204,.25);background:none;color:var(--ink-2);font:600 12px var(--sans);border-radius:8px;padding:6px 12px;cursor:pointer">Unlink</button></div>'+
+      '<div class="tiles" style="margin:14px 0">'+
+        '<div class="tile"><div class="v">'+(d.overall!=null?((window.SY&&SY.attainment)?esc(SY.attainment(d.profile.level,d.overall).short):('Grade '+gradeFor(d.overall))):'–')+'</div><div class="k">'+((window.SY&&SY.attainment&&/ks1|ks2|eyfs|reception/.test(SY.attainment(d.profile.level,0).system))?'Working at':'Predicted overall')+'</div></div>'+
+        '<div class="tile"><div class="v">'+d.streak+' <small>days</small></div><div class="k">Study streak</div></div>'+
+        '<div class="tile"><div class="v">'+d.lessons+'</div><div class="k">Lessons &amp; courses</div></div>'+
+        '<div class="tile"><div class="v" style="font-size:20px">'+esc(d.weakest||'–')+'</div><div class="k">Weakest subject</div></div>'+
+      '</div>'+
+      '<div class="grid"><div class="card c7" style="background:none;border:none;padding:0"><h3 style="font-family:var(--serif);font-size:15px;color:var(--gold-300)">Subject progress</h3>'+subjRows+
+        (d.diag?'<div class="note" style="font-style:normal;margin-top:8px">Latest diagnostic risk: <b style="color:'+(d.diag.risk==='CRITICAL'?'var(--crit)':d.diag.risk==='HIGH'?'var(--warn)':'var(--good)')+'">'+esc(d.diag.risk)+'</b></div>':'')+'</div>'+
+      '<div class="card c5" style="background:none;border:none;padding:0"><h3 style="font-family:var(--serif);font-size:15px;color:var(--gold-300)">Recent activity</h3>'+acts+'</div></div>'+
+      careerBlock+
+      schoolBlock+
+      '<div style="margin-top:12px"><a class="btn" href="../../app/parent/" style="border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12px var(--sans);border-radius:8px;padding:7px 13px;text-decoration:none">Book support for '+esc(name.split(' ')[0])+'</a></div>'+
+      '</div>';
+  }).join('');
+  el('children').querySelectorAll('[data-unlink]').forEach(function(b){b.onclick=function(){
+    var kids=SY.get('children',[]);kids.splice(+b.dataset.unlink,1);SY.set('children',kids);render();
+  }});
+  /* homework the child's teachers set — status, grades & feedback */
+  try{
+    var hwCard=el('hw-parent-card');
+    if(hwCard&&window.SYHomework){
+      if(kids.length){ hwCard.style.display=''; SYHomework.mountParent(el('hw-parent-mount'),{children:kids}); }
+      else hwCard.style.display='none';
+    }
+  }catch(e){}
+}
+
+function doLink(code,retried){
+  var b=el('link-go');b.disabled=true;
+  return SY.connectCode(code,'parent').then(function(r){
+    if(!r||!r.email){
+      return SY.cloudAuthed().then(function(ok){
+        if(ok){b.disabled=false;alert('No account found for that code. Ask your child to open StudYear once, then check the code in My Account → Connect a parent.');return;}
+        if(retried){b.disabled=false;alert('Still can\'t reach StudYear to link. Please check your connection and try again in a moment.');return;}
+        /* not signed in to the cloud — reconnect inline, then retry once */
+        return SY.ensureCloud().then(function(done){
+          if(!done){b.disabled=false;alert('Reconnect cancelled. Confirm your password to link across devices.');return;}
+          return doLink(code,true);
+        });
+      });
+    }
+    b.disabled=false;
+    var email=r.email,name=r.name||SY.accountName(email);
+    var kids=SY.get('children',[]);
+    if(kids.some(function(k){return k.email===email})){alert('That child is already linked.');el('link-code').value='';return}
+    kids.push({email:email,name:name,uid:r.uid||null,when:new Date().toISOString()});
+    SY.set('children',kids);
+    /* same-device: also stamp the link on the child's side so they see it offline */
+    try{
+      var pl=SY.readAccount(email,'parentLinks',[]);
+      if(!pl.some(function(p){return p.email===SY.session.email})){pl.push({email:SY.session.email,name:SY.session.name,when:new Date().toISOString()});
+        SY.writeAccount(email,'parentLinks',pl);}
+    }catch(e){}
+    SY.log('family','Linked child: '+name,'You can now see their shared progress.');
+    el('link-code').value='';
+    render();
+  }).catch(function(){b.disabled=false;alert('Couldn\'t link just now — please try again in a moment.');});
+}
+el('link-go').onclick=function(){
+  var code=el('link-code').value.trim();
+  if(!/^[A-Za-z0-9-]{4,}$/.test(code)){alert('Enter the link code from your child\'s account.');return}
+  doLink(code,false);
+};
+/* scanned from a child's QR: ?link=CODE — prefill and link automatically */
+(function(){try{
+  var m=/[?&]link=([A-Za-z0-9-]{4,24})/.exec(location.search||'');
+  if(!m)return;var code=m[1];var f=el('link-code');if(!f)return;
+  f.value=code;try{f.scrollIntoView({behavior:'smooth',block:'center'})}catch(e){}
+  setTimeout(function(){doLink(code,false)},400);
+  try{history.replaceState(null,'',location.pathname)}catch(e){}
+}catch(e){}})();
+render();
+try{SY.myLinks().then(function(g){
+  if(!g||!g.outbound)return;var kids=SY.get('children',[]),added=false;
+  g.outbound.forEach(function(l){if(l.email&&!(SY.crossesDemoBoundary&&SY.crossesDemoBoundary(l.email))&&!kids.some(function(k){return k.email===l.email})){kids.push({email:l.email,name:l.name||SY.accountName(l.email),uid:l.uid||null,when:new Date().toISOString()});added=true;}});
+  if(added){SY.set('children',kids);render();}
+}).catch(function(){});}catch(e){}
+})();
+</script>
+</body>
+</html>
