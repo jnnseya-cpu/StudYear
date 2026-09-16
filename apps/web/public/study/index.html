@@ -3108,7 +3108,15 @@ const DG_QBANK={
  "Science":[{q:"Which is a chemical change?",o:["burning wood","melting ice","dissolving sugar","boiling water"],a:0},
    {q:"The independent variable is the one you…",o:["change on purpose","measure","keep the same","plot on the y-axis"],a:0}],
  "Computer Science":[{q:"Binary 1011 in denary is…",o:["11","13","9","10"],a:0},
-   {q:"Which sort has O(n log n) average complexity?",o:["merge sort","bubble sort","linear search","insertion sort"],a:0}]};
+   {q:"Which sort has O(n log n) average complexity?",o:["merge sort","bubble sort","linear search","insertion sort"],a:0}],
+ "Electrical Engineering (Level 2)":[{q:"Ohm's law states that voltage equals…",o:["current × resistance","current ÷ resistance","current + resistance","resistance ÷ current"],a:0},
+   {q:"The SI unit of electrical resistance is the…",o:["ohm","volt","ampere","watt"],a:0},
+   {q:"Electrical power in a DC circuit is calculated as…",o:["P = V × I","P = V ÷ I","P = I ÷ V","P = V + I"],a:0},
+   {q:"The nominal UK single-phase domestic supply voltage is…",o:["230 V","110 V","400 V","12 V"],a:0}],
+ "Electrical Wiring and Testing":[{q:"In UK fixed wiring (BS 7671) the earth/protective conductor is coloured…",o:["green and yellow","blue","brown","black"],a:0},
+   {q:"For additional protection, an RCD on a socket circuit typically trips at a residual current of…",o:["30 mA","100 mA","300 mA","1 A"],a:0},
+   {q:"An insulation-resistance test on a 230 V domestic circuit is carried out at…",o:["500 V DC","230 V AC","50 V DC","1000 V AC"],a:0},
+   {q:"In UK fixed wiring the line (live) conductor is coloured…",o:["brown","blue","green and yellow","grey"],a:0}]};
 
 let dgSubs=(PROFILE.subjects&&PROFILE.subjects.length?PROFILE.subjects.map(x=>({s:x.s,conf:50})):
   [{s:"Mathematics",conf:50},{s:"English",conf:50},{s:"Science",conf:50}]).slice(0,24);
@@ -3173,9 +3181,12 @@ function dgQuestionPool(){
   covered.forEach(s=>{if(picks.length>=MCQ)return;const q=shuffle(bySubj[s].slice())[0];if(q){picks.push(q);used.add(q.q)}});
   const rest=shuffle(covered.flatMap(s=>bySubj[s]).filter(q=>!used.has(q.q)));
   for(const q of rest){ if(picks.length>=MCQ)break; if(!used.has(q.q)){picks.push(q);used.add(q.q)} }
-  if(picks.length<MCQ){ // pad from the STUDENT'S level tier if the run is tiny
-    const padSrc=dgTier()==='primary'?DG_QBANK_PRIMARY:dgTier()==='alevel'?{...DG_QBANK,...DG_QBANK_ALEVEL}:DG_QBANK;
-    const extra=shuffle(Object.keys(padSrc).flatMap(s=>padSrc[s].map(q=>({...q,subj:s}))).filter(q=>!used.has(q.q)));
+  if(picks.length<MCQ){ // pad with MORE questions — but ONLY from the student's
+    // OWN chosen subjects (across banks), never a subject they don't study. A
+    // learner on NVQ / Electrical Engineering must never be handed a Computer
+    // Science question just because the bank had spare ones.
+    const padSrc={...DG_QBANK,...DG_QBANK_PRIMARY,...DG_QBANK_ALEVEL};
+    const extra=shuffle(Object.keys(padSrc).filter(s=>chosen.includes(s)).flatMap(s=>padSrc[s].map(q=>({...q,subj:s}))).filter(q=>!used.has(q.q)));
     for(const q of extra){ if(picks.length>=MCQ)break; picks.push(q);used.add(q.q) }
   }
   return shuffle(picks).slice(0,MCQ);

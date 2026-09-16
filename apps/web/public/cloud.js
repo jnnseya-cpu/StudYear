@@ -163,13 +163,27 @@
 
   /* ------------------------------------------------ token store ---------- */
   function toks() { try { return JSON.parse(localStorage.getItem('sy-cloud-tok')) || {}; } catch (e) { return {}; } }
+  /* Email is the token-store key. Normalise it (trim + lowercase) so a session
+     whose email casing differs from the one used at sign-in still finds its
+     refresh token — otherwise the account looks "not signed in" and every
+     backend action (admin sync, parent linking) silently fails despite a valid
+     cloud session. */
+  function tkey(email) { return String(email || '').trim().toLowerCase(); }
+  /* Find an account's tokens case-insensitively, tolerating older entries that
+     were saved under a raw (mixed-case) key before normalisation. */
+  function findTok(email) {
+    var all = toks(), k = tkey(email);
+    if (all[k]) return all[k];
+    for (var e in all) { if (tkey(e) === k) return all[e]; }
+    return null;
+  }
   function saveTok(email, t) {
-    var all = toks();
-    all[email] = { uid: t.localId || t.user_id || (all[email] && all[email].uid),
-      idToken: t.idToken || t.id_token, refreshToken: t.refreshToken || t.refresh_token,
+    var all = toks(), k = tkey(email), prev = findTok(email) || {};
+    all[k] = { uid: t.localId || t.user_id || prev.uid,
+      idToken: t.idToken || t.id_token, refreshToken: t.refreshToken || t.refresh_token || prev.refreshToken,
       exp: Date.now() + (parseInt(t.expiresIn || t.expires_in || '3600', 10) - 120) * 1000 };
     try { localStorage.setItem('sy-cloud-tok', JSON.stringify(all)); } catch (e) {}
-    return all[email];
+    return all[k];
   }
 
   function idpAt(base, action, body) {
@@ -203,7 +217,7 @@
   }
   async function token(email) {
     if (!CFG) return null;
-    var t = toks()[email];
+    var t = findTok(email);
     if (!t || !t.refreshToken) return null;
     if (t.idToken && Date.now() < t.exp) return t.idToken;
     try {
@@ -375,7 +389,7 @@
   async function upload(name, blob, email) {
     await whenReady(); if (!CFG || !CFG.storageBucket) throw new Error('storage not configured');
     var tk = await token(email);
-    var uid = (toks()[email] || {}).uid;
+    var uid = (findTok(email) || {}).uid;
     if (!tk || !uid) throw new Error('not signed in to cloud');
     var object = 'uploads/' + uid + '/' + String(name).replace(/[^\w.\-]+/g, '_');
     var r = await fetch(gbase('st') + '/v0/b/' + CFG.storageBucket +
