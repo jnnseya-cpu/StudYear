@@ -1490,16 +1490,30 @@ window.cloudUserOp=function(op,uid,value,done){
       });
   }).catch(function(){toast('Cloud unreachable')});
 };
-function cloudStatus(msg,kind){var e=document.getElementById('u-cloud-status');if(!e)return;
+function cloudStatus(msg,kind,btn){var e=document.getElementById('u-cloud-status');if(!e)return;
   e.textContent=msg;
   var c=kind==='ok'?['rgba(92,187,123,.10)','rgba(92,187,123,.35)']:kind==='warn'?['rgba(224,169,63,.10)','rgba(224,169,63,.4)']:['rgba(230,103,103,.10)','rgba(230,103,103,.4)'];
-  e.style.background=c[0];e.style.borderColor=c[1];}
+  e.style.background=c[0];e.style.borderColor=c[1];
+  if(btn){var b=document.createElement('button');b.textContent=btn.label;
+    b.style.cssText='margin-left:10px;padding:5px 12px;border-radius:7px;border:1px solid var(--gold-500,#c9a227);background:rgba(201,162,39,.16);color:var(--gold-300,#e6c65b);font:600 12px system-ui;cursor:pointer';
+    b.onclick=btn.onclick;e.appendChild(b);}}
 (function cloudPull(retries){retries=retries||0;
   if(!window.SYCloud||!cloudApi()){
     if(retries>3)cloudStatus('⚠ Platform sync not configured on this device — showing THIS device’s accounts only. New signups made elsewhere will not appear here until the backend connection is set up.','warn');
     setTimeout(function(){cloudPull(retries+1)},1500);return;}
   SYCloud.token(SY.session.email).then(function(tk){
-    if(!tk){cloudStatus('⚠ Not signed in to the cloud on this device — showing local accounts only. Sign in with your admin Firebase account (verified + allow-listed) to pull every platform signup.','warn');return;}
+    if(!tk){cloudStatus('⚠ Not signed in to the cloud on this device — showing local accounts only. Click to sign in and pull every platform signup.','warn',
+      {label:'Sign in to the cloud',onclick:function(){
+        if(!SY.ensureCloud){cloudStatus('⚠ Cloud sign-in unavailable on this device.','err');return;}
+        cloudStatus('Signing in to the cloud…');
+        SY.ensureCloud().then(function(done){
+          if(!done){cloudStatus('⚠ Sign-in cancelled — confirm your admin password to pull platform signups.','warn',
+            {label:'Try again',onclick:function(){cloudPull(0);}});return;}
+          cloudStatus('✓ Signed in — pulling platform signups…','ok');cloudPull(0);
+        }).catch(function(){cloudStatus('⚠ Cloud sign-in failed — check your connection and try again.','err',
+          {label:'Try again',onclick:function(){cloudPull(0);}});});
+      }});
+      return;}
     return fetch(cloudApi()+'/adminOverview',{headers:{Authorization:'Bearer '+tk}})
       .then(function(r){return r.json().then(function(j){return {status:r.status,j:j}})}).then(function(res){
         var j=res.j;
