@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — School & Trust Dashboard</title>
+<link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{
+    --navy-950:#060B18; --navy-900:#0B1220; --navy-800:#101B33;
+    --gold-300:#A9CFF2; --gold-400:#5FA8E0; --gold-500:#3D8FD1;
+    --ink:#EDF1F8; --ink-2:#AAB6CC; --ink-3:#8795AE;
+    /* validated categorical slots (dark, surface #0B1220 — all checks pass) */
+    --s1:#3987e5; --s2:#199e70; --s3:#c98500;
+    --good:#5CBB7B; --warn:#c98500; --crit:#e66767;
+    --line:rgba(77,157,224,.14);
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:
+    radial-gradient(1100px 600px at 80% -10%, rgba(77,157,224,.10), transparent 60%),
+    radial-gradient(900px 700px at -10% 30%, rgba(22,37,74,.85), transparent 65%),
+    var(--navy-950);
+    color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1240px;margin:0 auto;padding:56px 32px 90px}
+  header.page h1{font-family:var(--serif);font-weight:500;font-size:44px;letter-spacing:-.01em}
+  header.page .k{font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold-500);margin-bottom:14px}
+  header.page p{color:var(--ink-2);max-width:70ch;margin-top:12px;font-weight:300}
+
+  section{margin-top:64px}
+  .sec-head{display:flex;align-items:baseline;gap:16px;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:22px}
+  .sec-head h2{font-family:var(--serif);font-weight:500;font-size:27px}
+  .sec-head .who{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-400)}
+  .sec-head .tag{margin-left:auto;font-size:12px;color:var(--ink-3)}
+
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+  .tile{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:rgba(16,27,51,.5)}
+  .tile .v{font-family:var(--serif);font-size:30px;color:var(--gold-300);line-height:1.1}
+  .tile .v small{font-size:14px;color:var(--ink-2);font-family:var(--sans)}
+  .tile .k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}
+  .tile .d{font-size:12px;margin-top:4px}
+  .up{color:var(--good)} .down{color:var(--crit)}
+
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.62),rgba(11,18,32,.9));padding:20px 22px;position:relative}
+  .card h3{font-size:13px;font-weight:600;letter-spacing:.02em}
+  .card .sub{font-size:11.5px;color:var(--ink-3);margin:3px 0 12px}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;position:absolute;top:20px;right:22px}
+  .legend span{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--ink-2)}
+  .legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+  .c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+  svg{display:block;width:100%}
+  svg text{font-family:var(--sans)}
+  .axis{stroke:rgba(170,182,204,.14);stroke-width:1}
+  .tick{fill:#6B7A96;font-size:10.5px}
+  .dlabel{fill:#EDF1F8;font-size:11px;font-weight:600}
+  .hover-rect{fill:transparent;cursor:crosshair}
+
+  #tip{position:fixed;z-index:99;pointer-events:none;background:#101B33;border:1px solid rgba(77,157,224,.4);
+    border-radius:8px;padding:8px 12px;font-size:12px;color:var(--ink);box-shadow:0 10px 30px rgba(0,0,0,.5);
+    opacity:0;transition:opacity .12s;max-width:240px}
+  #tip b{color:var(--gold-300)}
+  .note{font-size:11.5px;color:var(--ink-3);margin-top:10px;font-style:italic}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}.grid>*{grid-column:auto}.tiles{grid-template-columns:repeat(2,1fr)}}
+
+  .dnav{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+  .dnav a{font-size:12px;letter-spacing:.05em;color:var(--ink-2);text-decoration:none;
+    border:1px solid rgba(170,182,204,.25);border-radius:20px;padding:6px 14px}
+  .dnav a:hover{border-color:var(--gold-500);color:var(--gold-300)}
+  .dnav a.on{border-color:var(--gold-500);color:var(--gold-300);background:rgba(77,157,224,.1)}
+</style>
+</head>
+<body>
+<script src="../../guard.js" data-role="school" data-base="../../"></script>
+<script>
+/* This page is a legacy analytics MOCK-UP: every tile/chart below is a hardcoded
+   illustration, identical for everyone. The REAL school console (../../school/)
+   computes live figures from your actual cohort, at-risk model and shared pool
+   and has honest empty states. Send real signed-in leaders there so nobody
+   mistakes the illustration for their own data. Demo tours keep the showcase. */
+(function(){try{var s=JSON.parse(localStorage.getItem('sy-session'));
+if(s&&s.role==='school'&&!s.demo){location.replace('../../school/');}}catch(e){}})();
+</script>
+<div id="tip"></div>
+<div class="wrap">
+
+<header class="page">
+  <div class="k"><a href="../../" style="color:inherit;text-decoration:none">⌂ StudYear</a> · Command Centre Analytics · <a href="../../app/school/" style="color:inherit;text-decoration:none">Open the OS →</a></div>
+  <h1>School & Trust dashboard.</h1>
+  <p>Whole-cohort intelligence for leadership. All charts read the live mastery record — hover any mark.</p>
+  <nav class="dnav"><a href="../student/" class="">Student</a><a href="../parent/" class="">Parent</a><a href="../teacher/" class="">Teacher</a><a href="../school/" class="on">School & Trust</a><a href="../tutor/" class="">Tutor</a><a href="../../app/?switch=1">Switch account</a><a href="#" onclick="localStorage.removeItem('sy-session');location.href='../../';return false">Sign out</a></nav>
+<script>
+// a signed-in user sees only THEIR dashboard link, not the whole list
+(function(){try{var s=JSON.parse(localStorage.getItem('sy-session'));
+if(s&&s.role){document.querySelectorAll('.dnav a').forEach(function(a){
+var h=a.getAttribute('href')||'';
+if(h.indexOf('../')===0&&h.indexOf('app/')===-1&&h!=='../'+s.role+'/')a.remove();});}}catch(e){}})();
+</script>
+</header>
+
+<!-- ============================== SCHOOL ============================== -->
+<section id="school">
+  <div class="sec-head"><span class="who">04 · School &amp; Trust</span><h2>Executive academic operations.</h2><span class="tag">Evidence for governors &amp; inspectors</span></div>
+  <div class="tiles">
+    <div class="tile"><div class="v">+0.42</div><div class="k">Progress 8 (modelled)</div><div class="d up">▲ 0.11 vs autumn baseline</div></div>
+    <div class="tile"><div class="v">37</div><div class="k">At-risk students</div><div class="d down">flagged 6 wks before mocks</div></div>
+    <div class="tile"><div class="v">14,200</div><div class="k">Shared ACU pool</div><div class="d">Medium School · 64% consumed</div></div>
+    <div class="tile"><div class="v">3.2×</div><div class="k">Intervention ROI</div><div class="d">grade-delta per £ vs baseline</div></div>
+  </div>
+  <div class="grid">
+    <div class="card c7"><h3>Cohort health map — year group × subject</h3><div class="sub">mean mastery · cold cells = deploy staff here</div><div id="ch-sch-heat"></div></div>
+    <div class="card c5"><h3>Predicted vs target — by department</h3><div class="sub">gap analysis feeding the staff-deployment view</div>
+      <div class="legend"><span><i style="background:var(--s1)"></i>Predicted</span><span><i style="background:var(--s3)"></i>Target</span></div>
+      <div id="ch-sch-dept"></div></div>
+  </div>
+</section>
+
+</div>
+
+<script>
+/* ============ micro chart factory — thin marks, tooltips, direct labels ============ */
+const tip=document.getElementById('tip');
+function showTip(html,x,y){tip.innerHTML=html;tip.style.opacity=1;
+  tip.style.left=Math.min(x+14,innerWidth-260)+'px';tip.style.top=(y+14)+'px'}
+function hideTip(){tip.style.opacity=0}
+const NS='http://www.w3.org/2000/svg';
+function el(t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e}
+function mount(id,w,h){const s=el('svg',{viewBox:`0 0 ${w} ${h}`});document.getElementById(id).appendChild(s);return s}
+const GOLD='#5FA8E0',S1='#3987e5',S2='#199e70',S3='#c98500';
+
+/* line chart: series=[{name,color,values}], labels[] */
+function lineChart(id,labels,series,opts={}){
+  const w=560,h=opts.h||190,p={l:34,r:70,t:14,b:26},s=mount(id,w,h);
+  const all=series.flatMap(x=>x.values), max=opts.max??Math.max(...all)*1.15, min=opts.min??0;
+  const X=i=>p.l+i*(w-p.l-p.r)/(labels.length-1), Y=v=>h-p.b-(v-min)/(max-min)*(h-p.t-p.b);
+  for(let g=0;g<=3;g++){const y=p.t+g*(h-p.t-p.b)/3;
+    s.appendChild(el('line',{x1:p.l,x2:w-p.r,y1:y,y2:y,class:'axis'}));
+    const t=el('text',{x:p.l-8,y:y+4,'text-anchor':'end',class:'tick'});t.textContent=Math.round(max-g*(max-min)/3)+(opts.unit||'');s.appendChild(t)}
+  labels.forEach((L,i)=>{if(i%Math.ceil(labels.length/6)===0||i===labels.length-1){
+    const t=el('text',{x:X(i),y:h-8,'text-anchor':'middle',class:'tick'});t.textContent=L;s.appendChild(t)}});
+  if(opts.target){const y=Y(opts.target);
+    s.appendChild(el('line',{x1:p.l,x2:w-p.r,y1:y,y2:y,stroke:'rgba(77,157,224,.5)','stroke-dasharray':'5 6','stroke-width':1}));
+    const t=el('text',{x:w-p.r+6,y:y+4,class:'tick',fill:GOLD});t.textContent=opts.targetLabel||('target '+opts.target);s.appendChild(t)}
+  series.forEach(sr=>{
+    if(sr.band){const up=sr.values.map((v,i)=>`${X(i)},${Y(v+sr.band)}`).join(' ');
+      const dn=sr.values.map((v,i)=>`${X(i)},${Y(Math.max(v-sr.band,min))}`).reverse().join(' ');
+      s.appendChild(el('polygon',{points:up+' '+dn,fill:sr.color,opacity:.12}))}
+    s.appendChild(el('polyline',{points:sr.values.map((v,i)=>`${X(i)},${Y(v)}`).join(' '),
+      fill:'none',stroke:sr.color,'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'}));
+    const li=sr.values.length-1;
+    s.appendChild(el('circle',{cx:X(li),cy:Y(sr.values[li]),r:4.5,fill:sr.color,stroke:'#0B1220','stroke-width':2}));
+    const dl=el('text',{x:X(li)+9,y:Y(sr.values[li])+4,class:'dlabel',fill:sr.color});dl.textContent=sr.name;s.appendChild(dl);
+  });
+  const hov=el('rect',{x:p.l,y:p.t,width:w-p.l-p.r,height:h-p.t-p.b,class:'hover-rect'});s.appendChild(hov);
+  const dot=el('circle',{r:4,fill:'none',stroke:GOLD,'stroke-width':2,opacity:0});s.appendChild(dot);
+  hov.addEventListener('mousemove',e=>{const r=s.getBoundingClientRect();
+    const i=Math.max(0,Math.min(labels.length-1,Math.round((e.clientX-r.left)/(r.width)*(w)/( (w-p.l-p.r)/(labels.length-1) ) - p.l/((w-p.l-p.r)/(labels.length-1)) )));
+    dot.setAttribute('opacity',1);dot.setAttribute('cx',X(i));dot.setAttribute('cy',Y(series[0].values[i]));
+    showTip(`<b>${labels[i]}</b><br>`+series.map(sr=>`${sr.name}: <b>${sr.values[i]}${opts.unit||''}</b>`).join('<br>'),e.clientX,e.clientY)});
+  hov.addEventListener('mouseleave',()=>{hideTip();dot.setAttribute('opacity',0)});
+}
+
+/* bar chart: rounded data-end, 2px gaps, per-bar hover */
+function barChart(id,labels,values,opts={}){
+  const w=560,h=opts.h||190,p={l:36,r:12,t:12,b:40},s=mount(id,w,h);
+  const max=opts.max??Math.max(...values)*1.18;
+  const bw=(w-p.l-p.r)/values.length, Y=v=>h-p.b-(v/max)*(h-p.t-p.b);
+  for(let g=0;g<=3;g++){const y=p.t+g*(h-p.t-p.b)/3;
+    s.appendChild(el('line',{x1:p.l,x2:w-p.r,y1:y,y2:y,class:'axis'}));
+    const t=el('text',{x:p.l-7,y:y+4,'text-anchor':'end',class:'tick'});t.textContent=Math.round(max-g*max/3)+(opts.unit||'');s.appendChild(t)}
+  values.forEach((v,i)=>{
+    const x=p.l+i*bw+2, wd=bw-4, y=Y(v), color=(opts.colors&&opts.colors[i])||opts.color||S1;
+    const bar=el('path',{d:`M${x},${h-p.b} L${x},${y+4} Q${x},${y} ${x+4},${y} L${x+wd-4},${y} Q${x+wd},${y} ${x+wd},${y+4} L${x+wd},${h-p.b} Z`,fill:color});
+    s.appendChild(bar);
+    if(opts.dlabels){const t=el('text',{x:x+wd/2,y:y-6,'text-anchor':'middle',class:'dlabel'});t.textContent=v+(opts.unit||'');s.appendChild(t)}
+    const lb=el('text',{x:x+wd/2,y:h-p.b+16,'text-anchor':'middle',class:'tick'});lb.textContent=labels[i];s.appendChild(lb);
+    if(opts.sublabels){const t2=el('text',{x:x+wd/2,y:h-p.b+30,'text-anchor':'middle',class:'tick',fill:'#4d5a75'});t2.textContent=opts.sublabels[i];s.appendChild(t2)}
+    bar.addEventListener('mousemove',e=>showTip(`<b>${labels[i]}</b><br>${opts.tipName||'value'}: <b>${v}${opts.unit||''}</b>${opts.tips?('<br>'+opts.tips[i]):''}`,e.clientX,e.clientY));
+    bar.addEventListener('mouseleave',hideTip);
+  });
+  if(opts.target){const y=Y(opts.target);
+    s.appendChild(el('line',{x1:p.l,x2:w-p.r,y1:y,y2:y,stroke:'rgba(77,157,224,.55)','stroke-dasharray':'5 6'}));
+    const t=el('text',{x:w-p.r-4,y:y-6,'text-anchor':'end',class:'tick',fill:GOLD});t.textContent=opts.targetLabel;s.appendChild(t)}
+}
+
+/* grouped bars (2 series) */
+function groupBars(id,labels,a,b,opts={}){
+  const w=560,h=opts.h||190,p={l:36,r:12,t:12,b:28},s=mount(id,w,h);
+  const max=Math.max(...a,...b)*1.18, g=(w-p.l-p.r)/labels.length, bw=(g-10)/2, Y=v=>h-p.b-(v/max)*(h-p.t-p.b);
+  for(let k=0;k<=3;k++){const y=p.t+k*(h-p.t-p.b)/3;s.appendChild(el('line',{x1:p.l,x2:w-p.r,y1:y,y2:y,class:'axis'}))}
+  labels.forEach((L,i)=>{
+    const x0=p.l+i*g+4;
+    [[a[i],S1,opts.na||'A',x0],[b[i],S3,opts.nb||'B',x0+bw+2]].forEach(([v,c,n,x])=>{
+      const y=Y(v);
+      const bar=el('path',{d:`M${x},${h-p.b} L${x},${y+4} Q${x},${y} ${x+4},${y} L${x+bw-4},${y} Q${x+bw},${y} ${x+bw},${y+4} L${x+bw},${h-p.b} Z`,fill:c});
+      s.appendChild(bar);
+      bar.addEventListener('mousemove',e=>showTip(`<b>${L}</b><br>${n}: <b>${v}${opts.unit||''}</b>`,e.clientX,e.clientY));
+      bar.addEventListener('mouseleave',hideTip)});
+    const t=el('text',{x:x0+bw,y:h-8,'text-anchor':'middle',class:'tick'});t.textContent=L;s.appendChild(t)});
+}
+
+/* heatmap: sequential single-hue gold ramp (monotonic lightness on dark) */
+const RAMP=['#0E1E33','#13294B','#18355B','#1E4270','#245086','#2B5F9C','#3370B3','#4283C6','#63A0D8','#8FBFE9'];
+function heat(id,rows,cols,data,opts={}){
+  const w=560, cell=Math.min((w-120)/cols.length, 26), h=rows.length*(cell+3)+46, s=mount(id,w,h);
+  rows.forEach((r,ri)=>{
+    const t=el('text',{x:112,y:ri*(cell+3)+cell/2+5,'text-anchor':'end',class:'tick'});t.textContent=r;s.appendChild(t);
+    cols.forEach((c,ci)=>{
+      const v=data[ri][ci];
+      const rc=el('rect',{x:120+ci*(cell+3),y:ri*(cell+3),width:cell,height:cell,rx:4,
+        fill:RAMP[Math.max(0,Math.min(9,Math.round(v/100*9)))]});
+      s.appendChild(rc);
+      rc.addEventListener('mousemove',e=>showTip(`<b>${r} × ${c}</b><br>mastery: <b>${v}%</b>${v<45?'<br>⚠ intervention suggested':''}`,e.clientX,e.clientY));
+      rc.addEventListener('mouseleave',hideTip)});
+  });
+  cols.forEach((c,ci)=>{const t=el('text',{x:120+ci*(cell+3)+cell/2,y:rows.length*(cell+3)+16,'text-anchor':'middle',class:'tick'});
+    t.textContent=c;s.appendChild(t)});
+  const cap=el('text',{x:120,y:rows.length*(cell+3)+38,class:'tick'});cap.textContent='weak ◄';s.appendChild(cap);
+  const cap2=el('text',{x:120+cols.length*(cell+3)-6,y:rows.length*(cell+3)+38,'text-anchor':'end',class:'tick'});cap2.textContent='► mastered';s.appendChild(cap2);
+}
+
+/* horizontal funnel bars */
+function funnel(id,stages,values){
+  const w=560,h=stages.length*44+10,s=mount(id,w,h),max=values[0];
+  stages.forEach((st,i)=>{
+    const y=i*44+6, bw=(values[i]/max)*(w-190);
+    const bar=el('rect',{x:150,y:y,width:bw,height:26,rx:5,fill:S1,opacity:1-(i*0.14)});
+    s.appendChild(bar);
+    const t=el('text',{x:142,y:y+18,'text-anchor':'end',class:'tick'});t.textContent=st;s.appendChild(t);
+    const v=el('text',{x:158+bw,y:y+18,class:'dlabel'});v.textContent=values[i]+(i>0?`  (${Math.round(values[i]/values[i-1]*100)}%)`:'');s.appendChild(v);
+    bar.addEventListener('mousemove',e=>showTip(`<b>${st}</b><br>count: <b>${values[i]}</b>${i>0?`<br>conversion: <b>${Math.round(values[i]/values[i-1]*100)}%</b>`:''}`,e.clientX,e.clientY));
+    bar.addEventListener('mouseleave',hideTip)});
+}
+
+// SCHOOL
+heat('ch-sch-heat',['Year 7','Year 8','Year 9','Year 10','Year 11'],
+  ['Mat','Eng','Sci','His','Geo','MFL','CS'],
+  [[68,72,65,70,66,60,64],[64,70,62,66,64,58,62],[60,66,58,62,60,54,58],
+   [55,62,52,58,56,48,54],[50,58,44,54,52,42,50]]);
+groupBars('ch-sch-dept',['Maths','English','Science','Humanities','MFL'],
+  [6.4,6.8,5.9,6.2,5.6],[7.0,7.0,6.5,6.5,6.0],{na:'Predicted',nb:'Target',h:210});
+</script>
+</body>
+</html>

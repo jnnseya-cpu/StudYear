@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Take the Register</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  .hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end;margin-top:14px}
+  .mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:16px}
+  .mini .card{padding:14px 16px}
+  .reg{margin-top:8px}
+  .rrow{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid rgba(170,182,204,.08);flex-wrap:wrap}
+  .rrow .who{flex:1;min-width:150px}.rrow .who b{color:var(--ink);font-size:14px}.rrow .who span{display:block;font-size:11.5px;color:var(--ink-3)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .seg button{appearance:none;border:0;background:transparent;color:var(--ink-2);font:600 11.5px var(--sans);padding:7px 11px;cursor:pointer;border-right:1px solid var(--line)}
+  .seg button:last-child{border-right:0}
+  .seg button.on[data-v="present"]{background:rgba(92,187,123,.22);color:#8ee0a5}
+  .seg button.on[data-v="late"]{background:rgba(201,133,0,.24);color:#e6c169}
+  .seg button.on[data-v="authorised"]{background:rgba(77,157,224,.22);color:var(--gold-300)}
+  .seg button.on[data-v="absent"]{background:rgba(230,103,103,.24);color:#f2a5a5}
+  .pct{font-family:var(--serif);font-size:15px;min-width:52px;text-align:right}
+  .pct.lo{color:#f2a5a5}.pct.mid{color:#e6c169}.pct.hi{color:#8ee0a5}
+  .quick{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+  .link-cta{border:1px solid rgba(201,133,0,.4);background:rgba(201,133,0,.08);border-radius:12px;padding:16px 18px;margin-top:16px}
+</style></head><body>
+<script src="../../guard.js" data-role="teacher" data-base="../../"></script>
+<div class="shell"><main>
+  <div class="hd"><span class="live">● Register</span><span class="badge" id="school-badge">—</span></div>
+  <div class="k" style="margin-top:10px">Attendance · Take the register</div>
+  <h1>Take the register</h1>
+  <p class="lede">Mark your class present, late, authorised or absent. Attendance feeds the school's attendance-recovery and equity engines automatically.</p>
+
+  <div id="notlinked" style="display:none" class="link-cta">
+    <b style="color:var(--ink)">You're not linked to a school yet.</b>
+    <p style="color:var(--ink-2);font-size:13px;margin:6px 0 12px">Link your school to pull your class roster and share attendance with leadership. You can still take a register for any students you've added to your own profile.</p>
+    <a class="btn solid" href="../register/#sec-school">Link my school →</a>
+  </div>
+
+  <div class="ctl">
+    <div><label class="f">Date</label><input type="date" id="f-date"></div>
+    <div><label class="f">Class / cohort</label><select id="f-cohort"></select></div>
+    <div><label class="f">Session</label><select id="f-session">
+      <option value="AM">Morning (AM)</option><option value="PM">Afternoon (PM)</option>
+      <option value="P1">Period 1</option><option value="P2">Period 2</option><option value="P3">Period 3</option>
+      <option value="P4">Period 4</option><option value="P5">Period 5</option>
+    </select></div>
+  </div>
+
+  <div class="mini">
+    <div class="card stat"><div class="v" id="s-present">0</div><div class="k">Present</div></div>
+    <div class="card stat"><div class="v" id="s-late">0</div><div class="k">Late</div></div>
+    <div class="card stat"><div class="v" id="s-auth">0</div><div class="k">Authorised</div></div>
+    <div class="card stat"><div class="v" id="s-absent">0</div><div class="k">Absent</div></div>
+    <div class="card stat"><div class="v" id="s-rate">—</div><div class="k">Attendance</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="card c8">
+      <h3>Class register</h3><div class="sub" id="reg-sub">Tap a status for each student</div>
+      <div class="quick">
+        <button class="btn sm" id="all-present">✓ Mark all present</button>
+        <button class="btn sm ghost" id="clear-reg">Clear</button>
+        <button class="btn sm solid" id="save-reg">Save register</button>
+        <span class="badge" id="saved-badge" style="display:none"></span>
+      </div>
+      <div class="reg" id="reg"></div>
+    </div>
+    <div class="card c4">
+      <h3>Attendance watch</h3><div class="sub">Learners below 90% across recorded sessions</div>
+      <div id="watch"></div>
+    </div>
+    <div class="card c12">
+      <h3>Recent registers</h3><div class="sub">Your saved sessions</div>
+      <div id="recent"></div>
+    </div>
+  </div>
+</main></div>
+<script src="../nav.js" data-base="../" data-cur="attendance/"></script>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;var TW=window.TW||{};
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function toast(m){var t=$('toast');if(!t)return;t.textContent=m;t.style.opacity='1';setTimeout(function(){t.style.opacity='0'},2200)}
+function pad(n){return n<10?'0'+n:''+n}
+function isoDate(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+
+var code=TW.schoolCode||null;
+$('school-badge').textContent=TW.schoolName?(esc(TW.schoolName)+(TW.verified?'':' (Pending)')):'Not linked to a school';
+if(!code){$('school-badge').className='badge warn';$('notlinked').style.display='block'}
+
+/* ---- storage: sy-school:<code>:attendance = { "date|cohort|session": {records:{email:status}, by, at} }
+   when no school, fall back to teacher-local SY.set('attendance', {...}) ---- */
+function loadStore(){return code?SY.schoolGet(code,'attendance',{}):SY.get('attendance',{})}
+function saveStore(o){if(code)SY.schoolSet(code,'attendance',o);else SY.set('attendance',o)}
+
+/* roster / cohorts */
+var students=(TW.myStudents&&TW.myStudents())||[];
+var cohorts=(TW.myCohorts&&TW.myCohorts())||[];
+var csel=$('f-cohort');
+var opts=['<option value="__all">All my students ('+students.length+')</option>'];
+cohorts.forEach(function(c){opts.push('<option value="'+esc(c)+'">'+esc(c)+'</option>')});
+csel.innerHTML=opts.join('');
+
+$('f-date').value=isoDate(new Date());
+
+function rosterFor(cohort){
+  if(cohort==='__all'||!cohort)return students;
+  return students.filter(function(s){var pf=SY.readAccount(s.email,'profile',{});return pf.level===cohort||s.year===cohort});
+}
+function keyFor(){return $('f-date').value+'|'+csel.value+'|'+$('f-session').value}
+
+var draft={}; /* email -> status for the current key */
+
+function loadDraft(){
+  var store=loadStore();var rec=store[keyFor()];
+  draft=rec&&rec.records?JSON.parse(JSON.stringify(rec.records)):{};
+  if(rec){$('saved-badge').style.display='';$('saved-badge').className='badge good';$('saved-badge').textContent='Saved '+(rec.at?SY.timeAgo(rec.at):'')}
+  else{$('saved-badge').style.display='none'}
+}
+
+function studentPct(email){
+  var store=loadStore();var present=0,counted=0;
+  Object.keys(store).forEach(function(k){var r=store[k].records||{};var st=r[email];if(st==null)return;counted++;if(st==='present'||st==='late'||st==='authorised')present++});
+  return counted?Math.round(100*present/counted):null;
+}
+
+function render(){
+  var list=rosterFor(csel.value);
+  $('reg-sub').textContent=list.length?('Tap a status for each of '+list.length+' student'+(list.length===1?'':'s')):'No students in this class';
+  if(!list.length){$('reg').innerHTML='<div class="empty">No students'+(code?' in this cohort. Assign cohorts from your school, or pick “All my students”.':'. Link your school or add students to your profile.')+'</div>';updateSummary();return}
+  $('reg').innerHTML=list.map(function(s){
+    var st=draft[s.email]||'';var pct=studentPct(s.email);
+    var cls=pct==null?'':pct<90?'lo':pct<96?'mid':'hi';
+    function b(v,l){return '<button data-e="'+esc(s.email)+'" data-v="'+v+'"'+(st===v?' class="on"':'')+'>'+l+'</button>'}
+    return '<div class="rrow"><div class="who"><b>'+esc(s.name||SY.accountName(s.email))+'</b><span>'+esc(s.email)+'</span></div>'+
+      '<div class="seg">'+b('present','Present')+b('late','Late')+b('authorised','Auth')+b('absent','Absent')+'</div>'+
+      '<div class="pct '+cls+'">'+(pct==null?'—':pct+'%')+'</div></div>';
+  }).join('');
+  Array.prototype.forEach.call($('reg').querySelectorAll('.seg button'),function(btn){
+    btn.onclick=function(){var e=btn.getAttribute('data-e'),v=btn.getAttribute('data-v');
+      draft[e]=(draft[e]===v)?'':v;render()};
+  });
+  updateSummary();
+}
+
+function updateSummary(){
+  var list=rosterFor(csel.value);var c={present:0,late:0,authorised:0,absent:0};
+  list.forEach(function(s){var st=draft[s.email];if(st&&c[st]!=null)c[st]++});
+  $('s-present').textContent=c.present;$('s-late').textContent=c.late;$('s-auth').textContent=c.authorised;$('s-absent').textContent=c.absent;
+  var marked=c.present+c.late+c.authorised+c.absent;var inAtt=c.present+c.late+c.authorised;
+  $('s-rate').textContent=marked?Math.round(100*inAtt/marked)+'%':'—';
+}
+
+function renderWatch(){
+  var store=loadStore();var seen={};
+  Object.keys(store).forEach(function(k){var r=store[k].records||{};Object.keys(r).forEach(function(e){seen[e]=1})});
+  var rows=Object.keys(seen).map(function(e){return {e:e,p:studentPct(e)}}).filter(function(x){return x.p!=null&&x.p<90}).sort(function(a,b){return a.p-b.p});
+  $('watch').innerHTML=rows.length?rows.slice(0,12).map(function(x){
+    return '<div class="row"><span class="badge '+(x.p<85?'crit':'warn')+'">'+x.p+'%</span> <b>'+esc(SY.accountName(x.e))+'</b> <a href="../interventions/" style="margin-left:auto;color:var(--gold-300)">→ plan</a></div>';
+  }).join(''):'<div class="empty">No attendance concerns — everyone above 90% so far.</div>';
+}
+
+function renderRecent(){
+  var store=loadStore();var keys=Object.keys(store).sort().reverse().slice(0,12);
+  $('recent').innerHTML=keys.length?keys.map(function(k){
+    var r=store[k];var parts=k.split('|');var rec=r.records||{};var vals=Object.keys(rec).map(function(e){return rec[e]});
+    var pres=vals.filter(function(v){return v==='present'||v==='late'||v==='authorised'}).length;
+    var rate=vals.length?Math.round(100*pres/vals.length):0;
+    return '<div class="row"><b>'+esc(parts[0])+'</b> <span class="badge info">'+esc(parts[1]==='__all'?'All':parts[1])+'</span> <span class="badge">'+esc(parts[2])+'</span> <span style="color:var(--ink-3)">'+vals.length+' marked</span> <span class="pct '+(rate<90?'lo':rate<96?'mid':'hi')+'" style="margin-left:auto">'+rate+'%</span></div>';
+  }).join(''):'<div class="empty">No registers saved yet.</div>';
+}
+
+$('all-present').onclick=function(){rosterFor(csel.value).forEach(function(s){draft[s.email]='present'});render()};
+$('clear-reg').onclick=function(){draft={};render()};
+$('save-reg').onclick=function(){
+  var list=rosterFor(csel.value);
+  if(!list.length){toast('No students to save');return}
+  var marked=list.filter(function(s){return draft[s.email]}).length;
+  if(!marked){toast('Mark at least one student first');return}
+  var store=loadStore();
+  var records={};list.forEach(function(s){if(draft[s.email])records[s.email]=draft[s.email]});
+  store[keyFor()]={records:records,by:SY.session.email,byName:SY.session.name||'',at:new Date().toISOString(),cohort:csel.value,session:$('f-session').value};
+  saveStore(store);
+  SY.log('attendance','Register taken',marked+' marked · '+$('f-date').value+' · '+($('f-session').value));
+  toast('Register saved — '+marked+' student'+(marked===1?'':'s'));
+  loadDraft();renderWatch();renderRecent();render();
+};
+
+['f-date','f-cohort','f-session'].forEach(function(id){$(id).onchange=function(){loadDraft();render()}});
+
+loadDraft();render();renderWatch();renderRecent();
+})();
+</script>
+</body></html>

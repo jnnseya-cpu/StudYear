@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <linearGradient id="syg" x1="78%" y1="0%" x2="22%" y2="100%">
+      <stop offset="0%" stop-color="#4FA6E0"/>
+      <stop offset="55%" stop-color="#2E6BC4"/>
+      <stop offset="100%" stop-color="#1A2A5C"/>
+    </linearGradient>
+  </defs>
+  <!-- the S -->
+  <text x="118" y="206" text-anchor="middle" font-family="'Arial Black','Arial Bold',Arial,sans-serif" font-weight="900" font-size="188" fill="url(#syg)">S</text>
+  <!-- mortarboard -->
+  <polygon points="120,8 214,55 120,102 26,55" fill="url(#syg)"/>
+  <!-- tassel -->
+  <path d="M212,58 L219,106" stroke="url(#syg)" stroke-width="7" stroke-linecap="round" fill="none"/>
+  <!-- tassel sparkle -->
+  <path d="M221,104 c3.2,15 6.5,18.3 21,21.5 c-14.5,3.2 -17.8,6.5 -21,21.5 c-3.2,-15 -6.5,-18.3 -21,-21.5 c14.5,-3.2 17.8,-6.5 21,-21.5 z" fill="#4FA6E0"/>
+</svg>

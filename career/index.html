@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Career Passport</title><link rel="manifest" href="../manifest.json"><link rel="icon" href="../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--gold-300:#A9CFF2;--gold-400:#5FA8E0;--gold-500:#3D8FD1;--good:#5CBB7B;--warn:#c98500;--crit:#e66767;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#8795AE;--line:rgba(77,157,224,.14);--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}body{background:radial-gradient(1100px 600px at 82% -12%,rgba(77,157,224,.13),transparent 60%),var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  .wrap{max-width:1000px;margin:0 auto;padding:30px 22px 90px}
+  a{color:inherit}.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+  .top .logo{font-family:var(--serif);font-size:18px;text-decoration:none}.top .logo b{color:#4FA6E0}
+  .top .sp{margin-left:auto;display:flex;gap:8px}.chip{font-size:12px;color:var(--ink-2);border:1px solid rgba(170,182,204,.25);border-radius:20px;padding:6px 12px;text-decoration:none}
+  h1{font-family:var(--serif);font-weight:500;font-size:30px;margin-top:6px}.k{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-400)}
+  p.lede{color:var(--ink-2);font-weight:300;margin-top:4px;max-width:75ch}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:18px 20px;margin-top:16px}
+  .card h3{font-family:var(--serif);font-weight:500;font-size:17px}.card .sub{font-size:12.5px;color:var(--ink-3);margin:4px 0 12px}
+  label.f{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:12px 0 5px}
+  input,select{width:100%;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}select option{background:#101B33;color:#EDF1F8}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:640px){.two{grid-template-columns:1fr}}
+  .togs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}@media(max-width:640px){.togs{grid-template-columns:1fr 1fr}}
+  .tog{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:rgba(6,11,24,.32);font-size:12.5px;cursor:pointer}
+  .tog input{width:auto;accent-color:var(--gold-500)}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12px var(--sans);border-radius:9px;padding:9px 16px;cursor:pointer;text-decoration:none;display:inline-block}.btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}
+  .path{border:1px solid var(--line);border-radius:12px;padding:14px 15px;margin-top:10px;background:rgba(6,11,24,.32)}
+  .path.top{border-color:rgba(92,187,123,.4);background:rgba(92,187,123,.06)}
+  .path .ph{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.path .ph .ic{font-size:22px}.path .ph b{font-size:15px}
+  .path .fit{margin-left:auto;font-family:var(--serif);font-size:18px}
+  .bar{height:9px;border-radius:5px;background:rgba(170,182,204,.12);overflow:hidden;margin:9px 0}.bar i{display:block;height:100%}
+  .path .why{font-size:12.5px;color:var(--ink-2)}.path .meta{font-size:11.5px;color:var(--ink-3);margin-top:6px;display:flex;gap:14px;flex-wrap:wrap}
+  .pill{display:inline-block;font-size:11px;color:var(--gold-300);border:1px solid rgba(77,157,224,.3);background:rgba(77,157,224,.06);border-radius:20px;padding:3px 10px;margin:3px 4px 0 0}
+  .passrow{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:13px}
+  .badge{font-size:10px;border-radius:20px;padding:3px 9px;border:1px solid rgba(92,187,123,.45);color:var(--good)}
+  .emps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:6px}@media(max-width:640px){.emps{grid-template-columns:1fr}}
+  .emp{border:1px solid var(--line);border-radius:11px;padding:12px;background:rgba(6,11,24,.32)}.emp h4{font-size:12px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.1em;font-weight:600}.emp .e{font-size:12.5px;color:var(--ink-2);margin-top:5px}
+  .note{font-size:11.5px;color:var(--ink-3);margin-top:8px}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+  .pw-chips{display:flex;flex-wrap:wrap;gap:8px}
+  .pw-chip{appearance:none;font:600 12px var(--sans);border:1px solid var(--line);background:rgba(6,11,24,.4);color:var(--ink-2);border-radius:20px;padding:7px 13px;cursor:pointer}
+  .pw-chip.on{border-color:var(--gold-500);background:rgba(77,157,224,.14);color:var(--gold-300)}
+  .pw-detail{margin-top:12px}.pw-blurb{font-size:13.5px;color:var(--ink-2)}
+  .pw-core{font-size:13px;color:var(--ink);background:rgba(92,187,123,.07);border:1px solid rgba(92,187,123,.3);border-radius:10px;padding:9px 12px;margin:10px 0}
+  .pw-lbl{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:12px 0 5px}
+  .pill.route{color:var(--good);border-color:rgba(92,187,123,.4);background:rgba(92,187,123,.07)}
+  .pw-res{font-size:12.5px;color:var(--gold-300);margin-top:12px}.pw-tip{font-size:12px;color:var(--ink-3);margin-top:8px;line-height:1.6}
+  .pw-form{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:4px}@media(max-width:640px){.pw-form{grid-template-columns:1fr}}
+  .pw-in{width:100%}.pw-add{appearance:none;border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff;font:600 13px var(--sans);border-radius:9px;padding:10px 16px;cursor:pointer;white-space:nowrap}
+  .pw-safe{font-size:11.5px;color:var(--ink-3);margin-top:8px}
+  .pw-enc-list{margin-top:12px}.pw-enc{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-top:8px;background:rgba(6,11,24,.32);font-size:13px}
+  .pw-eic{font-size:18px}.pw-date2{font-size:11px;color:var(--ink-3);margin-left:8px}
+  .pw-del{appearance:none;border:1px solid rgba(170,182,204,.25);background:transparent;color:var(--ink-3);border-radius:8px;width:26px;height:26px;cursor:pointer}
+  .pw-empty{font-size:12.5px;color:var(--ink-3);padding:10px 0}
+  .pw-opp{display:flex;align-items:center;gap:10px;border:1px solid rgba(92,187,123,.3);border-radius:10px;padding:9px 12px;margin-top:8px;background:rgba(92,187,123,.05);font-size:13px}
+</style></head><body>
+<script src="../guard.js" data-role="student" data-base="../"></script>
+<script src="../pathways.js"></script>
+<div class="wrap" role="main">
+  <div class="top"><a class="logo" href="../">⌂ <b class="wm">StudYear</b></a><div class="sp"><a class="chip" href="../dashboards/student/">Dashboard</a><a class="chip" href="../study/#predict">Progress</a><a class="chip" href="#" id="signout">Sign out</a></div></div>
+  <div class="k">Career Pathway AI™ · Apprenticeship First™</div>
+  <h1>Your Career Passport</h1>
+  <p class="lede">University is not the default — it's one of many great routes. StudYear matches you to the pathways that fit your ability, interests and your local opportunities, from Year 5 onward.</p>
+
+  <div class="card" style="border-color:rgba(92,187,123,.4);background:linear-gradient(180deg,rgba(92,187,123,.09),rgba(11,18,32,.9))">
+    <h3>Just got your results and they’re not what you hoped?</h3>
+    <div class="sub">Didn’t get the grades at GCSE or A-Level? There are no dead ends. See your real routes forward — resits, Functional Skills, college, apprenticeships, Clearing, foundation years — with the first action for each, and a personal 7-day plan.</div>
+    <a class="btn solid" href="next-steps/" style="text-decoration:none">Results &amp; Next Steps →</a>
+  </div>
+
+  <div class="card"><h3>Tell us about you</h3><div class="sub">Your subjects and grades come from your profile — add the rest to sharpen your matches.</div>
+    <div class="two">
+      <div><label class="f">How do you prefer to learn &amp; work?</label><select id="c-style" aria-label="How you prefer to learn and work"><option value="balanced">A mix of both</option><option value="academic">Reading, theory &amp; ideas</option><option value="practical">Hands-on &amp; practical</option></select></div>
+      <div><label class="f">Your local area (for local employer matches)</label><input id="c-locality" placeholder="e.g. Birmingham, or a coastal town"></div>
+    </div>
+    <label class="f">What are you interested in? (pick any)</label>
+    <div class="togs" id="c-interests"></div>
+    <div class="two" style="margin-top:12px">
+      <div><label class="f">Personality</label><select id="c-personality" aria-label="Personality"><option value="">Select…</option><option>Leader / organiser</option><option>Creative / maker</option><option>Analytical / problem-solver</option><option>Caring / people-focused</option><option>Entrepreneurial / independent</option></select></div>
+      <div><label class="f">Income priority</label><select id="c-income" aria-label="Income priority"><option value="balanced">Balanced</option><option value="high">Maximise earnings</option><option value="purpose">Purpose over pay</option></select></div>
+    </div>
+    <div style="margin-top:14px"><button class="btn solid" id="c-gen">Generate my pathways</button> <button class="btn" id="c-save">Save passport</button></div>
+  </div>
+
+  <div class="card" id="passport-card" style="display:none"><h3>🎓 Passports</h3>
+    <div id="passports"></div>
+  </div>
+
+  <div class="card" id="paths-card" style="display:none"><h3>🧭 Your best-fit pathways</h3><div class="sub">Ranked by fit — Apprenticeship First™ means no route is assumed. Highest match first.</div>
+    <div id="paths"></div>
+  </div>
+
+  <div class="card" id="gcse-route-card" style="display:none"><h3>🎯 Your Year 10 route planner</h3><div class="sub">Deciding what comes after GCSEs? Here's how your current grades map to every post-16 route — and exactly what keeps each door open.</div>
+    <div id="gcse-routes"></div>
+  </div>
+
+  <div class="card" id="subject-advice-card" style="display:none"><h3>📚 Choosing subjects — GCSE options &amp; post-16</h3><div class="sub">Pick subjects that play to your strengths — better grades come from subjects you're good at and enjoy, and that keeps the most routes open.</div>
+    <div id="subject-advice"></div>
+  </div>
+
+  <div class="card" id="tech-path-card" style="display:none"><h3>🧭 Technical pathway — academic core + a route into local jobs</h3><div class="sub">From 14 you can keep English, maths &amp; science <b>and</b> build real technical skills tied to the industries growing near you. Pick a sector to see every route in — apprenticeship, college, university or straight into work. No dead ends.</div>
+    <div id="tech-path"></div>
+  </div>
+
+  <div class="card" id="passport-exp-card" style="display:none"><h3>🎒 Skills &amp; Experience Passport</h3><div class="sub">Log the real-world experience employers value — mentoring, workplace visits, business-set projects and work experience. It builds your CV and evidences your school's careers standards.</div>
+    <div id="passport-exp"></div>
+  </div>
+
+  <div class="card" id="ai-impact-card" style="display:none"><h3>🤖 AI &amp; the future of work</h3><div class="sub">How automation and AI could reshape each pathway — and how to stay ahead of it, from Year 5</div>
+    <div id="ai-impact"></div>
+  </div>
+
+  <div class="card" id="emp-card" style="display:none"><h3>🏢 Opportunity matches</h3><div class="sub">Live labour-market lens — local, national and international</div>
+    <div class="emps" id="employers"></div>
+    <div class="note" id="coach"></div>
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;var S=SY.session;
+function $(id){return document.getElementById(id)}function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var e=$('toast');e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2400)}
+$('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+
+var profile=SY.get('profile',{});
+var saved=SY.get('career',{});
+/* stage detection — a primary child (EYFS/KS1/KS2) must NOT be shown UCAS,
+   university salary bands, degree apprenticeships or automation-risk analysis.
+   They get an age-appropriate "explorer" instead (preserve & enhance: the
+   secondary engine below is untouched; primary simply routes to its own view). */
+var _ATT=(SY.attainment&&profile.level)?SY.attainment(profile.level,60):null;
+var isPrimary=!!(_ATT&&/eyfs|ks1|ks2|elevenplus/.test(_ATT.system));
+if(isPrimary){
+  document.querySelector('.k').textContent='Explorer Passport™ · Dream Big';
+  document.querySelector('h1').textContent='Your Explorer Passport';
+  document.querySelector('p.lede').textContent='There are thousands of amazing jobs in the world — and you don\'t have to choose now! Pick what you love and discover the kinds of work that might be perfect for you one day.';
+  var _sub=document.querySelector('#paths-card .sub');if(_sub)_sub.textContent='Jobs you might love — there\'s no wrong answer, and you can change your mind as much as you like.';
+  var _rows=document.querySelectorAll('.card .two');if(_rows[1])_rows[1].style.display='none';   // hide personality + income-priority
+  var _formSub=document.querySelector('.card .sub');if(_formSub)_formSub.textContent='Pick the things you love — that\'s all you need!';
+  var _genBtn=document.getElementById('c-gen');if(_genBtn)_genBtn.textContent='Show me!';
+}
+var INTERESTS=[['tech','Technology & coding'],['engineering','Engineering'],['health','Health & care'],['business','Business & finance'],['creative','Art & design'],['media','Media & film'],['science','Science'],['construction','Construction & trades'],['law','Law & politics'],['sport','Sport'],['education','Teaching'],['environment','Environment & energy'],['hospitality','Hospitality & tourism'],['marine','Marine & maritime'],['agriculture','Agriculture']];
+var chosen=saved.interests||[];
+INTERESTS.forEach(function(it){var l=el('label','tog');var cb=el('input');cb.type='checkbox';cb.value=it[0];cb.checked=chosen.indexOf(it[0])>=0;l.appendChild(cb);l.appendChild(document.createTextNode(' '+it[1]));$('c-interests').appendChild(l)});
+if(saved.style)$('c-style').value=saved.style;if(saved.locality)$('c-locality').value=saved.locality;if(saved.personality)$('c-personality').value=saved.personality;if(saved.income)$('c-income').value=saved.income;
+
+/* academic ability from profile subjects (grades 1-9) */
+function academicScore(){
+  var subs=profile.subjects||[];if(!subs.length)return 55;
+  var g=subs.map(function(x){return parseInt(x.current||x.target||'5',10)||5});
+  return Math.round(clamp(g.reduce(function(a,b){return a+b},0)/g.length/9*100,0,100));
+}
+function readInterests(){return [].slice.call($('c-interests').querySelectorAll('input:checked')).map(function(c){return c.value})}
+
+var PATHWAYS=[
+  {k:'university',ic:'🎓',t:'University',sal:'£27k → £45k+',sectors:['science','law','health','education','business','media'],
+   score:function(a,p,intr){return a*0.7+(p==='academic'?18:p==='practical'?-8:6)+(hasAny(intr,['science','law','health','education','medicine'])?10:0)}},
+  {k:'degreeapp',ic:'🏗️',t:'Degree Apprenticeship',sal:'Earn while you learn · £18k → £40k',sectors:['engineering','tech','business','construction'],
+   score:function(a,p,intr){return a*0.55+(p==='practical'?16:p==='balanced'?12:4)+(hasAny(intr,['engineering','tech','business','construction'])?14:0)+8}},
+  {k:'technical',ic:'🔧',t:'Technical College / T-Level',sal:'£20k → £38k',sectors:['engineering','tech','health','construction'],
+   score:function(a,p,intr){return a*0.4+(p==='practical'?20:8)+(hasAny(intr,['engineering','tech','health','construction'])?14:0)+6}},
+  {k:'trade',ic:'🛠️',t:'Trade / Skilled Apprenticeship',sal:'£22k → £45k self-employed',sectors:['construction','engineering'],
+   score:function(a,p,intr){return (100-a)*0.25+(p==='practical'?26:6)+(hasAny(intr,['construction','engineering','agriculture'])?18:0)}},
+  {k:'employment',ic:'💼',t:'Employment / Entry role',sal:'£18k → £30k, then rise',sectors:['business','hospitality','health'],
+   score:function(a,p,intr){return (100-a)*0.3+14+(hasAny(intr,['business','hospitality','sport'])?10:0)}},
+  {k:'business',ic:'📈',t:'Business / Start-up',sal:'Variable · high ceiling',sectors:['business','tech','creative'],
+   score:function(a,p,intr,pers){return a*0.3+(pers==='Entrepreneurial / independent'?26:8)+(hasAny(intr,['business','tech','creative','media'])?14:0)}},
+  {k:'selfemployed',ic:'🚀',t:'Self-employment / Freelance',sal:'You set it',sectors:['creative','media','tech','construction'],
+   score:function(a,p,intr,pers){return (p==='practical'?12:8)+(pers==='Creative / maker'?18:pers==='Entrepreneurial / independent'?20:6)+(hasAny(intr,['creative','media','tech','construction'])?14:0)}}
+];
+function hasAny(arr,list){return arr.some(function(x){return list.indexOf(x)>=0})}
+
+/* locality-aware employer library — UK-wide anchors per region; the list a
+   student sees is COMPOSED for them: region anchors + entries driven by
+   their own strongest subjects, quiz results and chosen interests. */
+var LOCAL_EMP={
+  birmingham:['Jaguar Land Rover','NHS Birmingham','HS2 / construction','BT / tech','University of Birmingham','Deutsche Bank ops'],
+  london:['Financial services & fintech','NHS trusts','Tech scale-ups','Creative & media studios','Legal chambers','Civil service fast stream'],
+  manchester:['Media City / BBC','Engineering & manufacturing','NHS Greater Manchester','Digital & fintech','Universities'],
+  leeds:['NHS Leeds & health-tech','Financial & legal services','Channel 4 / media','Engineering & manufacturing'],
+  sheffield:['Advanced manufacturing (AMRC)','NHS South Yorkshire','Steel & engineering','Digital agencies'],
+  liverpool:['Port & maritime logistics','NHS Liverpool','Creative & media','Life sciences'],
+  newcastle:['Engineering & offshore energy','NHS North East','Digital & tech (Sage)','Universities'],
+  nottingham:['Boots / pharma & health','Engineering & rail','Financial services (Experian)','Universities'],
+  leicester:['Manufacturing & textiles','NHS Leicester','Logistics & distribution','Space & engineering (NSC)'],
+  coventry:['Automotive & EV engineering','Manufacturing R&D','Logistics','Universities'],
+  bristol:['Aerospace (Airbus, Rolls-Royce)','Digital & creative','NHS Bristol','Green energy & environment'],
+  oxford:['Life sciences & research','Universities & publishing','Health trusts','Motorsport engineering'],
+  cambridge:['Tech & AI (Silicon Fen)','Life sciences & biotech','Universities & research','Health trusts'],
+  southampton:['Port & maritime','Aerospace & defence','NHS South','Universities'],
+  portsmouth:['Naval & defence engineering','Port & maritime','Aerospace','Universities'],
+  plymouth:['Marine engineering & naval base','Ocean science','Tourism & hospitality','Health trusts'],
+  hull:['Offshore wind (Siemens)','Port & logistics','Chemicals & manufacturing','Health trusts'],
+  glasgow:['Shipbuilding & engineering','Financial services','NHS Scotland','Space & satellite tech'],
+  edinburgh:['Financial services & fintech','Tech & AI scale-ups','NHS Scotland','Universities & research'],
+  cardiff:['Media (BBC Cymru)','Financial & professional services','NHS Wales','Advanced manufacturing'],
+  swansea:['Steel & advanced materials','Health & life sciences','Universities','Tourism'],
+  belfast:['Aerospace (Spirit)','Cyber-security & fintech','Health trusts','Film & creative (Titanic Studios)'],
+  coastal:['Marine engineering firms','Tourism & hospitality','Renewable / offshore energy','Environmental agencies','Fishing & aquaculture'],
+  rural:['Agri-tech & farming enterprises','Renewable energy projects','Rural NHS & care','Tourism & land management']
+};
+/* sector → employers, used to individualise every column */
+var SECTOR_EMP={
+  tech:['Software & fintech firms','IT & data apprenticeships'],
+  engineering:['Manufacturers & rail / infrastructure','Green-energy engineering'],
+  health:['NHS trusts','Care providers & health-tech'],
+  business:['Banks & professional services','Consultancies'],
+  construction:['Housebuilders & civil engineering','Trades apprenticeships'],
+  creative:['Studios & agencies','Games & design houses'],
+  media:['Broadcasters & production companies','Digital publishers'],
+  science:['Labs & research institutes','Pharma & biotech'],
+  law:['Solicitors & chambers','Legal apprenticeships (CILEX)'],
+  education:['Schools & trusts','EdTech companies'],
+  sport:['Clubs & academies','Leisure & coaching providers'],
+  environment:['Renewable energy','Environmental agencies'],
+  marine:['Ports & marine engineering'],
+  hospitality:['Hotels, travel & events groups'],
+  agriculture:['Agri-tech & food production']
+};
+/* the student's own results drive sectors too: strong subjects → sectors */
+var SUBJ_SECTOR={
+  'math':'tech','further math':'tech','computer':'tech','computing':'tech',
+  'physic':'engineering','design':'engineering','engineering':'engineering',
+  'biolog':'health','chemist':'science','science':'science','psycholog':'health','pe':'sport','physical ed':'sport',
+  'english':'media','drama':'creative','art':'creative','music':'creative','media':'media','film':'media',
+  'histor':'law','politic':'law','law':'law','religio':'education','sociolog':'education',
+  'business':'business','econom':'business','geograph':'environment','environment':'environment',
+  'french':'business','spanish':'business','german':'business','language':'business'
+};
+function subjectSectors(subjNames){
+  var out=[];subjNames.forEach(function(s){s=String(s||'').toLowerCase();
+    for(var k in SUBJ_SECTOR){if(s.indexOf(k)>=0&&out.indexOf(SUBJ_SECTOR[k])<0)out.push(SUBJ_SECTOR[k])}});
+  return out;
+}
+/* real RESULTS: per-subject average from this account's quiz history */
+function quizMastery(){
+  var by={};(SY.get('quizzes',[])||[]).forEach(function(q){
+    if(!q||!q.subj)return;
+    var v=(q.total>0)?100*q.score/q.total:(typeof q.pct==='number'?q.pct:null);
+    if(v==null)return;
+    (by[q.subj]=by[q.subj]||[]).push(v);
+  });
+  var out=[];for(var s in by){out.push({s:s,avg:Math.round(by[s].reduce(function(a,b){return a+b},0)/by[s].length)})}
+  return out.sort(function(a,b){return b.avg-a.avg});
+}
+var INTL_BY_SECTOR={
+  tech:'Remote-first engineering teams',health:'Global health programmes (WHO, MSF)',
+  business:'Global graduate schemes',engineering:'International infrastructure & energy projects',
+  creative:'Global studios & platforms',media:'International media networks',
+  science:'Research programmes abroad (ERC, CERN)',law:'International law & NGOs',
+  environment:'Climate & conservation projects worldwide',education:'Teach-abroad programmes',
+  hospitality:'Cruise, resort & aviation careers',sport:'International academies & sport science',
+  marine:'Global shipping & offshore',agriculture:'Agri-science exchanges'
+};
+function localEmployers(loc){loc=(loc||'').toLowerCase();for(var k in LOCAL_EMP){if(k!=='coastal'&&k!=='rural'&&loc.indexOf(k)>=0)return LOCAL_EMP[k]}if(/coast|sea|beach|port|marine|island/.test(loc))return LOCAL_EMP.coastal;if(/village|rural|farm|countryside|shire\b/.test(loc))return LOCAL_EMP.rural;return null}
+
+/* ---- primary (EYFS/KS1/KS2) explorer -------------------------------------
+   No salaries, no UCAS, no university %, no automation-risk. Interests map to
+   friendly, encouraging job families a child can picture themselves in. */
+var PRIMARY_JOBS={
+  tech:{ic:'💻',t:'Making with computers',eg:['Game maker','App inventor','Robot builder','Website designer'],why:'You could build games, apps and clever robots!'},
+  engineering:{ic:'🛠️',t:'Building & inventing',eg:['Engineer','Inventor','Bridge builder','Rocket designer'],why:'You could design and build amazing things that really work.'},
+  health:{ic:'🩺',t:'Helping people feel better',eg:['Doctor','Nurse','Vet','Paramedic'],why:'You could look after people and animals and help them get well.'},
+  business:{ic:'💡',t:'Big ideas & running things',eg:['Shop owner','Inventor of a new toy','Team leader','Money whizz'],why:'You could start your own business one day!'},
+  creative:{ic:'🎨',t:'Making art & designing',eg:['Artist','Illustrator','Fashion designer','Animator'],why:'You could draw, design and create beautiful things.'},
+  media:{ic:'🎬',t:'Films, stories & shows',eg:['Film maker','YouTuber','Author','Presenter'],why:'You could tell brilliant stories on screen and in books.'},
+  science:{ic:'🔬',t:'Discovering how things work',eg:['Scientist','Space explorer','Nature expert','Inventor'],why:'You could discover new things about the world and space!'},
+  construction:{ic:'🏗️',t:'Building homes & cities',eg:['Builder','Architect','Digger driver','Carpenter'],why:'You could build houses, schools and whole cities.'},
+  law:{ic:'⚖️',t:'Fairness & leading',eg:['Judge','Police officer','Leader','Debater'],why:'You could help make things fair for everyone.'},
+  sport:{ic:'⚽',t:'Sport & keeping fit',eg:['Athlete','Coach','PE teacher','Physio'],why:'You could play, coach and help people stay healthy.'},
+  education:{ic:'📚',t:'Teaching & helping others learn',eg:['Teacher','Librarian','Tutor','Museum guide'],why:'You could help other children learn new things.'},
+  environment:{ic:'🌍',t:'Looking after our planet',eg:['Conservationist','Wind-farm engineer','Ranger','Climate scientist'],why:'You could help protect animals, oceans and nature.'},
+  hospitality:{ic:'🍽️',t:'Food, travel & welcoming people',eg:['Chef','Baker','Adventure guide','Hotel host'],why:'You could cook amazing food and welcome people from everywhere.'},
+  marine:{ic:'⛵',t:'The sea & ships',eg:['Marine biologist','Ship captain','Diver','Boat builder'],why:'You could explore the oceans and everything that lives there.'},
+  agriculture:{ic:'🚜',t:'Farms, food & animals',eg:['Farmer','Vet','Tractor engineer','Food scientist'],why:'You could grow food and look after animals.'}
+};
+function generatePrimary(){
+  var intr=readInterests();var p=$('c-style').value;
+  var strengths=(profile.subjects||[]).slice(0,3).map(function(x){return x.s}).filter(Boolean);
+  var powers=[];
+  if(hasAny(intr,['tech','engineering','construction']))powers.push('Building & making');
+  if(hasAny(intr,['creative','media']))powers.push('Being creative');
+  if(hasAny(intr,['health','education','law']))powers.push('Helping others');
+  if(hasAny(intr,['science','environment','marine']))powers.push('Curious explorer');
+  if(hasAny(intr,['sport']))powers.push('Active & sporty');
+  if(p==='practical')powers.push('Hands-on');
+  if(p==='academic')powers.push('Loves reading & ideas');
+  if(!powers.length)powers.push('Trying lots of things');
+  /* passport */
+  $('passports').innerHTML=
+    '<div class="passrow"><span style="flex:1"><b>Explorer Passport</b> — you\'re just getting started 🌟</span><span class="badge">active</span></div>'+
+    '<div class="passrow"><span style="flex:1">Things you\'re good at</span><span>'+(strengths.length?strengths.map(function(s){return '<span class="pill">'+esc(s)+'</span>'}).join(''):'<span class="pill">Everything you practise!</span>')+'</span></div>'+
+    '<div class="passrow"><span style="flex:1">Your superpowers</span><span>'+powers.map(function(s){return '<span class="pill">'+esc(s)+'</span>'}).join('')+'</span></div>'+
+    '<div class="passrow" style="border:0"><span style="flex:1">Things you love</span><span>'+(intr.length?intr.map(function(x){var f=INTERESTS.find(function(i){return i[0]===x});return '<span class="pill">'+esc(f?f[1]:x)+'</span>'}).join(''):'Pick some above ⤴')+'</span></div>';
+  $('passport-card').style.display='block';
+  /* dream jobs from interests */
+  var picks=intr.map(function(x){return PRIMARY_JOBS[x]}).filter(Boolean);
+  if(!picks.length)picks=[PRIMARY_JOBS.science,PRIMARY_JOBS.creative,PRIMARY_JOBS.tech,PRIMARY_JOBS.health];
+  $('paths').innerHTML=picks.map(function(j){
+    return '<div class="path"><div class="ph"><span class="ic">'+j.ic+'</span><b>'+esc(j.t)+'</b></div>'+
+      '<div class="why">'+esc(j.why)+'</div>'+
+      '<div style="margin-top:8px">'+j.eg.map(function(e){return '<span class="pill">'+esc(e)+'</span>'}).join('')+'</div></div>';
+  }).join('');
+  $('paths-card').style.display='block';
+  /* gentle coach; hide the secondary-only cards */
+  $('ai-impact-card').style.display='none';
+  $('emp-card').style.display='block';$('employers').innerHTML='';
+  $('coach').innerHTML='🌟 <b>Keep exploring!</b> The best thing you can do right now is try lots of things, read about jobs that sound fun, and keep practising at school. Every subject you learn opens more doors later. There\'s no rush — you have loads of time to decide, and you can dream as big as you like!';
+  document.querySelector('#emp-card h3').textContent='🌟 Your explorer tip';
+  var _es=document.querySelector('#emp-card .sub');if(_es)_es.style.display='none';
+}
+/* GCSE-stage (Year 10/11) route planner: map the student's real GCSE grades to
+   the entry requirements of every post-16 route, so a Year 10 student and parent
+   can see which doors are open, which are within reach, and exactly what to lift
+   to keep each one open. GCSE-stage only — never shown to primary or post-16. */
+var isGCSE=!!(_ATT&&_ATT.system==='gcse');
+var CAREER_SUMMARY={}; /* compact, persisted for the parent dashboard summary card */
+function gradeOf(x){return parseInt(x&&(x.current||x.target)||'0',10)||0;}
+function findSubj(re){return (profile.subjects||[]).find(function(x){return re.test(String(x&&x.s||'').toLowerCase());});}
+function renderGcseRoutes(){
+  var subs=profile.subjects||[];
+  var grades=subs.map(gradeOf).filter(function(g){return g>0;});
+  if(!grades.length){ $('gcse-routes').innerHTML='<div class="note" style="font-style:normal">Add your GCSE subjects and current/target grades in your <a href="../account/profile/">profile</a> — then this planner shows exactly which post-16 routes are open to you and what to aim for.</div>'; $('gcse-route-card').style.display='block'; return; }
+  var pass4=grades.filter(function(g){return g>=4;}).length;
+  var strong6=grades.filter(function(g){return g>=6;}).length;
+  var eng=findSubj(/english/), maths=findSubj(/math/);
+  var engG=eng?gradeOf(eng):0, mathG=maths?gradeOf(maths):0;
+  var core4=(engG>=4&&mathG>=4), core5=(engG>=5&&mathG>=5);
+  var ROUTES=[
+    {ic:'🎓',t:'A-levels (school sixth form)',req:'Typically 5+ GCSEs at grade 4+ including English &amp; Maths, and grade 6+ in the subjects you want to study.',
+     ok:(strong6>=3&&core5), close:(strong6>=2&&core4),
+     act:function(){return core5?'Hold grade 6+ in the subjects you\'d take at A-level — you\'re on the academic route.':'Lift English &amp; Maths to grade 5+ and push your best 3 subjects toward grade 6.';}},
+    {ic:'🧰',t:'Applied / BTEC (college)',req:'Typically 4+ GCSEs at grade 4+. More coursework and a clear vocational focus.',
+     ok:(pass4>=4), close:(pass4>=3),
+     act:function(){return pass4>=4?'You meet this — choose a sector you enjoy (health, business, IT, engineering…).':'Aim for grade 4+ in a couple more subjects to open the full range.';}},
+    {ic:'🛠️',t:'T-Levels (technical, college)',req:'Typically 4–5 GCSEs grade 4+ including English &amp; Maths — a 2-year technical qualification with a real industry placement.',
+     ok:(pass4>=4&&core4), close:(pass4>=3),
+     act:function(){return core4?'Core met — pick a T-Level route (digital, health &amp; science, construction, education…).':'Secure grade 4+ in English &amp; Maths first — that\'s the gateway.';}},
+    {ic:'🏗️',t:'Apprenticeship (Level 2/3)',req:'Grade 4+ in English &amp; Maths is the common baseline; the rest is set by the employer. Earn while you learn.',
+     ok:core4, close:(engG>=3||mathG>=3),
+     act:function(){return core4?'You\'re eligible — browse vacancies on gov.uk/apply-apprenticeship in a field you like.':'Grade 4 in English &amp; Maths unlocks most apprenticeships — target those two.';}},
+    {ic:'💼',t:'Employment / traineeship',req:'Entry-level roles and traineeships with few formal GCSE requirements — a traineeship can bridge you into an apprenticeship.',
+     ok:true, close:true,
+     act:function(){return 'Always an option — and a traineeship is a strong stepping-stone if you\'re not sure yet.';}}
+  ];
+  var open=ROUTES.filter(function(r){return r.ok;}).length;
+  CAREER_SUMMARY.routesOpen=open;
+  CAREER_SUMMARY.routes=ROUTES.map(function(r){return {t:r.t.replace(/&amp;/g,'&'),status:r.ok?'On track':r.close?'Within reach':'Grades to lift'};});
+  CAREER_SUMMARY.grades={subjects:grades.length,pass4:pass4,strong6:strong6,english:engG,maths:mathG};
+  var html='<div class="note" style="font-style:normal;margin-bottom:12px">From your current grades — <b>'+grades.length+' subjects</b>, <b>'+pass4+'</b> at grade 4+, <b>'+strong6+'</b> at grade 6+ (English <b>'+(engG||'—')+'</b>, Maths <b>'+(mathG||'—')+'</b>). <b>'+open+' of '+ROUTES.length+'</b> routes are on track today, and every route stays open with the right grades — nothing is decided for you.</div>';
+  html+=ROUTES.map(function(r){
+    var st=r.ok?{k:'On track',c:'var(--good)'}:r.close?{k:'Within reach',c:'var(--gold-500)'}:{k:'Grades to lift',c:'var(--warn)'};
+    return '<div class="path"><div class="ph"><span class="ic">'+r.ic+'</span><b>'+r.t+'</b><span class="fit" style="color:'+st.c+'">'+st.k+'</span></div>'+
+      '<div class="why">'+r.req+'</div>'+
+      '<div class="meta"><span>👉 '+r.act()+'</span></div></div>';
+  }).join('');
+  html+='<div class="note" style="margin-top:10px">Not sure yet? That\'s normal in Year 10. Keep your grades up in English &amp; Maths and your favourite subjects — that keeps the most doors open while you decide. Your best-fit pathways above rank these by <i>you</i>, not just grades.</div>';
+  $('gcse-routes').innerHTML=html;
+  $('gcse-route-card').style.display='block';
+}
+/* Subject-choice advice keyed by interest/sector (same keys as INTERESTS &
+   SUBJ_SECTOR). Recommends GCSE OPTION subjects and POST-16 subjects that follow
+   from a student's strengths + interests. Core (English, Maths, Science) is
+   compulsory and called out separately — it keeps every door open. */
+var SUBJECT_ADVICE={
+  tech:{gcse:['Computer Science','Triple Science','a Modern Language'],post16:['Maths','Computer Science','Physics'],why:'coding, data &amp; digital careers'},
+  engineering:{gcse:['Triple Science','Design &amp; Technology','Computer Science'],post16:['Maths','Physics','Design &amp; Technology / Engineering'],why:'design, build &amp; problem-solving'},
+  health:{gcse:['Triple Science','Health &amp; Social Care or PE','a Modern Language'],post16:['Biology','Chemistry','Psychology'],why:'medicine, nursing &amp; care'},
+  business:{gcse:['Business Studies','Economics or Geography','a Modern Language'],post16:['Business','Economics','Maths'],why:'enterprise, finance &amp; management'},
+  creative:{gcse:['Art &amp; Design','Design &amp; Technology','Drama or Music'],post16:['Art &amp; Design','Graphics / Photography','Media Studies'],why:'design, art &amp; production'},
+  media:{gcse:['Media Studies','English','Drama or Art'],post16:['Media Studies','English Language','Film Studies'],why:'film, journalism &amp; content'},
+  science:{gcse:['Triple Science','Computer Science','Geography'],post16:['Biology','Chemistry','Physics'],why:'research &amp; applied science'},
+  construction:{gcse:['Design &amp; Technology','Combined/Triple Science','Business Studies'],post16:['T-Level Construction','Maths','Design &amp; Technology'],why:'trades, surveying &amp; civil engineering'},
+  law:{gcse:['History','English Literature','a Modern Language'],post16:['History','English Literature','Politics / Law'],why:'law, politics &amp; public service'},
+  sport:{gcse:['PE','Combined/Triple Science','Business Studies'],post16:['PE','Biology','Psychology'],why:'sport science, coaching &amp; physio'},
+  education:{gcse:['English','a subject you love','Psychology/Sociology if offered'],post16:['English / your specialist subject','Psychology','Sociology'],why:'teaching &amp; child development'},
+  environment:{gcse:['Geography','Triple Science','Biology focus'],post16:['Geography','Biology','Environmental Science'],why:'sustainability, energy &amp; conservation'},
+  hospitality:{gcse:['Business Studies','Food Technology','a Modern Language'],post16:['BTEC/T-Level Hospitality','Business','a Language'],why:'travel, events &amp; catering'},
+  marine:{gcse:['Triple Science','Geography','Design &amp; Technology'],post16:['Biology','Physics','Geography'],why:'marine engineering &amp; ocean science'},
+  agriculture:{gcse:['Triple Science','Geography','Business Studies'],post16:['Biology','Geography','Environmental Science'],why:'agri-tech, land &amp; food'}
+};
+function renderSubjectAdvice(intr,strengths,bestRoute){
+  var keys=intr.slice();
+  subjectSectors(strengths||[]).forEach(function(k){if(keys.indexOf(k)<0)keys.push(k);}); // strong subjects → sectors (same keys)
+  if(!keys.length)keys=['science','business','creative'];
+  var gcse={},post16={},reasons=[];
+  keys.slice(0,5).forEach(function(k){var a=SUBJECT_ADVICE[k];if(!a)return;
+    a.gcse.forEach(function(s){gcse[s]=(gcse[s]||0)+1;});
+    a.post16.forEach(function(s){post16[s]=(post16[s]||0)+1;});
+    var lbl=(INTERESTS.find(function(i){return i[0]===k;})||[0,k])[1];
+    reasons.push('<b>'+esc(lbl)+'</b> → '+a.why);
+  });
+  function top(obj,n){return Object.keys(obj).sort(function(a,b){return obj[b]-obj[a];}).slice(0,n);}
+  var pills=function(list){return list.map(function(s){return '<span class="pill">'+s+'</span>';}).join('');};
+  var html='';
+  html+='<div class="passrow"><span style="flex:1"><b>Your grade-getters</b> — keep these strong</span><span>'+(strengths&&strengths.length?strengths.map(function(s){return '<span class="pill">'+esc(s)+'</span>';}).join(''):'<span class="pill">add subjects in your profile</span>')+'</span></div>';
+  html+='<div class="passrow"><span style="flex:1"><b>Compulsory core</b> (everyone) — keeps every door open</span><span><span class="pill">English</span><span class="pill">Maths</span><span class="pill">Science</span></span></div>';
+  var gcseList=top(gcse,6), post16List=top(post16,5);
+  var deco=function(list){return list.map(function(s){return s.replace(/&amp;/g,'&');});}; // decoded for storage/messages
+  html+='<div class="passrow"><span style="flex:1"><b>GCSE options that suit you</b></span><span>'+pills(gcseList)+'</span></div>';
+  html+='<div class="passrow"><span style="flex:1"><b>Post-16 subjects to aim for</b></span><span>'+pills(post16List)+'</span></div>';
+  html+='<div class="passrow" style="border:0"><span style="flex:1"><b>Why these</b></span><span style="max-width:60%">'+(reasons.length?reasons.join(' · '):'pick interests above to personalise')+'</span></div>';
+  html+='<div class="note" style="margin-top:10px">Choose <b>3–4 options you enjoy and are strong in</b> — grades matter more than the exact subject for most routes, and a language + a humanity (History/Geography) keep academic doors widest.</div>';
+  html+='<div style="margin-top:12px"><button class="btn solid" id="discuss-choices">💬 Discuss my choices with the AI tutor</button></div>';
+  $('subject-advice').innerHTML=html;
+  $('subject-advice-card').style.display='block';
+  /* persist a compact summary for the parent dashboard */
+  CAREER_SUMMARY.gcseOptions=deco(gcseList);
+  CAREER_SUMMARY.post16=deco(post16List);
+  CAREER_SUMMARY.strengths=(strengths||[]).slice(0,3);
+  /* open the AI tutor pre-loaded with this student's strengths + shortlist */
+  var db=$('discuss-choices');
+  if(db)db.onclick=function(){
+    var msg="I'm a "+(profile.level||'GCSE')+" student deciding my subjects and post-16 route. My strongest subjects are: "+
+      ((strengths&&strengths.length)?strengths.join(', '):'still building')+
+      ". Based on my strengths I'm considering these GCSE options: "+deco(gcseList).join(', ')+
+      "; and post-16 subjects: "+deco(post16List).join(', ')+
+      ". My best-fit route looks like "+(bestRoute||'still open')+
+      ". Please talk me through whether these suit me, what to prioritise, and anything I've missed.";
+    try{localStorage.setItem('sy-tutor-prefill',msg);}catch(e){}
+    location.href='../study/#tutor';
+  };
+}
+/* ---- Technical Pathways (14+): academic core + a technical route into local
+   growth sectors, with the four employer-encounter types logged to a Skills &
+   Experience Passport. Secondary-stage only; primary keeps the Explorer. ---- */
+function renderTechPathways(intr,bestRouteKey){
+  if(!window.SYPathways){$('tech-path-card').style.display='none';return;}
+  var rec=SYPathways.read();
+  var focus=rec.sectorFocus;
+  if(!focus){ // suggest from interests, then from best route, else first sector
+    for(var i=0;i<(intr||[]).length&&!focus;i++)focus=SYPathways.sectorForInterest(intr[i]);
+    if(!focus){var map={degreeapp:'manufacturing',technical:'manufacturing',trade:'construction',business:'digital',university:'lifesciences'};focus=map[bestRouteKey]||SYPathways.SECTORS[0].k;}
+  }
+  var chips=SYPathways.SECTORS.map(function(s){
+    return '<button type="button" class="pw-chip'+(s.k===focus?' on':'')+'" data-s="'+s.k+'">'+s.ic+' '+esc(s.name)+'</button>';
+  }).join('');
+  var s=SYPathways.sector(focus)||SYPathways.SECTORS[0];
+  var detail=
+    '<div class="pw-detail">'+
+      '<div class="pw-blurb">'+esc(s.blurb)+'</div>'+
+      '<div class="pw-core">📘 <b>Keep your academic core:</b> English · maths · science — <b>plus</b> the technical route below.</div>'+
+      '<div class="pw-lbl">Vocational qualifications</div><div>'+s.vq.map(function(v){return '<span class="pill">'+esc(v)+'</span>'}).join('')+'</div>'+
+      '<div class="pw-lbl">Every route in — no dead ends</div><div>'+s.routes.map(function(r){return '<span class="pill route">'+esc(r)+'</span>'}).join('')+'</div>'+
+      '<div class="pw-res">🤖 <b>Future-proof:</b> '+esc(s.resilience)+'</div>'+
+      '<div class="pw-tip">By 16 you\'ll understand the local jobs, the skills employers want, and whether an apprenticeship, college or another route fits you best.</div>'+
+    '</div>';
+  var opps=(SYPathways.marketList?SYPathways.marketList({sector:focus}):[]).slice(0,6);
+  var oppHtml=opps.length?'<div class="pw-lbl">Live opportunities near you — posted by employers &amp; colleges</div>'+opps.map(function(o){
+    var tag={workexp:'🗓️ Work experience',mentoring:'🤝 Mentoring',project:'🧩 Project',visit:'🏢 Visit',apprenticeship:'🎓 Apprenticeship',vacancy:'💼 Vacancy',course:'🎓 Course',provider:'🧭 Provider'}[o.kind]||o.kind;
+    return '<div class="pw-opp"><span class="pw-eic">'+(tag.split(' ')[0])+'</span><span style="flex:1"><b>'+esc(o.title||'')+'</b><span class="pw-date2">'+esc(o.ownerName||'')+(o.location?' · '+esc(o.location):'')+'</span></span></div>';
+  }).join(''):'';
+  $('tech-path').innerHTML='<div class="pw-chips">'+chips+'</div>'+detail+oppHtml;
+  [].slice.call($('tech-path').querySelectorAll('.pw-chip')).forEach(function(b){
+    b.onclick=function(){SYPathways.setFocus(b.getAttribute('data-s'),((SYPathways.sector(b.getAttribute('data-s'))||{}).routes||[])[0]);renderTechPathways(intr,bestRouteKey);renderPassport();toast('Technical pathway updated');};
+  });
+  $('tech-path-card').style.display='block';
+  try{CAREER_SUMMARY.sectorFocus=s.name;SY.set('careerSummary',CAREER_SUMMARY);}catch(e){}
+}
+function renderPassport(){
+  if(!window.SYPathways){$('passport-exp-card').style.display='none';return;}
+  var rec=SYPathways.read();var enc=rec.encounters||[];
+  var opts=SYPathways.ENCOUNTERS.map(function(t){return '<option value="'+t.k+'">'+t.ic+' '+esc(t.label)+'</option>'}).join('');
+  var form=
+    '<div class="pw-form">'+
+      '<select id="pw-type" class="pw-in">'+opts+'</select>'+
+      '<input id="pw-emp" class="pw-in" placeholder="Employer / organisation" maxlength="120">'+
+      '<input id="pw-title" class="pw-in" placeholder="What you did (e.g. shadowed an engineer)" maxlength="160">'+
+      '<input id="pw-date" class="pw-in" type="date">'+
+      '<button type="button" id="pw-add" class="pw-add">Add to passport</button>'+
+    '</div>'+
+    '<div class="pw-safe">🔒 StudYear brokers employer contact safely — log what you did, never share private contact details here.</div>';
+  var list=enc.length?enc.map(function(e){var t=SYPathways.encType(e.type)||{ic:'•',label:'Encounter'};
+    return '<div class="pw-enc"><span class="pw-eic">'+t.ic+'</span><span style="flex:1"><b>'+esc(e.employer||'Employer')+'</b> — '+esc(t.label)+(e.title?': '+esc(e.title):'')+'<span class="pw-date2">'+esc(e.date||'')+'</span></span><button type="button" class="pw-del" data-id="'+e.id+'">✕</button></div>';
+  }).join(''):'<div class="pw-empty">No experience logged yet — add your first employer encounter above. Even one workplace visit strengthens your Career Passport.</div>';
+  var met=SYPathways.gatsbyMet(rec);
+  var g=met.length?'<div class="pw-lbl">Careers standards you already evidence</div><div>'+met.map(function(b){return '<span class="pill route">✓ Gatsby '+b.n+': '+esc(b.short)+'</span>'}).join('')+'</div>':'';
+  $('passport-exp').innerHTML=form+'<div class="pw-enc-list">'+list+'</div>'+g;
+  $('pw-add').onclick=function(){
+    var emp=$('pw-emp').value.trim();if(!emp){toast('Add the employer or organisation');return;}
+    SYPathways.addEncounter({type:$('pw-type').value,employer:emp,title:$('pw-title').value.trim(),date:$('pw-date').value||undefined,sector:rec.sectorFocus});
+    renderPassport();toast('Added to your passport');
+  };
+  [].slice.call($('passport-exp').querySelectorAll('.pw-del')).forEach(function(b){
+    b.onclick=function(){SYPathways.removeEncounter(b.getAttribute('data-id'));renderPassport();toast('Removed');};
+  });
+  $('passport-exp-card').style.display='block';
+}
+function generate(){
+  if(isPrimary)return generatePrimary();
+  var a=academicScore();var p=$('c-style').value;var intr=readInterests();var pers=$('c-personality').value;var income=$('c-income').value;var loc=$('c-locality').value.trim();
+  /* NEET / return-to-learning (16–26): the passport becomes a re-entry engine —
+     funded routes first (Skills Bootcamps, apprenticeships, adult education),
+     employment-facing pathways boosted, functional Maths & English the spine. */
+  var isNEET=/NEET/i.test(profile.level||'');
+  /* passports */
+  var strengths=(profile.subjects||[]).slice().sort(function(x,y){return (parseInt(y.current||'5')||5)-(parseInt(x.current||'5')||5)}).slice(0,3).map(function(x){return x.s});
+  var skills=[];if(hasAny(intr,['tech','engineering']))skills.push('Digital & technical');if(hasAny(intr,['business']))skills.push('Enterprise');if(hasAny(intr,['creative','media']))skills.push('Creativity');if(a>=70)skills.push('Academic rigour');if(p==='practical')skills.push('Practical / hands-on');if(!skills.length)skills.push('Developing broad skills');
+  $('passports').innerHTML=
+    '<div class="passrow"><span style="flex:1"><b>Career Passport</b> — building since '+(profile.level||'now')+'</span><span class="badge">active</span></div>'+
+    '<div class="passrow"><span style="flex:1">Strength profile</span><span>'+(strengths.length?strengths.map(function(s){return '<span class="pill">'+esc(s)+'</span>'}).join(''):'Add subjects in your profile')+'</span></div>'+
+    '<div class="passrow"><span style="flex:1">Skills passport</span><span>'+skills.map(function(s){return '<span class="pill">'+esc(s)+'</span>'}).join('')+'</span></div>'+
+    '<div class="passrow"><span style="flex:1">Interests mapped</span><span>'+(intr.length?intr.map(function(x){var f=INTERESTS.find(function(i){return i[0]===x});return '<span class="pill">'+esc(f?f[1]:x)+'</span>'}).join(''):'Pick some interests above')+'</span></div>'+
+    '<div class="passrow" style="border:0"><span style="flex:1">Academic ability index</span><span style="font-family:var(--serif);color:var(--gold-300)">'+a+'/100</span></div>';
+  $('passport-card').style.display='block';
+  /* pathways scored — NEET boosts earn-while-you-learn and funded re-entry routes */
+  var scored=PATHWAYS.map(function(pw){var s=Math.round(clamp(pw.score(a,p,intr,pers)+(income==='high'&&/app|trade|business/.test(pw.k)?6:0)+(isNEET&&/degreeapp|technical|trade|employment/.test(pw.k)?14:0),4,100));return {pw:pw,s:s}}).sort(function(x,y){return y.s-x.s});
+  var max=scored[0].s;
+  $('paths').innerHTML=scored.map(function(o,i){var pct=Math.round(100*o.s/Math.max(max,1));var c=i===0?'var(--good)':o.s>=55?'var(--gold-500)':'var(--warn)';
+    return '<div class="path'+(i===0?' top':'')+'"><div class="ph"><span class="ic">'+o.pw.ic+'</span><b>'+o.pw.t+'</b>'+(i===0?' <span class="badge">best fit</span>':'')+'<span class="fit" style="color:'+c+'">'+o.s+'%</span></div>'+
+      '<div class="bar"><i style="width:'+pct+'%;background:'+c+'"></i></div>'+
+      '<div class="why">'+pathWhy(o.pw.k,a,p,intr)+'</div>'+
+      '<div class="meta"><span>💷 '+esc(o.pw.sal)+'</span><span>📊 labour demand: '+demand(o.pw.k)+'</span></div></div>';
+  }).join('');
+  $('paths-card').style.display='block';
+  /* Year 10/11 route planner: real GCSE grades → post-16 route requirements */
+  if(isGCSE){try{renderGcseRoutes();}catch(e){}}else{$('gcse-route-card').style.display='none';}
+  /* GCSE options + post-16 subject choices from strengths & interests */
+  if(isGCSE){try{renderSubjectAdvice(intr,strengths,scored[0]&&scored[0].pw.t);}catch(e){}}else{$('subject-advice-card').style.display='none';}
+  /* persist the compact summary for the parent dashboard's at-a-glance card */
+  if(isGCSE){try{CAREER_SUMMARY.stage='gcse';CAREER_SUMMARY.bestRoute=scored[0]&&scored[0].pw.t;CAREER_SUMMARY.when=new Date().toISOString();SY.set('careerSummary',CAREER_SUMMARY);}catch(e){}}
+  /* employers — composed from THIS student's data: quiz results + subject
+     strengths + interests decide the sectors; locality picks the region. */
+  var qm=quizMastery();                                     // real results
+  var strongQuiz=qm.filter(function(x){return x.avg>=60}).map(function(x){return x.s});
+  var mySectors=[];                                          // ranked, deduped
+  intr.forEach(function(x){if(mySectors.indexOf(x)<0)mySectors.push(x)});
+  subjectSectors(strongQuiz.concat(strengths)).forEach(function(x){if(mySectors.indexOf(x)<0)mySectors.push(x)});
+  var sectorEmp=[];var sectorWhy={};
+  mySectors.forEach(function(x){(SECTOR_EMP[x]||[]).forEach(function(e){if(sectorEmp.indexOf(e)<0){sectorEmp.push(e);sectorWhy[e]=x}})});
+  if(!sectorEmp.length)sectorEmp=['Employers across sectors — add subjects & interests to sharpen this'];
+  var le=localEmployers(loc);
+  var localList=(le?le.slice(0,3):[]).concat(sectorEmp.slice(0,le?2:5));
+  if(isNEET)localList=['Skills Bootcamps — funded, 12–16 weeks (gov.uk)','Apprenticeships 16–26 — earn while you learn','Adult education college — free GCSE Maths & English resits'].concat(localList).slice(0,6);
+  var intl=mySectors.map(function(x){return INTL_BY_SECTOR[x]}).filter(Boolean).slice(0,3);
+  intl.push('Study-abroad pathways');
+  $('employers').innerHTML=
+    '<div class="emp"><h4>Local'+(loc?' · '+esc(loc):'')+'</h4><div class="e">'+(localList.length?localList.map(esc).join('<br>'):'Set your town above for local matches')+'</div></div>'+
+    '<div class="emp"><h4>National — matched to your strengths</h4><div class="e">'+sectorEmp.slice(0,5).map(esc).join('<br>')+'<br>UCAS · gov.uk apprenticeships</div></div>'+
+    '<div class="emp"><h4>International</h4><div class="e">'+intl.map(esc).join('<br>')+'</div></div>';
+  /* coach: strongest route from the pathway model, weakest subject from REAL
+     results (quiz history first, profile grades as fallback) */
+  var weakest=(qm.length?qm[qm.length-1]:null);
+  var weakName=weakest?weakest.s:((profile.subjects||[]).slice().sort(function(x,y){return (parseInt(x.current||'5')||5)-(parseInt(y.current||'5')||5)})[0]||{}).s;
+  var strongName=qm.length?qm[0].s:strengths[0];
+  $('coach').innerHTML=(isNEET?'🎯 <b>Return-to-learning route (16–26):</b> step 1 — free GCSE Maths &amp; English resits (StudYear\'s diagnostic + recovery plan get you exam-ready); step 2 — a funded Skills Bootcamp or apprenticeship in your strongest sector; step 3 — real employment with a qualification behind you. You are not behind, you are re-routing.<br>':'')+
+    '🤖 <b>AI Career Coach:</b> based on your data, '+scored[0].pw.t.toLowerCase()+' is your strongest route right now — but keep '+scored[1].pw.t.toLowerCase()+' open. '
+    +(strongName?('Your results are strongest in <b>'+esc(strongName)+'</b>'+(weakest&&qm.length?' ('+qm[0].avg+'%)':'')+'. '):'')
+    +(weakName?('Boost your match by lifting <b>'+esc(weakName)+'</b>'+(weakest?' (currently '+weakest.avg+'%)':'')+' — a focused recovery week moves it fastest. '):'Add subjects in your profile to sharpen this. ')
+    +'Gain experience in '+(mySectors.length?esc((INTERESTS.find(function(i){return i[0]===mySectors[0]})||[mySectors[0],mySectors[0]])[1]):'a field you enjoy')+'.';
+  $('emp-card').style.display='block';
+  /* 14+ technical pathway + Skills & Experience Passport (secondary stage) */
+  try{renderTechPathways(intr,scored[0]&&scored[0].pw.k);renderPassport();}catch(e){}
+  /* pull live employer/college opportunities from the backend, then re-render */
+  try{if(window.SYPathways&&SYPathways.marketSync)SYPathways.marketSync().then(function(){try{renderTechPathways(intr,scored[0]&&scored[0].pw.k);}catch(e){}});}catch(e){}
+  renderAIImpact(intr);
+}
+
+/* AI impact on jobs — automation exposure per field + how to stay ahead.
+   Grounded in the consensus of automation-risk research (routine/clerical highest
+   exposure; caring, skilled-trades, creative-judgement and complex-reasoning roles
+   more resilient). Every field lists AI-resilient adjacent skills — the point is
+   not "avoid this path" but "do this path in an AI-augmented way". */
+var AI_IMPACT={
+  tech:{risk:'Medium',ex:'AI now writes boilerplate code and tests — routine coding shrinks, but AI systems, security and product judgement grow fast.',keep:['Build & deploy AI systems, not just code','Cybersecurity & data privacy','Product thinking & problem framing']},
+  engineering:{risk:'Low',ex:'Design is AI-assisted, but real-world build, testing and safety judgement stay human. Demand rises in green energy & robotics.',keep:['Robotics & automation','Sustainable / green engineering','Hands-on prototyping']},
+  health:{risk:'Low',ex:'AI supports diagnosis and admin, but care, dexterity and human trust are hard to automate — an ageing population lifts demand.',keep:['Patient care & communication','Working alongside diagnostic AI','Mental-health & community care']},
+  business:{risk:'High',ex:'Routine bookkeeping, data entry and basic analysis are highly automatable. Strategy, negotiation and AI-driven decision-making are the safe ground.',keep:['Data & AI-driven decision-making','Entrepreneurship & strategy','Complex negotiation & leadership']},
+  creative:{risk:'Medium',ex:'Generative AI produces drafts fast — but taste, direction, originality and brand judgement rise in value. Creatives who direct AI thrive.',keep:['Creative direction & curation','Using generative tools as a co-pilot','Original concept & storytelling']},
+  media:{risk:'Medium',ex:'AI drafts, edits and captions at scale; verification, live production and authentic voice become the differentiators.',keep:['Fact-checking & media literacy','Live & on-the-ground production','Authentic personal brand']},
+  science:{risk:'Low',ex:'AI accelerates research and analysis, but experimental design, ethics and interpretation stay human. AI-for-science is a growth field.',keep:['Experimental design','Data science & bioinformatics','Research ethics']},
+  construction:{risk:'Low',ex:'Skilled trades and on-site problem-solving are among the hardest to automate. Modern methods (BIM, modular, green retrofit) add demand.',keep:['Skilled trades & site craft','Digital construction (BIM)','Green retrofit & sustainability']},
+  law:{risk:'Medium',ex:'AI handles document review and research; advocacy, judgement, ethics and client trust remain human. Legal-tech literacy is a big advantage.',keep:['Advocacy & negotiation','Legal-tech & AI governance','Ethics & policy']},
+  sport:{risk:'Low',ex:'Physical performance, coaching and community are human. AI adds analytics — those who use data to coach gain an edge.',keep:['Coaching & sports psychology','Performance data & analytics','Physio & rehabilitation']},
+  education:{risk:'Low',ex:'AI personalises learning, but relationships, motivation and safeguarding are human. Teachers who use AI well reclaim time and lift outcomes.',keep:['Mentoring & motivation','AI-assisted teaching','SEND & inclusive practice']},
+  environment:{risk:'Low',ex:'The green transition is a decades-long growth engine; AI optimises systems while field, policy and engineering roles expand.',keep:['Renewable energy systems','Climate data & modelling','Environmental policy']},
+  hospitality:{risk:'Medium',ex:'Bookings and some service automate, but hospitality, experience design and human warmth stay central — especially premium and experiential.',keep:['Experience & event design','Hospitality leadership','Personalised service']},
+  marine:{risk:'Low',ex:'Marine engineering, ports and offshore work are hands-on and safety-critical; offshore wind adds strong demand.',keep:['Marine & offshore engineering','Offshore renewables','Navigation & logistics']},
+  agriculture:{risk:'Medium',ex:'Precision farming and robotics automate routine tasks, but agri-tech, land management and food security create new high-skill roles.',keep:['Agri-tech & precision farming','Sustainable land management','Food science & supply chains']}
+};
+function riskColor(r){return r==='High'?'var(--crit)':r==='Medium'?'var(--warn)':'var(--good)'}
+function renderAIImpact(intr){
+  var list=(intr&&intr.length)?intr:Object.keys(AI_IMPACT).slice(0,4);
+  var rows=list.map(function(x){var d=AI_IMPACT[x];if(!d)return '';var name=(INTERESTS.find(function(i){return i[0]===x})||[])[1]||x;
+    return '<div style="border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:10px;background:rgba(6,11,24,.32)">'+
+      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b style="color:var(--ink);font-size:14px">'+esc(name)+'</b>'+
+      '<span style="font-size:11px;border:1px solid '+riskColor(d.risk)+';color:'+riskColor(d.risk)+';border-radius:20px;padding:2px 10px">AI exposure: '+d.risk+'</span></div>'+
+      '<div style="font-size:13px;color:var(--ink-2);margin-top:6px;line-height:1.6">'+esc(d.ex)+'</div>'+
+      '<div style="font-size:12px;color:var(--gold-300);margin-top:8px"><b>Stay ahead — build:</b> '+d.keep.map(esc).join(' · ')+'</div></div>';
+  }).join('');
+  var highs=list.filter(function(x){return AI_IMPACT[x]&&AI_IMPACT[x].risk==='High'});
+  var summary='<div class="note" style="margin-top:10px;font-size:12.5px">'+
+    (highs.length?'⚠ Some of your interests ('+highs.map(function(x){return esc((INTERESTS.find(function(i){return i[0]===x})||[])[1]||x)}).join(', ')+') are more exposed to automation. That doesn\'t rule them out — it means aim for the <b>judgement, creativity and human</b> parts of the field, and learn to <b>direct AI</b> rather than compete with it.'
+    :'✓ Your chosen fields are relatively AI-resilient. Keep the edge by learning to <b>use AI as a co-pilot</b> in whatever you do — that is the single biggest career advantage this decade.')+
+    ' StudYear\'s Apprenticeship-First™ engine weights future-resilient and green-economy routes.</div>';
+  $('ai-impact').innerHTML=rows+summary;
+  $('ai-impact-card').style.display='block';
+}
+function pathWhy(k,a,p,intr){
+  if(k==='university')return a>=68?'Your strong grades open competitive courses and graduate careers.':'Achievable with a grade lift — foundation and clearing routes also exist.';
+  if(k==='degreeapp')return 'Earn a salary and a degree at once — ideal for '+(p==='practical'?'your hands-on style':'ambitious students who want no debt')+'.';
+  if(k==='technical')return 'T-Levels and technical colleges turn '+(p==='practical'?'your practical strengths':'applied learning')+' into industry-ready skills.';
+  if(k==='trade')return 'Skilled trades are in high demand, well paid, and lead to self-employment.';
+  if(k==='employment')return 'Start earning and progress through on-the-job training and qualifications.';
+  if(k==='business')return 'Your enterprise interest suits building products, services or a venture.';
+  if(k==='selfemployed')return 'Freelance and creative routes reward independence and initiative.';
+  return '';
+}
+function demand(k){return ({university:'strong',degreeapp:'very high',technical:'high',trade:'very high',employment:'steady',business:'growing',selfemployed:'growing'})[k]||'steady'}
+
+$('c-gen').onclick=generate;
+$('c-save').onclick=function(){
+  var data={style:$('c-style').value,locality:$('c-locality').value.trim(),interests:readInterests(),personality:$('c-personality').value,income:$('c-income').value,updatedAt:new Date().toISOString()};
+  SY.set('career',data);SY.log('career','Career passport updated',data.interests.length+' interests · '+(data.locality||'no locality'));toast('Career passport saved');
+};
+if((saved.interests&&saved.interests.length)||profile.subjects){generate()}
+})();
+</script>
+</body></html>
