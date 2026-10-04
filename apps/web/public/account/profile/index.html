@@ -77,6 +77,7 @@
 </head>
 <body>
 <script src="../../guard.js" data-role="student" data-base="../../"></script>
+<script src="../../vocab.js"></script>
 <div class="shell">
 
 <aside class="side">
@@ -214,8 +215,8 @@ var toastTimer;
 function toast(t){var el=$('toast');el.textContent=t;el.style.opacity=1;
   clearTimeout(toastTimer);toastTimer=setTimeout(function(){el.style.opacity=0},2600)}
 
-var SUBJECTS=["Accounting","Art & Design","Biology","Business Studies","Chemistry","Combined Science","Computer Science","Computing","Design & Technology","Drama","Economics","Electrical Engineering (Level 2)","Electrical Wiring and Testing","English","English Language","English Literature","French","Further Mathematics","Geography","German","Government & Politics","Health & Social Care","History","ICT","Law","Mathematics","Media Studies","Music","Philosophy","Physical Education","Physics","Psychology","Religious Studies","Science","Sociology","Spanish","Fun","Other"].sort(function(a,b){return (a==="Fun"||a==="Other"?1:0)-(b==="Fun"||b==="Other"?1:0)||a.localeCompare(b)});
-var LEVELS=["Reception (EYFS · age 4–5)","Key Stage 1 (Years 1–2 · age 5–7)","Key Stage 2 (Years 3–6 · age 7–11)","Years 7-9 (KS3)","GCSE","IGCSE","National 5","BTEC National","NVQ","Level 2 Engineering","AS","A2/A-level","Scottish Highers","Scottish Advanced Highers","International Baccalaureate","University · Undergraduate Year 1","University · Undergraduate Year 2","University · Undergraduate Year 3 / Final","University · Foundation year","University · Master's / Postgraduate","11+ Exam","NEET · Return to learning (16–26)","Lifelong learning · Adult autodidact","Fun","Other"];
+var SUBJECTS=((window.SYVOCAB&&SYVOCAB.subjects&&SYVOCAB.subjects.slice())||["Accounting","Art & Design","Biology","Business Studies","Chemistry","Combined Science","Computer Science","Computing","Design & Technology","Drama","Economics","Electrical Engineering (Level 2)","Electrical Wiring and Testing","English","English Language","English Literature","French","Further Mathematics","Geography","German","Government & Politics","Health & Social Care","History","ICT","Law","Mathematics","Media Studies","Music","Philosophy","Physical Education","Physics","Psychology","Religious Studies","Science","Sociology","Spanish","Fun","Other"]).sort(function(a,b){return (a==="Fun"||a==="Other"?1:0)-(b==="Fun"||b==="Other"?1:0)||a.localeCompare(b)});
+var LEVELS=(window.SYVOCAB&&SYVOCAB.levels&&SYVOCAB.levels.slice())||["Reception (EYFS · age 4–5)","Key Stage 1 (Years 1–2 · age 5–7)","Key Stage 2 (Years 3–6 · age 7–11)","Years 7-9 (KS3)","GCSE","IGCSE","National 5","BTEC National","NVQ","Level 2 Engineering","AS","A2/A-level","Scottish Highers","Scottish Advanced Highers","International Baccalaureate","University · Undergraduate Year 1","University · Undergraduate Year 2","University · Undergraduate Year 3 / Final","University · Foundation year","University · Master's / Postgraduate","11+ Exam","NEET · Return to learning (16–26)","Lifelong learning · Adult autodidact","Fun","Other"];
 var BOARDS=["AQA","CCEA","CIE","Edexcel","OCR","SQA","WJEC","Other"];
 var GRADES=["9","8","7","6","5","4","3","2","1","A*","A","B","C","D","E","U"];
 
@@ -306,13 +307,17 @@ function gradesForLevel(level){
   if(/ks1|key stage 1|ks2|key stage 2/.test(L)) return ['Greater Depth','Expected Standard','Working Towards'];
   if(/ks3|key stage 3|year *7|year *8|year *9/.test(L)) return ['Greater Depth','Above','At expected','Working towards','Below'];
   if(/11\s*\+|eleven/.test(L)) return ['Above pass','Pass standard','Working towards pass'];
+  if(/functional skills/.test(L)) return ['Level 2','Level 1','Entry 3','Entry 2','Entry 1','Working towards'];
   if(/gcse|igcse/.test(L)) return ['9','8','7','6','5','4','3','2','1','U'];
+  if(/core maths|\bepq\b|extended project|welsh bacc|pre-?u/.test(L)) return ['A*','A','B','C','D','E','U'];
   if(/international baccalaureate|\bib\b/.test(L)) return ['7','6','5','4','3','2','1'];
+  if(/national 4|\bnat 4\b/.test(L)) return ['Complete','Not yet complete'];
   if(/national 5|scottish|advanced higher|\bhighers?\b/.test(L)) return ['A','B','C','D','No award'];
   if(/nvq|competen/.test(L)) return ['Achieved','Working towards','Not yet competent'];
-  if(/btec|t-?level|vocational|engineering|electrical|wiring/.test(L)) return ['Distinction*','Distinction','Merit','Pass','Near Pass'];
+  if(/access to he|apprentic|\bhnc\b|\bhnd\b|higher national|foundation degree/.test(L)) return ['Distinction','Merit','Pass','Not yet passed'];
+  if(/btec|t-?level|tech award|cambridge (technical|national)|vocational|engineering|electrical|wiring/.test(L)) return ['Distinction*','Distinction','Merit','Pass','Near Pass'];
   if(/a2|a-?level|\bas\b/.test(L)) return ['A*','A','B','C','D','E','U'];
-  if(/master|postgrad|\bpg\b/.test(L)) return ['Distinction','Merit','Pass'];
+  if(/master|postgrad|\bpg\b|phd|doctora/.test(L)) return ['Distinction','Merit','Pass'];
   if(/undergrad|degree|\bug\b|university|foundation year|honours/.test(L)) return ['1st','2:1','2:2','3rd','Pass'];
   if(/neet|lifelong|adult|autodidact/.test(L)) return ['Confident','Developing','Foundation','Getting started'];
   return GRADES; // Fun / Other / generic

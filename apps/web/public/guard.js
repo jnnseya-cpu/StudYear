@@ -359,6 +359,31 @@
       var L = String(level || '').toLowerCase();
       var m = Math.max(0, Math.min(100, Math.round(masteryPct || 0)));
 
+      // --- specific UK qualifications that must be matched BEFORE the generic
+      //     rules below (e.g. Welsh Bacc must not fall into the IB 1–7 branch) ---
+      // Functional Skills: Entry 1–3 → Level 1 → Level 2 (achievement, not graded)
+      if (/functional skills/.test(L)) {
+        var fs = m >= 75 ? 'Level 2' : m >= 55 ? 'Level 1' : m >= 40 ? 'Entry 3' : m >= 25 ? 'Entry 2' : 'Entry 1';
+        return { system: 'functional', band: fs, short: fs, caption: 'Functional Skills level', label: 'Functional Skills — ' + fs + ' (' + m + '%)' };
+      }
+      // Core Maths / EPQ / Welsh Baccalaureate / Pre-U → A*/A–E family
+      if (/core maths|\bepq\b|extended project|welsh bacc|pre-?u/.test(L)) {
+        var ag2 = m >= 90 ? 'A*' : m >= 80 ? 'A' : m >= 70 ? 'B' : m >= 60 ? 'C' : m >= 50 ? 'D' : m >= 40 ? 'E' : 'U';
+        var nm2 = /core maths/.test(L) ? 'Core Maths' : /welsh bacc/.test(L) ? 'Welsh Bacc' : /pre-?u/.test(L) ? 'Pre-U' : 'EPQ';
+        return { system: 'l3cert', band: ag2, short: (ag2 === 'U' ? 'U' : 'Grade ' + ag2), caption: nm2 + ' grade', label: nm2 + ' ' + ag2 + ' (' + m + '%)' };
+      }
+      // National 4 (Scotland): internally assessed, Complete / Not yet complete
+      if (/national 4|\bnat 4\b/.test(L)) {
+        var n4 = m >= 50 ? 'Complete' : 'Not yet complete';
+        return { system: 'scottish-n4', band: n4, short: n4, caption: 'National 4 (Pass/▸)', label: 'National 4 — ' + n4 };
+      }
+      // Access to HE / Apprenticeship / HNC / HND / Foundation degree → Pass/Merit/Distinction
+      if (/access to he|apprentic|\bhnc\b|\bhnd\b|higher national|foundation degree/.test(L)) {
+        var vb2 = m >= 80 ? 'Distinction' : m >= 60 ? 'Merit' : m >= 40 ? 'Pass' : 'Not yet passed';
+        var nm3 = /access to he/.test(L) ? 'Access to HE' : /apprentic/.test(L) ? 'Apprenticeship' : /foundation degree/.test(L) ? 'Foundation degree' : /hnd|higher national/.test(L) ? 'HND' : 'HNC';
+        return { system: 'he-vocational', band: vb2, short: vb2, caption: nm3 + ' grade', label: nm3 + ' — ' + vb2 + ' (' + m + '%)' };
+      }
+
       // University — Master's / Postgraduate: Distinction / Merit / Pass
       if (/master|postgrad|\bpg\b|\bpgt\b|\bpgr\b|phd|doctora|\bmsc\b|\bmba\b/.test(L)) {
         var pgb = m >= 70 ? 'Distinction' : m >= 60 ? 'Merit' : m >= 50 ? 'Pass' : 'Fail';
@@ -387,8 +412,8 @@
         if (isAS && ag === 'A*') ag = 'A';
         return { system: 'alevel', band: ag, short: (ag === 'U' ? 'U' : 'Grade ' + ag), caption: (isAS ? 'AS-level' : 'A-level') + ' grade', label: (isAS ? 'AS-level ' : 'A-level ') + ag + ' (' + m + '%)' };
       }
-      // BTEC / T-level / vocational: Pass / Merit / Distinction / Distinction*
-      if (/btec|t-?level|vocational|\bcache\b|\bnvq\b|\bhnd\b|\bhnc\b/.test(L)) {
+      // BTEC / T-level / Cambridge Technical & National / vocational: Pass / Merit / Distinction / Distinction*
+      if (/btec|t-?level|tech award|cambridge (technical|national)|vocational|\bcache\b|\bnvq\b/.test(L)) {
         var vb = m >= 85 ? 'Distinction*' : m >= 70 ? 'Distinction' : m >= 55 ? 'Merit' : m >= 40 ? 'Pass' : m >= 30 ? 'Near Pass' : 'Unclassified';
         return { system: 'btec', band: vb, short: vb, caption: 'BTEC / vocational grade', label: 'BTEC — ' + vb + ' (' + m + '%)' };
       }
