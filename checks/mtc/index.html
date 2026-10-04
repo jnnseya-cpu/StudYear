@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Times Tables Check</title>
+<link rel="manifest" href="../../manifest.json">
+<link rel="icon" href="../../icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#060B18">
+<style>
+  /* self-contained bright StudYear Primary theme (independent of kids.css so
+     the check is always readable, even if that stylesheet is slow to load) */
+  :root{
+    --navy-950:#F7FBFF; --navy-900:#FFFFFF; --navy-800:#EEF6FF;
+    --gold-300:#2563EB; --gold-400:#3B82F6; --gold-500:#3B82F6;
+    --ink:#1E293B; --ink-2:#475569; --ink-3:#64748B;
+    --good:#22C55E; --warn:#E0810B; --crit:#E0554E;
+    --line:#E2E8F0;
+    --serif:'Fredoka','Baloo 2',Georgia,serif;
+    --sans:'Nunito',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:linear-gradient(180deg,#F7FBFF 0%,#EEF6FF 60%,#F7FBFF 100%);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5}
+  .card{box-shadow:0 8px 24px rgba(30,41,59,.06);opacity:1!important;animation:none!important}
+  .btn.solid{box-shadow:0 6px 16px rgba(59,130,246,.28)}
+  .key{background:#EEF6FF}
+  .wrap{max-width:820px;margin:0 auto;padding:28px 20px 80px}
+  a.back{color:var(--gold-300);text-decoration:none;font-weight:700;font-size:14px}
+  h1{font-family:var(--serif);font-weight:600;font-size:30px;margin:14px 0 4px}
+  .sub{color:var(--ink-2);font-size:14px}
+  .card{background:var(--navy-900);border:1px solid var(--line);border-radius:18px;padding:22px;margin-top:18px}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);
+    font:700 15px var(--sans);border-radius:14px;padding:12px 20px;cursor:pointer;min-height:48px}
+  .btn.solid{background:var(--gold-500);color:#fff;border:none}
+  .btn.big{font-size:17px;padding:16px 26px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .timebar{height:12px;border-radius:8px;background:rgba(170,182,204,.18);overflow:hidden;margin:6px 0 4px}
+  .timebar i{display:block;height:100%;background:var(--good);border-radius:8px}
+  .q{font-family:var(--serif);font-weight:700;text-align:center;font-size:64px;padding:18px 6px}
+  .ans{width:100%;text-align:center;font-size:44px;font-family:var(--serif);font-weight:700;
+    background:#fff;color:#12203a;border:none;border-radius:14px;padding:14px 8px;outline:none}
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:320px;margin:14px auto 0}
+  .key{font:700 22px var(--sans);border-radius:12px;border:1px solid var(--line);background:var(--navy-800);
+    color:var(--ink);padding:14px 0;cursor:pointer;min-height:54px}
+  .key.wide{grid-column:span 1}
+  .big-score{font-family:var(--serif);font-size:56px;font-weight:700}
+  .pill{display:inline-block;border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;border:1px solid var(--line);margin:4px 6px 0 0}
+  .tcell{display:inline-flex;align-items:center;justify-content:center;width:44px;height:40px;border-radius:10px;margin:4px;font-weight:800;border:1px solid var(--line)}
+  .hidden{display:none}
+  .center{text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../study/">← Back to StudYear</a>
+  <h1>✖️ Times Tables Check</h1>
+  <div class="sub">Year 4 · 25 questions · <b>6 seconds</b> each · tables up to 12 × 12</div>
+
+  <!-- INTRO -->
+  <div class="card" id="intro">
+    <h3 style="font-family:var(--serif);font-weight:600;font-size:20px">Ready to go fast? ⚡</h3>
+    <p class="sub" style="margin-top:8px;font-size:15px">You will get <b>25 times-tables questions</b>. You have <b>6 seconds</b> to answer each one, then it moves on automatically.
+      Type your answer and press <b>Enter</b> (or use the number buttons). Just like the real Year 4 check!</p>
+    <p class="sub" style="margin-top:10px;font-size:15px">The check uses more of the trickier tables — <b>6, 7, 8, 9 and 12</b>. Take a deep breath and do your best.</p>
+    <div class="row" style="margin-top:16px"><button class="btn solid big" id="start">Start ⚡</button></div>
+  </div>
+
+  <!-- CHECK -->
+  <div class="card hidden" id="check">
+    <div class="row" style="justify-content:space-between">
+      <span class="sub" id="counter">Question 1 of 25</span>
+      <span class="sub" id="clock">6s</span>
+    </div>
+    <div class="timebar"><i id="time" style="width:100%"></i></div>
+    <div class="q" id="qtext">6 × 7 =</div>
+    <input class="ans" id="ans" type="text" inputmode="numeric" autocomplete="off" aria-label="Your answer">
+    <div class="keypad" id="keypad"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="card hidden" id="result"></div>
+</div>
+
+<script src="../../guard.js" data-role="student" data-base="../../"></script>
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var TOTAL=25, LIMIT=6000; // 6 seconds per question
+  /* DfE weighting — the check favours the 6, 7, 8, 9 and 12 tables and never
+     uses the 1 times table. Build a weighted pool of the "table" factor. */
+  var WEIGHT={2:1,3:2,4:2,5:1,6:4,7:4,8:4,9:4,10:1,11:2,12:5};
+  var pool=[];for(var t in WEIGHT){for(var i=0;i<WEIGHT[t];i++)pool.push(+t);}
+  function rnd(a){return a[Math.floor(Math.random()*a.length)]}
+  function buildQs(){
+    var qs=[],seen={};
+    while(qs.length<TOTAL){
+      var a=rnd(pool), b=2+Math.floor(Math.random()*11); // 2..12
+      var key=Math.min(a,b)+"x"+Math.max(a,b);
+      if(seen[key]&&Math.random()<0.7)continue; seen[key]=1;
+      if(Math.random()<0.5){var s=a;a=b;b=s;}
+      qs.push({a:a,b:b,ans:a*b});
+    }
+    return qs;
+  }
+  var qs=buildQs(), idx=0, results=[], tStart=0, timer=null, locked=false;
+
+  function showQ(){
+    locked=false;
+    var q=qs[idx];
+    $("counter").textContent="Question "+(idx+1)+" of "+TOTAL;
+    $("qtext").textContent=q.a+" × "+q.b+" =";
+    $("ans").value=""; $("ans").focus();
+    tStart=Date.now();
+    $("time").style.background="var(--good)";
+    var tick=function(){
+      var left=LIMIT-(Date.now()-tStart);
+      var pct=Math.max(0,left/LIMIT*100);
+      $("time").style.width=pct+"%";
+      $("clock").textContent=Math.max(0,Math.ceil(left/1000))+"s";
+      if(pct<34)$("time").style.background="var(--crit)";
+      else if(pct<67)$("time").style.background="var(--warn)";
+      if(left<=0){submit(true);return;}
+      timer=requestAnimationFrame(tick);
+    };
+    timer=requestAnimationFrame(tick);
+  }
+  function submit(timeout){
+    if(locked)return; locked=true;
+    if(timer)cancelAnimationFrame(timer);
+    var q=qs[idx];
+    var val=parseInt(($("ans").value||"").replace(/[^0-9]/g,""),10);
+    var ok=(val===q.ans);
+    results.push({a:q.a,b:q.b,ans:q.ans,given:isNaN(val)?null:val,ok:ok,ms:Date.now()-tStart,timeout:!!timeout});
+    idx++;
+    if(idx>=TOTAL){finish();return;}
+    // brief rest between questions (like the real check)
+    $("qtext").textContent="…"; $("time").style.width="100%";$("time").style.background="var(--gold-500)";
+    setTimeout(showQ,700);
+  }
+  function finish(){
+    var score=results.filter(function(r){return r.ok}).length;
+    var avgMs=Math.round(results.reduce(function(a,r){return a+r.ms},0)/results.length);
+    // per-table accuracy → weakest tables
+    var byT={};results.forEach(function(r){[r.a,r.b].forEach(function(t){if(t<2)return;(byT[t]=byT[t]||{n:0,ok:0});byT[t].n++;if(r.ok)byT[t].ok++;});});
+    var weak=Object.keys(byT).map(function(t){return {t:+t,acc:byT[t].ok/byT[t].n,n:byT[t].n}})
+      .filter(function(x){return x.acc<0.75}).sort(function(a,b){return a.acc-b.acc}).map(function(x){return x.t});
+    var rec={score:score,of:TOTAL,avgMs:avgMs,when:new Date().toISOString(),weak:weak.slice(0,4)};
+    try{if(window.SY){SY.set("check:mtc",rec);
+      SY.log("diagnostic","Times Tables Check: "+score+"/"+TOTAL,
+        "Average answer time "+(avgMs/1000).toFixed(1)+"s"+(weak.length?" · practise the "+weak.slice(0,3).join(", ")+" times tables.":" · fluent across the board! 🎉"));}}catch(e){}
+    var col=score>=22?"var(--good)":score>=15?"var(--warn)":"var(--crit)";
+    var head=score>=24?"Amazing — almost perfect! 🎉":score>=20?"Brilliant times-tables fluency!":score>=13?"Good effort — keep practising!":"Let's build those tables up!";
+    var wrong=results.filter(function(r){return !r.ok});
+    $("result").innerHTML=
+      '<div class="center"><div class="sub">'+esc(head)+'</div>'+
+      '<div class="big-score" style="color:'+col+'">'+score+' / '+TOTAL+'</div>'+
+      '<div class="sub">Average answer time '+(avgMs/1000).toFixed(1)+' seconds'+(avgMs<=3000?' — super speedy! ⚡':'')+'</div></div>'+
+      (weak.length?'<div style="margin-top:16px"><div class="sub" style="font-weight:700;color:var(--ink)">Practise these times tables:</div><div style="margin-top:6px">'+weak.slice(0,5).map(function(t){return '<span class="tcell" style="border-color:rgba(230,103,103,.4);color:#f2c4c4">'+t+'×</span>'}).join('')+'</div></div>'
+        :'<div class="sub" style="margin-top:16px;color:#bfe8cd">Fluent across every table tested — fantastic! ⭐</div>')+
+      (wrong.length?'<div style="margin-top:14px"><div class="sub" style="font-weight:700;color:var(--ink)">Review:</div><div style="margin-top:6px" class="sub">'+wrong.slice(0,8).map(function(r){return r.a+' × '+r.b+' = <b style="color:var(--good)">'+r.ans+'</b>'+(r.given!=null?' (you put '+r.given+')':' (ran out of time)')}).join('<br>')+'</div></div>':'')+
+      '<div class="row" style="margin-top:18px;justify-content:center">'+
+        '<button class="btn solid big" id="again">Try again ⚡</button>'+
+        '<a class="btn big" href="../../study/#diag" style="text-decoration:none">Go to my learning →</a>'+
+      '</div>';
+    $("check").classList.add("hidden");$("result").classList.remove("hidden");
+    $("again").onclick=function(){location.reload()};
+  }
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+
+  /* on-screen keypad for touch devices */
+  (function(){
+    var keys=["1","2","3","4","5","6","7","8","9","⌫","0","OK"];
+    $("keypad").innerHTML=keys.map(function(k){return '<button class="key" data-k="'+k+'">'+k+'</button>'}).join('');
+    $("keypad").querySelectorAll(".key").forEach(function(b){b.onclick=function(){
+      var k=b.dataset.k, el=$("ans");
+      if(k==="⌫")el.value=el.value.slice(0,-1);
+      else if(k==="OK")submit(false);
+      else if(el.value.length<4)el.value+=k;
+      el.focus();
+    }});
+  })();
+  $("ans").addEventListener("keydown",function(e){if(e.key==="Enter")submit(false)});
+  $("start").onclick=function(){$("intro").classList.add("hidden");$("check").classList.remove("hidden");showQ();};
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — My Profile</title>
+<link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--gold-300:#A9CFF2;--gold-500:#3D8FD1;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#8795AE;--line:rgba(77,157,224,.14);--crit:#e66767;--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:radial-gradient(1100px 600px at 80% -10%,rgba(77,157,224,.10),transparent 60%),var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding:26px 22px 90px}
+  a.back{color:var(--ink-2);text-decoration:none;font-size:13px}
+  .cover{position:relative;height:180px;border-radius:16px;overflow:hidden;margin-top:14px;
+    background:linear-gradient(120deg,#16254A,#2B6CB0 60%,#8B5CF6);border:1px solid var(--line)}
+  .cover img{width:100%;height:100%;object-fit:cover}
+  .cover .edit{position:absolute;right:12px;bottom:12px}
+  .avatar{position:relative;width:110px;height:110px;border-radius:50%;margin:-55px 0 0 26px;
+    border:4px solid var(--navy-950);background:#101B33;overflow:hidden;display:grid;place-items:center;
+    font-family:var(--serif);font-size:40px;color:var(--gold-300)}
+  .avatar img{width:100%;height:100%;object-fit:cover}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);
+    font:600 13px var(--sans);border-radius:9px;padding:9px 16px;cursor:pointer;text-decoration:none;display:inline-block}
+  .btn.danger{border-color:rgba(230,103,103,.55);color:#e59b9b;background:rgba(230,103,103,.08)}
+  .btn:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #8B5CF6;outline-offset:2px}
+  h1{font-family:var(--serif);font-weight:500;font-size:30px;margin:14px 0 2px}
+  .role{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-300);border:1px solid rgba(217,174,85,.4);border-radius:12px;padding:3px 10px;vertical-align:4px;margin-left:8px}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.62),rgba(11,18,32,.9));padding:20px 22px;margin-top:18px}
+  .card h2{font-family:var(--serif);font-weight:500;font-size:19px;margin-bottom:10px}
+  label{display:block;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin:12px 0 5px}
+  input{width:100%;padding:10px 12px;border-radius:9px;background:rgba(6,11,24,.7);color:var(--ink);border:1px solid rgba(170,182,204,.22);font-size:14px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:640px){.row{grid-template-columns:1fr}}
+  .note{font-size:12px;color:var(--ink-3)}
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;z-index:99}
+</style>
+</head>
+<body>
+<script src="../../guard.js" data-role="any" data-base="../../"></script>
+<main class="wrap">
+  <a class="back" href="javascript:history.back()" aria-label="Go back to the previous page">← Back</a>
+
+  <div class="cover" id="cover" role="img" aria-label="Profile cover image">
+    <button class="btn edit" id="cover-btn" aria-label="Change cover image">🖼 Change cover</button>
+  </div>
+  <div class="avatar" id="avatar" role="img" aria-label="Profile photo"></div>
+  <div style="margin:8px 0 0 26px"><button class="btn" id="photo-btn" aria-label="Change profile photo">📷 Change photo</button></div>
+  <input type="file" id="photo-file" accept="image/*" style="display:none" aria-hidden="true">
+  <input type="file" id="cover-file" accept="image/*" style="display:none" aria-hidden="true">
+
+  <h1 id="me-name">—<span class="role" id="me-role"></span></h1>
+  <div class="note" id="me-email"></div>
+
+  <section class="card" aria-labelledby="h-info">
+    <h2 id="h-info">Account information</h2>
+    <div class="row">
+      <div><label for="f-name">Display name</label><input id="f-name" autocomplete="name"></div>
+      <div><label for="f-phone">Phone (optional)</label><input id="f-phone" autocomplete="tel" inputmode="tel"></div>
+      <div><label for="f-town">Town / city (optional)</label><input id="f-town" autocomplete="address-level2"></div>
+      <div><label for="f-lang">Preferred language</label><input id="f-lang" placeholder="English" autocomplete="language"></div>
+    </div>
+    <div id="role-extra"></div>
+    <div style="margin-top:14px"><button class="btn" id="save">Save profile</button></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-ref">
+    <h2 id="h-ref">🤝 My referral code — earn 250 ACUs per new customer</h2>
+    <p class="note">Every StudYear account is a Referrer: share your code or link and receive <b style="color:var(--ink)">250 ACUs</b>
+      for each new customer who joins with it (valid after 14 days and £10+ of cleared spend). Over 5,000 followers on
+      social media? <a href="../../partners/" style="color:#8FC2EC">Apply for a commission tier instead</a>.</p>
+    <div class="row" style="align-items:end">
+      <div><label for="ref-code">Your code</label><input id="ref-code" readonly aria-describedby="h-ref"></div>
+      <div><label for="ref-link">Your share link</label><input id="ref-link" readonly></div>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="ref-copy">Copy link</button>
+      <a class="btn" id="ref-wa" target="_blank" rel="noopener">Share on WhatsApp</a>
+    </div>
+    <div class="note" id="ref-stats" style="margin-top:10px" aria-live="polite"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-links">
+    <h2 id="h-links">Quick links</h2>
+    <div id="links" style="display:flex;gap:10px;flex-wrap:wrap"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-danger" style="border-color:rgba(230,103,103,.35)">
+    <h2 id="h-danger" style="color:#e59b9b">Delete account</h2>
+    <p class="note">Deleting permanently erases your account and personal data — your sign-in, profile, encrypted
+      content and AI history — from our servers and this device. Financial records required by law (e.g. payment
+      receipts) are retained for the statutory period, unlinked from a live account. This cannot be undone.</p>
+    <div style="margin-top:10px"><button class="btn danger" id="del">Delete my account permanently</button></div>
+  </section>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+var SY=window.SY;if(!SY||!SY.session)return;
+var S=SY.session;var $=function(id){return document.getElementById(id)};
+var toastTimer;function toast(t){var el=$('toast');el.textContent=t;el.style.opacity=1;clearTimeout(toastTimer);toastTimer=setTimeout(function(){el.style.opacity=0},3000)}
+var profile=SY.get('profile',{})||{};
+
+function draw(){
+  $('me-name').firstChild.nodeValue=S.name||profile.name||'—';
+  $('me-role').textContent=S.role;
+  $('me-email').textContent=S.email;
+  $('f-name').value=S.name||profile.name||'';
+  $('f-phone').value=profile.phone||'';
+  $('f-town').value=profile.town||'';
+  $('f-lang').value=profile.lang||'English';
+  var av=$('avatar');av.innerHTML=profile.photo?'<img src="'+profile.photo+'" alt="Your profile photo">':(S.name||'?')[0].toUpperCase();
+  var cv=$('cover');var old=cv.querySelector('img');if(old)old.remove();
+  if(profile.cover){var im=document.createElement('img');im.src=profile.cover;im.alt='';cv.prepend(im)}
+}
+
+/* required info differs per role — shown so every account is complete */
+var EXTRA={
+  student:[['level','Study level (e.g. GCSE)'],['board','Exam board (e.g. AQA)']],
+  parent:[['children','Children linked (from Command Centre)']],
+  teacher:[['subject','Main subject'],['school','School name']],
+  tutor:[['subjects','Subjects you tutor'],['rate','Hourly rate (£)']],
+  school:[['schoolName','School name'],['dfe','DfE / URN number (optional)']],
+  authority:[['laName','Authority name']],
+  admin:[['title','Job title (optional)']]
+};
+$('role-extra').innerHTML=(EXTRA[S.role]||[]).map(function(f){
+  return '<label for="fx-'+f[0]+'">'+f[1]+'</label><input id="fx-'+f[0]+'" value="'+String(profile[f[0]]||'').replace(/"/g,'&quot;')+'">';
+}).join('');
+
+function pick(fileInput,cb){
+  fileInput.onchange=function(){
+    var f=fileInput.files[0];if(!f)return;
+    if(f.size>4*1024*1024){toast('Image too large — 4 MB max');return}
+    var r=new FileReader();r.onload=function(){cb(String(r.result));};r.readAsDataURL(f);
+  };
+  fileInput.click();
+}
+$('photo-btn').onclick=function(){pick($('photo-file'),function(d){profile.photo=d;SY.set('profile',profile);draw();toast('Profile photo updated')})};
+$('cover-btn').onclick=function(){pick($('cover-file'),function(d){profile.cover=d;SY.set('profile',profile);draw();toast('Cover updated')})};
+
+function persist(showToast){
+  profile.name=$('f-name').value.trim()||profile.name;
+  profile.phone=$('f-phone').value.trim();
+  profile.town=$('f-town').value.trim();
+  profile.lang=$('f-lang').value.trim()||'English';
+  (EXTRA[S.role]||[]).forEach(function(f){profile[f[0]]=$('fx-'+f[0]).value.trim()});
+  SY.set('profile',profile);
+  /* keep the session + registry display name in step */
+  if(profile.name&&profile.name!==S.name){
+    S.name=profile.name;localStorage.setItem('sy-session',JSON.stringify(S));
+    try{var us=JSON.parse(localStorage.getItem('sy-users'))||[];
+      us.forEach(function(u){if(u.email===S.email&&u.role===S.role)u.name=profile.name});
+      localStorage.setItem('sy-users',JSON.stringify(us));}catch(e){}
+  }
+  draw();
+  if(showToast)toast('Profile saved');
+  else{var b=$('save');b.textContent='✓ Saved automatically';clearTimeout(persist._t2);
+    persist._t2=setTimeout(function(){b.textContent='Save profile'},1800)}
+}
+$('save').onclick=function(){persist(true)};
+/* autosave: every field change persists after a short pause — no data loss
+   if the user never presses Save (announced via the aria-live toast area) */
+var autoTimer;
+document.querySelectorAll('#f-name,#f-phone,#f-town,#f-lang,#role-extra input').forEach(function(el){
+  el.addEventListener('input',function(){clearTimeout(autoTimer);autoTimer=setTimeout(function(){persist(false)},1200)});
+  el.addEventListener('blur',function(){clearTimeout(autoTimer);persist(false)});
+});
+
+var HOME={student:'../../study/',parent:'../../parent/',teacher:'../../teacher/',tutor:'../../tutor/',
+  school:'../../school/',authority:'../../authority/',admin:'../../admin/'};
+$('links').innerHTML='<a class="btn" href="'+(HOME[S.role]||'../../')+'">My console</a>'+
+  (S.role==='student'?'<a class="btn" href="../topup/">Plans &amp; top-up</a>':'')+
+  '<a class="btn" href="../../partners/">Partner programme</a>'+
+  '<a class="btn" href="#" id="signout">Sign out</a>';
+document.getElementById('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+
+$('del').onclick=async function(){
+  if(!confirm('Delete this account and ALL of its data? This cannot be undone.'))return;
+  if(prompt('Type DELETE to confirm')!=='DELETE'){toast('Deletion cancelled');return}
+  /* Erase server-side FIRST (UK GDPR Art.17): the Auth account, profile, E2E
+     data, AI logs and lead row. Only wipe the local device once that succeeds,
+     so we never tell the user it's deleted while their cloud record survives. */
+  try{
+    if(window.SYCloud&&SYCloud.selfDelete&&SYCloud.ready&&SYCloud.ready()){
+      toast('Deleting your account…');
+      var r=await SYCloud.selfDelete(S.email);
+      if(!r||!r.ok){toast('Could not delete your account right now — please try again or email contact@studyear.com.');return;}
+    }
+  }catch(e){ toast('Could not reach the server to delete your account — please try again shortly.'); return; }
+  try{
+    var us=JSON.parse(localStorage.getItem('sy-users'))||[];
+    localStorage.setItem('sy-users',JSON.stringify(us.filter(function(u){return !(u.email===S.email&&u.role===S.role)})));
+    var kill=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);
+      if(k&&(k.indexOf('sy-u:'+S.email+':')===0||k==='sy-e2e:'+S.email||k==='sy-dk:'+S.email))kill.push(k)}
+    kill.forEach(function(k){localStorage.removeItem(k)});
+    localStorage.removeItem('sy-session');localStorage.removeItem('sy-cloud-tok');
+  }catch(e){}
+  location.href='../../?deleted=1';
+};
+
+/* ---- personal referral code: every account is a Referrer by default ---- */
+(function(){
+  if(!profile.refCode){
+    profile.refCode='SY-'+((S.name||'ME').replace(/[^A-Za-z]/g,'').slice(0,5).toUpperCase()||'ME')+
+      '-'+Math.random().toString(36).slice(2,6).toUpperCase();
+    SY.set('profile',profile);
+  }
+  /* auto-register in the partner registry so purchases with this code attribute */
+  try{
+    var ps=JSON.parse(localStorage.getItem('sy-partners'))||[];
+    if(!ps.some(function(p){return p.code===profile.refCode}))
+      ps.push({name:S.name,email:S.email,code:profile.refCode,followers:0,tier:'referrer',approved:true,auto:true,when:new Date().toISOString()});
+    localStorage.setItem('sy-partners',JSON.stringify(ps));
+  }catch(e){}
+  var link='https://www.studyear.com/auth/?signup=1&ref='+encodeURIComponent(profile.refCode);
+  $('ref-code').value=profile.refCode;
+  $('ref-link').value=link;
+  $('ref-copy').onclick=function(){try{navigator.clipboard.writeText(link);toast('Share link copied')}catch(e){}};
+  $('ref-wa').href='https://wa.me/?text='+encodeURIComponent('Join me on StudYear — the AI study platform 🎓 Sign up with my link: '+link);
+  /* Referral stats — DISPLAY ONLY, from the authoritative server. Rewards are NOT
+     credited in the browser: doing so let anyone mint ACUs by hand-editing
+     localStorage. The reward is credited server-side on the referee's first
+     CLEARED payment (farm-proof) and appears in your balance via the wallet sync. */
+  try{
+    var el=$('ref-stats'); if(el)el.textContent='Loading your referrals…';
+    var done=function(txt){ if(el)el.textContent=txt; };
+    var fallback='Share your link to start earning — rewards credit when a referral first subscribes.';
+    if(window.SYCloud&&SYCloud.refCode){
+      SYCloud.refCode(S.email).then(function(r){
+        if(r&&typeof r.joined==='number')done('Referrals joined: '+r.joined+(r.bonus?(' · '+r.bonus+' ACUs earned'):'')+' · rewards credit when a referral first subscribes.');
+        else done(fallback);
+      }).catch(function(){done(fallback);});
+    } else done(fallback);
+  }catch(e){}
+})();
+
+draw();
+})();
+</script>
+</body>
+</html>

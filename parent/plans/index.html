@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Parent subscriptions</title>
+<link rel="manifest" href="../../manifest.json">
+<link rel="icon" href="../../icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--navy-900:#0B1220;--navy-800:#101B33;--gold-300:#A9CFF2;--gold-400:#5FA8E0;--gold-500:#3D8FD1;
+    --ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#8795AE;--good:#5CBB7B;--warn:#c98500;--crit:#e66767;--line:rgba(77,157,224,.14);
+    --serif:Georgia,"Times New Roman",serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:radial-gradient(1100px 600px at 80% -10%,rgba(77,157,224,.1),transparent 60%),radial-gradient(900px 700px at -10% 30%,rgba(22,37,74,.85),transparent 65%),var(--navy-950);
+    color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:34px 26px 90px}
+  a{color:inherit}
+  .top{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+  .logo{font-family:var(--serif);font-size:20px;text-decoration:none;display:inline-flex;gap:9px;align-items:center}.logo b{color:#4FA6E0;font-weight:600}
+  .chip{margin-left:auto;font-size:12px;color:var(--ink-2);border:1px solid rgba(170,182,204,.25);border-radius:20px;padding:6px 13px;text-decoration:none}
+  h1{font-family:var(--serif);font-weight:500;font-size:34px;letter-spacing:-.01em}
+  header p{color:var(--ink-2);max-width:74ch;margin-top:8px;font-weight:300}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.62),rgba(11,18,32,.9));padding:20px 22px;margin-top:20px}
+  .card h3{font-family:var(--serif);font-weight:500;font-size:18px}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0}
+  .step{border:1px solid var(--line);border-radius:11px;padding:12px 14px;font-size:12.5px;color:var(--ink-2);background:rgba(6,11,24,.4)}
+  .step b{display:block;font-family:var(--serif);font-size:19px;color:var(--gold-300);margin-bottom:4px}
+  @media(max-width:760px){.steps{grid-template-columns:1fr}}
+  input{background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}
+  input:focus{border-color:var(--gold-500)}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 13px var(--sans);border-radius:9px;padding:10px 18px;cursor:pointer;text-decoration:none;display:inline-block}
+  .btn:hover{background:rgba(77,157,224,.22)}
+  .btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}
+  .codeline{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}.codeline input{flex:1;min-width:200px}
+  .plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:18px}
+  .plan{border:1px solid var(--line);border-radius:14px;padding:18px 20px;background:rgba(16,27,51,.5);position:relative;display:flex;flex-direction:column}
+  .plan.rec{border-color:var(--gold-500)}
+  .plan .flag{position:absolute;top:-10px;left:16px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff;border-radius:20px;padding:3px 11px}
+  .plan .cur{position:absolute;top:-10px;right:16px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;border:1px solid rgba(92,187,123,.6);color:var(--good);background:var(--navy-900);border-radius:20px;padding:3px 11px}
+  .plan h4{font-family:var(--serif);font-weight:500;font-size:18px}
+  .plan .pv{font-family:var(--serif);font-size:24px;color:var(--gold-300);margin-top:6px}
+  .plan ul{margin:12px 0 16px 17px;font-size:12.5px;color:var(--ink-2)}.plan li{margin:5px 0}
+  .plan .btn{margin-top:auto;text-align:center}
+  .walbar{border:1px solid var(--line);border-radius:12px;background:rgba(16,27,51,.5);padding:12px 18px;margin-top:18px;font-size:13.5px;color:var(--ink-2);display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+  .walbar b{font-family:var(--serif);font-size:20px;color:var(--gold-300)}
+  .fine{font-size:11.5px;color:var(--ink-3);margin-top:24px;font-style:italic}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+</style>
+</head>
+<body>
+<script src="../../guard.js" data-role="parent" data-base="../../"></script>
+<script src="../../billing.js"></script>
+<div class="wrap">
+<div class="top">
+  <a class="logo" href="../../">⌂ <b class="wm">StudYear</b></a>
+  <a class="chip" href="../">← Command Centre</a>
+</div>
+<header>
+  <h1>Parent subscriptions</h1>
+  <p>Subscribe securely through Stripe to unlock the parent dashboard and linked-student insights.</p>
+</header>
+
+<div class="walbar">Current plan: <b id="cur-plan">–</b> <span id="cur-ends"></span></div>
+
+<div class="card">
+  <h3>Have a discount or promo code?</h3>
+  <p style="font-size:13.5px;color:var(--ink-2);margin-top:6px">Apply it below before you pick a plan — it is passed to Stripe automatically when you click Subscribe.</p>
+  <div class="steps">
+    <div class="step"><b>1</b>Enter your code and click Apply code</div>
+    <div class="step"><b>2</b>Pick a plan and click Subscribe</div>
+    <div class="step"><b>3</b>On Stripe's secure page, the discount shows as a line-item reduction before you pay</div>
+  </div>
+  <div class="codeline"><input id="promo" type="text" placeholder="e.g. SUMMER25" autocomplete="off"><button class="btn" id="promo-apply">Apply code</button></div>
+</div>
+
+<div class="plans" id="plans"></div>
+
+<p class="fine">Secure payments processed by Stripe. <b>Every paid plan runs for exactly 30 days, then stops
+  automatically — no auto-renewal, no lock-in and nothing to cancel.</b> Renew whenever you choose.<br>
+  Preview build: Stripe checkout connects when the backend and new billing keys go live — subscribing here activates
+  your local preview plan so you can exercise the Command Centre.</p>
+</div>
+<div id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var SY=window.SY; if(!SY) return;
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function fmt(n){return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,',')}
+var toastTimer;function toast(t){var el=$('toast');el.textContent=t;el.style.opacity=1;clearTimeout(toastTimer);toastTimer=setTimeout(function(){el.style.opacity=0},3200)}
+var DAY=86400000;
+function fmtDay(iso){try{return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}catch(e){return iso}}
+
+var PLANS=[
+  {id:'parent_view',label:'Parent View',pounds:5,acus:300,feats:['300 ACUs added when you subscribe (30-day term)','Child progress visibility and linked-student snapshots','Upgrade for Academic Command Centre features']},
+  {id:'parent_pro',label:'Parent Pro',pounds:10,acus:700,feats:['700 ACUs added when you subscribe (30-day term)','Academic Command Centre — live snapshots & stability scoring','Verified Study Hours™ & weekly AI briefing']},
+  {id:'parent_pro_plus',label:'Parent Pro+',pounds:20,acus:1650,rec:true,flag:'Recommended',feats:['Everything in Parent Pro','1,650 ACUs added when you subscribe (30-day term)','AI intervention mode & Parent Advisor','Emotional intelligence & predictive grade engine']},
+  {id:'parent_elite',label:'Parent Elite',pounds:39,acus:3900,feats:['Full AI academic optimisation suite','3,900 ACUs added when you subscribe (30-day term)','Family intelligence dashboard & live alerts','University readiness, burnout prevention & priority AI']}];
+var LABELS={};PLANS.forEach(function(p){LABELS[p.id]=p.label});
+
+function monthKey(){return new Date().toISOString().slice(0,7)}
+var wallet=SY.get('wallet',null)||{acus:0,plan:'none',month:monthKey()};
+if(wallet.plan&&wallet.plan.indexOf('parent')===0&&wallet.planExpires&&Date.now()>new Date(wallet.planExpires).getTime()){
+  wallet.plan='none';delete wallet.planExpires;SY.set('wallet',wallet);
+}
+function drawWallet(){
+  $('cur-plan').textContent=LABELS[wallet.plan]||(wallet.plan==='none'?'No active plan':wallet.plan);
+  $('cur-ends').textContent=(wallet.plan&&wallet.plan.indexOf('parent')===0&&wallet.planExpires)?('· ends '+fmtDay(wallet.planExpires)+' (no auto-renewal)'):'';
+  document.querySelectorAll('.plan .cur').forEach(function(x){x.remove()});
+  var el=document.querySelector('.plan[data-id="'+wallet.plan+'"]');
+  if(el){var c=document.createElement('span');c.className='cur';c.textContent='Your plan';el.appendChild(c)}
+}
+
+var promo=SY.get('promo','');if(promo)$('promo').value=promo;
+$('promo-apply').onclick=function(){promo=$('promo').value.trim().toUpperCase();SY.set('promo',promo);
+  toast(promo?('Code '+promo+' saved — passed to Stripe on Subscribe'):'Code cleared')};
+
+$('plans').innerHTML=PLANS.map(function(p){return '<div class="plan'+(p.rec?' rec':'')+'" data-id="'+p.id+'">'+
+  (p.flag?'<span class="flag">'+p.flag+'</span>':'')+'<h4>'+p.label+'</h4>'+
+  '<div class="pv">£'+p.pounds+'.00 / 30 days</div>'+
+  '<ul>'+p.feats.map(function(f){return '<li>'+esc(f)+'</li>'}).join('')+'</ul>'+
+  '<button class="btn'+(p.rec?' solid':'')+'" data-plan="'+p.id+'">Subscribe with Stripe</button></div>'}).join('');
+
+$('plans').addEventListener('click',function(e){
+  var b=e.target.closest('[data-plan]');if(!b)return;
+  var pl=PLANS.find(function(x){return x.id===b.dataset.plan});
+  var activate=function(){
+    wallet.plan=pl.id;wallet.acus=(wallet.acus||0)+pl.acus;wallet.month=monthKey();
+    wallet.planStart=new Date().toISOString();wallet.planExpires=new Date(Date.now()+30*DAY).toISOString();
+    SY.set('wallet',wallet);drawWallet();
+    SY.log('billing','Started '+pl.label,fmt(pl.acus)+' ACUs added · 30-day term, ends '+fmtDay(wallet.planExpires)+' with no auto-renewal.');
+    toast('Preview '+pl.label+(promo?' ('+promo+')':'')+' active — runs 30 days then stops automatically (no auto-renewal).');
+  };
+  /* real Stripe checkout when payment links are configured; else preview-activate */
+  if(window.SYBill){SYBill.checkout(pl.id,{promo:promo,email:(SY.session&&SY.session.email),ref:(SY.session&&SY.session.email),activate:activate})}
+  else activate();
+});
+drawWallet();
+/* returned from a real Stripe payment: reflect the plan in the wallet */
+(function(){ if(!(window.SYBill&&SYBill.consumeReturn))return; var id=SYBill.consumeReturn(); if(!id)return;
+  var pl=PLANS.find(function(x){return x.id===id}); if(!pl||pl.pounds<=0)return;
+  wallet.plan=pl.id; wallet.acus=(wallet.acus||0)+pl.acus; wallet.month=monthKey();
+  wallet.planStart=new Date().toISOString(); wallet.planExpires=new Date(Date.now()+30*DAY).toISOString();
+  SY.set('wallet',wallet); drawWallet();
+  SY.log('billing','Started '+pl.label,fmt(pl.acus)+' ACUs added · 30-day term, ends '+fmtDay(wallet.planExpires)+'.');
+  toast('Payment received — '+pl.label+' active, '+fmt(pl.acus)+' ACUs added.');
+})();
+})();
+</script>
+</body>
+</html>
