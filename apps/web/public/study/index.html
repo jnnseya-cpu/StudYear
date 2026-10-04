@@ -1004,6 +1004,11 @@
     <div class="tile"><div class="v" id="pt-grade">–</div><div class="k">Predicted grade</div></div>
   </div>
   <div class="grid">
+    <div class="card c12" id="learn-you-card">
+      <h3>🧠 How you learn best</h3>
+      <div class="sub">your personal learning profile — built from your own study history using evidence-based cognitive science: spaced repetition, retrieval practice and interleaving</div>
+      <div id="learn-you"><div class="empty">Study a little — a quiz, a lesson, or a review — and your personal learning insights appear here.</div></div>
+    </div>
     <div class="card c7"><h3>Quiz scores over time</h3><div class="sub">every quiz you finish lands here</div><div id="score-chart"><div class="empty">Take a quiz in 🔎 Find resources to start the chart.</div></div></div>
     <div class="card c5"><h3>🗺 Mastery Map™</h3><div class="sub">curriculum states per subject — every weak concept has a recovery route</div><div id="mastery"></div><div class="note" style="margin-top:8px">States: Not assessed · Emerging (&lt;40%) · Developing (&lt;60%) · Secure (&lt;80%) · Mastered (≥80%) · At risk of forgetting (no practice for 14+ days)</div></div>
     <div class="card c6"><h3>Improvement — are you getting better?</h3><div class="sub">your earlier scores vs your most recent, per subject</div><div id="prog-improve"></div></div>
@@ -2112,7 +2117,7 @@ document.getElementById("g-qz-go").onclick=()=>{
   const n=Math.max(3,Math.min(10,+$v("g-qz-n")||5));
   if(window.SYAI&&SYAI.ready()){
     toast("Writing your quiz with "+SYAI.provider()+"…");
-    SYAI.ask("Write exactly "+n+" multiple-choice questions in the school subject "+($v("g-qz-subj")||"General")+" for a "+($v("g-qz-level")||dgLevelStr())+" student on the topic \""+topic+"\"."+((window.SY&&SY.stageStyle)?SY.stageStyle($v("g-qz-level")):"")+" EVERY question must be specifically about \""+topic+"\" as taught in "+($v("g-qz-subj")||"that subject")+" — do NOT drift into unrelated arithmetic, spelling or vocabulary unless the subject itself is Maths or English. Return ONLY lines, one per question, in this exact shape: the-actual-question-text :: correct answer :: wrong :: wrong :: wrong (4 options total, correct answer FIRST). Write the REAL question as the first field — NEVER the literal word \"question\", a label or a number. After each question line you may add a line 'exp:: one-sentence explanation'. No numbering or headings. Questions must be factually accurate and specific to the topic.","Subject: "+($v("g-qz-subj")||"General")+". Topic: "+topic,{maxTokens:1200}).then(t=>{
+    SYAI.ask("Write exactly "+n+" multiple-choice questions in the school subject "+($v("g-qz-subj")||"General")+" for a "+($v("g-qz-level")||dgLevelStr())+" student on the topic \""+topic+"\"."+((window.SY&&SY.stageStyle)?SY.stageStyle($v("g-qz-level")):"")+" EVERY question must be specifically about \""+topic+"\" as taught in "+($v("g-qz-subj")||"that subject")+" — do NOT drift into unrelated arithmetic, spelling or vocabulary unless the subject itself is Maths or English."+difficultyHint($v("g-qz-subj"))+" Return ONLY lines, one per question, in this exact shape: the-actual-question-text :: correct answer :: wrong :: wrong :: wrong (4 options total, correct answer FIRST). Write the REAL question as the first field — NEVER the literal word \"question\", a label or a number. After each question line you may add a line 'exp:: one-sentence explanation'. No numbering or headings. Questions must be factually accurate and specific to the topic.","Subject: "+($v("g-qz-subj")||"General")+". Topic: "+topic,{maxTokens:1200}).then(t=>{
       const qs=[];let last=null;
       String(t).split("\n").forEach(l=>{l=l.trim();if(!l)return;
         if(/^exp\s*::/i.test(l)){if(last)last.exp=l.replace(/^exp\s*::\s*/i,"");return}
@@ -2842,7 +2847,115 @@ function recordQuiz(r,pct){
   const h=store.get("quizzes",[]);
   h.push({t:todayKey(),when:new Date().toISOString(),subj:r.subj,title:r.title,pct});store.set("quizzes",h);
 }
+/* ===================== HOW YOU LEARN BEST — personal learning profile =====================
+   Turns the invisible adaptive engine into a visible, personal insight built ONLY from the
+   learner's own history: when they actually study best (habit), how consistent they are
+   (habit), the live state of their spaced-repetition deck (weak spots + forgetting curve),
+   and confidence-vs-reality calibration (metacognition). No new data captured — it reads
+   the activity log, the review deck and the latest diagnostic that already exist. */
+var TOD_BANDS=[["Late night",0,6],["Early morning",6,9],["Morning",9,12],["Afternoon",12,17],["Evening",17,22],["Late night",22,24]];
+function todBand(h){for(var i=0;i<TOD_BANDS.length;i++){if(h>=TOD_BANDS[i][1]&&h<TOD_BANDS[i][2])return TOD_BANDS[i][0];}return "Evening";}
+/* recent answer accuracy (0–100) across the last N quizzes — drives adaptive difficulty */
+function recentAccuracy(n){
+  try{var qz=(store.get("quizzes",[])||[]).slice(0,n||6).map(function(q){return +q.pct;}).filter(function(x){return !isNaN(x);});
+    if(!qz.length)return null; return Math.round(qz.reduce(function(a,b){return a+b;},0)/qz.length);}catch(e){return null;}
+}
+/* difficulty instruction injected into AI question generation so a session that's being aced
+   steps up, and one that's struggling consolidates — within-session adaptive difficulty. */
+function difficultyHint(subj){
+  var a=recentAccuracy(6);
+  if(a==null)return " Pitch at solid exam standard, rising in difficulty.";
+  if(a>=80)return " The learner is scoring highly ("+a+"% recently) — raise the challenge: fewer recall questions, more application, analysis and multi-step reasoning at the top of this level.";
+  if(a<50)return " The learner is finding this hard ("+a+"% recently) — consolidate: start with the core idea, keep steps small and scaffolded, then build up gently.";
+  return " Pitch at the learner's current standard ("+a+"% recently), rising steadily in difficulty.";
+}
+function reviewReminderPref(){try{return localStorage.getItem('sy-review-reminders')==='1';}catch(e){return false;}}
+function enableReviewReminders(cb){
+  try{
+    if(!('Notification' in window)){cb&&cb(false,'unsupported');return;}
+    Notification.requestPermission().then(function(p){
+      if(p==='granted'){try{localStorage.setItem('sy-review-reminders','1');}catch(e){} cb&&cb(true);}
+      else cb&&cb(false,'denied');
+    }).catch(function(){cb&&cb(false,'error');});
+  }catch(e){cb&&cb(false,'error');}
+}
+/* Proactive nudge: if items are due and reminders are on, surface a notification the moment
+   the learner opens StudYear (the reliable PWA moment), plus the in-app nudge always shows. */
+function maybeNotifyDueReviews(){
+  try{
+    if(!reviewReminderPref()||!('Notification' in window)||Notification.permission!=='granted')return;
+    var ri=store.get("reviewItems",{})||{},now=Date.now(),due=0;
+    for(var k in ri){var it=ri[k];if(it&&(it.due||0)<=now&&((it.kind==='card'&&it.front)||(it.q&&it.o)))due++;}
+    if(due>0&&!sessionStorage.getItem('sy-review-notified')){
+      sessionStorage.setItem('sy-review-notified','1');
+      new Notification('StudYear — time to revise',{body:due+' topic'+(due>1?'s are':' is')+' due for review. A 2-minute retrieval locks '+(due>1?'them':'it')+' back in.'});
+    }
+  }catch(e){}
+}
+function renderLearnPanel(){
+  var el=document.getElementById("learn-you"); if(!el) return;
+  var acts=(store.get("activity",[])||[]).filter(function(a){return a&&a.when;});
+  var ri=store.get("reviewItems",{})||{};
+  var diag=(store.get("diagnostics",[])||[])[0]||null;
+  var now=Date.now(), DAY=864e5;
+  if(!acts.length && !Object.keys(ri).length && !diag){
+    el.innerHTML='<div class="empty">Study a little — a quiz, a lesson, or a review — and your personal learning insights appear here.</div>';
+    return;
+  }
+  /* 1 — best time of day (habit) */
+  var buckets={}; acts.forEach(function(a){var d=new Date(a.when); if(!isNaN(d.getTime())){var b=todBand(d.getHours()); buckets[b]=(buckets[b]||0)+1;}});
+  var bestTime=null,bestN=0; for(var b in buckets){if(buckets[b]>bestN){bestN=buckets[b];bestTime=b;}}
+  /* 2 — consistency (habit): distinct active days in last 14 + streak */
+  var ds={}; acts.forEach(function(a){var age=(now-new Date(a.when).getTime())/DAY; if(age<=14&&age>=0)ds[String(a.when).slice(0,10)]=1;});
+  var activeDays=Object.keys(ds).length; var streak=(typeof streakLen==="function")?streakLen():0;
+  /* 3 — spaced-repetition deck state (weak spots + forgetting curve) */
+  var tracked=0,dueNow=0,nextDue=Infinity,struggling=0;
+  for(var k in ri){var it=ri[k]; if(!it)continue; tracked++; var dd=it.due||0; if(dd<=now)dueNow++; else nextDue=Math.min(nextDue,dd); if((it.wrong||0)>=2)struggling++;}
+  var nextTxt=dueNow>0?(dueNow+" due now"):(tracked&&nextDue<Infinity?("next in "+Math.max(1,Math.ceil((nextDue-now)/DAY))+"d"):"all clear");
+  /* 4 — confidence vs reality (calibration / metacognition) */
+  var over=[],under=[];
+  if(diag&&diag.list){diag.list.forEach(function(x){ if(!x.asked)return; var acc=Math.round(100*(x.ok||0)/x.asked); var conf=x.conf||0;
+    if(conf>=65&&acc<50)over.push(x.s); else if(conf<=45&&acc>=70)under.push(x.s); });}
+
+  function tile(v,k){return '<div class="tile"><div class="v" style="font-size:19px">'+v+'</div><div class="k">'+k+'</div></div>';}
+  var html='<div class="tiles" style="grid-template-columns:repeat(4,1fr);margin:4px 0 12px">';
+  html+=tile(bestTime?esc(bestTime):'–','Your best study time');
+  html+=tile(activeDays+' <small>/14 days</small>','Consistency'+(streak?(' · '+streak+'d streak'):''));
+  html+=tile(tracked?esc(nextTxt):'–','Review deck');
+  html+=tile(tracked?(tracked-dueNow>=0?Math.max(0,tracked-struggling):tracked)+' <small>steady</small>':'–','Topics in memory');
+  html+='</div>';
+
+  var lines=[];
+  if(bestTime) lines.push('<b style="color:var(--gold-300)">You focus best in the '+esc(bestTime.toLowerCase())+'.</b> We’ll weight your plan and review nudges towards then.');
+  if(activeDays>=5) lines.push('Strong consistency — '+activeDays+' active days in the last fortnight. Spacing beats cramming; keep the rhythm.');
+  else if(activeDays>0) lines.push('A short daily habit works far better than one long session — even 10 minutes keeps the forgetting curve at bay.');
+  if(struggling>0) lines.push('<b>'+struggling+' topic'+(struggling>1?'s keep':' keeps')+' slipping</b> — they’ll keep coming back more often until they stick.');
+  if(over.length) lines.push('⚠ <b>Confidence check:</b> you felt sure about <b>'+over.slice(0,3).map(esc).join(', ')+'</b> but the practice says '+(over.length>1?'they need':'it needs')+' another look — the most valuable place to spend 15 minutes.');
+  if(under.length) lines.push('💪 You rated <b>'+under.slice(0,3).map(esc).join(', ')+'</b> low, but you’re actually doing well there — trust yourself.');
+  if(!lines.length) lines.push('Keep going — a diagnostic and a few quizzes unlock your full learning profile.');
+
+  html+='<div style="font-size:13.5px;line-height:1.5;color:var(--ink-2)">'+lines.map(function(l){return '<div style="margin:5px 0;padding-left:16px;position:relative"><span style="position:absolute;left:0;color:var(--gold-500)">›</span>'+l+'</div>';}).join('')+'</div>';
+
+  /* actions: review-now + optional reminders */
+  html+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">';
+  if(dueNow>0) html+='<button class="btn sm" id="ly-review">🔁 Review '+dueNow+' due now</button>';
+  if('Notification' in window){
+    html+= reviewReminderPref()
+      ? '<span class="badge" style="background:rgba(92,187,123,.12);color:#7fcf98;border:1px solid rgba(92,187,123,.35)">🔔 Review reminders on</span>'
+      : '<button class="btn ghost sm" id="ly-remind">🔔 Remind me when reviews are due</button>';
+  }
+  html+='</div>';
+  html+='<div class="note" style="margin-top:10px">How it works: every answer you miss enters a <b>spaced-repetition</b> schedule and returns right before you’d forget it (the spacing effect). Quizzes and recall cards use <b>retrieval practice</b>, and your review queue <b>interleaves</b> topics — all evidence-based cognitive science, tuned to you.</div>';
+
+  el.innerHTML=html;
+  var rb=document.getElementById("ly-review"); if(rb)rb.onclick=function(){ if(typeof startItemReview==="function")startItemReview(); else if(typeof showTab==="function")showTab("smartreview"); };
+  var nb=document.getElementById("ly-remind"); if(nb)nb.onclick=function(){ nb.disabled=true; nb.textContent='Enabling…';
+    enableReviewReminders(function(ok,why){ if(ok){toast&&toast("🔔 Review reminders on — we’ll nudge you when topics are due.");renderLearnPanel();}
+      else {nb.disabled=false;nb.textContent='🔔 Remind me when reviews are due'; toast&&toast(why==='denied'?"Notifications are blocked in your browser settings.":"Couldn’t enable reminders on this device.");} }); };
+}
+
 function renderProgress(){
+  try{renderLearnPanel();}catch(e){}
   document.getElementById("pt-streak").innerHTML=streakLen()+" <small>days</small>";
   document.getElementById("pt-points").textContent=store.get("points",0).toLocaleString();
   const qz=store.get("quizzes",[]);
@@ -5152,6 +5265,7 @@ function tdTile(v,k,color){return '<div class="tile" style="background:rgba(6,11
   '<div class="note" style="margin:2px 0 0;font-size:11px">'+esc(k)+'</div></div>';}
 function renderToday(){
   var mt=document.getElementById("today-mount");if(!mt)return;
+  try{maybeNotifyDueReviews();}catch(e){}
   var mo=tdMomentum(),kp=tdKP(),rec=tdRecommended(),ms=tdMissions();
   var done=ms.filter(function(x){return x.done}).length, toEarn=ms.reduce(function(a,b){return a+(b.done?0:b.kp)},0);
   var h='<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line,rgba(170,182,204,.14));padding-bottom:12px;margin-bottom:16px"><h2 style="font-family:var(--serif);font-weight:500;font-size:26px;flex:1">☀️ Today</h2><span class="note" style="margin:0">small steps · real mastery</span></div>';
@@ -5430,7 +5544,7 @@ function examStartWith(subj,level,n,mt,opts){
 }
 function examBuild(subj,level,n,cb){
   if(window.SYAI&&SYAI.ready()){
-    var sys="You are an examiner writing a "+level+" "+subj+" mock exam."+((window.SY&&SY.stageStyle)?SY.stageStyle(level):"")+" Write exactly "+n+" multiple-choice questions of genuine exam standard, increasing in difficulty. For each output a line 'Q: <question>' then four lines 'A) ' 'B) ' 'C) ' 'D) ' then 'ANSWER: <letter>' then 'WHY: <one-sentence explanation>'. No preamble, no numbering label on its own line.";
+    var sys="You are an examiner writing a "+level+" "+subj+" mock exam."+((window.SY&&SY.stageStyle)?SY.stageStyle(level):"")+" Write exactly "+n+" multiple-choice questions of genuine exam standard, increasing in difficulty."+difficultyHint(subj)+" For each output a line 'Q: <question>' then four lines 'A) ' 'B) ' 'C) ' 'D) ' then 'ANSWER: <letter>' then 'WHY: <one-sentence explanation>'. No preamble, no numbering label on its own line.";
     SYAI.ask(sys,"Subject: "+subj+"\nLevel: "+level+"\nQuestions: "+n,{maxTokens:1600}).then(function(txt){
       var qs=examParse(String(txt||""));
       if(qs.length>=Math.min(3,n))cb(qs.slice(0,n));else cb(examBuildOffline(subj,n));
