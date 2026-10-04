@@ -45,6 +45,7 @@
   dialog::backdrop{background:rgba(4,8,18,.75)}
 </style></head><body>
 <script src="../guard.js" data-role="admin" data-base="../"></script>
+<script src="../vocab.js"></script>
 <script src="../export.js"></script>
 <script src="../growth.js"></script>
 <div class="shell">
@@ -560,8 +561,8 @@ function mask(e){
 var PLAN_NAMES={child_free:'Child Free',student_access:'Student Access',student_premium:'Student Premium',
   student_premium_plus:'Student Premium+',student_max:'Student Max',parent_pro:'Parent Pro',parent_pro_plus:'Parent Pro+',
   parent_elite:'Parent Elite',teacher_pro:'Teacher Pro',tutor_pro:'Tutor Pro',school:'School staff',admin:'Admin'};
-var LEVELS=['Reception','KS1','KS2','11+','KS3','GCSE','IGCSE','National 5','AS','A-level','Highers','IB','BTEC','University'];
-var SUBJECTS=['Accounting','Art','Biology','Business','Chemistry','Computer Science','Design & Technology','Drama','Economics','English Language','English Literature','French','Further Maths','Geography','German','History','Mathematics','Music','Physical Education','Physics','Politics','Psychology','Religious Studies','Sociology','Spanish'];
+var LEVELS=(window.SYVOCAB&&SYVOCAB.levels&&SYVOCAB.levels.slice())||['Reception','KS1','KS2','11+','KS3','GCSE','IGCSE','National 5','AS','A-level','Highers','IB','BTEC','University'];
+var SUBJECTS=(window.SYVOCAB&&SYVOCAB.subjects&&SYVOCAB.subjects.slice())||['Accounting','Art','Biology','Business','Chemistry','Computer Science','Design & Technology','Drama','Economics','English Language','English Literature','French','Further Maths','Geography','German','History','Mathematics','Music','Physical Education','Physics','Politics','Psychology','Religious Studies','Sociology','Spanish'];
 /* read/write through the guard so end-to-end-encrypted accounts stay sealed */
 function acct(email,k,d){return SY.readAccount(email,k,d)}
 function acctSet(email,k,v){SY.writeAccount(email,k,v)}
