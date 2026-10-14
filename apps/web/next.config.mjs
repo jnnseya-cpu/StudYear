@@ -48,7 +48,7 @@ const nextConfig = {
                   "object-src 'none'",
                   "frame-ancestors 'none'",
                   "form-action 'self' https://buy.stripe.com https://checkout.stripe.com",
-                  "script-src 'self' 'unsafe-inline' https://connect.facebook.net https://www.googletagmanager.com https://www.google-analytics.com",
+                  "script-src 'self' 'unsafe-inline' blob: https://connect.facebook.net https://www.googletagmanager.com https://www.google-analytics.com https://cdn.jsdelivr.net",
                   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
                   "font-src 'self' data: https://fonts.gstatic.com",
                   "img-src 'self' data: blob: https:",

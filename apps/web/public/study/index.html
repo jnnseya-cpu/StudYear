@@ -985,7 +985,7 @@
           <button class="btn ghost" id="coach-upload">📎 Attach a photo or PDF</button>
         </div>
         <input type="file" id="coach-cam-file" accept="image/*" capture="environment" style="display:none">
-        <input type="file" id="coach-file" accept="image/*,application/pdf" style="display:none">
+        <input type="file" id="coach-file" accept="image/*,.heic,.heif,application/pdf" style="display:none">
         <div class="note" style="margin-top:8px">A clear, well-lit photo of a page of their handwriting (for writing) or the notes/facts they're trying to learn (for memory) works best.</div>
       </div>
       <div style="margin-top:12px"><button class="btn" id="coach-go">Analyse &amp; build the plan →</button></div>
@@ -4004,15 +4004,43 @@ function coachSetMode(m){ coachMode=m;
   var w=document.getElementById('coach-mode-write'), me=document.getElementById('coach-mode-memory');
   if(w)w.className='btn'+(m==='write'?'':' ghost'); if(me)me.className='btn'+(m==='memory'?'':' ghost');
   var n=document.getElementById('coach-mode-note'); if(n)n.textContent=COACH_NOTES[m]||''; }
+function coachSetAttached(dataUrl,name,isPdf){
+  coachImage=dataUrl;
+  var fn=document.getElementById('coach-filename');
+  if(fn)fn.innerHTML=(isPdf?'📄 ':'📷 ')+"<b style='color:var(--gold-300)'>"+esc(name)+"</b> attached"+(window.SYAI&&SYAI.ready()?' — ready to analyse':" <span style='color:var(--warn)'>(enable live AI in the Gateway to analyse)</span>");
+}
+/* Convert an iPhone HEIC/HEIF photo to JPEG in the browser (vision models and
+   browsers can't read HEIC). Lazy-loads heic2any only when needed; rejects if
+   the library can't load (e.g. offline / blocked) so the caller can guide the user. */
+function heicToJpeg(file){
+  return new Promise(function(resolve,reject){
+    function run(){ if(!window.heic2any)return reject(new Error('no-lib'));
+      try{ window.heic2any({blob:file,toType:'image/jpeg',quality:0.85}).then(function(o){resolve(Array.isArray(o)?o[0]:o);}).catch(reject);}catch(e){reject(e);} }
+    if(window.heic2any)return run();
+    var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+    s.onload=run; s.onerror=function(){reject(new Error('cdn'));}; document.head.appendChild(s);
+  });
+}
 function coachTakeFile(f){ if(!f)return;
   var fn=document.getElementById('coach-filename');
-  var isPdf=f.type==='application/pdf'||/\.pdf$/i.test(f.name);
-  if(!(isPdf||/^image\//.test(f.type))){toast("Attach a photo (or a PDF)");return;}
-  var capMb=isPdf?25:8; if(f.size>capMb*1024*1024){toast("Max "+capMb+" MB");return;}
-  var r=new FileReader();
-  r.onload=function(){coachImage=r.result;
-    if(fn)fn.innerHTML=(isPdf?'📄 ':'📷 ')+"<b style='color:var(--gold-300)'>"+esc(f.name)+"</b> attached"+(window.SYAI&&SYAI.ready()?' — ready to analyse':" <span style='color:var(--warn)'>(enable live AI in the Gateway to analyse)</span>");};
-  r.readAsDataURL(f); }
+  var name=f.name||'photo';
+  var isPdf=f.type==='application/pdf'||/\.pdf$/i.test(name);
+  var isHeic=/image\/hei[cf]/i.test(f.type)||/\.hei[cf]$/i.test(name);
+  /* Accept by EXTENSION too — on Windows/Chrome a HEIC (and sometimes JPG) file
+     arrives with an empty MIME type, which the old image/ check wrongly rejected. */
+  var isImg=/^image\//.test(f.type)||/\.(jpe?g|png|webp|gif|bmp|hei[cf])$/i.test(name);
+  if(!(isPdf||isImg)){toast("Attach a photo (JPG/PNG/HEIC) or a PDF");return;}
+  var capMb=isPdf?25:12; if(f.size>capMb*1024*1024){toast("That file is over "+capMb+" MB — try a smaller photo");return;}
+  if(isHeic){
+    if(fn)fn.innerHTML="⏳ Converting iPhone photo (HEIC) to a readable image…";
+    heicToJpeg(f).then(function(blob){
+      var r=new FileReader(); r.onload=function(){coachSetAttached(r.result,name.replace(/\.hei[cf]$/i,'.jpg'),false);}; r.readAsDataURL(blob);
+    }).catch(function(){
+      if(fn)fn.innerHTML="<span style='color:var(--warn)'>iPhone HEIC photos can’t be read directly. Easiest fix: open it in Windows <b>Photos</b> → the <b>⋯</b> menu → <b>Save as</b> a JPG and attach that — or on your phone take a <b>screenshot</b> of the photo and attach the screenshot.</span>";
+    });
+    return;
+  }
+  var r=new FileReader(); r.onload=function(){coachSetAttached(r.result,name,isPdf);}; r.readAsDataURL(f); }
 function coachPrompt(mode,level){
   var yr=level||'their year group';
   if(mode==='write') return "You are a UK literacy and handwriting specialist (SENCO / occupational-therapy informed) analysing a photo of a child's handwritten work. The learner's level is: "+yr+". Look VERY carefully at the attached photo and be specific and honest but kind — this is a struggling child and a worried parent. Assess: (1) HANDWRITING — legibility, letter formation (name specific malformed or reversed letters, e.g. b/d/p/q, a/o), size consistency, spacing between letters and words, sitting on the line, pencil control; (2) SPELLING — the pattern of errors (phonetic spelling, missing sounds, common exception words) with the ACTUAL misspelt words you can see; (3) WRITING — sentence structure, capital letters, punctuation, vocabulary and length versus what is expected for "+yr+"; (4) LEVEL — a plain, kind statement of roughly where this sits versus age-expected and the size of the gap. Then produce an ongoing improvement plan that works FAST. Return markdown with EXACTLY these headings: '## What I can see'; '## Where it sits' (current vs expected for "+yr+"); '## This week — daily 10 minutes' (3-5 very specific drills: handwriting formation naming the exact letters to practise, spacing/size exercises, one spelling focus); '## Spelling words to lock in' then a line starting 'WORDS:' with 6-12 exact words to practise, comma-separated; '## The 4-week strategy'; '## For the parent or teacher' (2-3 concrete actions); then a final line starting 'RECHECK:' with a number of days (e.g. RECHECK: 14). Be specific to THIS photo. Never generic.";
