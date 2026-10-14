@@ -4036,11 +4036,13 @@ function coachSavePlan(mode,md,parsed){
   store.set('coachPlans',plans.slice(0,20));
 }
 function coachGo(){
-  if(!coachImage){toast("Take or attach a photo first");return;}
-  if(!(window.SYAI&&SYAI.ready())){toast("Live AI needed to read the photo — ask your admin to enable it in the AI Gateway");return;}
-  if(!spendAcus(COACH_PRICE,"Skills Coach ("+coachMode+")"))return; try{refreshArBal();}catch(e){}
-  var level=(PROFILE&&PROFILE.level)||(typeof dgLevelStr==="function"?dgLevelStr():"");
   var out=document.getElementById('coach-out');
+  function msg(h){ if(out)out.innerHTML='<div class="note" style="padding:11px 13px;border-radius:9px;background:rgba(224,169,63,.10);border:1px solid rgba(224,169,63,.4);color:var(--gold-300)">'+h+'</div>'; }
+  if(!coachImage){ toast("Take or attach a photo first"); msg('📷 Take or attach a photo of the work first, then press <b>Analyse</b>.'); return; }
+  if(!(window.SYAI&&SYAI.ready())){ msg('The Skills Coach reads the photo with live AI, which isn’t switched on here yet. On the live site this works automatically; if you’re the admin, enable a provider key in the AI Gateway.'); return; }
+  if(!spendAcus(COACH_PRICE,"Skills Coach ("+coachMode+")")){ msg('This analysis needs <b>'+COACH_PRICE+' credits</b> and your balance is lower. Top up your wallet (or ask your school/parent to) and try again — your photo is still attached.'); return; }
+  try{refreshArBal();}catch(e){}
+  var level=(PROFILE&&PROFILE.level)||(typeof dgLevelStr==="function"?dgLevelStr():"");
   out.innerHTML='<div class="empty">Reading the photo closely and building the plan with '+SYAI.provider()+'…</div>';
   var go=document.getElementById('coach-go'); if(go){go.disabled=true;go.textContent='Analysing…';}
   SYAI.ask(coachPrompt(coachMode,level),"The work is in the attached photo. Learner level: "+level+".",
@@ -4055,7 +4057,7 @@ function coachGo(){
     coachImage=null; var fn=document.getElementById('coach-filename'); if(fn)fn.textContent='No photo yet.';
     renderCoachPlans();
     if(go){go.disabled=false;go.textContent='Analyse & build the plan →';}
-  }).catch(function(){ out.innerHTML='<div class="note" style="color:var(--warn)">Couldn’t analyse the photo just now — please try again with a clearer, well-lit photo.</div>'; if(go){go.disabled=false;go.textContent='Analyse & build the plan →';}});
+  }).catch(function(e){ out.innerHTML='<div class="note" style="color:var(--warn);padding:11px 13px;border:1px solid rgba(224,169,63,.4);border-radius:9px">Couldn’t analyse the photo just now'+((e&&e.message)?' ('+esc(String(e.message))+')':'')+'. Try a clearer, well-lit photo, or sign in again if it mentions reconnecting.</div>'; if(go){go.disabled=false;go.textContent='Analyse & build the plan →';}});
 }
 function renderCoachPlans(){
   var el=document.getElementById('coach-plans'); if(!el)return;
