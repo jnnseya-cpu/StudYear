@@ -3512,6 +3512,10 @@ function dgGenerate(written){
 }
 
 function renderDgReport(rep){
+  /* top attainment LABEL for this learner's level (Grade 9 / Greater Depth /
+     1st / Distinction*…). Computed here because dgGenerate's TOP is out of
+     scope — without it the report template threw and #dg-out never rendered. */
+  const TOP=((window.SY&&SY.attainment)?SY.attainment(PROFILE.level,100).short:"Grade 9");
   const baseline=store.get("baseline",null);
   const isBase=rep.isBaseline||(baseline&&baseline.when===rep.when);
   const growth=(baseline&&!isBase)?rep.avg-baseline.avg:0;
