@@ -316,6 +316,7 @@
   <button data-t="lesson">📖 Interactive Lesson</button>
   <button data-t="practice">🧩 Comprehension &amp; Reasoning</button>
   <button data-t="spelling">🔤 Spelling</button>
+  <button data-t="skillscoach">🧠 Skills Coach</button>
   <button data-t="course">🎓 AI Course</button>
   <button data-t="review">📝 Assignment review</button>
   <button data-t="diag">🩺 Diagnostic</button>
@@ -966,6 +967,38 @@
   </div>
 </section>
 
+<!-- ============================ SKILLS COACH (photo → deep plan) ============================ -->
+<section id="tab-skillscoach">
+  <div class="grid">
+    <div class="card c12">
+      <h3>🧠 Skills Coach — photo → a plan that actually works</h3>
+      <div class="sub">Worried about <b>handwriting, spelling or writing level</b>, or that nothing <b>sticks in memory</b> no matter how much you repeat it? Take or attach a photo of your child's work and the Coach reads it closely, works out exactly what's holding them back, and builds an ongoing, step-by-step plan — with the key items loaded straight into spaced practice so progress comes quickly.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <button class="btn" id="coach-mode-write" data-mode="write">✍️ Writing &amp; handwriting</button>
+        <button class="btn ghost" id="coach-mode-memory" data-mode="memory">🧠 Memory &amp; retention</button>
+      </div>
+      <div id="coach-mode-note" class="note" style="margin-top:10px"></div>
+      <div id="coach-drop" style="margin-top:12px;border:2px dashed rgba(170,182,204,.3);border-radius:12px;padding:18px;text-align:center">
+        <div id="coach-filename" class="note" style="margin-bottom:10px">No photo yet.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+          <button class="btn" id="coach-camera">📷 Take a photo</button>
+          <button class="btn ghost" id="coach-upload">📎 Attach a photo or PDF</button>
+        </div>
+        <input type="file" id="coach-cam-file" accept="image/*" capture="environment" style="display:none">
+        <input type="file" id="coach-file" accept="image/*,application/pdf" style="display:none">
+        <div class="note" style="margin-top:8px">A clear, well-lit photo of a page of their handwriting (for writing) or the notes/facts they're trying to learn (for memory) works best.</div>
+      </div>
+      <div style="margin-top:12px"><button class="btn" id="coach-go">Analyse &amp; build the plan →</button></div>
+      <div id="coach-out" style="margin-top:14px"></div>
+    </div>
+    <div class="card c12">
+      <h3>📋 Ongoing plans</h3>
+      <div class="sub">Each analysis is saved here with a re-check date. Re-photograph on the date and the Coach measures progress and updates the plan.</div>
+      <div id="coach-plans"><div class="empty">Your saved improvement plans will appear here.</div></div>
+    </div>
+  </div>
+</section>
+
 <!-- ============================ AI COURSE ============================ -->
 <section id="tab-course">
   <div class="grid">
@@ -1372,6 +1405,7 @@ function showTab(t){
   if(t==="leagues"){try{renderLeagues();}catch(e){}}
   if(t==="examsim"){try{renderExamSim();}catch(e){}}
   if(t==="smartreview"){try{renderReview();}catch(e){}}
+  if(t==="skillscoach"){try{renderSkillsCoach();}catch(e){}}
   if(t==="wins"){try{renderAchievements();}catch(e){}}
   if(t==="progress") renderProgress();
   if(t==="homework"&&window.SYHomework){try{SYHomework.mountStudent(document.getElementById("hw-mount"),{email:(SY&&SY.session&&SY.session.email)||""});}catch(e){}}
@@ -3950,6 +3984,104 @@ function arStatic(title,text,subj,level){
     <h3 style="font-family:var(--serif);font-weight:500;font-size:16px;color:var(--warn);margin:14px 0 6px">Targets to lift your grade</h3>
     <ul style="margin:0 0 0 18px;font-size:13.5px;color:var(--ink-2)">${targets.map(s=>`<li style="margin:4px 0">${esc(s)}</li>`).join("")||"<li>Excellent — polish with a timed rewrite.</li>"}</ul>`;
 };
+
+/* ============================ SKILLS COACH (photo → deep reasoning → ongoing plan) ============================
+   Two worried-parent pain points, one mechanism: photograph the child's work, the live model
+   reads it closely, diagnoses what's actually holding them back, and builds an ongoing plan —
+   with the key items pushed straight into the spaced-repetition deck so progress comes fast.
+     write  — handwriting legibility, letter formation, spelling patterns, writing level vs year
+     memory — why it isn't sticking (copying ≠ learning) + an active-recall + spacing plan      */
+var coachMode='write', coachImage=null, COACH_PRICE=60;
+var COACH_NOTES={
+  write:"Writing & handwriting: photograph a page of their handwriting. The Coach reads letter formation, spacing, legibility, spelling patterns and writing level versus their age — then builds a plan.",
+  memory:"Memory & retention: photograph what they're trying to learn (notes, keywords, times tables). The Coach works out WHY it isn't sticking and builds an active-recall plan — the opposite of copying it out again."
+};
+function coachSetMode(m){ coachMode=m;
+  var w=document.getElementById('coach-mode-write'), me=document.getElementById('coach-mode-memory');
+  if(w)w.className='btn'+(m==='write'?'':' ghost'); if(me)me.className='btn'+(m==='memory'?'':' ghost');
+  var n=document.getElementById('coach-mode-note'); if(n)n.textContent=COACH_NOTES[m]||''; }
+function coachTakeFile(f){ if(!f)return;
+  var fn=document.getElementById('coach-filename');
+  var isPdf=f.type==='application/pdf'||/\.pdf$/i.test(f.name);
+  if(!(isPdf||/^image\//.test(f.type))){toast("Attach a photo (or a PDF)");return;}
+  var capMb=isPdf?25:8; if(f.size>capMb*1024*1024){toast("Max "+capMb+" MB");return;}
+  var r=new FileReader();
+  r.onload=function(){coachImage=r.result;
+    if(fn)fn.innerHTML=(isPdf?'📄 ':'📷 ')+"<b style='color:var(--gold-300)'>"+esc(f.name)+"</b> attached"+(window.SYAI&&SYAI.ready()?' — ready to analyse':" <span style='color:var(--warn)'>(enable live AI in the Gateway to analyse)</span>");};
+  r.readAsDataURL(f); }
+function coachPrompt(mode,level){
+  var yr=level||'their year group';
+  if(mode==='write') return "You are a UK literacy and handwriting specialist (SENCO / occupational-therapy informed) analysing a photo of a child's handwritten work. The learner's level is: "+yr+". Look VERY carefully at the attached photo and be specific and honest but kind — this is a struggling child and a worried parent. Assess: (1) HANDWRITING — legibility, letter formation (name specific malformed or reversed letters, e.g. b/d/p/q, a/o), size consistency, spacing between letters and words, sitting on the line, pencil control; (2) SPELLING — the pattern of errors (phonetic spelling, missing sounds, common exception words) with the ACTUAL misspelt words you can see; (3) WRITING — sentence structure, capital letters, punctuation, vocabulary and length versus what is expected for "+yr+"; (4) LEVEL — a plain, kind statement of roughly where this sits versus age-expected and the size of the gap. Then produce an ongoing improvement plan that works FAST. Return markdown with EXACTLY these headings: '## What I can see'; '## Where it sits' (current vs expected for "+yr+"); '## This week — daily 10 minutes' (3-5 very specific drills: handwriting formation naming the exact letters to practise, spacing/size exercises, one spelling focus); '## Spelling words to lock in' then a line starting 'WORDS:' with 6-12 exact words to practise, comma-separated; '## The 4-week strategy'; '## For the parent or teacher' (2-3 concrete actions); then a final line starting 'RECHECK:' with a number of days (e.g. RECHECK: 14). Be specific to THIS photo. Never generic.";
+  return "You are an expert in the cognitive science of memory and a UK SEND specialist. The learner's level is: "+yr+". They struggle to retain material even after repeating it and copying it out — which means the method, not the child, is the problem. Look carefully at the attached photo (notes, keywords, times tables or whatever they are trying to memorise). Assess: (1) WHY it is not sticking — diagnose from what you see (passive copying instead of active recall, no spacing, too much at once / no chunking, no meaning or visual hook); (2) WHAT exactly must be remembered — extract the key facts/items/terms from the photo. Then build an ongoing retention plan grounded in evidence (active recall, spaced repetition, interleaving, dual coding, chunking, mnemonics, elaboration, teach-back). Return markdown with EXACTLY these headings: '## What you are trying to remember' (from the photo); '## Why repeating and copying is not working'; '## The method that will work' (the shift to active recall + spacing, in plain words a parent can follow); '## This week — 5-10 minutes a day' (a specific daily retrieval routine); '## Lock these in' then a line starting 'CARDS:' listing 6-12 key facts as question/answer pairs in the form 'front :: back' separated by ' | '; '## Memory tricks'; '## For the parent or teacher' (how to QUIZ them, not re-read to them); then a final line starting 'RECHECK:' with a number of days (e.g. RECHECK: 7). Be specific to THIS material. Never generic.";
+}
+function coachParseAndSeed(mode,md){
+  var words=[], cards=[], recheck=(mode==='memory'?7:14);
+  var mW=md.match(/WORDS:\s*([^\n]+)/i); if(mW)words=mW[1].split(/[,\n]/).map(function(s){return s.trim().replace(/^[-*]\s*/,'');}).filter(function(s){return s&&s.length<40;}).slice(0,16);
+  var mC=md.match(/CARDS:\s*([^\n]+)/i); if(mC)cards=mC[1].split('|').map(function(p){var kv=p.split('::');return {front:(kv[0]||'').trim(),back:(kv[1]||'').trim()};}).filter(function(c){return c.front;}).slice(0,16);
+  var mR=md.match(/RECHECK:\s*(\d{1,3})/i); if(mR)recheck=Math.max(3,Math.min(60,+mR[1]));
+  var seeded=0;
+  try{
+    if(mode==='write') words.forEach(function(w){try{noteReviewCard(w,"Spell it correctly: "+w,"Spelling",false);seeded++;}catch(e){}});
+    else cards.forEach(function(c){try{noteReviewCard(c.front,c.back,"Memory",false);seeded++;}catch(e){}});
+  }catch(e){}
+  return {words:words,cards:cards,recheck:recheck,seeded:seeded};
+}
+function coachSavePlan(mode,md,parsed){
+  var plans=store.get('coachPlans',[]); var now=Date.now();
+  plans.unshift({id:'cp'+now.toString(36),mode:mode,when:new Date().toISOString(),level:(PROFILE&&PROFILE.level)||'',md:md,seeded:parsed.seeded,recheckDays:parsed.recheck,recheckDue:now+parsed.recheck*864e5});
+  store.set('coachPlans',plans.slice(0,20));
+}
+function coachGo(){
+  if(!coachImage){toast("Take or attach a photo first");return;}
+  if(!(window.SYAI&&SYAI.ready())){toast("Live AI needed to read the photo — ask your admin to enable it in the AI Gateway");return;}
+  if(!spendAcus(COACH_PRICE,"Skills Coach ("+coachMode+")"))return; try{refreshArBal();}catch(e){}
+  var level=(PROFILE&&PROFILE.level)||(typeof dgLevelStr==="function"?dgLevelStr():"");
+  var out=document.getElementById('coach-out');
+  out.innerHTML='<div class="empty">Reading the photo closely and building the plan with '+SYAI.provider()+'…</div>';
+  var go=document.getElementById('coach-go'); if(go){go.disabled=true;go.textContent='Analysing…';}
+  SYAI.ask(coachPrompt(coachMode,level),"The work is in the attached photo. Learner level: "+level+".",
+    {maxTokens:1800,image:coachImage,acus:COACH_PRICE,label:"Skills Coach ("+coachMode+")"}).then(function(md){
+    var parsed=coachParseAndSeed(coachMode,md);
+    coachSavePlan(coachMode,md,parsed);
+    addPoints(10);touchStreak();
+    logEvent("coach",(coachMode==='write'?'Writing & handwriting':'Memory & retention')+" plan created",(parsed.seeded?parsed.seeded+" items added to spaced practice · ":"")+"re-check in "+parsed.recheck+" days.");
+    out.innerHTML='<div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:6px">'+(coachMode==='write'?'Writing & handwriting plan':'Memory & retention plan')+' · read from your photo</div>'+SYAI.render(md)
+      +(parsed.seeded?'<div class="note" style="margin-top:10px;padding:10px 12px;border-radius:8px;background:rgba(92,187,123,.10);border:1px solid rgba(92,187,123,.35)">✓ '+parsed.seeded+' '+(coachMode==='write'?'word':'fact')+(parsed.seeded>1?'s':'')+' added to Smart Review — short daily retrieval will lock them in. <a href="#" id="coach-toreview" style="color:var(--gold-300)">Practise now →</a></div>':'');
+    var tr=document.getElementById('coach-toreview'); if(tr)tr.onclick=function(e){e.preventDefault(); if(typeof startItemReview==="function")startItemReview(); else showTab('smartreview');};
+    coachImage=null; var fn=document.getElementById('coach-filename'); if(fn)fn.textContent='No photo yet.';
+    renderCoachPlans();
+    if(go){go.disabled=false;go.textContent='Analyse & build the plan →';}
+  }).catch(function(){ out.innerHTML='<div class="note" style="color:var(--warn)">Couldn’t analyse the photo just now — please try again with a clearer, well-lit photo.</div>'; if(go){go.disabled=false;go.textContent='Analyse & build the plan →';}});
+}
+function renderCoachPlans(){
+  var el=document.getElementById('coach-plans'); if(!el)return;
+  var plans=store.get('coachPlans',[])||[]; var now=Date.now();
+  if(!plans.length){el.innerHTML='<div class="empty">Your saved improvement plans will appear here.</div>';return;}
+  el.innerHTML=plans.map(function(p,i){
+    var due=p.recheckDue||0, days=Math.ceil((due-now)/864e5);
+    var recheck=due<=now?'<span class="badge" style="background:rgba(230,103,103,.14);color:#f0a0a0;border:1px solid rgba(230,103,103,.4)">Re-check due</span>':'<span class="note">re-check in '+Math.max(0,days)+'d</span>';
+    var label=p.mode==='write'?'✍️ Writing & handwriting':'🧠 Memory & retention';
+    var when=new Date(p.when).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    return '<div class="card" style="margin:8px 0;background:rgba(6,11,24,.35)"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b style="flex:1">'+label+'</b><span class="note">'+when+'</span>'+recheck+'</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn ghost sm" data-cv="'+i+'">View plan</button><button class="btn sm" data-cr="'+esc(p.mode)+'">📷 Re-check with a new photo</button></div></div>';
+  }).join('');
+  el.querySelectorAll('[data-cv]').forEach(function(b){b.onclick=function(){var p=plans[+b.dataset.cv]; var out=document.getElementById('coach-out'); out.innerHTML=(window.SYAI&&SYAI.render)?SYAI.render(p.md):('<pre style="white-space:pre-wrap">'+esc(p.md)+'</pre>'); if(out.scrollIntoView)out.scrollIntoView({behavior:'smooth',block:'start'});};});
+  el.querySelectorAll('[data-cr]').forEach(function(b){b.onclick=function(){coachSetMode(b.dataset.cr); var c=document.getElementById('coach-camera'); if(c)c.click();};});
+}
+function renderSkillsCoach(){ coachSetMode(coachMode); renderCoachPlans(); }
+(function(){
+  var cw=document.getElementById('coach-mode-write'), cm=document.getElementById('coach-mode-memory');
+  if(cw)cw.onclick=function(){coachSetMode('write');}; if(cm)cm.onclick=function(){coachSetMode('memory');};
+  var up=document.getElementById('coach-upload'), cf=document.getElementById('coach-file');
+  var cam=document.getElementById('coach-camera'), cmf=document.getElementById('coach-cam-file');
+  if(up&&cf){up.onclick=function(){cf.click();}; cf.addEventListener('change',function(){coachTakeFile(this.files[0]);this.value='';});}
+  if(cam&&cmf){cam.onclick=function(){cmf.click();}; cmf.addEventListener('change',function(){coachTakeFile(this.files[0]);this.value='';});}
+  var dz=document.getElementById('coach-drop');
+  if(dz){dz.addEventListener('dragover',function(e){e.preventDefault();dz.style.borderColor='var(--gold-400)';});
+    dz.addEventListener('dragleave',function(){dz.style.borderColor='rgba(170,182,204,.3)';});
+    dz.addEventListener('drop',function(e){e.preventDefault();dz.style.borderColor='rgba(170,182,204,.3)';coachTakeFile(e.dataTransfer.files&&e.dataTransfer.files[0]);});}
+  var go=document.getElementById('coach-go'); if(go)go.onclick=coachGo;
+})();
 
 /* ============================ PREDICTED GRADE ============================ */
 (function(){
