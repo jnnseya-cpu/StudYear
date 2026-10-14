@@ -714,13 +714,18 @@ async function fetchT(url: string, opts: RequestInit, ms = Number(process.env.AI
   finally { clearTimeout(t); }
 }
 async function aiCall(provider: AiProvider, key: string, body: AiBody): Promise<{ text: string; model: string }> {
-  const model = (process.env.AI_MODEL && (process.env.AI_PROVIDER ?? 'openai') === provider)
-    ? process.env.AI_MODEL : AI_DEFAULT_MODEL[provider];
+  const img = body.image ? String(body.image).match(/^data:([^;]+);base64,(.*)$/) : null;
+  // For a photo/document read, always use the provider's known vision-capable
+  // default model — otherwise an AI_MODEL override set to a text-only model would
+  // silently ignore the image and the Skills Coach / Assignment Review would fail.
+  const model = img
+    ? AI_DEFAULT_MODEL[provider]
+    : ((process.env.AI_MODEL && (process.env.AI_PROVIDER ?? 'openai') === provider)
+        ? process.env.AI_MODEL : AI_DEFAULT_MODEL[provider]);
   // Clamp output length server-side so a client can't request a huge (costly)
   // completion. Even authenticated callers must stay inside this ceiling.
   const maxTokens = Math.max(1, Math.min(Number(body.maxTokens) || 1024, 2048));
   const temperature = Math.max(0, Math.min(Number(body.temperature ?? 0.6), 1));
-  const img = body.image ? String(body.image).match(/^data:([^;]+);base64,(.*)$/) : null;
   if (provider === 'gemini') {
     const parts: unknown[] = [{ text: String(body.user ?? '') }];
     if (img) parts.push({ inlineData: { mimeType: img[1], data: img[2] } });
