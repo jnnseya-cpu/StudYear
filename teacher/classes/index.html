@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — My Classes</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18"></head><body>
+<script src="../../guard.js" data-role="teacher" data-base="../../"></script>
+<div class="shell"><main>
+  <div class="k">Institutional staff</div><h1>My classes</h1>
+  <p class="lede">Students in your assigned year groups (school admin sets cohorts under Staff deployment). Empty assignment shows all school students.</p>
+  <div id="classes"></div>
+</main></div>
+<script src="../nav.js" data-base="../" data-cur="classes/"></script>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;var TW=window.TW||{};
+function $(id){return document.getElementById(id)}function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var students=(TW.myStudents&&TW.myStudents())||[];
+if(!students.length){$('classes').innerHTML='<div class="card"><div class="empty">No year groups with enrolled students yet. Your school admin assigns students and cohorts from the school portal.</div></div>';return}
+var M=students.map(function(s){return Object.assign({name:SY.accountName(s.email)||s.name||s.email},TW.metrics(s.email))});
+var byYear={};M.forEach(function(m){(byYear[m.level||'Unassigned']=byYear[m.level||'Unassigned']||[]).push(m)});
+$('classes').innerHTML=Object.keys(byYear).map(function(y){var list=byYear[y];var avg=Math.round(list.reduce(function(a,m){return a+m.overall},0)/list.length);
+  return '<div class="card" style="margin-top:14px"><h3>'+esc(y)+' <span class="badge">'+list.length+' students · avg '+avg+'%</span></h3>'+
+    list.map(function(m){var c=m.overall>=65?'var(--good)':m.overall>=45?'var(--warn)':'var(--crit)';
+      return '<div class="row"><span style="width:160px"><b>'+esc(m.name)+'</b></span><span class="bar" style="flex:1"><i style="width:'+m.overall+'%;background:'+c+'"></i></span><span style="width:44px;text-align:right;font-size:12px">'+m.overall+'%</span><span class="badge '+(m.risk==='HIGH'||m.risk==='CRITICAL'?'crit':m.risk==='MEDIUM'?'warn':'good')+'" style="margin-left:8px">'+m.risk.toLowerCase()+'</span></div>';
+    }).join('')+'</div>';
+}).join('');
+})();
+</script>
+</body></html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — AI Teaching Assistant</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  .tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .tools .t{font-size:12.5px;color:var(--ink-2);border:1px solid var(--line);border-radius:20px;padding:7px 14px;cursor:pointer}.tools .t.on{color:var(--gold-300);border-color:var(--gold-500);background:rgba(77,157,224,.1)}
+  .out{border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin-top:14px;background:rgba(6,11,24,.32);white-space:pre-wrap;font-size:13.5px;color:var(--ink-2);line-height:1.7}
+  .out h4{font-family:var(--serif);color:var(--ink);font-size:15px;margin:2px 0 8px}
+</style></head><body>
+<script src="../../guard.js" data-role="tutor" data-base="../../"></script>
+<script src="../../ai.js"></script>
+<script src="../../export.js"></script>
+<script src="../../exam.js"></script>
+<script src="../../makers.js"></script>
+<div class="shell"><main>
+  <div class="k">Teaching operator</div><h1>AI Teaching Assistant</h1>
+  <p class="lede">Explain, diagram, quiz and plan in seconds. Prepare anything for a session — lesson plans, worksheets, quizzes, homework, exam questions and parent updates.</p>
+  <div class="card">
+    <div class="two"><div><label class="f">Subject</label><input id="subj" placeholder="Mathematics"></div><div><label class="f">Level</label><input id="level" placeholder="GCSE / A-level"></div></div>
+    <label class="f">Topic</label><input id="topic" placeholder="e.g. Quadratic equations">
+    <div class="tools" id="tools">
+      <span class="t on" data-t="plan">Lesson plan</span><span class="t" data-t="explain">Explain concept</span><span class="t" data-t="quiz">Quiz</span>
+      <span class="t" data-t="homework">Homework</span><span class="t" data-t="exam">Exam questions</span><span class="t" data-t="parent">Parent update</span><span class="t" data-t="diagram">Diagram brief</span>
+    </div>
+    <div style="margin-top:12px"><button class="btn solid" id="go">Generate</button> <button class="btn ghost" id="copy" style="display:none">Copy</button></div>
+  </div>
+  <div class="out" id="out" style="display:none"></div>
+  <div class="note">Preview generates from structured templates on-device (no AI credits). Live models arrive with the backend and adapt to each student's Academic Twin.</div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="k">Assessment</div><h2 style="font-family:var(--serif);margin:4px 0 2px">Exam Paper Builder</h2>
+    <p class="lede" style="margin:0 0 6px">Build an exam-style paper for your students in any subject — up to 50 questions
+      with a mark-scheme answer sheet for every question, branded to your tutoring practice, exported as Word or PDF.
+      Costs 1 ACU per question (min. 10). <span id="exam-bal"></span></p>
+    <div id="exam-mount"></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="k">Create your own</div><h2 style="font-family:var(--serif);margin:4px 0 2px">Resource Makers</h2>
+    <p class="lede" style="margin:0 0 8px">The full maker suite — flashcards, quizzes, revision notes, mind maps, topic
+      summaries, essay plans, labelled diagrams and worksheets — written by the live model <b>for your student</b>,
+      pitched to their level, saved to your library and exported to Word or PDF. A few ACUs per generation from your wallet.</p>
+    <div id="makers-mount"></div>
+  </div>
+</main></div>
+<script src="../nav.js" data-base="../" data-cur="assistant/"></script>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;
+function $(id){return document.getElementById(id)}function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var e=$('toast');if(!e)return;e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2000)}
+var mode='plan';
+$('tools').querySelectorAll('.t').forEach(function(el){el.onclick=function(){$('tools').querySelectorAll('.t').forEach(function(x){x.classList.remove('on')});el.classList.add('on');mode=el.dataset.t}});
+var LIVE_PROMPTS={
+  plan:"Write a complete 1-to-1 tutoring session plan: objectives, warm-up retrieval, main teaching with concrete content (I do / we do / you do), a 4-question check WITH answers, and homework.",
+  explain:"Explain the topic for a 1-to-1 session: hook, plain-language core idea, a fully worked example, the most common misconception + fix, and a prompt for the student to explain it back.",
+  quiz:"Write a 5-question quiz rising in difficulty with 4 options each, the correct answer marked, and one-line explanations.",
+  homework:"Set a ~25-minute homework: 5 questions rising in difficulty plus one reasoning task, with a mark scheme.",
+  exam:"Write exam-style questions: a 2-mark recall, a 4-mark application, a 6-mark multi-step problem, and an extended prompt — each WITH mark-scheme points.",
+  parent:"Draft a warm, professional after-session parent update about this topic: what was covered, how the student did, one way to help at home. Ready to send.",
+  diagram:"Describe a clear labelled diagram of the topic: list every part with its label and a one-line description, in drawing order (you cannot draw, so make the description complete enough to sketch from)."};
+function gen(){
+  var s=$('subj').value.trim()||'the subject',l=$('level').value.trim()||'this level',t=$('topic').value.trim()||'the topic';
+  if(window.SYAI&&SYAI.ready()){
+    $('out').style.display='block';$('out').innerHTML='<div style="opacity:.6">Working with '+SYAI.provider()+'…</div>';
+    SYAI.ask("You are a "+l+" "+s+" private tutor's AI assistant. "+(LIVE_PROMPTS[mode]||LIVE_PROMPTS.plan)+" Use markdown. Be genuinely usable — concrete content, no placeholders."+(window.SYAI&&SYAI.diagramHint?SYAI.diagramHint:""),"Topic: "+t,{maxTokens:1400})
+      .then(function(txt){$('out').innerHTML='<div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:6px">Live AI · '+esc(mode)+'</div>'+SYAI.render(txt);$('copy').style.display='inline-block'})
+      .catch(function(){toast('Live AI error — showing the template');genStatic(s,l,t)});
+    return;
+  }
+  genStatic(s,l,t);
+}
+function genStatic(s,l,t){
+  var o='';
+  if(mode==='plan')o='<h4>Lesson plan · '+esc(t)+'</h4>Objectives:\n• Define and understand '+t+'.\n• Apply it to worked & exam problems.\n• Reason independently.\n\nStarter (5m): retrieval of prior knowledge.\nMain (25m): I do → we do → you do.\nDifferentiation: scaffold for support; multi-step stretch task.\nCheck: 4-question mini-quiz.\nPlenary (5m): one-sentence summary + 5-question homework.';
+  else if(mode==='explain')o='<h4>Explaining '+esc(t)+' at '+esc(l)+'</h4>Start with a real-world hook, then the core idea in plain language, then a worked example, then a common misconception to avoid. Analogy: relate '+t+' to something familiar. Finish by asking the student to explain it back.';
+  else if(mode==='quiz')o='<h4>Quiz · '+esc(t)+'</h4>1. Recall: define '+t+'.\n2. Apply: a one-step problem.\n3. Apply: a two-step problem.\n4. Analyse: spot the error in a worked solution.\n5. Stretch: an exam-style question.\n\n(Answers auto-marked with feedback in the live build.)';
+  else if(mode==='homework')o='<h4>Homework · '+esc(t)+'</h4>5 questions rising in difficulty on '+t+', plus one "explain your reasoning" task. Est. 25 minutes. Auto-marked; results flow to your Command Centre.';
+  else if(mode==='exam')o='<h4>Exam questions · '+esc(t)+' ('+esc(l)+')</h4>• 2-mark recall\n• 4-mark application\n• 6-mark multi-step problem\n• Extended/essay prompt with mark scheme cues.';
+  else if(mode==='parent')o='<h4>Parent update</h4>Dear parent,\n\nIn today\'s session we worked on '+t+' in '+s+'. Your child showed good understanding and we identified next steps to practise at home. I\'ll set short homework to consolidate. Please encourage 15 minutes of practice before next session.\n\nBest wishes,\nYour StudYear tutor';
+  else if(mode==='diagram')o='<h4>Diagram brief · '+esc(t)+'</h4>Create a clear, labelled diagram showing the key components of '+t+', with a step-by-step visual flow and colour-coded annotations. Ultrarealistic, exam-accurate styling. (Rendered by the visual engine in-session.)';
+  $('out').style.display='block';$('out').innerHTML=o;$('copy').style.display='inline-block';
+}
+$('go').onclick=gen;
+$('copy').onclick=function(){var txt=$('out').innerText;(navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(function(){toast('Copied')},function(){toast('Select & copy manually')})};
+
+/* ---- Exam Paper Builder: branded to the tutor's practice, metered from the tutor's ACU wallet ---- */
+if(window.SYExam&&$('exam-mount')){
+  var tp=SY.get('tutorProfile',{})||{},prof=SY.get('profile',{})||{};
+  var practice=tp.businessName||prof.name||SY.session.name||'Your tutoring practice';
+  function wallet(){var w=SY.get('wallet',null)||{acus:100,plan:'child_free'};return w}
+  function refreshBal(){var b=$('exam-bal');if(b)b.innerHTML='Wallet: <b style="color:var(--gold-300)">'+(wallet().acus||0).toLocaleString()+' ACUs</b>.'}
+  refreshBal();
+  SYExam.mount($('exam-mount'),{
+    brand:{name:practice,line:'Powered by StudYear'},
+    defaults:{subject:$('subj').value||'',level:'GCSE'},
+    goId:'exam-go',
+    spend:function(cost,label){var w=wallet();
+      if((w.acus||0)<cost){toast('Not enough ACUs — '+(w.acus||0)+'/'+cost+' needed. Top up in Plans.');return false}
+      w.acus-=cost;SY.set('wallet',w);
+      SY.log&&SY.log('billing',label+' — '+cost+' ACUs',(w.acus)+' ACUs remaining.');
+      refreshBal();return true;},
+    onBuilt:function(st){SY.log&&SY.log('create','Exam paper built: '+st.meta.title,st.meta.n+' questions · '+st.meta.total+' marks · answer sheet included.')}
+  });
+}
+/* ---- Resource Makers: the student "create your own" suite, for the tutee ---- */
+if(window.SYMakers&&$('makers-mount')){
+  SYMakers.mount($('makers-mount'),{
+    context:'tutor',
+    brand:{name:practice,line:'Powered by StudYear'},
+    defaults:{subject:$('subj').value||'',level:'GCSE'},
+    cost:5,
+    spend:function(cost,label){var w=wallet();
+      if((w.acus||0)<cost){toast('Not enough ACUs — '+(w.acus||0)+'/'+cost+' needed. Top up in Plans.');return false}
+      w.acus-=cost;SY.set('wallet',w);
+      SY.log&&SY.log('billing',label+' — '+cost+' ACUs',(w.acus)+' ACUs remaining.');
+      refreshBal();return true;}
+  });
+}
+})();
+</script>
+</body></html>

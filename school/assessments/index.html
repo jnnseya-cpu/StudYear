@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Assessments</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--navy-900:#0B1220;--gold-300:#A9CFF2;--gold-400:#5FA8E0;--gold-500:#3D8FD1;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#8795AE;--line:rgba(77,157,224,.14);--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}body{background:radial-gradient(1200px 700px at 82% -12%,rgba(77,157,224,.13),transparent 60%),var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  .shell{display:flex;min-height:100vh;max-width:1440px;margin:0 auto}
+  aside{width:236px;flex:none;border-right:1px solid var(--line);padding:22px 14px 30px;position:sticky;top:0;align-self:flex-start;max-height:100vh;overflow-y:auto}
+  .slogo{font-family:var(--serif);font-size:19px;color:var(--ink);text-decoration:none;display:block;padding:4px 10px 14px}.slogo b{color:#4FA6E0;font-weight:600}
+  aside nav a{display:block;font-size:13px;color:var(--ink-2);text-decoration:none;padding:8px 10px;border-radius:8px;margin:1px 0}aside nav a:hover{color:var(--gold-300);background:rgba(77,157,224,.08)}aside nav a.on{color:var(--gold-300);background:rgba(77,157,224,.12)}
+  main{flex:1;padding:30px 30px 90px;min-width:0}@media(max-width:960px){.shell{flex-direction:column}aside{width:100%;position:sticky;top:0;z-index:60;max-height:46vh;overflow-y:auto;background:#060B18;border-right:none;border-bottom:1px solid var(--line)}aside nav{display:flex;flex-wrap:wrap;gap:2px}main{padding:22px 18px 70px}}
+  a{color:inherit}h1{font-family:var(--serif);font-weight:500;font-size:28px}p.lede{color:var(--ink-2);font-weight:300;margin-top:6px}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:18px 20px;margin-top:18px}.card h3{font-family:var(--serif);font-weight:500;font-size:17px}.card .sub{font-size:12.5px;color:var(--ink-3);margin:5px 0 12px}
+  label.f{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:12px 0 5px}
+  input,textarea,select{width:100%;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}input:focus,textarea:focus,select:focus{border-color:var(--gold-500)}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12px var(--sans);border-radius:9px;padding:9px 15px;cursor:pointer;text-decoration:none;display:inline-block}.btn:hover{background:rgba(77,157,224,.22)}.btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}.btn.sm{padding:6px 11px;font-size:11.5px}
+  .item{border:1px solid var(--line);border-radius:11px;background:rgba(16,27,51,.5);padding:12px 15px;margin-bottom:9px;display:flex;gap:12px;align-items:center}.item .t{flex:1}.item .t b{font-size:14px}.item .t small{display:block;color:var(--ink-3);font-size:11.5px}
+  .empty{color:var(--ink-3);font-style:italic;padding:14px 0}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold-300);opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+</style></head>
+<body>
+<script src="../../guard.js" data-role="school" data-base="../../"></script>
+<div class="shell">
+<aside><a class="slogo" href="../../">⌂ <b class="wm">StudYear</b></a><nav>
+  <a href="../">Command Centre</a><a href="../#risk">Risk intelligence</a><a href="../interventions/">Intervention war room</a><a href="../people/">People management</a><a href="../analytics/">Analytics</a><a href="../acu/">ACU command</a><a href="./" class="on">Assessments</a><a href="../reports/">Executive reports</a><a href="../resources/">Knowledge hub</a><a href="../plans/">Top up ACUs</a><a href="../settings/">Settings</a>
+</nav></aside>
+<main>
+  <h1>Assessments</h1><p class="lede">Record school-wide or cohort assessments; assignment distribution can plug in later. Saved assessments post to your join code so linked students receive them.</p>
+  <div class="card"><h3>New assessment</h3><div class="sub">Add an entry to your school assessment library.</div>
+    <label class="f">Title</label><input type="text" id="a-title" placeholder="e.g. Autumn maths checkpoint">
+    <label class="f">Description</label><textarea id="a-desc" rows="2" placeholder="Scope, cohort, format…"></textarea>
+    <label class="f">Cohort (year group, optional)</label><input type="text" id="a-cohort" placeholder="e.g. GCSE / Year 11">
+    <label class="f">Due date (optional)</label><input type="date" id="a-due">
+    <div style="margin-top:12px"><button class="btn solid" id="a-save">Save assessment</button></div>
+  </div>
+  <div class="card"><h3>Assessment library</h3><div class="sub">Recently added records for your school.</div><div id="a-list"></div></div>
+</main>
+</div>
+<div id="toast"></div>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;
+function $(id){return document.getElementById(id)}function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var el=$('toast');el.textContent=t;el.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){el.style.opacity=0},2600)}
+var code=SY.get('schoolCode',null);if(!code){code=(Math.random().toString(36).slice(2,10)).toUpperCase();SY.set('schoolCode',code)}
+function list(){return SY.schoolGet(code,'assessments',[])}
+function board(){return SY.schoolGet(code,'board',[])}
+function draw(){var a=list();$('a-list').innerHTML=a.length?a.map(function(x,i){return '<div class="item"><div class="t"><b>'+esc(x.title)+'</b><small>'+esc(x.desc||'')+(x.cohort?' · '+esc(x.cohort):'')+(x.due?' · due '+x.due:'')+'</small></div><button class="btn sm" data-del="'+i+'">Remove</button></div>'}).join(''):'<div class="empty">No assessments yet — add one above.</div>';
+  $('a-list').querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){var a=list();a.splice(+b.dataset.del,1);SY.schoolSet(code,'assessments',a);draw()}})}
+draw();
+$('a-save').onclick=function(){var title=$('a-title').value.trim();if(!title){toast('Enter a title');return}
+  var rec={title:title,desc:$('a-desc').value.trim(),cohort:$('a-cohort').value.trim(),due:$('a-due').value,when:new Date().toISOString()};
+  var a=list();a.unshift(rec);SY.schoolSet(code,'assessments',a.slice(0,100));
+  /* also post to the class board so linked students (and consenting parents) see it */
+  var bd=board();bd.unshift({title:'Assessment: '+title,detail:(rec.desc||'')+(rec.due?' (due '+rec.due+')':''),subj:'',when:rec.when});SY.schoolSet(code,'board',bd.slice(0,50));
+  SY.log('assessment','Assessment added: '+title,rec.cohort||'whole school');
+  $('a-title').value='';$('a-desc').value='';$('a-cohort').value='';$('a-due').value='';toast('Assessment saved and posted to your cohort');draw();};
+})();
+</script>
+</body></html>

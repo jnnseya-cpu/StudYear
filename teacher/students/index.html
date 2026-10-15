@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — My students · records</title>
+<link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--bg:#060B18;--panel:#0B1428;--line:rgba(170,182,204,.16);--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#77839B;
+    --gold-300:#F2CE7B;--gold-400:#D9AE55;--gold-500:#B98A2F;--good:#5CBB7B;--warn:#E0A93F;
+    --serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans)}
+  .wrap{max-width:1060px;margin:0 auto;padding:26px 22px 80px}
+  h1{font-family:var(--serif);font-size:27px;margin:6px 0 4px}
+  h3{font-family:var(--serif);font-size:16.5px}
+  .k{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-400)}
+  .lede{color:var(--ink-2);font-size:14px;margin:4px 0 16px;line-height:1.6;max-width:80ch}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:16px 18px}
+  .note{font-size:11.5px;color:var(--ink-3);line-height:1.6}
+  .btn{appearance:none;border:1px solid var(--gold-500);border-radius:8px;padding:8px 13px;font-size:12.5px;font-weight:600;cursor:pointer;background:linear-gradient(180deg,var(--gold-300),var(--gold-400));color:#1a1405}
+  .btn.ghost{background:none;border-color:var(--line);color:var(--ink-2)}
+  .btn.sm{padding:4px 9px;font-size:11px}
+  .roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-top:10px}
+  .kid{border:1px solid var(--line);border-radius:11px;padding:12px 14px;cursor:pointer;background:rgba(6,11,24,.35)}
+  .kid:hover{border-color:var(--gold-500)}
+  .kid b{color:var(--ink)}
+  .pill{display:inline-block;border:1px solid var(--line);border-radius:16px;padding:2px 9px;font-size:10.5px}
+  .pill.ok{color:var(--good);border-color:rgba(92,187,123,.4)}
+  .pill.warn{color:#e8c07a;border-color:rgba(224,169,63,.4)}
+  a.back{color:var(--ink-3);font-size:13px;text-decoration:none}
+</style></head><body>
+<script src="../../guard.js" data-role="teacher" data-base="../../"></script>
+<script src="../../ai.js"></script><script src="../../export.js"></script><script src="../../record.js"></script>
+<div class="wrap">
+<a class="back" href="../">← Teacher Command Centre</a>
+<div class="k" style="margin-top:14px">My cohorts · private student records</div>
+<h1>Student records &amp; learning models</h1>
+<p class="lede">The dedicated record of everything your students do in the OS, plus the machine-learned model that
+  builds each one's individual plan, study style and improvement strategy. You can only open children in your
+  assigned cohorts — every access is logged for the school.</p>
+
+<div id="roster-view"><div class="card"><h3>My students</h3><div class="roster" id="roster"></div></div></div>
+<div id="record-view" style="display:none">
+  <div style="margin-bottom:10px"><button class="btn ghost sm" id="back-roster">← My students</button></div>
+  <div id="record"></div>
+</div>
+</div>
+<script>
+(function(){
+'use strict';
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tp=SY.get('teacherProfile',{})||{};
+var code=tp.schoolCode||null;
+if(!code){$('roster').innerHTML='<div class="note">Link your school first (Profile &amp; school link) — student records live inside the school workspace.</div>';return}
+var roster=SY.schoolGet(code,'roster',[]);
+var mine=roster.filter(function(r){
+  return SYRecord.access(code,r.email,SY.session.email,'teacher').allowed;
+});
+function draw(){
+  $('roster').innerHTML=mine.map(function(r,i){
+    var m=SYRecord.model(SYRecord.collect(r.email));
+    return '<div class="kid" data-i="'+i+'"><b>'+esc(r.name||SY.accountName(r.email))+'</b>'+
+      '<div class="note">'+esc(r.year||'')+' · '+m.evidence+' recorded events · '+esc(m.styleLabel)+'</div>'+
+      '<div style="margin-top:5px"><span class="pill '+(m.risk==='LOW'?'ok':'warn')+'">risk '+m.risk.toLowerCase()+'</span> <span class="pill">'+(m.overall||0)+'%</span></div></div>';
+  }).join('')||'<div class="note">No students in your assigned cohorts yet.</div>';
+  $('roster').querySelectorAll('.kid').forEach(function(el){el.onclick=function(){
+    $('roster-view').style.display='none';$('record-view').style.display='block';
+    SYRecord.render($('record'),{child:mine[+el.dataset.i].email,code:code,viewer:{email:SY.session.email,role:'teacher',name:SY.session.name}});
+  }});
+}
+$('back-roster').onclick=function(){$('record-view').style.display='none';$('roster-view').style.display='block';draw()};
+draw();
+})();
+</script>
+</body></html>

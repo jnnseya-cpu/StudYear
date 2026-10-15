@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Fluency Heatmap</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  .hm{overflow-x:auto;margin-top:8px}
+  .hm table{border-collapse:collapse;font-size:12px;min-width:640px}
+  .hm th{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);padding:6px 8px;text-align:left}
+  .hm td{padding:6px 8px;border:1px solid rgba(6,11,24,.6)}
+  .hm td.cell{text-align:center;min-width:54px;font-weight:600;border-radius:4px}
+  .hm td.name{color:var(--ink);white-space:nowrap}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:12px}
+</style></head><body>
+<script src="../../guard.js" data-role="teacher" data-base="../../"></script>
+<script src="../../export.js"></script>
+<div class="shell"><main>
+  <div class="k">Institutional staff · SkillRush™</div><h1>Class fluency heatmap</h1>
+  <p class="lede">Live fluency across your class — accuracy per skill, at-risk learners, fastest improvers. Set the class focus, print practice sheets and run class battles. Readiness tracking mirrors the Multiplication Tables Check.</p>
+
+  <div class="kpis">
+    <div class="card stat"><div class="v" id="k-players">0</div><div class="k">Playing</div></div>
+    <div class="card stat"><div class="v" id="k-acc">—</div><div class="k">Class accuracy</div></div>
+    <div class="card stat"><div class="v" id="k-risk">0</div><div class="k">At risk</div></div>
+    <div class="card stat"><div class="v" id="k-mtc">—</div><div class="k">MTC-ready</div></div>
+    <div class="card stat"><div class="v" id="k-battle">0</div><div class="k">Battle pts this week</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="card c12"><h3>Skill heatmap</h3><div class="sub">Accuracy per student per skill · green ≥80% · amber 50–79% · red &lt;50% · grey = not practised</div>
+      <div class="hm" id="heatmap"></div></div>
+
+    <div class="card c6"><h3>🎯 Teacher-directed practice</h3><div class="sub">Set the class focus — it becomes every student's daily mission</div>
+      <label class="f">Focus skill</label><select id="focus-skill"></select>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn solid sm" id="focus-set">Set class focus</button><button class="btn ghost sm" id="focus-clear">Clear</button><span class="note" id="focus-state" style="margin:0"></span></div>
+      <div class="note">Students see “🏫 Your teacher set the class focus” on their SkillRush mission.</div></div>
+
+    <div class="card c6"><h3>🖨 Printable practice sheet</h3><div class="sub">20 questions + answer key — paper practice for class or homework</div>
+      <label class="f">Skill</label><select id="sheet-skill"></select>
+      <div style="margin-top:10px"><button class="btn sm" id="sheet-go">⬇ Export sheet — PDF · Word</button></div></div>
+
+    <div class="card c6"><h3>⚠ At risk / 🚀 improving fastest</h3><div class="sub">From live accuracy and session history</div><div id="watch"></div></div>
+    <div class="card c6"><h3>⚔️ Class battle manager</h3><div class="sub" id="battle-sub">This week's battle</div><div id="battle"></div>
+      <div style="margin-top:8px"><button class="btn ghost sm" id="battle-reset">Reset this week's battle</button></div></div>
+
+    <div class="card c12"><h3>🏆 School league</h3><div class="sub">Anonymous hero names — school-wide, resets weekly</div><div id="board"></div></div>
+  </div>
+</main></div>
+<script src="../nav.js" data-base="../" data-cur="fluency/"></script>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;var TW=window.TW||{};
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var e=$('toast');if(!e)return;e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2200)}
+function ri(a,b){return Math.floor(a+Math.random()*(b-a+1))}
+function weekKey(){var d=new Date();var on=new Date(d.getFullYear(),0,1);var wk=Math.ceil((((d-on)/864e5)+on.getDay()+1)/7);return d.getFullYear()+'-W'+wk}
+var code=TW.schoolCode||null;
+
+var SKILL_NAMES={addition:'Addition',subtraction:'Subtraction',tables:'Times tables',division:'Division',bonds:'Bonds',inverse:'Inverse ops',word:'Word probs',mental:'Mental arith.',fractions:'Fractions',decimals:'Decimals',percent:'Percent',algebra:'Algebra',squares:'Squares',formulas:'Formulas',spelling:'Spelling',grammar:'Grammar',vocab:'Vocab',science:'Science',geography:'Geography',history:'History',french:'French'};
+var SKILL_KEYS=Object.keys(SKILL_NAMES);
+['focus-skill','sheet-skill'].forEach(function(id){$(id).innerHTML=SKILL_KEYS.map(function(k){return '<option value="'+k+'">'+esc(SKILL_NAMES[k])+'</option>'}).join('')});
+
+/* gather each student's skillrush data (consent-scoped same-device reads; server-side in production) */
+var students=(TW.myStudents&&TW.myStudents())||[];
+var rows=students.map(function(s){
+  var sr=SY.readAccount(s.email,'skillrush',null)||{skill:{},history:[]};
+  return {email:s.email,name:s.name||SY.accountName(s.email),sr:sr};
+});
+var playing=rows.filter(function(r){return r.sr&&r.sr.history&&r.sr.history.length});
+
+/* KPIs */
+$('k-players').textContent=playing.length+'/'+rows.length;
+var accs=[];playing.forEach(function(r){Object.keys(r.sr.skill||{}).forEach(function(k){var st=r.sr.skill[k];if(st.total)accs.push(100*st.right/st.total)})});
+$('k-acc').textContent=accs.length?Math.round(accs.reduce(function(a,b){return a+b},0)/accs.length)+'%':'—';
+function acc(st){return st&&st.total?Math.round(100*st.right/st.total):null}
+var atRisk=playing.filter(function(r){return Object.keys(r.sr.skill||{}).some(function(k){var a=acc(r.sr.skill[k]);return a!=null&&a<50})});
+$('k-risk').textContent=atRisk.length;
+/* MTC readiness: tables accuracy ≥90% with 20+ attempts */
+var mtcReady=playing.filter(function(r){var st=(r.sr.skill||{}).tables;return st&&st.total>=20&&acc(st)>=90}).length;
+$('k-mtc').textContent=playing.length?mtcReady+'/'+playing.length:'—';
+
+/* heatmap */
+function cellColor(a){return a==null?'rgba(107,122,150,.14)':a>=80?'rgba(92,187,123,.35)':a>=50?'rgba(201,133,0,.35)':'rgba(230,103,103,.4)'}
+$('heatmap').innerHTML=playing.length?('<table><tr><th>Student</th>'+SKILL_KEYS.map(function(k){return '<th>'+esc(SKILL_NAMES[k])+'</th>'}).join('')+'</tr>'+
+  rows.map(function(r){return '<tr><td class="name">'+esc(r.name)+(r.sr.history&&r.sr.history.length?'':' <span style="color:var(--ink-3);font-size:10px">(not started)</span>')+'</td>'+
+    SKILL_KEYS.map(function(k){var a=acc((r.sr.skill||{})[k]);return '<td class="cell" style="background:'+cellColor(a)+'">'+(a==null?'—':a+'%')+'</td>'}).join('')+'</tr>'}).join('')+'</table>')
+  :'<div class="empty">No SkillRush sessions from your class yet — set a class focus and ask students to open SkillRush from their console.</div>';
+
+/* at risk / improving */
+var improving=playing.map(function(r){
+  var by={};(r.sr.history||[]).slice().reverse().forEach(function(h){(by[h.skill]=by[h.skill]||[]).push(h.acc)});
+  var best=null;Object.keys(by).forEach(function(k){var v=by[k];if(v.length>=2){var d=v[v.length-1]-v[0];if(best==null||d>best)best=d}});
+  return {r:r,imp:best};
+}).filter(function(x){return x.imp!=null}).sort(function(a,b){return b.imp-a.imp});
+$('watch').innerHTML=(atRisk.length?atRisk.slice(0,5).map(function(r,i){
+    var weak=Object.keys(r.sr.skill||{}).filter(function(k){var a=acc(r.sr.skill[k]);return a!=null&&a<50}).map(function(k){return SKILL_NAMES[k]});
+    return '<div class="row"><span class="badge crit">at risk</span> <b>'+esc(r.name)+'</b><span style="color:var(--ink-3);font-size:11.5px">'+esc(weak.join(', '))+'</span>'+
+      '<button class="btn sm ghost" data-pu="'+i+'" style="margin-left:auto">✉ Parent update</button></div>'+
+      '<div class="note" style="margin:2px 0 6px">🤖 AI suggests: 3× Comeback Mode sessions on '+esc(weak[0]||'the weak skill')+' this week, then re-check the heatmap.</div>';
+  }).join(''):'<div class="row" style="border:0"><span class="badge good">none at risk</span></div>')+
+  (improving.length?improving.slice(0,5).map(function(x){return '<div class="row"><span class="badge good">+'+x.imp+'%</span> <b>'+esc(x.r.name)+'</b><span style="margin-left:auto;color:var(--ink-3);font-size:11.5px">fastest improving</span></div>'}).join(''):'')+
+  '<div id="pu-out" style="margin-top:8px;font-size:13px;color:var(--ink-2);line-height:1.7"></div>';
+/* parent update generator — live AI when configured, template otherwise */
+Array.prototype.forEach.call(document.querySelectorAll('[data-pu]'),function(b){b.onclick=function(){
+  var r=atRisk[+b.dataset.pu];var weak=Object.keys(r.sr.skill||{}).filter(function(k){var a=acc(r.sr.skill[k]);return a!=null&&a<50}).map(function(k){return SKILL_NAMES[k]});
+  var out=document.getElementById('pu-out');
+  var tmpl='Dear parent,\n\nIn our SkillRush fluency practice, '+r.name+' is working hard but finding '+(weak.join(' and ')||'some skills')+' tricky right now. Two or three short 5-minute sessions at home this week (Comeback Mode is perfect) would make a real difference — little and often beats one long session.\n\nThank you for your support,\n'+(SY.session.name||'Class teacher');
+  if(window.SYAI&&SYAI.ready()){out.innerHTML='<span style="opacity:.6">Drafting with '+SYAI.provider()+'…</span>';
+    SYAI.ask('Write a warm, brief parent update (4–6 sentences) from a class teacher about fluency practice: what the child finds hard, one specific way to help at home this week using short daily practice. Ready to send. No placeholders.','Child: '+r.name+'. Weak skills: '+weak.join(', ')+'.',{maxTokens:350})
+      .then(function(t){out.innerHTML='<div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:4px">Parent update · '+esc(r.name)+'</div>'+SYAI.render(t)+'<button class="btn sm" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.parentNode.innerText)">Copy</button>'})
+      .catch(function(){out.innerHTML='<pre style="white-space:pre-wrap;font-family:inherit">'+esc(tmpl)+'</pre>'});
+    return}
+  out.innerHTML='<div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:4px">Parent update · '+esc(r.name)+'</div><pre style="white-space:pre-wrap;font-family:inherit">'+esc(tmpl)+'</pre>';
+}});
+
+/* teacher-directed focus */
+function focusState(){var f=code?SY.schoolGet(code,'skillrush-focus',null):null;
+  $('focus-state').innerHTML=f&&f.skill?('<span style="color:var(--good)">● Live: '+esc(SKILL_NAMES[f.skill]||f.skill)+'</span>'):'No focus set';
+  if(f&&f.skill)$('focus-skill').value=f.skill;}
+$('focus-set').onclick=function(){if(!code){toast('Link your school first (Profile & school link)');return}
+  SY.schoolSet(code,'skillrush-focus',{skill:$('focus-skill').value,setBy:SY.session.email,when:new Date().toISOString()});
+  SY.log('skillrush','Class focus set',SKILL_NAMES[$('focus-skill').value]);toast('Class focus set — it is now every student\'s daily mission');focusState()};
+$('focus-clear').onclick=function(){if(code)SY.schoolSet(code,'skillrush-focus',null);toast('Focus cleared');focusState()};
+focusState();
+
+/* printable practice sheet */
+var GEN={tables:function(){var a=ri(2,12),b=ri(2,12);return [a+' × '+b+' =',a*b]},
+  addition:function(){var a=ri(10,200),b=ri(10,200);return [a+' + '+b+' =',a+b]},
+  subtraction:function(){var a=ri(10,200),b=ri(10,200);var hi=Math.max(a,b),lo=Math.min(a,b);return [hi+' − '+lo+' =',hi-lo]},
+  division:function(){var b=ri(2,12),ans=ri(2,12);return [(b*ans)+' ÷ '+b+' =',ans]},
+  bonds:function(){var a=ri(1,99);return ['What adds to 100 with '+a+'?',100-a]},
+  inverse:function(){var b=ri(2,9),ans=ri(2,9);return ['? × '+b+' = '+(b*ans),ans]},
+  mental:function(){var a=ri(10,90),b=ri(10,80);return [a+' + '+b+' =',a+b]},
+  fractions:function(){var d=[2,4,5,10][ri(0,3)],n=ri(1,d-1),w=d*ri(2,9);return [n+'/'+d+' of '+w+' =',w*n/d]},
+  decimals:function(){var a=ri(1,9),b=ri(1,9);return ['0.'+a+' + 0.'+b+' =',Math.round((a/10+b/10)*100)/100]},
+  percent:function(){var p=[50,25,10,20][ri(0,3)],base=ri(2,20)*10;return [p+'% of '+base+' =',base*p/100]},
+  algebra:function(){var x=ri(2,12),b=ri(1,10),m=ri(2,9);return [m+'x + '+b+' = '+(m*x+b)+',  x =',x]},
+  squares:function(){var n=ri(2,15);return [n+'² =',n*n]}};
+$('sheet-go').onclick=function(e){
+  var k=$('sheet-skill').value;var g=GEN[k];
+  if(!g){toast('Printable sheets cover the maths skills — pick one of those');return}
+  var qs=[];for(var i=0;i<20;i++)qs.push(g());
+  var name='SkillRush-'+k+'-practice';
+  var qHtml='<ol>'+qs.map(function(q){return '<li style="margin:10px 0">'+q[0]+' ______</li>'}).join('')+'</ol>';
+  var aHtml='<ol>'+qs.map(function(q){return '<li>'+q[1]+'</li>'}).join('')+'</ol>';
+  SYExport.menu(e.currentTarget,{
+    pdf:function(){SYExport.pdf('SkillRush practice — '+SKILL_NAMES[k],'<h1>SkillRush™ practice — '+SKILL_NAMES[k]+'</h1><p class="meta">Name: ______________  Class: ______  Date: ______</p>'+qHtml+'<div style="page-break-before:always"></div><h2>Answer key</h2>'+aHtml)},
+    word:function(){SYExport.word(name,{title:'SkillRush practice — '+SKILL_NAMES[k],blocks:[{p:'Name: ______________  Class: ______  Date: ______'},{h:'Questions'}].concat(qs.map(function(q,i){return {p:(i+1)+'. '+q[0]+' ______'}})).concat([{h:'Answer key'}]).concat(qs.map(function(q,i){return {p:(i+1)+'. '+q[1]}}))});toast('Word sheet downloaded')}
+  });
+};
+
+/* battle manager + school league */
+function renderBattle(){
+  if(!code){$('battle').innerHTML='<div class="empty">Link your school to run class battles.</div>';return}
+  var wk=weekKey();var bt=SY.schoolGet(code,'skillrush-battle',[]).filter(function(x){return x.week===wk});
+  var total=bt.reduce(function(a,x){return a+(x.right||0)},0);
+  $('k-battle').textContent=total.toLocaleString();
+  $('battle-sub').textContent='Week '+wk;
+  var by={};bt.forEach(function(x){by[x.name]=(by[x.name]||0)+(x.right||0)});
+  var top=Object.keys(by).map(function(n){return [n,by[n]]}).sort(function(a,b){return b[1]-a[1]});
+  $('battle').innerHTML=top.length?top.slice(0,8).map(function(x,i){return '<div class="row"><b style="width:26px">'+(i+1)+'</b><span style="flex:1">'+esc(x[0])+'</span><span>'+x[1]+' pts</span></div>'}).join(''):'<div class="empty">No battle points yet — tell the class to play ⚔️ Class Battle mode this week.</div>';
+}
+$('battle-reset').onclick=function(){if(!code)return;if(!confirm('Reset this week\'s class battle points?'))return;
+  var wk=weekKey();var bt=SY.schoolGet(code,'skillrush-battle',[]).filter(function(x){return x.week!==wk});
+  SY.schoolSet(code,'skillrush-battle',bt);toast('Battle reset');renderBattle()};
+renderBattle();
+
+function renderBoard(){
+  if(!code){$('board').innerHTML='<div class="empty">Link your school to see the school league.</div>';return}
+  var bd=SY.schoolGet(code,'skillrush-board',[]).slice().sort(function(a,b){return (b.xp||0)-(a.xp||0)});
+  $('board').innerHTML=bd.length?bd.slice(0,12).map(function(x,i){return '<div class="row"><b style="width:26px">'+(i+1)+'</b><span style="width:26px">'+esc(x.av||'🦸')+'</span><span style="flex:1">'+esc(x.name)+'</span><span>'+(x.xp||0).toLocaleString()+' XP</span></div>'}).join(''):'<div class="empty">No league entries yet.</div>';
+}
+renderBoard();
+})();
+</script>
+</body></html>
