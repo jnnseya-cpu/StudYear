@@ -3995,7 +3995,7 @@ function arStatic(title,text,subj,level){
    with the key items pushed straight into the spaced-repetition deck so progress comes fast.
      write  — handwriting legibility, letter formation, spelling patterns, writing level vs year
      memory — why it isn't sticking (copying ≠ learning) + an active-recall + spacing plan      */
-var coachMode='write', coachImage=null, COACH_PRICE=60;
+var coachMode='write', coachImage=null, COACH_PRICE=60, coachRecheckOf=null;
 var COACH_NOTES={
   write:"Writing & handwriting: photograph a page of their handwriting. The Coach reads letter formation, spacing, legibility, spelling patterns and writing level versus their age — then builds a plan.",
   memory:"Memory & retention: photograph what they're trying to learn (notes, keywords, times tables). The Coach works out WHY it isn't sticking and builds an active-recall plan — the opposite of copying it out again."
@@ -4058,9 +4058,11 @@ function coachParseAndSeed(mode,md){
   }catch(e){}
   return {words:words,cards:cards,recheck:recheck,seeded:seeded};
 }
-function coachSavePlan(mode,md,parsed){
+function coachSavePlan(mode,md,parsed,prev){
   var plans=store.get('coachPlans',[]); var now=Date.now();
-  plans.unshift({id:'cp'+now.toString(36),mode:mode,when:new Date().toISOString(),level:(PROFILE&&PROFILE.level)||'',md:md,seeded:parsed.seeded,recheckDays:parsed.recheck,recheckDue:now+parsed.recheck*864e5});
+  var thread=(prev&&(prev.thread||prev.id))||('cp'+now.toString(36));
+  var round=(prev?(prev.round||1)+1:1);
+  plans.unshift({id:'cp'+now.toString(36),mode:mode,when:new Date().toISOString(),level:(PROFILE&&PROFILE.level)||'',md:md,seeded:parsed.seeded,recheckDays:parsed.recheck,recheckDue:now+parsed.recheck*864e5,recheckOf:(prev&&prev.id)||null,thread:thread,round:round});
   store.set('coachPlans',plans.slice(0,20));
 }
 function coachGo(){
@@ -4073,10 +4075,14 @@ function coachGo(){
   var level=(PROFILE&&PROFILE.level)||(typeof dgLevelStr==="function"?dgLevelStr():"");
   out.innerHTML='<div class="empty">Reading the photo closely and building the plan with '+SYAI.provider()+'…</div>';
   var go=document.getElementById('coach-go'); if(go){go.disabled=true;go.textContent='Analysing…';}
-  SYAI.ask(coachPrompt(coachMode,level),"The work is in the attached photo. Learner level: "+level+".",
-    {maxTokens:1800,image:coachImage,acus:COACH_PRICE,label:"Skills Coach ("+coachMode+")"}).then(function(md){
+  var prev=coachRecheckOf;  // the earlier plan this re-check should measure progress against
+  var sys=coachPrompt(coachMode,level)+(prev?" IMPORTANT: this is a RE-CHECK of an earlier assessment of the SAME learner. Begin your answer with a first section '## Progress since last time' that compares this new photo against the previous assessment below and states plainly what has IMPROVED and what still needs work (be specific and encouraging), then give the full updated plan using the headings above.":"");
+  var usr="The work is in the attached photo. Learner level: "+level+"."+(prev?("\n\nPREVIOUS ASSESSMENT (for comparison only):\n"+String(prev.md||'').slice(0,1500)):"");
+  SYAI.ask(sys,usr,
+    {maxTokens:1800,image:coachImage,acus:COACH_PRICE,label:"Skills Coach ("+coachMode+(prev?" re-check":"")+")"}).then(function(md){
     var parsed=coachParseAndSeed(coachMode,md);
-    coachSavePlan(coachMode,md,parsed);
+    coachSavePlan(coachMode,md,parsed,prev);
+    coachRecheckOf=null;
     addPoints(10);touchStreak();
     logEvent("coach",(coachMode==='write'?'Writing & handwriting':'Memory & retention')+" plan created",(parsed.seeded?parsed.seeded+" items added to spaced practice · ":"")+"re-check in "+parsed.recheck+" days.");
     out.innerHTML='<div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-400);margin-bottom:6px">'+(coachMode==='write'?'Writing & handwriting plan':'Memory & retention plan')+' · read from your photo</div>'+SYAI.render(md)
@@ -4094,13 +4100,19 @@ function renderCoachPlans(){
   el.innerHTML=plans.map(function(p,i){
     var due=p.recheckDue||0, days=Math.ceil((due-now)/864e5);
     var recheck=due<=now?'<span class="badge" style="background:rgba(230,103,103,.14);color:#f0a0a0;border:1px solid rgba(230,103,103,.4)">Re-check due</span>':'<span class="note">re-check in '+Math.max(0,days)+'d</span>';
-    var label=p.mode==='write'?'✍️ Writing & handwriting':'🧠 Memory & retention';
+    var label=(p.mode==='write'?'✍️ Writing & handwriting':'🧠 Memory & retention')+((p.round&&p.round>1)?' <span class="badge" style="background:rgba(92,187,123,.14);color:#7fcf98;border:1px solid rgba(92,187,123,.35)">re-check #'+p.round+'</span>':'');
     var when=new Date(p.when).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
     return '<div class="card" style="margin:8px 0;background:rgba(6,11,24,.35)"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b style="flex:1">'+label+'</b><span class="note">'+when+'</span>'+recheck+'</div>'
-      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn ghost sm" data-cv="'+i+'">View plan</button><button class="btn sm" data-cr="'+esc(p.mode)+'">📷 Re-check with a new photo</button></div></div>';
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn ghost sm" data-cv="'+i+'">View plan</button><button class="btn sm" data-cr="'+i+'">🔁 Re-check with a new photo</button></div></div>';
   }).join('');
   el.querySelectorAll('[data-cv]').forEach(function(b){b.onclick=function(){var p=plans[+b.dataset.cv]; var out=document.getElementById('coach-out'); out.innerHTML=(window.SYAI&&SYAI.render)?SYAI.render(p.md):('<pre style="white-space:pre-wrap">'+esc(p.md)+'</pre>'); if(out.scrollIntoView)out.scrollIntoView({behavior:'smooth',block:'start'});};});
-  el.querySelectorAll('[data-cr]').forEach(function(b){b.onclick=function(){coachSetMode(b.dataset.cr); var c=document.getElementById('coach-camera'); if(c)c.click();};});
+  el.querySelectorAll('[data-cr]').forEach(function(b){b.onclick=function(){
+    var p=plans[+b.dataset.cr]; if(!p)return;
+    coachSetMode(p.mode); coachRecheckOf=p; coachImage=null;
+    var fn=document.getElementById('coach-filename');
+    if(fn)fn.innerHTML="🔁 <b style='color:var(--gold-300)'>Re-check</b> — take <b>or attach</b> a new photo of the same work below, then press <b>Analyse</b>. The Coach will compare it to the last one and show the progress.";
+    var dz=document.getElementById('coach-drop'); if(dz&&dz.scrollIntoView)dz.scrollIntoView({behavior:'smooth',block:'center'});
+  };});
 }
 function renderSkillsCoach(){ coachSetMode(coachMode); renderCoachPlans(); }
 (function(){
