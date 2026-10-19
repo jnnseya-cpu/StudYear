@@ -2616,7 +2616,8 @@ function renderPlan(){
             <div class="act">${esc(s.mode)} · ${s.mins} min</div>
           </label>
           <div class="slot-acts">
-            <button class="btn sm" data-lesson-topic="${esc(topic)}" data-lesson-subj="${esc(s.subj)}" data-lesson-level="${esc(s.level||'')}" title="Open as an Interactive Lesson">📖 Lesson</button>
+            <button class="btn sm" data-course-subj="${esc(s.subj)}" data-course-topic="${esc(topic)}" data-course-level="${esc(s.level||'')}" title="Build a full structured course on this, in one click">🎓 Course</button>
+            <button class="btn ghost sm" data-lesson-topic="${esc(topic)}" data-lesson-subj="${esc(s.subj)}" data-lesson-level="${esc(s.level||'')}" title="Open as an Interactive Lesson">📖 Lesson</button>
             <button class="btn ghost sm" data-find-subj="${esc(s.subj)}" data-find-topic="${esc(topic)}" title="Search matching resources">🔎 Resources</button>
           </div></div>`;
       }).join("")+`</div>`;
@@ -2625,6 +2626,8 @@ function renderPlan(){
   var _pr=document.getElementById("plan-refresh");if(_pr)_pr.onclick=function(){var g=document.getElementById("gen-plan");if(g)g.click();};
   out.querySelectorAll("[data-lesson-topic]").forEach(b=>b.onclick=()=>
     openLessonFor(b.dataset.lessonTopic,b.dataset.lessonSubj,b.dataset.lessonLevel));
+  out.querySelectorAll("[data-course-subj]").forEach(b=>b.onclick=()=>
+    courseFromPlan(b.dataset.courseSubj,b.dataset.courseTopic,b.dataset.courseLevel));
   out.querySelectorAll("[data-find-subj]").forEach(b=>b.onclick=()=>{
     showTab("search");
     document.getElementById("q").value=b.dataset.findTopic||b.dataset.findSubj;
@@ -4557,6 +4560,26 @@ document.getElementById("il-go").onclick=()=>{
 /* reuse the modal quiz viewer for generated quizzes */
 function openInlineQuiz(r){ r.id=r.id||("gen"+Date.now()); LIB.push(r); openRes(r.id); }
 
+/* one-click: build a full structured course from a planner session — pre-fills
+   the AI Course form (adding the exact subject/level as options if needed) and
+   fires the generator, so the plan's subject + topic go straight to a course. */
+function courseFromPlan(subj,topic,level){
+  showTab("course");
+  var sel=document.getElementById("cg-subject");
+  if(sel&&subj){
+    var has=Array.prototype.some.call(sel.options,function(o){return o.value===subj||o.text===subj;});
+    if(!has){var o=document.createElement("option");o.text=subj;o.value=subj;sel.insertBefore(o,sel.options[sel.options.length-1]);}
+    sel.value=subj;
+  }
+  var tp=document.getElementById("cg-topic"); if(tp)tp.value=(topic&&subj&&topic.toLowerCase()!==subj.toLowerCase())?topic:"";
+  var lv=document.getElementById("cg-level");
+  if(lv){var lvl=level||(PROFILE&&PROFILE.level)||lv.value||"";
+    if(lvl){var hasL=Array.prototype.some.call(lv.options,function(o){return o.value===lvl||o.text===lvl;});
+      if(!hasL){var ol=document.createElement("option");ol.text=lvl;ol.value=lvl;lv.appendChild(ol);} lv.value=lvl;}}
+  var bd=document.getElementById("cg-board"); if(bd&&PROFILE&&PROFILE.board&&PROFILE.board!=="—"){try{bd.value=PROFILE.board;}catch(e){}}
+  var go=document.getElementById("cg-go"); if(go)go.click();  // one click → generate
+}
+
 /* open a planner session as an Interactive Lesson — pre-fills topic/subject/level */
 function openLessonFor(topic,subj,level){
   showTab("lesson");
@@ -4588,8 +4611,8 @@ document.getElementById("cg-go").onclick=()=>{
     document.getElementById("cg-sub").textContent=head+" · generating with live AI…";
     document.getElementById("cg-out").innerHTML='<div class="note">Writing your course with '+SYAI.provider()+'…</div>';
     const grounding=(function(){const f=curricFor(subject,level);return f?"\nGround the course on this REAL "+f.tier+" specification structure — keep to it and refine/expand the bullets with concrete, exam-relevant detail:\n"+f.modules.map((m,i)=>"Module "+(i+1)+": "+m.t+" — "+m.topics.join("; ")).join("\n"):""})();
-    const sys="You are StudYear's course designer. Write a structured "+level+" "+subject+" course"+(board?" aligned to the "+board+" exam board":"")+(focus?" focused on: "+focus+" (go deep on this topic; only include other modules where they directly support it)":"")+". Produce 4–6 modules. For each module use a '## Module N — <title>' heading, then 3–5 specific subtopics as bullets, then a line '▸ ends with a check quiz'. Be concrete and appropriate to the level — real curriculum content, never generic filler."+((window.SY&&SY.stageStyle)?SY.stageStyle(level):"")+" End with a short 'How to study this course' note."+grounding;
-    SYAI.ask(sys,"Subject: "+subject+(focus?"\nFocus topic: "+focus:"")+"\nLevel: "+level+(board?"\nExam board: "+board:""),{maxTokens:1500,acus:CG_PRICE,label:"AI course: "+subject}).then(txt=>{
+    const sys="You are StudYear's expert "+level+" "+subject+" course designer and examiner"+(board?", writing precisely to the "+board+" specification":"")+". Build a rigorous, specification-accurate course"+(focus?" focused specifically on: \""+focus+"\" — go deep on exactly this topic; include other modules ONLY where they are needed to master it":"")+". Produce 4–6 modules. For EACH module, in this order: a '## Module N — <precise, specific title>' heading; then 3–5 bullets of REAL curriculum content using correct terminology (concrete facts, formulae, named cases, dates, definitions — never vague filler); then a line 'Objective: <what the learner will be able to DO after it>'; then a line 'Worked example: <one concrete, level-appropriate example or model answer>'; then a line 'Common mistake: <the specific error learners make here, and the fix>'; then a line '▸ ends with a check quiz'. Pitch exactly at genuine "+level+" standard — not easier, not harder."+((window.SY&&SY.stageStyle)?SY.stageStyle(level):"")+" Finish with a '## How to study this course' section giving the smartest order, minutes per module, and what 'mastered' looks like. Be specific, exam-relevant and high-standard throughout; a teacher should be able to teach straight from it."+grounding;
+    SYAI.ask(sys,"Subject: "+subject+(focus?"\nFocus topic: "+focus:"")+"\nLevel: "+level+(board?"\nExam board: "+board:""),{maxTokens:2000,acus:CG_PRICE,label:"AI course: "+subject}).then(txt=>{
       addPoints(10);touchStreak();logEvent("course","AI course: "+cap,head+" — live AI course generated.");
       document.getElementById("cg-sub").textContent=head+" · live AI course — every module opens into a real lesson, tutor session and quiz";
       /* split the AI text into modules so each one becomes a LEARNABLE unit */
