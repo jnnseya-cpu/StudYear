@@ -258,7 +258,7 @@ $('skills').querySelectorAll('.sk').forEach(function(b){b.onclick=function(){cur
 $('acc-font').onchange=function(){document.body.classList.toggle('bigfont',this.checked)};
 $('acc-dys').onchange=function(){document.body.classList.toggle('dyslexic',this.checked)};
 /* read aloud (SpeechSynthesis) + voice answers (SpeechRecognition where the browser supports it) */
-function speak(txt){try{if(!$('acc-read').checked)return;var u=new SpeechSynthesisUtterance(String(txt).replace('×',' times ').replace('−',' minus ').replace('÷',' divided by ').replace('²',' squared ').replace('√',' square root of '));u.rate=0.95;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+function speak(txt){try{if(!$('acc-read').checked)return;var u=new SpeechSynthesisUtterance(String(txt).replace('×',' times ').replace('−',' minus ').replace('÷',' divided by ').replace('²',' squared ').replace('√',' square root of '));u.rate=0.95;u.volume=1;u.lang='en-GB';try{var vs=speechSynthesis.getVoices()||[];var gb=vs.filter(function(v){return /en[-_]GB/i.test(v.lang)});var v=(gb.filter(function(v){return /sonia|libby|ryan|hazel|george|daniel|google uk/i.test(v.name||'')})[0]||gb[0]);if(v)u.voice=v;}catch(e){}speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
 var Rec=window.SpeechRecognition||window.webkitSpeechRecognition;var recog=null;
 if(!Rec){$('voice-supp').textContent='(not supported in this browser)';$('acc-voice').disabled=true}
 $('acc-voice').onchange=function(){

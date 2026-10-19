@@ -5184,9 +5184,13 @@ function cgStatic(subject,level,board,cap,focus){
   function loadVoices(){try{_voices=(window.speechSynthesis&&speechSynthesis.getVoices())||[];}catch(e){_voices=[];}}
   if(canSpeak){loadVoices();try{speechSynthesis.onvoiceschanged=loadVoices;}catch(e){}}
   function pickVoice(){if(!_voices.length)loadVoices();
-    return _voices.filter(function(v){return /en[-_]GB/i.test(v.lang);})[0]
-        || _voices.filter(function(v){return /^en/i.test(v.lang);})[0]
-        || _voices.filter(function(v){return /female|samantha|karen|serena|google uk/i.test((v.name||''));})[0] || null;}
+    var gb=_voices.filter(function(v){return /en[-_]GB/i.test(v.lang);});
+    /* known high-quality British voices across Windows / Chrome / Apple */
+    var nice=/sonia|libby|ryan|hazel|george|mia|susan|google uk|daniel|arthur|kate|oliver|thomas|serena/i;
+    return gb.filter(function(v){return nice.test(v.name||'');})[0]   /* best British by name */
+        || gb[0]                                                       /* any en-GB */
+        || _voices.filter(function(v){return nice.test(v.name||'')||/\buk\b|british|england/i.test(v.name||'');})[0]
+        || _voices.filter(function(v){return /^en/i.test(v.lang);})[0] || null;}
   /* LOUD path: real audio synthesised on the server, replayed through a Web
      Audio gain node (>1) so it's clearly audible even where the device's own
      TTS is too quiet (the reported problem). Falls back to the built-in browser
@@ -5217,8 +5221,8 @@ function cgStatic(subject,level,board,cap,focus){
     if(!text)return;
     if(cloudCanSpeak()){
       try{
-        SYCloud.speak(text,{voice:"nova",speed:Math.max(0.6,Math.min(1.2,rate*1.05))})
-          .then(function(buf){return playBoosted(buf,5.5);})
+        SYCloud.speak(text,{voice:"fable",speed:Math.max(0.6,Math.min(1.2,rate*1.05))})
+          .then(function(buf){return playBoosted(buf,7);})
           .catch(function(){sayLocal(text,rate);});
         return;
       }catch(e){/* fall through to the built-in voice */}
