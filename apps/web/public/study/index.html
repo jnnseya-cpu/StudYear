@@ -7,6 +7,7 @@
 <link rel="manifest" href="../manifest.json"><link rel="icon" href="../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
 <style>
   :root{
+    color-scheme:dark;
     --navy-950:#060B18; --navy-900:#0B1220; --navy-800:#101B33;
     --gold-300:#A9CFF2; --gold-400:#5FA8E0; --gold-500:#3D8FD1;
     --ink:#EDF1F8; --ink-2:#AAB6CC; --ink-3:#8795AE;
@@ -215,11 +216,12 @@
   .paper .yr{font-family:var(--serif);font-size:20px;color:var(--gold-300);min-width:56px}
 
   /* tutor */
-  #chat{height:420px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;background:rgba(6,11,24,.5);padding:16px;display:flex;flex-direction:column;gap:12px}
-  .msg{max-width:82%;border-radius:12px;padding:10px 14px;font-size:14px;white-space:pre-wrap}
-  .msg.me{align-self:flex-end;background:rgba(57,135,229,.18);border:1px solid rgba(57,135,229,.4)}
-  .msg.bot{align-self:flex-start;background:rgba(77,157,224,.08);border:1px solid rgba(77,157,224,.3)}
+  #chat{height:420px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;background:#0B1424;padding:16px;display:flex;flex-direction:column;gap:12px}
+  .msg{max-width:82%;border-radius:12px;padding:10px 14px;font-size:14px;white-space:pre-wrap;color:#EDF1F8}
+  .msg.me{align-self:flex-end;background:rgba(57,135,229,.30);border:1px solid rgba(57,135,229,.5);color:#F4F8FF}
+  .msg.bot{align-self:flex-start;background:rgba(31,54,92,.75);border:1px solid rgba(77,157,224,.35);color:#EDF1F8}
   .msg.bot b{color:var(--gold-300)}
+  .msg.bot a{color:var(--gold-300)}
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
   .chip{border:1px solid rgba(170,182,204,.3);border-radius:20px;background:none;color:var(--ink-2);font-size:12px;padding:5px 12px;cursor:pointer}
   .chip:hover{border-color:var(--gold-500);color:var(--gold-300)}
