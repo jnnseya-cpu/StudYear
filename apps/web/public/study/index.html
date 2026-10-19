@@ -939,6 +939,12 @@
         </select></div>
       </div>
       <div id="sp-topic-wrap" style="display:none;margin-top:8px"><label class="f">Topic</label><input type="text" id="sp-topic" placeholder="e.g. science, the Victorians, space"></div>
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:end;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px"><label class="f">Reading voice</label>
+          <select id="sp-voice"><option value="">Best British voice (automatic)</option></select></div>
+        <button class="btn ghost sm" id="sp-voice-test" style="height:36px">🔊 Test voice</button>
+      </div>
+      <div class="note" id="sp-volnote" style="display:none;margin-top:8px;padding:8px 11px;border-radius:8px;background:rgba(224,169,63,.10);border:1px solid rgba(224,169,63,.35)"></div>
       <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" id="sp-go">🔊 Start spelling test</button>
         <span class="note" id="sp-voicenote" style="align-self:center"></span>
@@ -5180,10 +5186,13 @@ function cgStatic(subject,level,board,cap,focus){
      work around the Chrome bugs that made it quiet / cut out — speak() dropped
      when it follows cancel() too fast (defer a tick) and speech that auto-pauses
      (resume()). Volume is pinned to 1 so it's as loud as the device allows. */
-  var _voices=[];
+  var _voices=[]; var _cloudTtsOk=null;   /* null=unknown, true=cloud TTS worked, false=failed→device */
   function loadVoices(){try{_voices=(window.speechSynthesis&&speechSynthesis.getVoices())||[];}catch(e){_voices=[];}}
-  if(canSpeak){loadVoices();try{speechSynthesis.onvoiceschanged=loadVoices;}catch(e){}}
+  function voicePref(){try{return localStorage.getItem('sp-voice-pref')||'';}catch(e){return '';}}
+  if(canSpeak){loadVoices();try{speechSynthesis.onvoiceschanged=function(){loadVoices();try{populateVoicePicker();}catch(e){}};}catch(e){}}
   function pickVoice(){if(!_voices.length)loadVoices();
+    var pref=voicePref();
+    if(pref&&pref!=='online'){var byName=_voices.filter(function(v){return (v.name||'')===pref;})[0];if(byName)return byName;}
     var gb=_voices.filter(function(v){return /en[-_]GB/i.test(v.lang);});
     /* known high-quality British voices across Windows / Chrome / Apple */
     var nice=/sonia|libby|ryan|hazel|george|mia|susan|google uk|daniel|arthur|kate|oliver|thomas|serena/i;
@@ -5191,6 +5200,36 @@ function cgStatic(subject,level,board,cap,focus){
         || gb[0]                                                       /* any en-GB */
         || _voices.filter(function(v){return nice.test(v.name||'')||/\buk\b|british|england/i.test(v.name||'');})[0]
         || _voices.filter(function(v){return /^en/i.test(v.lang);})[0] || null;}
+  /* Voice picker: let the learner choose a specific British voice and test it,
+     and warn when only the (quieter) device voice is available. */
+  function populateVoicePicker(){
+    var sel=document.getElementById('sp-voice'); if(!sel)return;
+    if(!_voices.length)loadVoices();
+    var cur=voicePref();
+    var gb=_voices.filter(function(v){return /en[-_]GB/i.test(v.lang);});
+    var other=_voices.filter(function(v){return /^en/i.test(v.lang)&&!/en[-_]GB/i.test(v.lang);});
+    var h='<option value="">Best British voice (automatic)</option>';
+    if(cloudCanSpeak())h+='<option value="online">Clear British (online) — recommended</option>';
+    function opts(list){return list.map(function(v){return '<option value="'+esc(v.name)+'">'+esc(v.name)+'</option>';}).join('');}
+    if(gb.length)h+='<optgroup label="British (en-GB)">'+opts(gb)+'</optgroup>';
+    if(other.length)h+='<optgroup label="Other English">'+opts(other)+'</optgroup>';
+    sel.innerHTML=h;
+    try{sel.value=cur;}catch(e){}
+    updateVolNote();
+  }
+  function updateVolNote(){
+    var n=document.getElementById('sp-volnote'); if(!n)return;
+    var pref=voicePref();
+    var cloudFailed=(_cloudTtsOk===false);
+    var deviceOnly=(pref&&pref!=='online')||!cloudCanSpeak()||cloudFailed;
+    if(deviceOnly){ n.style.display='';
+      if(cloudFailed && (!pref||pref==='online')){
+        n.innerHTML="🔉 The clear online British voice couldn’t be reached just now, so we’re using your device’s built-in voice (which a browser can’t make louder). Turn your <b>system / laptop volume up</b>. It will switch back to the loud online voice automatically once you’re signed in and connected.";
+      } else {
+        n.innerHTML="🔉 Using your device’s built-in voice. Turn your <b>system / laptop volume up</b> — a browser can’t make a device voice louder than that. For the <b>loudest, clearest British voice</b>, choose <b>“Clear British (online)”</b> above"+(cloudCanSpeak()?"":" (needs you signed in and online)")+".";
+      }
+    } else { n.style.display='none'; }
+  }
   /* LOUD path: real audio synthesised on the server, replayed through a Web
      Audio gain node (>1) so it's clearly audible even where the device's own
      TTS is too quiet (the reported problem). Falls back to the built-in browser
@@ -5219,11 +5258,13 @@ function cgStatic(subject,level,board,cap,focus){
   function cloudCanSpeak(){try{return !!(window.SYCloud&&SYCloud.speak&&window.SY&&SY.session&&!SY.session.demo);}catch(e){return false;}}
   function say(text,rate){
     if(!text)return;
-    if(cloudCanSpeak()){
+    var pref=voicePref();
+    var useDevice=(pref&&pref!=='online');   /* learner chose a specific device voice */
+    if(!useDevice&&cloudCanSpeak()){
       try{
         SYCloud.speak(text,{voice:"fable",speed:Math.max(0.6,Math.min(1.2,rate*1.05))})
-          .then(function(buf){return playBoosted(buf,7);})
-          .catch(function(){sayLocal(text,rate);});
+          .then(function(buf){_cloudTtsOk=true;try{updateVolNote();}catch(e){}return playBoosted(buf,7);})
+          .catch(function(){_cloudTtsOk=false;try{updateVolNote();}catch(e){}sayLocal(text,rate);});
         return;
       }catch(e){/* fall through to the built-in voice */}
     }
@@ -5268,6 +5309,15 @@ function cgStatic(subject,level,board,cap,focus){
     else{el.textContent=cur.w;setTimeout(function(){if(state===s&&s.words[s.i]===cur)el.textContent="✏️ Now spell it";},1600);}
   }
   document.getElementById("sp-say").onclick=function(){if(state)speak(state.words[state.i].w);};
+  /* voice picker + test + volume note */
+  (function(){
+    var vsel=document.getElementById("sp-voice"); var vtest=document.getElementById("sp-voice-test");
+    if(vsel){vsel.onchange=function(){try{localStorage.setItem("sp-voice-pref",vsel.value);}catch(e){}try{updateVolNote();}catch(e){}};}
+    if(vtest){vtest.onclick=function(){say("This is your British spelling voice. Ready when you are.",0.82);};}
+    try{populateVoicePicker();}catch(e){}
+    /* voices often load a moment after the page — re-populate shortly after */
+    setTimeout(function(){try{loadVoices();populateVoicePicker();}catch(e){}},700);
+  })();
   document.getElementById("sp-context").onclick=function(){
     if(!state)return;var cur=state.words[state.i],el=document.getElementById("sp-sentence");
     if(cur.sentence){el.textContent='“'+cur.sentence+'”';speakSentence(cur.sentence);return;}
