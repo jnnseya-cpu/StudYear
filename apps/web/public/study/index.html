@@ -196,6 +196,9 @@
   .pri.MEDIUM{background:rgba(201,133,0,.14);color:#e0b566;border:1px solid rgba(201,133,0,.4)}
   .pri.LOW{background:rgba(92,187,123,.14);color:#96d6ac;border:1px solid rgba(92,187,123,.4)}
   .slot-acts{display:flex;flex-direction:column;gap:5px;align-items:flex-end}
+  .boostrow{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:10px;padding:10px 12px;border-radius:10px;background:linear-gradient(180deg,rgba(224,169,63,.12),rgba(224,169,63,.05));border:1px solid rgba(224,169,63,.35)}
+  .boostrow.done{opacity:.6}
+  .boostrow.done b{text-decoration:line-through}
   table.tt{width:100%;border-collapse:collapse;font-size:12.5px}
   table.tt th{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
   table.tt td{padding:7px 8px;border-bottom:1px solid rgba(170,182,204,.08);vertical-align:top}
@@ -2589,6 +2592,33 @@ function planStale(saved){
   for(var s in now){if(snap[s]!=null&&now[s]!==snap[s])return true;}
   return false;
 }
+/* ---- Daily boost -------------------------------------------------------
+   Every study day gets ONE small extra on top of the planned subject work —
+   a quick review, a spelling sprint, a reasoning quiz, a Skills Coach read or
+   a SkillRush burst — rotated so each day brings something different and the
+   habit stays fresh. Computed from the day's position so it also appears on
+   plans that were saved before this existed (no re-generation needed). */
+function extraPool(){
+  var base=[
+    {key:"review",   emoji:"🔁", label:"Smart review",         desc:"A 5-minute spaced-repetition review of cards you’ve already met — the fastest way to make them stick."},
+    {key:"spelling", emoji:"🔤", label:"Spelling sprint",       desc:"A short spelling test pitched to your level — a little every day and spelling climbs fast."},
+    {key:"quiz",     emoji:"🧩", label:"Quick reasoning quiz",  desc:"A short comprehension or problem-solving set to keep your thinking sharp."},
+    {key:"skills",   emoji:"🧠", label:"Skills Coach check-in", desc:"Snap a photo of a page of today’s work for a quick coaching read and your next step."},
+    {key:"skillrush",emoji:"⚡", label:"SkillRush burst",       desc:"A fast, arcade-style recall burst — a fun way to finish the day."}
+  ];
+  /* younger learners: lead with spelling, reading and review */
+  if(typeof dgTier==='function'&&dgTier()==='primary')return [base[1],base[2],base[0],base[3],base[4]];
+  return base;
+}
+function startExtra(key){
+  try{
+    if(key==="review"){ if(typeof startItemReview==="function"&&typeof dueReviewItems==="function"&&(dueReviewItems(1)||[]).length){startItemReview();} else {showTab("smartreview");} return; }
+    if(key==="spelling"){ showTab("spelling"); return; }
+    if(key==="quiz"){ showTab("practice"); return; }
+    if(key==="skills"){ showTab("skillscoach"); return; }
+    if(key==="skillrush"){ location.href="../skillrush/"; return; }
+  }catch(e){}
+}
 function renderPlan(){
   const saved=store.get("plan",null); const out=document.getElementById("plan-out");
   if(!saved||!saved.plan||!saved.plan.length){out.innerHTML='<div class="empty">Fill out the form to generate your personalized study plan!</div>';return}
@@ -2606,8 +2636,11 @@ function renderPlan(){
     html+=`<div class="plan-summary"><h4>Plan Summary</h4><p>${esc(saved.summary)}</p>`+
       (saved.phase?`<div class="phase">${esc(saved.phase)}</div>`:"")+`</div>`;
   }
-  order.forEach(d=>{
+  const _pool=extraPool();
+  order.forEach((d,dayIdx)=>{
     const sessions=byDate[d];
+    const extra=_pool[dayIdx%_pool.length];
+    const xKey="x-"+d, xDone=!!done[xKey];
     html+=`<div class="day-card"><h4>${d==="undated"?"Scheduled sessions":longDay(d)}</h4>`+
       `<div class="dow-lead">${d==="undated"?"":(new Date(d+"T00:00:00").toLocaleDateString("en-GB",{weekday:"long"}))}</div>`+
       sessions.map((s,i)=>{
@@ -2626,7 +2659,16 @@ function renderPlan(){
             <button class="btn ghost sm" data-lesson-topic="${esc(topic)}" data-lesson-subj="${esc(s.subj)}" data-lesson-level="${esc(s.level||'')}" title="Open as an Interactive Lesson">📖 Lesson</button>
             <button class="btn ghost sm" data-find-subj="${esc(s.subj)}" data-find-topic="${esc(topic)}" title="Search matching resources">🔎 Resources</button>
           </div></div>`;
-      }).join("")+`</div>`;
+      }).join("")+
+      (extra&&d!=="undated"?`<div class="boostrow ${xDone?"done":""}">
+          <label style="cursor:pointer;display:flex;gap:9px;align-items:flex-start;flex:1">
+            <input type="checkbox" data-k="${xKey}" ${xDone?"checked":""} style="accent-color:var(--gold-500);margin-top:3px">
+            <span><b style="font-size:13px">✨ Daily boost · ${extra.emoji} ${esc(extra.label)}</b>
+              <span class="note" style="display:block;font-style:normal;margin-top:2px">${esc(extra.desc)}</span></span>
+          </label>
+          <div class="slot-acts"><button class="btn sm solid" data-extra="${extra.key}">${extra.emoji} Start</button></div>
+        </div>`:"")+
+      `</div>`;
   });
   out.innerHTML=html;
   var _pr=document.getElementById("plan-refresh");if(_pr)_pr.onclick=function(){var g=document.getElementById("gen-plan");if(g)g.click();};
@@ -2634,6 +2676,7 @@ function renderPlan(){
     openLessonFor(b.dataset.lessonTopic,b.dataset.lessonSubj,b.dataset.lessonLevel));
   out.querySelectorAll("[data-course-subj]").forEach(b=>b.onclick=()=>
     courseFromPlan(b.dataset.courseSubj,b.dataset.courseTopic,b.dataset.courseLevel));
+  out.querySelectorAll("[data-extra]").forEach(b=>b.onclick=()=>startExtra(b.dataset.extra));
   out.querySelectorAll("[data-find-subj]").forEach(b=>b.onclick=()=>{
     showTab("search");
     document.getElementById("q").value=b.dataset.findTopic||b.dataset.findSubj;
