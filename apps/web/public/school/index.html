@@ -280,6 +280,7 @@
   <!-- ==================== SCHOOL ENGAGEMENT SUITE ==================== -->
   <div class="grid" style="margin-top:16px">
     <div class="card c12"><h3>🗓 Timetable builder</h3><div class="sub">Set the weekly timetable per class — teachers, students and parents see it live.</div><div id="tt-school-mount" style="margin-top:10px"></div></div>
+    <div class="card c12"><h3>📅 Term dates &amp; holidays</h3><div class="sub">Publish your school's holidays and half-terms — every linked learner's study planner keeps them free automatically.</div><div id="td-school-mount" style="margin-top:10px"></div></div>
     <div class="card c6"><h3>📣 Whole-school announcements</h3><div class="sub">Post notices to students, parents or specific classes; track acknowledgements.</div><div id="an-school-mount" style="margin-top:10px"></div></div>
     <div class="card c6"><h3>📎 Documents library</h3><div class="sub">Publish policies, letters and resources to families and students.</div><div id="dc-school-mount" style="margin-top:10px"></div></div>
     <div class="card c12"><h3>🎁 Behaviour &amp; rewards</h3><div class="sub">House points across the school — award, track the leaderboard, and see who needs support.</div><div id="bh-school-mount" style="margin-top:10px"></div></div>
@@ -909,6 +910,7 @@ function loadDemoSchool(){
     var code=(window.SY&&SY.get&&SY.get('schoolCode',null)); if(!code)return;
     var email=(SY.session&&SY.session.email), nm=(SY.session&&SY.session.name)||'School';
     if(window.SYTimetable) SYTimetable.mountSchool(document.getElementById('tt-school-mount'),{code:code});
+    if(window.SYTerms) SYTerms.mountSchool(document.getElementById('td-school-mount'),{code:code,email:email,byName:nm});
     if(window.SYAnnounce) SYAnnounce.mountPoster(document.getElementById('an-school-mount'),{code:code,by:email,byName:nm});
     if(window.SYDocs) SYDocs.mountManage(document.getElementById('dc-school-mount'),{code:code,by:email,byName:nm});
     if(window.SYBehaviour) SYBehaviour.mountTeacher(document.getElementById('bh-school-mount'),{code:code,by:email,byName:nm});

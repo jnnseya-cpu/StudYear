@@ -474,6 +474,21 @@
     try { var j = await api('/market', 'POST', { op: 'remove', id: id }, email); return !!(j && j.ok); }
     catch (e) { return false; }
   }
+
+  /* Shared school config (e.g. term dates) — cross-device. Read is any signed-in
+     account; write is owner-only (the first account to set a school's config
+     owns it). Returns null/false on offline/error so callers fall back to the
+     same-device school store / built-in defaults. */
+  async function schoolConfigGet(code, key, email) {
+    await whenReady(); if (!CFG || !email || !code) return null;
+    try { var j = await api('/schoolconfig?op=get&code=' + encodeURIComponent(code) + '&key=' + encodeURIComponent(key), 'GET', null, email); return j && j.ok ? j : null; }
+    catch (e) { return null; }
+  }
+  async function schoolConfigSet(code, key, value, ownerName, email) {
+    await whenReady(); if (!CFG || !email || !code) return false;
+    try { var j = await api('/schoolconfig', 'POST', { op: 'set', code: code, key: key, value: value, ownerName: ownerName || '' }, email); return !!(j && j.ok); }
+    catch (e) { return false; }
+  }
   /* authoritative server ACU balance + plan (from the append-only ledger). The
      client reconciles its local wallet UPWARD from this so a paid buyer who
      lost the redirect is still credited. Null on offline/error. */
@@ -571,6 +586,7 @@
     dirPublish: dirPublish, dirResolve: dirResolve, dirConnect: dirConnect,
     dirDisconnect: dirDisconnect, dirLinks: dirLinks,
     marketList: marketList, marketPublish: marketPublish, marketRemove: marketRemove,
+    schoolConfigGet: schoolConfigGet, schoolConfigSet: schoolConfigSet,
     walletState: walletState,
     blogList: blogList, blogPublish: blogPublish, blogRemove: blogRemove,
     blogView: blogView, blogViews: blogViews,

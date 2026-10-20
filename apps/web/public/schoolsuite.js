@@ -475,4 +475,88 @@
     }
   };
   window.SYSeating = Seating;
+
+  /* ======================================================================
+     TERM DATES — sy-school:<code>:termdates = [{start,end,label}]
+     A school publishes its holiday/half-term windows once; every linked
+     learner's study planner inherits them (school sets → all see), synced
+     cross-device through SYCloud.schoolConfig* with the same-device school
+     store as the offline fallback. Learner-entered dates and the built-in
+     England defaults are handled in the planner itself as further fallbacks.
+     ====================================================================== */
+  function sortBreaks(list){ return (list||[]).slice().sort(function(a,b){return String(a.start||'').localeCompare(String(b.start||''));}); }
+  var Terms = {
+    /* same-device published list for a school code */
+    get:function(code){ if(!code)return []; return sortBreaks(sg(code,'termdates',[])||[]); },
+    /* publish: save locally AND push to the cloud so every device inherits it */
+    set:function(code,list,email,ownerName){ if(!code)return false; var clean=sortBreaks(list); ss(code,'termdates',clean);
+      try{ if(window.SYCloud&&SYCloud.schoolConfigSet) SYCloud.schoolConfigSet(code,'termdates',clean,ownerName||'',email||(SY.session&&SY.session.email)); }catch(e){}
+      return true; },
+    /* refresh the same-device copy FROM the cloud (returns a promise of the list
+       or null if the cloud had nothing / was unreachable) */
+    pull:function(code,email){ return new Promise(function(res){
+      try{ if(!(window.SYCloud&&SYCloud.schoolConfigGet)){res(null);return;}
+        SYCloud.schoolConfigGet(code,'termdates',email||(SY.session&&SY.session.email)).then(function(j){
+          if(j&&j.ok&&Array.isArray(j.value)){ var clean=sortBreaks(j.value); ss(code,'termdates',clean); res(clean); }
+          else res(null);
+        }).catch(function(){res(null);});
+      }catch(e){res(null);} }); },
+    /* the effective school-published breaks for a learner, across every school
+       they're on; also kicks off a background cloud refresh for next time */
+    forStudent:function(email){ var codes=schoolsForEmail(email)||[]; var out=[];
+      for(var i=0;i<codes.length;i++){ try{ Terms.pull(codes[i],email); }catch(e){} var l=Terms.get(codes[i]); if(l&&l.length)out=out.concat(l); }
+      return sortBreaks(out); },
+    /* School-leadership editor: add/remove holiday windows and publish them. */
+    mountSchool:function(el,opts){ opts=opts||{}; if(!el)return;
+      var code=opts.code||SY.get('schoolCode',null); var email=opts.email||(SY.session&&SY.session.email); var ownerName=opts.byName||(SY.session&&SY.session.name)||'School';
+      if(!code){ el.innerHTML='<div class="note">Link your school first to publish term dates.</div>'; return; }
+      /* pull the latest published copy before first render so edits start from truth */
+      Terms.pull(code,email).then(function(){ render(); }).catch(function(){ render(); });
+      function render(){
+        var list=Terms.get(code);
+        var h='<div class="note" style="font-style:normal;margin-bottom:8px">Publish your school holidays &amp; half-terms. Every linked learner’s study planner keeps these free automatically — no study scheduled during the break.</div>';
+        h+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:420px"><thead><tr>'+
+          '<th style="text-align:left;padding:6px;font-size:11px;color:var(--ink-3)">Break</th>'+
+          '<th style="text-align:left;padding:6px;font-size:11px;color:var(--ink-3)">From</th>'+
+          '<th style="text-align:left;padding:6px;font-size:11px;color:var(--ink-3)">To</th>'+
+          '<th style="padding:6px"></th></tr></thead><tbody>';
+        if(!list.length) h+='<tr><td colspan="4" class="note" style="padding:8px">No breaks added yet.</td></tr>';
+        list.forEach(function(b,i){ h+='<tr>'+
+          '<td style="padding:6px;font-size:12.5px">'+esc(b.label||'Holiday')+'</td>'+
+          '<td style="padding:6px;font-size:12.5px">'+esc(b.start||'')+'</td>'+
+          '<td style="padding:6px;font-size:12.5px">'+esc(b.end||'')+'</td>'+
+          '<td style="padding:6px;text-align:right"><button class="btn ghost sm" data-rm="'+i+'">Remove</button></td></tr>'; });
+        h+='</tbody></table></div>';
+        h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:end;margin-top:10px">'+
+          '<div><label class="f">Name</label><input type="text" id="td-label" placeholder="e.g. Autumn half-term"></div>'+
+          '<div><label class="f">From</label><input type="date" id="td-start"></div>'+
+          '<div><label class="f">To</label><input type="date" id="td-end"></div>'+
+          '<button class="btn sm" id="td-add">Add break</button></div>';
+        h+='<div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
+          '<button class="btn solid" id="td-publish">Publish to all learners</button>'+
+          '<span class="note" id="td-status" style="margin:0"></span></div>';
+        el.innerHTML=h;
+        el.querySelectorAll('[data-rm]').forEach(function(btn){ btn.onclick=function(){ var l=Terms.get(code); l.splice(+btn.dataset.rm,1); ss(code,'termdates',l); render(); }; });
+        document.getElementById('td-add').onclick=function(){
+          var label=(document.getElementById('td-label').value||'').trim()||'Holiday';
+          var start=document.getElementById('td-start').value, end=document.getElementById('td-end').value;
+          if(!start||!end){ say('Pick both a start and end date for the break'); return; }
+          if(end<start){ say('A break can’t end before it starts'); return; }
+          var l=Terms.get(code); l.push({start:start,end:end,label:label.slice(0,60)}); ss(code,'termdates',l); render();
+        };
+        document.getElementById('td-publish').onclick=function(){
+          var btn=this; btn.disabled=true; var st=document.getElementById('td-status'); st.textContent='Publishing…';
+          var l=Terms.get(code);
+          try{ if(window.SYCloud&&SYCloud.schoolConfigSet){
+            SYCloud.schoolConfigSet(code,'termdates',l,ownerName,email).then(function(ok){
+              ss(code,'termdates',l); btn.disabled=false;
+              st.textContent=ok?'Published to all linked learners ✓':'Saved on this device — sign in to the cloud to sync to every learner.';
+            }).catch(function(){ ss(code,'termdates',l); btn.disabled=false; st.textContent='Saved on this device — cloud sync unavailable right now.'; });
+          } else { ss(code,'termdates',l); btn.disabled=false; st.textContent='Saved on this device.'; } }
+          catch(e){ btn.disabled=false; st.textContent='Saved on this device.'; }
+        };
+      }
+    }
+  };
+  window.SYTerms = Terms;
 })();

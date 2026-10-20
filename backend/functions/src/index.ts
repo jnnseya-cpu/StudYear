@@ -1878,6 +1878,73 @@ export const market = onRequest({ region: 'europe-west2', cors: true }, async (r
   }
 });
 
+// ---------------------------------------------------------- school config ----
+/**
+ * /schoolconfig — shared, non-personal school configuration keyed by join code.
+ * The first use case is term dates / holiday windows: a school publishes them
+ * once and every linked learner's study planner inherits them across devices.
+ *
+ * Public read (any signed-in account — term dates are not personal data);
+ * write is owner-only, following the /market model: the first account to set a
+ * school's config owns it and only that account can change it afterwards.
+ */
+const SCHOOL_CONFIG_KEYS = ['termdates'];
+function sanitizeTermDates(v: unknown) {
+  if (!Array.isArray(v)) throw httpError(400, 'term dates must be a list of breaks');
+  const iso = /^\d{4}-\d{2}-\d{2}$/;
+  return v.slice(0, 40).map((x) => {
+    const o = (x ?? {}) as { start?: unknown; end?: unknown; label?: unknown };
+    const start = String(o.start ?? '').slice(0, 10);
+    const end = String(o.end ?? '').slice(0, 10);
+    if (!iso.test(start) || !iso.test(end)) throw httpError(400, 'each break needs start and end dates (YYYY-MM-DD)');
+    if (end < start) throw httpError(400, 'a break cannot end before it starts');
+    return { start, end, label: String(o.label ?? '').slice(0, 60) };
+  });
+}
+export const schoolconfig = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const user = await requireUser(req.headers.authorization);
+    const op = String(req.query.op ?? req.body?.op ?? 'get');
+    const code = String(req.query.code ?? req.body?.code ?? '').trim().toUpperCase();
+    const key = String(req.query.key ?? req.body?.key ?? '').trim();
+    if (!/^[A-Z0-9-]{3,24}$/.test(code)) throw httpError(400, 'invalid school code');
+    if (!SCHOOL_CONFIG_KEYS.includes(key)) throw httpError(400, 'unknown config key');
+    const ref = db.doc(`schoolConfig/${code}__${key}`);
+
+    if (op === 'get') {
+      const d = await ref.get();
+      if (!d.exists) { res.json({ ok: true, value: null, ownerName: null, updated: null }); return; }
+      const v = d.data()!;
+      res.json({ ok: true, value: v.value ?? null, ownerName: v.ownerName ?? null,
+        updated: v.updatedAt && v.updatedAt.toMillis ? v.updatedAt.toMillis() : null });
+      return;
+    }
+
+    if (op === 'set') {
+      let value: unknown = req.body?.value;
+      if (key === 'termdates') value = sanitizeTermDates(value);
+      const existing = await ref.get();
+      if (existing.exists && existing.data()!.ownerId && existing.data()!.ownerId !== user.uid)
+        throw httpError(409, 'this school’s dates are managed by another account');
+      await ref.set({
+        code, key, value,
+        ownerId: user.uid, ownerEmail: user.email ?? null,
+        ownerName: String(req.body?.ownerName ?? '').slice(0, 120) || (existing.exists ? (existing.data()!.ownerName ?? null) : null),
+        createdAt: existing.exists ? (existing.data()!.createdAt ?? FieldValue.serverTimestamp()) : FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      await audit('SCHOOL_CONFIG_SET', user.uid, { code, key });
+      res.json({ ok: true });
+      return;
+    }
+
+    throw httpError(400, 'unknown op');
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
 // ---------------------------------------------------------------- blog ----
 /** The public-facing shape of a blog post — everything the blog reader and the
     static generator need, and nothing internal. */

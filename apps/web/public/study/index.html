@@ -408,8 +408,13 @@
       <label class="f" style="margin-top:12px">Time off <span style="text-transform:none;letter-spacing:0">(kept free so you can rest — untick to study through a break)</span></label>
       <div class="card" style="margin:4px 0 0;padding:12px">
         <label class="tf"><input type="checkbox" id="p-rest-bank" checked> Skip UK bank holidays</label>
-        <label class="tf"><input type="checkbox" id="p-rest-holiday" checked> Skip school holidays &amp; half‑terms <small style="text-transform:none;letter-spacing:0;color:var(--ink-3)">· approx, England</small></label>
+        <label class="tf"><input type="checkbox" id="p-rest-holiday" checked> Skip school holidays &amp; half‑terms</label>
+        <div class="note" id="p-holiday-src" style="margin-top:4px;font-style:normal;color:var(--gold-300)"></div>
         <div class="note" style="margin-top:6px;font-style:normal">Weekends are left free too — tick a weekend time above if you'd like to study then.</div>
+        <details style="margin-top:8px">
+          <summary class="f" style="cursor:pointer;text-transform:none;letter-spacing:0">＋ Add my own holiday dates (optional)</summary>
+          <div id="p-myterms" style="margin-top:8px"></div>
+        </details>
       </div>
       <label class="f" style="margin-top:10px">What are your weak areas? <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
       <input type="text" id="p-weak" placeholder="e.g. Algebra in Maths, essay structure in History…">
@@ -1423,6 +1428,7 @@ function showTab(t){
   if(t==="examsim"){try{renderExamSim();}catch(e){}}
   if(t==="smartreview"){try{renderReview();}catch(e){}}
   if(t==="skillscoach"){try{renderSkillsCoach();}catch(e){}}
+  if(t==="planner"){try{onPlannerOpen();}catch(e){}}
   if(t==="wins"){try{renderAchievements();}catch(e){}}
   if(t==="progress") renderProgress();
   if(t==="homework"&&window.SYHomework){try{SYHomework.mountStudent(document.getElementById("hw-mount"),{email:(SY&&SY.session&&SY.session.email)||""});}catch(e){}}
@@ -2462,7 +2468,57 @@ const SCHOOL_HOLIDAYS=[
   ["2028-04-03","2028-04-14"], ["2028-05-29","2028-06-02"], ["2028-07-24","2028-09-01"]
 ];
 function isBankHoliday(iso){return BANK_HOLIDAYS.has(iso);}
-function isSchoolHoliday(iso){for(var i=0;i<SCHOOL_HOLIDAYS.length;i++){if(iso>=SCHOOL_HOLIDAYS[i][0]&&iso<=SCHOOL_HOLIDAYS[i][1])return true;}return false;}
+/* Effective school-holiday windows, resolved with a clear precedence:
+   1) the learner's SCHOOL published its term dates (synced via SYTerms),
+   2) the learner entered their own dates,
+   3) the built-in approximate England pattern.
+   _holidayWindows caches the resolved set as [{start,end,label}]; null = not
+   resolved yet → fall back to the built-in defaults. */
+var _holidayWindows=null;
+function builtinHolidayWindows(){return SCHOOL_HOLIDAYS.map(function(r){return {start:r[0],end:r[1],label:"School holiday"};});}
+function myTermDates(){try{return store.get("termdates:self",[])||[];}catch(e){return [];}}
+function effectiveHolidayWindows(){return (_holidayWindows&&_holidayWindows.ranges&&_holidayWindows.ranges.length)?_holidayWindows.ranges:builtinHolidayWindows();}
+function isSchoolHoliday(iso){var w=effectiveHolidayWindows();for(var i=0;i<w.length;i++){if(iso>=w[i].start&&iso<=w[i].end)return true;}return false;}
+function resolveHolidayWindows(){
+  var email=(window.SY&&SY.session&&SY.session.email)||"";
+  var school=[]; try{ if(window.SYTerms&&SYTerms.forStudent) school=SYTerms.forStudent(email)||[]; }catch(e){}
+  if(school.length){ _holidayWindows={src:"school",ranges:school}; return; }
+  var mine=myTermDates(); if(mine.length){ _holidayWindows={src:"self",ranges:mine}; return; }
+  _holidayWindows={src:"default",ranges:builtinHolidayWindows()};
+}
+function updateHolidaySrc(){
+  var el=document.getElementById("p-holiday-src"); if(!el)return;
+  var src=_holidayWindows&&_holidayWindows.src;
+  if(src==="school") el.textContent="✓ Using your school's published term dates.";
+  else if(src==="self") el.textContent="✓ Using the holiday dates you entered below.";
+  else el.textContent="Using approximate England dates — these vary by school. Add your own below to be exact.";
+}
+function renderMyTerms(){
+  var el=document.getElementById("p-myterms"); if(!el)return;
+  var list=myTermDates(), h="";
+  if(list.length){ h+='<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:6px">'+list.map(function(b,i){
+    return '<div style="display:flex;gap:8px;align-items:center;font-size:12px"><span style="flex:1">'+esc(b.label||"Holiday")+' · '+esc(b.start)+' → '+esc(b.end)+'</span><button class="btn ghost sm" data-rmt="'+i+'">×</button></div>';
+  }).join("")+'</div>'; }
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:end">'+
+    '<div><label class="f">Name</label><input type="text" id="mt-label" placeholder="Half-term"></div>'+
+    '<div><label class="f">From</label><input type="date" id="mt-start"></div>'+
+    '<div><label class="f">To</label><input type="date" id="mt-end"></div>'+
+    '<button class="btn sm" id="mt-add">Add</button></div>';
+  el.innerHTML=h;
+  el.querySelectorAll("[data-rmt]").forEach(function(b){b.onclick=function(){var l=myTermDates();l.splice(+b.dataset.rmt,1);store.set("termdates:self",l);resolveHolidayWindows();updateHolidaySrc();renderMyTerms();};});
+  var add=document.getElementById("mt-add"); if(add)add.onclick=function(){
+    var label=(document.getElementById("mt-label").value||"").trim()||"Holiday";
+    var s=document.getElementById("mt-start").value, e=document.getElementById("mt-end").value;
+    if(!s||!e){toast("Pick both a start and end date");return;} if(e<s){toast("A break can't end before it starts");return;}
+    var l=myTermDates(); l.push({start:s,end:e,label:label.slice(0,60)}); store.set("termdates:self",l);
+    resolveHolidayWindows(); updateHolidaySrc(); renderMyTerms();
+  };
+}
+function onPlannerOpen(){
+  resolveHolidayWindows(); updateHolidaySrc(); renderMyTerms();
+  /* a linked school's dates may still be arriving from the cloud — re-resolve shortly after */
+  setTimeout(function(){try{resolveHolidayWindows();updateHolidaySrc();}catch(e){}},1200);
+}
 
 document.getElementById("gen-plan").onclick=()=>{
   const subs=planSubjects();
@@ -2484,7 +2540,9 @@ document.getElementById("gen-plan").onclick=()=>{
   if(!wdSlots.length&&!weSlots.length){wdSlots=[1,2];}
   const WD_TIMES=["07:30","16:30","19:30"], WD_NAMES=["Before school","After school","Evening"];
   const WE_TIMES=["10:00","14:00","19:00"], WE_NAMES=["Morning","Afternoon","Evening"];
-  /* time off: keep bank holidays / school holidays free unless the student opts in */
+  /* time off: keep bank holidays / school holidays free unless the student opts in.
+     resolve the effective holiday windows (school → own → default) first. */
+  try{ resolveHolidayWindows(); }catch(e){}
   const restBank=(function(){var el=document.getElementById("p-rest-bank");return el?el.checked:true;})();
   const restHoliday=(function(){var el=document.getElementById("p-rest-holiday");return el?el.checked:true;})();
   store.set("planAvail",{wd:wdSlots,we:weSlots,restBank,restHoliday});   // remember for next time
