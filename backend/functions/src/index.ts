@@ -1924,11 +1924,39 @@ export const schoolconfig = onRequest({ region: 'europe-west2', cors: true }, as
       let value: unknown = req.body?.value;
       if (key === 'termdates') value = sanitizeTermDates(value);
       const existing = await ref.get();
-      if (existing.exists && existing.data()!.ownerId && existing.data()!.ownerId !== user.uid)
-        throw httpError(409, 'this school’s dates are managed by another account');
+
+      /* Authorisation — ANY verified staff member of the school may edit its
+         config, so a calendar isn't locked to whoever happened to save first:
+           (a) the school account that owns the join code (shareCodes/<CODE>), or
+           (b) an account linked to that school as staff (a 'teacher' outbound
+               link to the school's uid for this code), or
+           (c) back-compat: no join code is registered for this school yet, so
+               fall back to the original first-writer-owns rule.
+         When the school is known on the directory, ownership is stored as the
+         SCHOOL's uid, so every staff member shares it. */
+      const STAFF_RELATIONS = ['teacher'];
+      const codeDoc = await db.doc(`shareCodes/${code}`).get();
+      const schoolUid: string | null = codeDoc.exists ? (codeDoc.data()!.uid ?? null) : null;
+      let authorised = false;
+      if (schoolUid && schoolUid === user.uid) authorised = true;               // the school account itself
+      if (!authorised && schoolUid) {                                           // a linked staff member
+        const link = await db.doc(`links/${user.uid}/outbound/${schoolUid}`).get();
+        if (link.exists) {
+          const lv = link.data()!;
+          if (STAFF_RELATIONS.includes(String(lv.relation)) && (lv.code === code || lv.kind === 'school')) authorised = true;
+        }
+      }
+      if (!authorised && !schoolUid) {                                          // (c) legacy first-writer
+        if (!existing.exists || !existing.data()!.ownerId || existing.data()!.ownerId === user.uid) authorised = true;
+      }
+      if (!authorised) throw httpError(403, 'only your school’s staff can change its term dates');
+
+      const ownerId = schoolUid || (existing.exists ? (existing.data()!.ownerId ?? user.uid) : user.uid);
       await ref.set({
         code, key, value,
-        ownerId: user.uid, ownerEmail: user.email ?? null,
+        ownerId, ownerSchoolUid: schoolUid ?? null,
+        lastEditorId: user.uid, lastEditorEmail: user.email ?? null,
+        ownerEmail: existing.exists ? (existing.data()!.ownerEmail ?? user.email ?? null) : (user.email ?? null),
         ownerName: String(req.body?.ownerName ?? '').slice(0, 120) || (existing.exists ? (existing.data()!.ownerName ?? null) : null),
         createdAt: existing.exists ? (existing.data()!.createdAt ?? FieldValue.serverTimestamp()) : FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),

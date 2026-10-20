@@ -866,8 +866,18 @@
   // every school console (people, students, analytics…) sees them.
   try {
     if ((s.role === 'school' || s.role === 'teacher') && !s.demo) {
-      var _scode = window.SY.get('schoolCode', null);
+      var _scode = window.SY.get('schoolCode', null) || ((window.SY.get('teacherProfile', {}) || {}).schoolCode) || null;
       if (_scode && s.role === 'school') window.SY.publishCode(_scode, 'school');
+      // a teacher links to the school as STAFF (relation 'teacher'), so the
+      // backend can recognise them as authorised to edit shared school config
+      // (e.g. term dates). Once per tab session; connectCode retries via cloud.
+      if (_scode && s.role === 'teacher') {
+        try { if (!sessionStorage.getItem('sy-stafflink:' + _scode)) {
+          Promise.resolve(window.SY.connectCode(_scode, 'teacher')).then(function () {
+            try { sessionStorage.setItem('sy-stafflink:' + _scode, '1'); } catch (e) {}
+          }).catch(function () {});
+        } } catch (e) {}
+      }
       window.SY.myLinks().then(function (g) {
         if (!g || !g.inbound || !_scode) return;
         var _r = window.SY.schoolGet(_scode, 'roster', []) || [], _add = false;

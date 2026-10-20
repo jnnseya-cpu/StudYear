@@ -49,6 +49,7 @@
     <div class="card c6"><h3>🎁 Behaviour points</h3><div class="sub">Reward effort and log concerns — students see their points &amp; badges, parents see the log.</div><div id="bh-teach-mount" style="margin-top:10px"></div></div>
     <div class="card c6"><h3>📣 Announcements</h3><div class="sub">Post notices to your classes or the whole school; families acknowledge them.</div><div id="an-teach-mount" style="margin-top:10px"></div></div>
     <div class="card c6"><h3>🗓 My teaching timetable</h3><div class="sub">Your weekly lessons, set by leadership in the School console.</div><div id="tt-teach-mount" style="margin-top:10px"></div></div>
+    <div class="card c12"><h3>📅 Term dates &amp; holidays</h3><div class="sub">Publish your school's holidays and half-terms — every linked learner's study planner keeps them free automatically. Shared with leadership and all staff.</div><div id="td-teach-mount" style="margin-top:10px"></div></div>
     <div class="card c6"><h3>📎 Documents &amp; resources</h3><div class="sub">Share checklists, letters and revision materials with students and parents.</div><div id="dc-teach-mount" style="margin-top:10px"></div></div>
     <div class="card c12"><h3>👤 Student 360</h3><div class="sub">One connected profile per student — attainment, attendance, behaviour, homework, interventions and an AI briefing.</div><div id="s360-teach-mount" style="margin-top:10px"></div></div>
     <div class="card c6"><h3>✉️ Message a parent</h3><div class="sub">A private message thread with each child's family.</div><div id="cm-teach-mount" style="margin-top:10px"></div></div>
@@ -154,6 +155,7 @@ $('active-interv').innerHTML=myInterv.filter(function(i){return i.status!=='clos
     if(window.SYBehaviour) SYBehaviour.mountTeacher(document.getElementById('bh-teach-mount'),{code:code,by:email,byName:nm});
     if(window.SYAnnounce) SYAnnounce.mountPoster(document.getElementById('an-teach-mount'),{code:code,by:email,byName:nm});
     if(window.SYTimetable) SYTimetable.mountTeacher(document.getElementById('tt-teach-mount'),{code:code,email:email});
+    if(window.SYTerms) SYTerms.mountSchool(document.getElementById('td-teach-mount'),{code:code,email:email,byName:nm});
     if(window.SYDocs) SYDocs.mountManage(document.getElementById('dc-teach-mount'),{code:code,by:email,byName:nm});
     if(window.SYStudent360) SYStudent360.mount(document.getElementById('s360-teach-mount'),{code:code});
     if(window.SYComms) SYComms.mountStaff(document.getElementById('cm-teach-mount'),{code:code,byName:nm});
