@@ -399,11 +399,17 @@
           <label class="tf"><input type="checkbox" class="p-wd" value="2" checked> Evening <small>· 19:30</small></label>
         </div>
         <div class="card" style="margin:0;padding:12px">
-          <div class="f" style="margin:0 0 6px">Weekends (Sat–Sun)</div>
-          <label class="tf"><input type="checkbox" class="p-we" value="0" checked> Morning <small>· 10:00</small></label>
-          <label class="tf"><input type="checkbox" class="p-we" value="1" checked> Afternoon <small>· 14:00</small></label>
+          <div class="f" style="margin:0 0 6px">Weekends (Sat–Sun) <small style="text-transform:none;letter-spacing:0;color:var(--ink-3)">· kept free unless you tick a time</small></div>
+          <label class="tf"><input type="checkbox" class="p-we" value="0"> Morning <small>· 10:00</small></label>
+          <label class="tf"><input type="checkbox" class="p-we" value="1"> Afternoon <small>· 14:00</small></label>
           <label class="tf"><input type="checkbox" class="p-we" value="2"> Evening <small>· 19:00</small></label>
         </div>
+      </div>
+      <label class="f" style="margin-top:12px">Time off <span style="text-transform:none;letter-spacing:0">(kept free so you can rest — untick to study through a break)</span></label>
+      <div class="card" style="margin:4px 0 0;padding:12px">
+        <label class="tf"><input type="checkbox" id="p-rest-bank" checked> Skip UK bank holidays</label>
+        <label class="tf"><input type="checkbox" id="p-rest-holiday" checked> Skip school holidays &amp; half‑terms <small style="text-transform:none;letter-spacing:0;color:var(--ink-3)">· approx, England</small></label>
+        <div class="note" style="margin-top:6px;font-style:normal">Weekends are left free too — tick a weekend time above if you'd like to study then.</div>
       </div>
       <label class="f" style="margin-top:10px">What are your weak areas? <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
       <input type="text" id="p-weak" placeholder="e.g. Algebra in Maths, essay structure in History…">
@@ -2371,7 +2377,9 @@ pAdd.addEventListener("input",function(){
   /* prefill the study-availability windows from last time */
   try{var av=store.get("planAvail",null);
     if(av){document.querySelectorAll(".p-wd").forEach(function(c){c.checked=(av.wd||[]).indexOf(+c.value)>-1});
-           document.querySelectorAll(".p-we").forEach(function(c){c.checked=(av.we||[]).indexOf(+c.value)>-1});}
+           document.querySelectorAll(".p-we").forEach(function(c){c.checked=(av.we||[]).indexOf(+c.value)>-1});
+           var rb=document.getElementById("p-rest-bank");    if(rb&&av.restBank!=null)rb.checked=!!av.restBank;
+           var rh=document.getElementById("p-rest-holiday"); if(rh&&av.restHoliday!=null)rh.checked=!!av.restHoliday;}
   }catch(e){}
 })();
 
@@ -2434,6 +2442,28 @@ function matchArea(text,subj){
   return hit||null;
 }
 
+/* ---- Time off: bank holidays + school holidays ------------------------
+   By default the planner keeps weekends, UK bank holidays and school
+   holidays/half-terms FREE (rest). The learner can opt in to study through
+   any of them. England & Wales bank holidays 2026–2028 (set in stone by
+   gov.uk). School-holiday windows are the typical English pattern and vary
+   by school, so they're clearly marked "approx" and can be switched off. */
+const BANK_HOLIDAYS=new Set([
+  /* 2026 */ "2026-01-01","2026-04-03","2026-04-06","2026-05-04","2026-05-25","2026-08-31","2026-12-25","2026-12-28",
+  /* 2027 */ "2027-01-01","2027-03-26","2027-03-29","2027-05-03","2027-05-31","2027-08-30","2027-12-27","2027-12-28",
+  /* 2028 */ "2028-01-03","2028-04-14","2028-04-17","2028-05-01","2028-05-29","2028-08-28","2028-12-25","2028-12-26"
+]);
+const SCHOOL_HOLIDAYS=[
+  /* 2026/27 — England (typical; varies by school/LA) */
+  ["2026-10-26","2026-10-30"], ["2026-12-21","2027-01-03"], ["2027-02-15","2027-02-19"],
+  ["2027-03-29","2027-04-09"], ["2027-05-31","2027-06-04"], ["2027-07-26","2027-09-01"],
+  /* 2027/28 */
+  ["2027-10-25","2027-10-29"], ["2027-12-20","2028-01-03"], ["2028-02-14","2028-02-18"],
+  ["2028-04-03","2028-04-14"], ["2028-05-29","2028-06-02"], ["2028-07-24","2028-09-01"]
+];
+function isBankHoliday(iso){return BANK_HOLIDAYS.has(iso);}
+function isSchoolHoliday(iso){for(var i=0;i<SCHOOL_HOLIDAYS.length;i++){if(iso>=SCHOOL_HOLIDAYS[i][0]&&iso<=SCHOOL_HOLIDAYS[i][1])return true;}return false;}
+
 document.getElementById("gen-plan").onclick=()=>{
   const subs=planSubjects();
   if(!subs.length){toast("Add at least one subject to this plan (or switch to All my profile subjects)");return}
@@ -2449,10 +2479,15 @@ document.getElementById("gen-plan").onclick=()=>{
      Slot index 0/1/2 maps to the times below; weekdays and weekends differ. */
   let wdSlots=Array.from(document.querySelectorAll(".p-wd:checked")).map(x=>+x.value).sort();
   let weSlots=Array.from(document.querySelectorAll(".p-we:checked")).map(x=>+x.value).sort();
-  if(!wdSlots.length&&!weSlots.length){wdSlots=[1,2];weSlots=[0,1];}   // nothing picked → sensible default
+  /* nothing picked → school-day default; weekends stay FREE unless the student
+     ticked a weekend time (resting on weekends is the default). */
+  if(!wdSlots.length&&!weSlots.length){wdSlots=[1,2];}
   const WD_TIMES=["07:30","16:30","19:30"], WD_NAMES=["Before school","After school","Evening"];
   const WE_TIMES=["10:00","14:00","19:00"], WE_NAMES=["Morning","Afternoon","Evening"];
-  store.set("planAvail",{wd:wdSlots,we:weSlots});                       // remember for next time
+  /* time off: keep bank holidays / school holidays free unless the student opts in */
+  const restBank=(function(){var el=document.getElementById("p-rest-bank");return el?el.checked:true;})();
+  const restHoliday=(function(){var el=document.getElementById("p-rest-holiday");return el?el.checked:true;})();
+  store.set("planAvail",{wd:wdSlots,we:weSlots,restBank,restHoliday});   // remember for next time
   const daysLeft=Math.max(7,Math.round((exam-today)/86400000));
   /* adapt to the learning profile + today's mood */
   const sessionMins=[20,25,30,40,60].includes(LEARN.session)?LEARN.session:40;
@@ -2524,17 +2559,31 @@ document.getElementById("gen-plan").onclick=()=>{
 
   /* build the list of study dates (tomorrow → day before the exam): a plan
      made today starts the next day, and only on days the student is free
-     (weekday/weekend availability), thinned to daysPerWeek per week. */
-  const studyDates=[]; const perWk={};
-  for(let off=1;;off++){
-    const date=new Date(today);date.setDate(date.getDate()+off);
-    if(date>=exam)break;                                           // exam day itself stays free
-    if(off>71)break;
-    if(!slotsFor(date).length)continue;                            // in school / not available
-    const wkB=Math.floor((off-1)/7);
-    if(!shortWindow){ if((perWk[wkB]||0)>=daysPerWeek)continue; perWk[wkB]=(perWk[wkB]||0)+1; }
-    studyDates.push(date);
+     (weekday/weekend availability), thinned to daysPerWeek per week.
+     Weekends, bank holidays and school holidays are kept free unless the
+     student opted in. If opting out would leave NO study days at all (e.g.
+     exam falls right after a bank-holiday weekend), the rest days are
+     relaxed so the plan is never empty — and the student is told. */
+  function buildDates(honourRest){
+    const dates=[]; const pw={}; let skippedRest=0;
+    for(let off=1;;off++){
+      const date=new Date(today);date.setDate(date.getDate()+off);
+      if(date>=exam)break;                                         // exam day itself stays free
+      if(off>71)break;
+      if(!slotsFor(date).length)continue;                          // in school / not available
+      if(honourRest){
+        const iso=isoOf(date);
+        if((restBank&&isBankHoliday(iso))||(restHoliday&&isSchoolHoliday(iso))){skippedRest++;continue;}
+      }
+      const wkB=Math.floor((off-1)/7);
+      if(!shortWindow){ if((pw[wkB]||0)>=daysPerWeek)continue; pw[wkB]=(pw[wkB]||0)+1; }
+      dates.push(date);
+    }
+    return {dates,skippedRest};
   }
+  let _b=buildDates(true); let restRelaxed=false;
+  if(!_b.dates.length && _b.skippedRest>0 && (restBank||restHoliday)){ _b=buildDates(false); restRelaxed=true; }
+  const studyDates=_b.dates;
 
   const DOW=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   const plan=[];let cursor=0;
@@ -2565,9 +2614,18 @@ document.getElementById("gen-plan").onclick=()=>{
   if(pace==="fast")adapt.push("a faster pace");
   if(lowEnergy)adapt.push("a lighter load today based on your check-in");
   if(style)adapt.push(style.toLowerCase()+"-style activities");
+  /* describe which breaks are kept free, so the plan explains its own rest days */
+  const restBits=[];
+  if(!weSlots.length)restBits.push("weekends");
+  if(restBank)restBits.push("bank holidays");
+  if(restHoliday)restBits.push("school holidays and half-terms");
+  const restLine=restRelaxed
+    ? " There was so little time before your exam that your days off had to be used too — rest where you can."
+    : (restBits.length?(" Your "+(restBits.length===1?restBits[0]:restBits.slice(0,-1).join(", ")+" and "+restBits[restBits.length-1])+" are kept free so you can rest and recharge.")
+      :" You've chosen to study every available day, including weekends and breaks.");
   const summary="This plan is personalised to you"+(adapt.length?" — "+adapt.join(", ")+" — ":" — ")+
     "breaking revision into manageable daily goals across every subject. Weak areas are prioritised, the last stretch "+
-    "switches to past papers, and the exam day is kept free. Stay consistent and you'll walk in confident"+(target?" and on track for your target of "+target:"")+".";
+    "switches to past papers, and the exam day is kept free."+restLine+" Stay consistent and you'll walk in confident"+(target?" and on track for your target of "+target:"")+".";
   const phase=shortWindow
     ? "Final push: consolidate the highest-priority topics, drill exam questions, and review your weakest areas first."
     : "Phase 1 — establish a strong foundation in your core subjects, review fundamental concepts, and identify areas that need the most attention.";
@@ -2578,7 +2636,9 @@ document.getElementById("gen-plan").onclick=()=>{
   logEvent("plan","Study plan generated",subs.length+" subject"+(subs.length>1?"s":"")+" · "+hours+" hrs/week"+(target?" · target "+target:"")+" — "+studyDates.length+" study days scheduled by date.");
   document.getElementById("plan-sub").textContent=
     `${subs.length} subject${subs.length>1?"s":""} · ${studyDates.length} study day${studyDates.length!==1?"s":""} · ${dailySessions} session${dailySessions>1?"s":""}/day · weak areas prioritised. Autosaved.`;
-  toast("Plan generated — tap 📖 to open any session as a lesson (+20 pts)");
+  toast(restRelaxed
+    ? "Plan generated — too few days before your exam to skip weekends/holidays, so they're included"
+    : "Plan generated — tap 📖 to open any session as a lesson (+20 pts)");
 };
 function fmtDate(iso){const d=new Date(iso+"T00:00:00");return d.getDate()+" "+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]}
 function longDay(iso){const d=new Date(iso+"T00:00:00");return d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
