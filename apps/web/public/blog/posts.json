@@ -692,5 +692,137 @@
     "published": true,
     "date": "2026-08-21T09:00:00.000Z",
     "reviewed": "2026-08-22T13:00:00.000Z"
+  },
+  {
+    "id": "skills-coach-photo-to-plan",
+    "title": "Skills Coach: a photo of your child's work becomes a plan that works",
+    "slug": "skills-coach-photo-to-plan",
+    "category": "Parents",
+    "excerpt": "Worried your child's handwriting, spelling or memory is behind? Photograph a page of their work and StudYear's Skills Coach builds an ongoing plan to fix it.",
+    "metaDesc": "Photograph your child's handwriting, spelling or writing and StudYear's Skills Coach reads it closely and builds a step-by-step plan — with the key items loaded into daily practice.",
+    "body": "A teacher tells you your Year 5 child is \"writing like Reception\". You can see it too — but what do you actually *do* on Monday morning? StudYear's Skills Coach answers that. Take or attach a photo of a page of real work and it reads that work closely, works out what is holding the child back, and hands you a clear, ongoing plan — with the most important items loaded straight into daily practice so progress comes quickly.\n\n## The USP: from a photo to a plan, not just a mark\nMost tools give a score. The Skills Coach gives a *strategy*. It looks at the actual page — letter formation, spelling patterns, sentence structure, what is remembered and what is not — and reasons about the specific gap in front of it. Then it writes a step-by-step plan you can start today, and seeds the key words and facts into StudYear's spaced‑repetition practice so they are revisited on exactly the days they are about to be forgotten.\n\n## What it helps with\n- **Handwriting & letter formation** — spots the habits behind messy or slow writing and drills the fix.\n- **Spelling level** — finds the patterns being missed (not just the wrong words) and turns them into practice.\n- **Writing level** — sentence structure, punctuation and building a paragraph, pitched to where the child actually is.\n- **Memory & retention** — when nothing sticks no matter how much is repeated, it builds a remember‑it plan around how memory really works.\n\n## Re-check and see the progress\nTwo weeks later, photograph a fresh piece of work and the Coach compares it to last time — what has improved, what to work on next, and an updated plan. You are never guessing whether it is working; you can see it.\n\n### Does this replace a teacher or a tutor?\nNo, and it does not pretend to. It is a practical second pair of eyes for the parent or teacher between lessons — reading the work, explaining the gap in plain English, and turning it into daily action. A professional stays in charge of the child's learning.\n\n### How quickly will we see a difference?\nThat depends on the child and on sticking with the short daily practice the plan sets. Because the key items go into spaced repetition, the things most at risk of being forgotten are the things practised first — which is the fastest route to visible change.\n\nStart with one photo. [Open the Skills Coach in StudYear](/study/) and see the first plan in minutes.",
+    "tags": [
+      "Skills Coach",
+      "handwriting",
+      "spelling",
+      "writing",
+      "memory",
+      "parents",
+      "StudYear"
+    ],
+    "keyword": "handwriting and spelling support",
+    "readTime": 4,
+    "seoScore": 98,
+    "published": true,
+    "date": "2026-10-22T09:00:00.000Z",
+    "reviewed": "2026-10-22T09:00:00.000Z"
+  },
+  {
+    "id": "study-planner-that-protects-rest-days",
+    "title": "The study planner that protects weekends, half-terms and bank holidays",
+    "slug": "study-planner-that-protects-rest-days",
+    "category": "Study tools",
+    "excerpt": "Most revision timetables fill every day until burnout. StudYear keeps weekends, half-terms and bank holidays free by default — unless the learner chooses to study.",
+    "metaDesc": "StudYear builds a revision timetable that protects rest: weekends, UK bank holidays and school holidays are kept free by default, with one-tap opt-in and a pre-exam safety net.",
+    "body": "A revision plan that books study into every single day does not build a hard worker — it builds a burnt‑out one. StudYear's study planner is different: it treats weekends, UK bank holidays and school holidays as time *off* by default, and only schedules study on them if the learner actually chooses to.\n\n## The USP: rest is the default, not an afterthought\nTick your exam date and your weekly hours and StudYear spreads the work across your real available days — then deliberately leaves the breaks clear. Weekends stay free unless you add a weekend study slot. UK bank holidays (2026–2028, the official dates) are skipped. School holidays and half‑terms are skipped too. The result is a plan a teenager can actually keep to, with recovery built in.\n\n## You are always in control\n- **Study through a break if you want to.** Each is a one‑tap opt‑in — turn on weekend study, or untick \"skip bank holidays\", whenever crunch time calls for it.\n- **Add your own dates.** Your school's holidays not standard? Enter your own term dates and the planner uses those.\n- **A pre‑exam safety net.** If your exam is so close that skipping every break would leave no time at all, the planner quietly uses those days and tells you why — so a plan is never empty.\n\n## Why this matters\nSpaced, sustainable study beats cramming, and rest is when memory consolidates. A plan that respects downtime is not a soft option — it is how consistent revision survives contact with real life. The planner also prioritises your weak areas and switches the final week to past‑paper practice, so the time you *do* spend is the time that counts.\n\n### Will it still cover everything before my exam?\nYes. It schedules around your exam date across the weeks you have, concentrating on your weakest topics first and keeping the exam day itself free. Protecting breaks changes *when* you study, not *whether* you are ready.\n\n### What if my school's holidays are different?\nAdd your own holiday dates in the planner and it uses yours. If your school publishes its dates to StudYear, your planner inherits them automatically.\n\n[Build your plan in StudYear](/study/) and see your first fortnight — rest days included.",
+    "tags": [
+      "revision",
+      "revision timetable",
+      "study tools",
+      "parents",
+      "StudYear"
+    ],
+    "keyword": "revision timetable that respects holidays",
+    "readTime": 4,
+    "seoScore": 98,
+    "published": true,
+    "date": "2026-10-22T10:00:00.000Z",
+    "reviewed": "2026-10-22T09:00:00.000Z"
+  },
+  {
+    "id": "publish-school-term-dates-to-every-pupils-planner",
+    "title": "Publish your term dates once — every pupil's study planner follows",
+    "slug": "publish-school-term-dates-to-every-pupils-planner",
+    "category": "Schools",
+    "excerpt": "A school sets its holidays and half-terms once in StudYear, and every linked pupil’s study planner keeps those dates free automatically — synced across devices.",
+    "metaDesc": "Set your school’s term dates and holidays once in StudYear; every linked pupil’s study planner inherits them automatically and keeps them free, synced across devices.",
+    "body": "School holidays are not national — they vary by local authority and by school. So a generic revision app that \"skips the half‑term\" is guessing. StudYear lets your school publish its *own* calendar once, and every linked pupil's study planner keeps those exact dates free — automatically, on every device.\n\n## The USP: one source of truth for the whole school\nIn the School or Teacher console, open **Term dates & holidays**, add each break — name, start, end — and click **Publish to all learners**. That is it. From then on, when a pupil linked to your join code builds a study plan, it inherits your calendar and never schedules revision through your holidays or INSET‑shaped breaks. No spreadsheets sent home, no parent re‑typing dates.\n\n## Built for how schools really work\n- **Synced across devices.** A pupil on a Chromebook in school and a phone at home sees the same published dates.\n- **Any staff member can keep it current.** The calendar belongs to the *school*, not to whoever created it first, so leadership and teaching staff can all edit it.\n- **Sensible fallbacks.** If a pupil's school hasn't published dates, their planner uses the dates the learner entered, or a clearly‑labelled approximate England pattern — it never dead‑ends.\n- **Safe by design.** Term dates are ordinary school information, not pupil data; nothing personal is shared to publish them.\n\n## Why it earns its place\nWorkload and wellbeing both improve when revision fits the real school year. Pupils trust a plan that respects their actual holidays; parents stop fielding \"do I have to revise on the inset day?\"; and your calendar becomes the single reference every family's plan is built on.\n\n### How long does it take to set up?\nA few minutes. Add each break once; it applies to every linked learner from then on, and you only revisit it when the calendar changes.\n\n### What if we change a date later?\nEdit it in the console and publish again — every pupil's planner picks up the change automatically the next time it syncs.\n\n[See it in the School console](/study/) and publish your calendar in minutes.",
+    "tags": [
+      "schools",
+      "teachers",
+      "revision timetable",
+      "StudYear"
+    ],
+    "keyword": "school term dates study planner",
+    "readTime": 4,
+    "seoScore": 97,
+    "published": true,
+    "date": "2026-10-22T11:00:00.000Z",
+    "reviewed": "2026-10-22T09:00:00.000Z"
+  },
+  {
+    "id": "daily-boost-something-extra-every-day",
+    "title": "Daily boost: one extra win every study day",
+    "slug": "daily-boost-something-extra-every-day",
+    "category": "Study tools",
+    "excerpt": "Every day in your StudYear plan adds one small extra on top of your subjects — a quiz, spelling, a quick review, a Skills Coach check or a SkillRush burst.",
+    "metaDesc": "StudYear adds a rotating daily boost to every study day — a quick quiz, spelling, spaced review, Skills Coach check-in or SkillRush burst — one click, and a habit that sticks.",
+    "body": "Consistency is what moves grades — and consistency comes from a habit, not a heroic weekend. That is why every day in a StudYear plan now carries a **Daily boost**: one small, high‑value extra on top of your planned subjects, so there is always a quick win to keep the streak alive.\n\n## The USP: something different every single day\nThe boost rotates, so it never gets stale and no two days in a row repeat:\n- **🔁 Smart review** — a five‑minute spaced‑repetition review of cards you have already met, timed for the moment you are about to forget them.\n- **🔤 Spelling sprint** — a short spelling test pitched to your level.\n- **🧩 Quick reasoning quiz** — a comprehension or problem‑solving set to keep thinking sharp.\n- **🧠 Skills Coach check‑in** — snap a photo of today's work for a quick read and next step.\n- **⚡ SkillRush burst** — a fast, arcade‑style recall game to finish on.\n\nYounger learners lead with spelling, reading and review; everyone gets variety.\n\n## One click, and it counts\nEach boost opens the right tool with a single tap — no hunting through menus — and ticking it off earns points, just like a study session. Little and often, visibly rewarded.\n\n## Why a daily extra works\nShort, varied, daily practice is exactly what the science of memory rewards: spacing beats cramming, and retrieval (actually recalling something) beats re‑reading. The Daily boost turns those findings into a thirty‑second decision you make every day instead of a plan you have to remember to follow.\n\n### Does the boost add to my workload?\nNo — it is small by design, a single quick activity meant to take a few minutes. It sits *alongside* your plan, not on top of it, to keep momentum between bigger sessions.\n\n### Can I skip a day?\nOf course. It is there to make the habit easy, not to nag. But because each day offers something different and quick, most learners find it is the part they actually look forward to.\n\n[Open your plan in StudYear](/study/) and take today's boost.",
+    "tags": [
+      "revision",
+      "spaced repetition",
+      "study tools",
+      "StudYear"
+    ],
+    "keyword": "daily revision habit",
+    "readTime": 3,
+    "seoScore": 97,
+    "published": true,
+    "date": "2026-10-22T12:00:00.000Z",
+    "reviewed": "2026-10-22T09:00:00.000Z"
+  },
+  {
+    "id": "spelling-practice-clear-british-voice",
+    "title": "Spelling practice with a clear British voice you can choose",
+    "slug": "spelling-practice-clear-british-voice",
+    "category": "Study tools",
+    "excerpt": "StudYear reads each spelling word aloud in a clear, loud British voice you can pick and test — then marks you instantly, with paste and spell-check switched off.",
+    "metaDesc": "A spelling test that reads each word in a clear British voice you choose and test, pitched to your level, marked instantly — with paste and spell-check off so it’s all you.",
+    "body": "A spelling test is only as good as the voice reading the words — and a quiet, robotic, American‑accented voice is no use to a British child learning British spellings. StudYear fixes exactly that: it reads each word aloud in a **clear, loud British voice you can choose and test**, then marks you instantly.\n\n## The USP: a voice that is actually clear — and yours to pick\n- **British by default, loud and clear.** The online voice is a natural British accent, boosted so it is easy to hear even where a device's built‑in voice is too quiet.\n- **Choose your voice and test it.** A small voice picker lets the learner select the British voice they like best and play a sample before starting.\n- **Honest about volume.** If your device falls back to its own quieter voice, StudYear tells you plainly and shows how to get the loud online one — no silent, unusable test.\n\n## A real test of spelling, not of copy‑paste\nPaste and autocorrect are switched off, so the answer is genuinely the child's. Each word can be heard again or used in a sentence for context, and the test is pitched to the learner's level — from commonly misspelled words to the curriculum spellings for their year, or words from any topic you choose.\n\n## Marked instantly, with the tricky ones saved\nEvery test marks on the spot and keeps the words you missed, so they come back for practice until they are mastered and your score climbs. A little every day — exactly what spelling rewards.\n\n### Why does the British accent matter?\nBecause pronunciation shapes spelling. Words a British child must spell to a British standard should be read the way they will hear them in class — so the sound and the spelling line up.\n\n### What if there's no internet?\nThe test still works using your device's built‑in voice. It may be quieter, and StudYear will say so and suggest turning the volume up or picking the online British voice once you're back online.\n\n[Try a spelling test in StudYear](/study/) — choose your voice and go.",
+    "tags": [
+      "spelling",
+      "fluency",
+      "study tools",
+      "primary",
+      "StudYear"
+    ],
+    "keyword": "spelling practice British voice",
+    "readTime": 3,
+    "seoScore": 97,
+    "published": true,
+    "date": "2026-10-22T13:00:00.000Z",
+    "reviewed": "2026-10-22T09:00:00.000Z"
+  },
+  {
+    "id": "one-click-ai-course-from-your-study-plan",
+    "title": "Turn any study-plan topic into a full course — in one click",
+    "slug": "one-click-ai-course-from-your-study-plan",
+    "category": "Study tools",
+    "excerpt": "See a topic in your StudYear plan you want to master? One click turns it into a full, structured course — objectives, worked examples, common mistakes and check quizzes.",
+    "metaDesc": "One click turns any topic in your StudYear study plan into a full, structured course — clear objectives, worked examples, common mistakes and a check quiz per module.",
+    "body": "Knowing you need to study \"quadratic equations\" on Tuesday is not the same as having something to actually learn from. StudYear closes that gap: next to every topic in your study plan is a **🎓 Course** button, and one click turns that single line into a full, structured course built for your subject and level.\n\n## The USP: a plan line becomes a real course, instantly\nNo searching, no setup. Tap Course on any planned session and StudYear builds a proper course on that topic — to a high standard, pitched to your level, in seconds. Each module is written to teach, not to pad:\n- a clear **learning objective**,\n- a **worked example** that shows the method step by step,\n- the **common mistake** to avoid on that point,\n- and a **check quiz** at the end of the module so you prove you have got it before moving on.\n\n## Why one click changes everything\nThe hardest part of revision is starting. When the course is one tap from the plan you already have, the friction disappears — you go from \"I should revise this\" to \"I'm learning it\" without a detour. And because the course is generated for your exact subject and level, it is specific and relevant, not a generic article.\n\n## It fits the rest of your plan\nThe same topics flow through your plan, your interactive lessons and your resource search, so a course is never an island — it is one more way into the exact thing you are scheduled to study, with the check quizzes feeding your progress.\n\n### Is the course tailored to my level?\nYes. It is built from the subject, topic and level attached to that plan session, so a GCSE course and a primary course on the \"same\" subject look very different — each pitched where it should be.\n\n### Do I have to set anything up?\nNo. The one‑click course reads the topic straight from your plan. You tap once and start learning.\n\n[Open your study plan in StudYear](/study/) and turn a topic into a course.",
+    "tags": [
+      "revision",
+      "interactive lessons",
+      "study tools",
+      "AI in education",
+      "StudYear"
+    ],
+    "keyword": "AI course builder",
+    "readTime": 3,
+    "seoScore": 97,
+    "published": true,
+    "date": "2026-10-22T14:00:00.000Z",
+    "reviewed": "2026-10-22T09:00:00.000Z"
   }
 ]
