@@ -241,6 +241,7 @@
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
       <input id="u-search" placeholder="Search name or email…" style="min-width:220px">
       <select id="u-role"><option value="">All roles</option><option>student</option><option>parent</option><option>teacher</option><option>tutor</option><option>school</option><option>authority</option><option>admin</option></select>
+      <button class="btn" id="u-add" title="Create or provision an account on the backend so it appears here — use it to add a child/student, or to pull in an account that only exists on another device.">➕ Add / provision account</button>
       <button class="btn ghost" id="u-clean" title="Removes duplicate rows, test/demo-domain accounts and bot-pattern names. Real users are never touched.">🧹 Clean test &amp; duplicate data</button>
       <button class="btn danger" id="u-delsel" style="display:none">Delete selected (<span id="u-selcount">0</span>)</button>
       <span class="note" style="align-self:center" id="u-count"></span>
@@ -1491,6 +1492,32 @@ window.cloudUserOp=function(op,uid,value,done){
       });
   }).catch(function(){toast('Cloud unreachable')});
 };
+/* Owner-side account creation / provisioning — create a backend account (or pull
+   in one that currently only exists on another device) so it appears in this
+   list and can be managed. Reuses /adminUserOp with op:'create'. */
+window.cloudCreateAccount=function(){
+  if(!window.SYCloud||!cloudApi()){toast('Connect to the platform backend first (see sync status above).');return;}
+  var email=prompt('Email of the account to add / provision:');
+  if(email==null||!email.trim())return; email=email.trim().toLowerCase();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('Enter a valid email address.');return;}
+  var name=prompt('Display name (optional):','')||'';
+  var role=(prompt('Role — student, parent, teacher, tutor, school, authority:','student')||'student').trim().toLowerCase();
+  var pw=prompt('Set a password (at least 6 characters) — the account holder signs in with this.\nIf this email already has a cloud account, leave blank to keep its current password.','');
+  if(pw==null)return;
+  if(pw&&String(pw).length<6){toast('Password must be at least 6 characters.');return;}
+  toast('Creating account…');
+  SYCloud.token(SY.session.email).then(function(tk){
+    if(!tk){toast('Sign in again to manage cloud accounts');return;}
+    return fetch(cloudApi()+'/adminUserOp',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+tk},
+      body:JSON.stringify({op:'create',email:email,name:name,role:role,plan:'child_free',password:pw})})
+      .then(function(r){return r.json()}).then(function(j){
+        if(j&&j.ok){ toast(j.createdNew?('✓ Account created: '+email):('✓ Account provisioned: '+email)); cloudPull(0); }
+        else { toast('Could not add account: '+((j&&j.error)||'failed')); }
+      });
+  }).catch(function(){toast('Cloud unreachable')});
+};
+try{var _uadd=document.getElementById('u-add');if(_uadd)_uadd.onclick=window.cloudCreateAccount;}catch(e){}
 function cloudStatus(msg,kind,btn){var e=document.getElementById('u-cloud-status');if(!e)return;
   e.textContent=msg;
   var c=kind==='ok'?['rgba(92,187,123,.10)','rgba(92,187,123,.35)']:kind==='warn'?['rgba(224,169,63,.10)','rgba(224,169,63,.4)']:['rgba(230,103,103,.10)','rgba(230,103,103,.4)'];

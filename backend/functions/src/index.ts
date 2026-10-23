@@ -1380,6 +1380,37 @@ export const adminUserOp = onRequest({ region: 'europe-west2', cors: true }, asy
   try {
     const admin = await requireAdmin(req.headers.authorization);
     const op = String(req.body?.op ?? '');
+
+    // create / provision an account directly from admin — so the owner is never
+    // dependent on the account's own device registering itself. If the email is
+    // already in Firebase Auth, we don't fail: we just (re)write its profile doc,
+    // which also makes a previously local-only account manageable here.
+    if (op === 'create') {
+      const email = String(req.body?.email ?? '').trim().toLowerCase();
+      const password = String(req.body?.password ?? '');
+      const name = String(req.body?.name ?? '').slice(0, 120);
+      const role = String(req.body?.role ?? 'student');
+      const plan = String(req.body?.plan ?? 'child_free');
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw httpError(400, 'a valid email is required');
+      let u: import('firebase-admin/auth').UserRecord;
+      let createdNew = false;
+      try {
+        u = await getAuth().getUserByEmail(email);
+        if (password) { if (password.length < 6) throw httpError(400, 'password must be at least 6 characters'); await getAuth().updateUser(u.uid, { password }); }
+      } catch (e) {
+        const msg = String((e as { code?: string; message?: string }).code ?? (e as Error).message ?? '');
+        if (msg.includes('auth/user-not-found') || msg.includes('no user record')) {
+          if (password.length < 6) throw httpError(400, 'password must be at least 6 characters to create a new account');
+          u = await getAuth().createUser({ email, password, displayName: name || undefined });
+          createdNew = true;
+        } else throw e;
+      }
+      await db.doc(`users/${u.uid}`).set({ name: name || null, roles: [role], plan, provisionedByAdmin: true, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      await audit('ADMIN_USER_CREATE', admin.uid, { target: u.uid, email, createdNew });
+      res.json({ ok: true, uid: u.uid, email, createdNew });
+      return;
+    }
+
     const uid = String(req.body?.uid ?? '');
     if (!uid) throw httpError(400, 'uid required');
     if (op === 'delete') {
