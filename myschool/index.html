@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — My School</title>
+<link rel="manifest" href="../manifest.json"><link rel="icon" href="../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--bg:#060B18;--panel:#0B1428;--line:rgba(170,182,204,.16);--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#77839B;
+    --gold-300:#F2CE7B;--gold-400:#D9AE55;--gold-500:#B98A2F;--good:#5CBB7B;--warn:#E0A93F;--bad:#E06060;
+    --serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans)}
+  .wrap{max-width:1020px;margin:0 auto;padding:26px 22px 80px}
+  h1{font-family:var(--serif);font-size:27px;margin:6px 0 4px}
+  h3{font-family:var(--serif);font-size:16.5px}
+  .k{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-400)}
+  .lede{color:var(--ink-2);font-size:14px;margin:4px 0 16px;line-height:1.6;max-width:78ch}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:16px 18px;margin-bottom:12px}
+  .note{font-size:11.5px;color:var(--ink-3);line-height:1.6}
+  .btn{appearance:none;border:1px solid var(--gold-500);border-radius:8px;padding:8px 13px;font-size:12.5px;font-weight:600;cursor:pointer;background:linear-gradient(180deg,var(--gold-300),var(--gold-400));color:#1a1405;text-decoration:none;display:inline-block}
+  .btn.ghost{background:none;border-color:var(--line);color:var(--ink-2)}
+  .btn.sm{padding:4px 9px;font-size:11px}
+  .pill{display:inline-block;border:1px solid var(--line);border-radius:16px;padding:2px 9px;font-size:10.5px}
+  .pill.ok{color:var(--good);border-color:rgba(92,187,123,.4)}
+  .pill.warn{color:#e8c07a;border-color:rgba(224,169,63,.4)}
+  .hw{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:13px}
+  .hw input{width:auto;accent-color:var(--gold-500)}
+  a.back{color:var(--ink-3);font-size:13px;text-decoration:none}
+  input,textarea{background:rgba(6,11,24,.6);border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:8px 10px;font-size:13px;font-family:var(--sans)}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#101B33;border:1px solid var(--gold-500);border-radius:10px;padding:11px 18px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:99}
+</style></head><body>
+<script src="../guard.js" data-role="student" data-base="../"></script>
+<div class="wrap">
+<a class="back" href="../study/">← My private study workspace</a>
+<div class="k" style="margin-top:14px">School-controlled area · works from home</div>
+<h1>🏫 My School</h1>
+<p class="lede" id="lede">Everything your school sets for you — homework, assessments, class notices and shared
+  resources — accessible at home, on top of your private StudYear section. Your school sees your progress here;
+  your private area stays yours.</p>
+
+<div class="card" id="link-card"><h3>School link</h3><div id="link-body"></div></div>
+<div class="card"><h3>📌 Homework &amp; school-set plan <span class="note">set by your teachers — tick off as you finish; your school sees completion live</span></h3><div id="hw"></div></div>
+<div class="card"><h3>🗓 Upcoming assessments</h3><div id="assess"></div></div>
+<div class="card"><h3>📣 Class board</h3><div id="board"></div></div>
+<div class="card"><h3>🛠 Support in place for you</h3><div class="note">Interventions your school is running with you — ask your teacher anything about them.</div><div id="ivs" style="margin-top:6px"></div></div>
+<div class="card"><h3>💬 Message my teacher <span class="note">your input feeds the system — questions land on the class board for staff</span></h3>
+  <div style="display:flex;gap:8px;margin-top:6px"><input id="msg" placeholder="e.g. I'm stuck on q3 of the algebra homework" style="flex:1"><button class="btn" id="msg-go">Send</button></div></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+(function(){
+'use strict';
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var e=$('toast');e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2200)}
+var link=SY.get('schoolLink',null);
+if(!link||!link.code){
+  $('link-body').innerHTML='<div class="note">You are not linked to a school yet. Your school adds you from their People management — once linked, homework, assessments and notices appear here automatically. Ask your teacher for your school\'s join details.</div>';
+  ['hw','assess','board','ivs'].forEach(function(id){$(id).innerHTML='<div class="note">Waiting for your school link.</div>'});
+  $('msg-go').onclick=function(){toast('Link to your school first')};
+  return;
+}
+var code=link.code;
+$('link-body').innerHTML='<span class="pill ok">● linked</span> <b>'+esc(link.name||code)+'</b> <span class="note">— your school-controlled area is live. Attendance, homework and progress sync both ways.</span>';
+
+/* homework: school/teacher-pushed plan weeks + tick-off that feeds back */
+var plan=SY.get('plan',{plan:[],done:{}})||{plan:[],done:{}};
+var items=[];
+(plan.plan||[]).forEach(function(w){(w.days||[]).forEach(function(d,di){
+  items.push({key:'w'+w.n+'d'+di,label:(d.d||'')+' · '+(d.s||'')+' — '+(d.t||d.task||'session')+(d.mins?' ('+d.mins+'m)':''),n:w.n});
+})});
+items=items.slice(-15);
+$('hw').innerHTML=items.length?items.map(function(it){
+  var done=!!(plan.done||{})[it.key];
+  return '<label class="hw"><input type="checkbox" data-k="'+it.key+'"'+(done?' checked':'')+'><span style="'+(done?'text-decoration:line-through;color:var(--ink-3)':'')+'">'+esc(it.label)+' <span class="note">week '+it.n+'</span></span></label>';
+}).join(''):'<div class="note">No school-set homework yet — it appears here the moment a teacher pushes a plan or your individual plan is issued.</div>';
+$('hw').querySelectorAll('input').forEach(function(cb){cb.onchange=function(){
+  var pl=SY.get('plan',{plan:[],done:{}});pl.done=pl.done||{};
+  if(cb.checked)pl.done[cb.dataset.k]=new Date().toISOString();else delete pl.done[cb.dataset.k];
+  SY.set('plan',pl);SY.log('plan',cb.checked?'Homework completed':'Homework reopened','School plan item '+cb.dataset.k+'.');
+  toast(cb.checked?'Done — your school sees this ✓':'Reopened');
+}});
+
+/* assessments + board + interventions from the school workspace */
+var as=SY.schoolGet(code,'assessments',[]);
+$('assess').innerHTML=as.length?as.slice(0,6).map(function(a){
+  return '<div class="hw" style="cursor:default"><span style="flex:1"><b style="color:var(--ink)">'+esc(a.title)+'</b>'+(a.desc?' <span class="note">'+esc(a.desc)+'</span>':'')+'</span><span class="pill '+(a.due?'warn':'')+'">'+(a.due?'due '+esc(a.due):'scheduled')+'</span></div>';
+}).join(''):'<div class="note">No assessments scheduled.</div>';
+var bd=SY.schoolGet(code,'board',[]);
+$('board').innerHTML=bd.length?bd.slice(0,8).map(function(b){
+  return '<div class="hw" style="cursor:default"><span style="flex:1"><b style="color:var(--ink)">'+esc(b.title)+'</b>'+(b.detail?' <span class="note">'+esc(b.detail)+'</span>':'')+'</span><span class="note">'+esc(String(b.when||'').slice(0,10))+'</span></div>';
+}).join(''):'<div class="note">No notices yet.</div>';
+var ivs=SY.schoolGet(code,'interventions',[]).filter(function(x){return x.email===SY.session.email&&x.status!=='complete'});
+$('ivs').innerHTML=ivs.length?ivs.map(function(x){
+  return '<div class="hw" style="cursor:default"><span style="flex:1"><b style="color:var(--ink)">'+esc(x.subject||'Support plan')+'</b> <span class="note">'+esc(x.notes||'')+'</span></span><span class="pill ok">'+esc(x.status)+'</span></div>';
+}).join(''):'<div class="note">No active support plans — you\'re on track.</div>';
+
+/* student input feeds the system: question → class board */
+$('msg-go').onclick=function(){
+  var m=$('msg').value.trim();if(m.length<5){toast('Write your question first');return}
+  var b=SY.schoolGet(code,'board',[]);
+  b.unshift({title:'Question from '+(SY.session.name||'a student'),detail:m,subj:'',from:SY.session.email,when:new Date().toISOString()});
+  SY.schoolSet(code,'board',b.slice(0,50));
+  SY.log('family','Question sent to school',m.slice(0,80));
+  $('msg').value='';toast('Sent — your teachers see it on the class board');
+};
+})();
+</script>
+</body></html>

@@ -1,0 +1,13 @@
+{
+  "_howto": "Real social proof for the landing page proof section. Every array is EMPTY until you have genuine, permissioned proof — add real entries only (see field shapes below) and they appear automatically on studyear.com with no code change. Never add fabricated quotes, names, schools or numbers: one fake reference destroys the credibility the whole section is built to earn, and only real, consenting people/organisations may appear here.",
+  "_fields": {
+    "outcomes": "Measured results you can defend: { \"value\": \"+1.2 grades\", \"label\": \"average uplift, Year 11 pilot\" }",
+    "testimonials": "Quotes from real, consenting people: { \"quote\": \"...\", \"name\": \"Jane Okafor\", \"role\": \"Deputy Head\", \"org\": \"St Mary's, Leeds\" }",
+    "logos": "Partner organisations that have agreed to be named: { \"name\": \"St Mary's, Leeds\", \"src\": \"proof/stmarys.png\" }  (src optional; name alone renders as text)",
+    "caseStudies": "Links to written case studies / evidence: { \"title\": \"How St Mary's cut its NEET-risk list by half\", \"href\": \"blog/st-marys-case-study/\" }"
+  },
+  "outcomes": [],
+  "testimonials": [],
+  "logos": [],
+  "caseStudies": []
+}

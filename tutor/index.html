@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Tutor Command Centre</title><link rel="manifest" href="../manifest.json"><link rel="icon" href="../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  .hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .live{font-size:11px;color:var(--good);border:1px solid rgba(92,187,123,.4);border-radius:20px;padding:3px 10px}
+  .pill{display:inline-block;font-size:11px;color:var(--gold-300);border:1px solid rgba(77,157,224,.3);background:rgba(77,157,224,.06);border-radius:20px;padding:3px 10px;margin:2px 4px 0 0}
+  .insight{border:1px solid rgba(77,157,224,.3);background:linear-gradient(180deg,rgba(77,157,224,.09),rgba(77,157,224,.03));border-radius:12px;padding:13px 16px;margin-top:14px;font-size:13px;color:var(--ink-2)}.insight b{color:var(--gold-300)}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}@media(max-width:720px){.kpis{grid-template-columns:1fr 1fr}}
+  .mini{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}@media(max-width:720px){.mini{grid-template-columns:1fr 1fr}}
+  .mini .card{padding:13px 15px}
+  .feed .row .st{margin-left:auto}
+  .stu{border:1px solid var(--line);border-radius:12px;padding:13px 14px;background:rgba(6,11,24,.32);margin-top:10px}
+  .stu .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.stu .top b{font-size:14px}
+  .badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+  .tbadge{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid;background:rgba(6,11,24,.3)}.tbadge.on{color:#89d3a2;border-color:rgba(92,187,123,.4)}.tbadge.off{color:var(--ink-3);border-color:var(--line);opacity:.55}
+  .qa{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .qa a{flex:1;min-width:170px;border:1px solid var(--line);border-radius:12px;padding:13px 14px;background:rgba(6,11,24,.32);text-decoration:none}
+  .qa a b{color:var(--ink);font-size:13.5px}.qa a span{display:block;font-size:11.5px;color:var(--ink-3);margin-top:3px}
+  .demobar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid rgba(201,133,0,.35);background:rgba(201,133,0,.07);border-radius:12px;padding:11px 15px;margin-top:14px;font-size:12.5px;color:#e0b566}
+  .kv{display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0;border-bottom:1px solid rgba(170,182,204,.08)}.kv b{color:var(--ink)}
+</style></head><body>
+<script src="../guard.js" data-role="tutor" data-base="../"></script>
+<script src="../growth.js"></script>
+<div class="shell"><main>
+  <div class="hd"><span class="live">● Live · synced &lt;1 min ago</span><span class="pill" id="mkt-pill">Marketplace live</span><div style="margin-left:auto"><button class="btn" id="demo-btn">Load demo</button></div></div>
+  <div class="k" style="margin-top:10px">Teaching operator · Tutor Command Centre</div>
+  <h1 id="welcome">Welcome back</h1>
+  <p class="lede">Revenue, students and session intelligence — built for professional tutors, not learners.</p>
+  <div class="insight" id="insight"></div>
+  <div class="demobar" id="demobar" style="display:none"></div>
+
+  <div class="kpis">
+    <div class="card stat"><div class="v" id="k-today">£0</div><div class="k">Today</div></div>
+    <div class="card stat"><div class="v" id="k-month">£0</div><div class="k">This month</div></div>
+    <div class="card stat"><div class="v" id="k-rating">0<span style="font-size:15px;color:var(--ink-2)">/5</span></div><div class="k">Rating</div></div>
+    <div class="card stat"><div class="v" id="k-retention">0%</div><div class="k">Retention</div></div>
+  </div>
+  <div class="mini">
+    <div class="card stat"><div class="v" id="k-sessions">0</div><div class="k">Sessions today</div></div>
+    <div class="card stat"><div class="v" id="k-upcoming">0</div><div class="k">Upcoming</div></div>
+    <div class="card stat"><div class="v" id="k-pending">0</div><div class="k">Pending requests</div></div>
+    <div class="card stat"><div class="v" id="k-tasks">0</div><div class="k">Pending study tasks</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="card c6 feed"><h3>Live session feed</h3><div class="sub">Real bookings from your pipeline — accept or decline in place</div><div id="feed"></div></div>
+    <div class="card c12" id="psb-card"><h3>🎯 Pre-Session Intelligence Brief</h3>
+      <div class="sub">Before every session — what happened since last time, what they've forgotten, and the recommended objective. No prep re-work.</div>
+      <div id="psb"></div></div>
+    <div class="card c6"><h3>Linked students (live)</h3><div class="sub">Profile, dashboard progress and quiz activity</div><div id="students"></div></div>
+
+    <div class="card c6"><h3>Revenue &amp; performance</h3><div class="sub">From sessions, rates and student dashboard data · <a href="earnings/" style="color:var(--gold-300)">full analytics</a></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:6px">
+        <div><div class="k" style="letter-spacing:.14em;margin-bottom:4px">Revenue</div>
+          <div class="kv">Pending payout<b id="r-payout">£0</b></div><div class="kv">AI commission<b id="r-comm">£0</b></div><div class="kv" style="border:0">Conversion rate<b id="r-conv">0%</b></div></div>
+        <div><div class="k" style="letter-spacing:.14em;margin-bottom:4px">Performance</div>
+          <div class="kv">Session completion<b id="p-compl">0%</b></div><div class="kv">Avg quiz score (30d)<b id="p-quiz">—</b></div><div class="kv" style="border:0">Avg student progress<b id="p-prog">—</b></div></div>
+      </div>
+      <div class="note" id="ai-insight" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card c6"><h3>Upcoming sessions</h3><div class="sub">Calendar · <a href="calendar/" style="color:var(--gold-300)">open calendar</a></div><div id="upcoming"></div></div>
+
+    <div class="card c6"><h3>Student pipeline</h3><div class="sub">CRM · <a href="pipeline/" style="color:var(--gold-300)">manage pipeline</a></div><div id="pipeline"></div></div>
+
+    <div class="card c6"><h3>Trust &amp; authority</h3><div class="sub">Badges shown on your marketplace profile</div>
+      <div class="badges" id="trust"></div>
+      <div style="margin-top:12px"><a class="btn" href="register/">Edit profile</a></div>
+    </div>
+
+    <div class="card c12"><h3>Quick actions</h3>
+      <div class="qa">
+        <a href="assistant/"><b>🤖 AI Teaching Assistant</b><span>Explain, diagram, quiz in-session</span></a>
+        <a href="earnings/"><b>💷 Earnings forecast</b><span>Payouts &amp; commission</span></a>
+        <a href="register/#marketplace"><b>⭐ Marketplace listing</b><span>View &amp; publish your profile</span></a>
+      </div>
+    </div>
+  </div>
+  <section id="growth-root" style="margin:16px 0"></section>
+</main></div>
+<script src="nav.js" data-base="" data-cur=""></script>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;var S=SY.session;
+function $(id){return document.getElementById(id)}function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var tt;function toast(t){var e=$('toast');if(!e)return;e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2400)}
+function money(n){return '£'+(Math.round(n||0)).toLocaleString()}
+
+var profile=SY.get('tutorProfile',{});
+var students=SY.get('tutorStudents',[]);
+var sessions=SY.get('tutorSessions',[]);
+var name=profile.name||S.name||'Tutor';
+$('welcome').textContent='Welcome back, '+name.split(' ')[0];
+
+/* rating from reviews if published */
+function reviews(){try{return JSON.parse(localStorage.getItem('sy-tutor-reviews:'+(profile.tutorId||'')))||[]}catch(e){return[]}}
+var rv=reviews();var rating=rv.length?(rv.reduce(function(a,x){return a+(+x.stars||0)},0)/rv.length):(profile.rating||0);
+$('mkt-pill').textContent=profile.published?'Marketplace live':'Not published';
+$('mkt-pill').style.opacity=profile.published?1:.5;
+
+/* insight */
+var subj=(profile.subjects||'').split(',')[0].trim()||'your subject';var rate=parseFloat(profile.hourlyRate||profile.pHourlyRate)||30;
+var regionAvg=Math.max(20,Math.round(rate*0.9));var potential=Math.round(rate*1.1);
+$('insight').innerHTML='<b>'+esc(profile.tutorType||'Tutor')+' · '+esc(subj)+'.</b> '+esc(subj)+' tutors in your region average '+money(regionAvg)+'/hour. Your profile positioning suggests <b>'+money(potential)+'/hour</b> potential.';
+
+/* time helpers */
+function isToday(iso){var d=new Date(iso);var n=new Date();return d.toDateString()===n.toDateString()}
+function isThisMonth(iso){var d=new Date(iso);var n=new Date();return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear()}
+function future(iso){return new Date(iso).getTime()>Date.now()}
+
+var done=sessions.filter(function(s){return s.status==='done'});
+var todayEarn=done.filter(function(s){return isToday(s.when)}).reduce(function(a,s){return a+(s.rate||rate)},0);
+var monthEarn=done.filter(function(s){return isThisMonth(s.when)}).reduce(function(a,s){return a+(s.rate||rate)},0);
+var activeStu=students.filter(function(s){return s.stage==='active'||s.stage==='trial'}).length;
+var retention=students.length?Math.round(100*activeStu/students.length):0;
+$('k-today').textContent=money(todayEarn);
+$('k-month').textContent=money(monthEarn);
+$('k-rating').innerHTML=(rating?rating.toFixed(1):'0')+'<span style="font-size:15px;color:var(--ink-2)">/5</span>';
+$('k-retention').textContent=retention+'%';
+$('k-sessions').textContent=sessions.filter(function(s){return isToday(s.when)}).length;
+$('k-upcoming').textContent=sessions.filter(function(s){return future(s.when)&&s.status!=='cancelled'}).length;
+$('k-pending').textContent=sessions.filter(function(s){return s.status==='pending'}).length;
+var totalTasks=students.reduce(function(a,s){return a+(s.pending||0)},0);
+$('k-tasks').textContent=totalTasks;
+
+/* live session feed */
+function drawFeed(){
+  var f=$('feed');if(!sessions.length){f.innerHTML='<div class="empty">No bookings yet — share your marketplace profile to receive requests.</div>';return}
+  f.innerHTML=sessions.slice().sort(function(a,b){return new Date(b.when)-new Date(a.when)}).slice(0,6).map(function(s,i){
+    var st=s.status==='pending'?'<button class="btn sm solid" data-acc="'+i+'">Accept</button> <button class="btn sm ghost" data-dec="'+i+'">Decline</button>':'<span class="badge '+(s.status==='done'?'good':s.status==='missed'?'warn':'info')+'">'+esc(s.status)+'</span>';
+    return '<div class="row"><span><b>'+esc(s.student)+'</b> · '+esc(s.subject||'General')+' · '+SY.timeAgo(s.when)+'</span><span class="st">'+st+'</span></div>';
+  }).join('');
+  f.querySelectorAll('[data-acc]').forEach(function(b){b.onclick=function(){sessions[+b.dataset.acc].status='confirmed';SY.set('tutorSessions',sessions);toast('Session confirmed');drawFeed()}});
+  f.querySelectorAll('[data-dec]').forEach(function(b){b.onclick=function(){sessions[+b.dataset.dec].status='cancelled';SY.set('tutorSessions',sessions);toast('Declined');drawFeed()}});
+}
+drawFeed();
+
+/* linked students */
+function stuData(st){
+  /* prefer live account data when linked & consented */
+  if(st.email){var pf=SY.readAccount(st.email,'profile',{});var qz=SY.readAccount(st.email,'quizzes',[]);var plan=SY.readAccount(st.email,'plan',null);
+    if(pf&&pf.level){var by={};qz.forEach(function(q){(by[q.subj]=by[q.subj]||[]).push(q.pct)});var subs=Object.keys(by);
+      var prog=subs.length?Math.round(subs.reduce(function(a,s){return a+by[s].reduce(function(x,z){return x+z},0)/by[s].length},0)/subs.length):(st.progress||0);
+      return {level:pf.level,progress:st.progress||prog,subjects:(pf.subjects||[]).map(function(x){return x.s}),weak:st.weak,pending:st.pending||0,updated:st.updatedAt};}}
+  return {level:st.level,progress:st.progress||0,subjects:st.subjects||[],weak:st.weak,pending:st.pending||0,updated:st.updatedAt};
+}
+var progs=[];
+$('students').innerHTML=students.length?students.map(function(st){var d=stuData(st);if(d.progress)progs.push(d.progress);
+  return '<div class="stu"><div class="top"><b>'+esc(st.name)+'</b> <span class="badge">'+esc(d.level||'—')+'</span></div>'+
+    '<div style="display:flex;align-items:center;gap:8px;margin-top:8px"><span style="font-size:11.5px;color:var(--ink-3);width:120px">Dashboard progress</span><span class="bar" style="flex:1"><i style="width:'+(d.progress||0)+'%;background:'+(d.progress>=65?'var(--good)':d.progress>=45?'var(--warn)':'var(--crit)')+'"></i></span><b style="font-size:12px">'+(d.progress||0)+'%</b></div>'+
+    (d.weak?'<div style="font-size:12px;color:#e0b566;margin-top:6px">Weak: '+esc(d.weak)+'</div>':'')+
+    (d.pending?'<div style="font-size:12px;color:var(--ink-3);margin-top:2px">'+d.pending+' pending tasks</div>':'')+
+    '<div style="margin-top:6px">'+(d.subjects||[]).slice(0,5).map(function(x){return '<span class="pill">'+esc(x)+'</span>'}).join('')+'</div>'+
+    (d.updated?'<div class="note">Dashboard updated '+SY.timeAgo(d.updated)+'</div>':'')+'</div>';
+}).join(''):'<div class="empty">No linked students yet. Students you tutor appear here with live progress.</div>';
+
+/* revenue & performance */
+var pendingPayout=done.filter(function(s){return !s.paid}).reduce(function(a,s){return a+(s.rate||rate)},0);
+var commission=Math.round(pendingPayout*0.1);
+var totalSess=sessions.length,completion=totalSess?Math.round(100*done.length/totalSess):0;
+var avgProg=progs.length?Math.round(progs.reduce(function(a,b){return a+b},0)/progs.length):null;
+$('r-payout').textContent=money(pendingPayout);
+$('r-comm').textContent=money(commission);
+$('r-conv').textContent=(profile.published?Math.min(100,students.length*8):0)+'%';
+$('p-compl').textContent=completion+'%';
+$('p-prog').textContent=avgProg!=null?avgProg+'%':'—';
+$('ai-insight').innerHTML=totalTasks?'📌 <b style="color:var(--gold-300)">Homework to review:</b> '+totalTasks+' pending study task(s) across your linked students.':'No outstanding homework to review.';
+
+/* upcoming */
+var up=sessions.filter(function(s){return future(s.when)&&s.status!=='cancelled'}).sort(function(a,b){return new Date(a.when)-new Date(b.when)});
+$('upcoming').innerHTML=up.length?up.slice(0,6).map(function(s){return '<div class="row"><span><b>'+esc(s.student)+'</b> · '+esc(s.subject||'General')+'</span><span class="st" style="margin-left:auto;color:var(--ink-3)">'+new Date(s.when).toLocaleString([], {weekday:'short',hour:'2-digit',minute:'2-digit'})+'</span></div>'}).join(''):'<div class="empty">No upcoming sessions. Share your profile to get bookings.</div>';
+
+/* pipeline */
+$('pipeline').innerHTML=students.length?students.slice(0,6).map(function(st){return '<div class="row"><span><b>'+esc(st.name)+'</b> · '+esc((st.subjects&&st.subjects[0])||st.subject||'General')+'</span><span class="st" style="margin-left:auto"><span class="badge '+(st.stage==='active'?'good':st.stage==='trial'?'info':'')+'">'+esc(st.stage||'lead')+'</span></span></div>'}).join(''):'<div class="empty">No students in your pipeline yet.</div>';
+
+/* trust badges */
+var trust=[
+  ['Verified Tutor',!!(profile.verified||profile.signature)],
+  ['DBS Checked',!!(profile.vDBS||profile.chkDBS)],
+  ['Qualifications Verified',!!(profile.qualDocs&&profile.qualDocs.length)||!!profile.degree],
+  ['AI Teaching Certified',!!profile.aiLessonPlanning],
+  ['Exam Specialist',!!(profile.examBoards||profile.spExamPrep)],
+  ['Top Rated',rating>=4.8]
+];
+$('trust').innerHTML=trust.map(function(t){return '<span class="tbadge '+(t[1]?'on':'off')+'">'+(t[1]?'✓ ':'○ ')+esc(t[0])+'</span>'}).join('');
+
+/* demo */
+if(students.some(function(s){return s.demo})||sessions.some(function(s){return s.demo})){
+  var db=$('demobar');db.style.display='flex';db.innerHTML='🎓 <b style="color:#e0b566">Demo data loaded</b> — sample students &amp; sessions. <b>No AI credits used.</b> <button class="btn sm" id="clr" style="margin-left:auto;padding:5px 11px">Clear demo</button>';
+  $('clr').onclick=function(){SY.set('tutorStudents',students.filter(function(s){return !s.demo}));SY.set('tutorSessions',sessions.filter(function(s){return !s.demo}));location.reload()};
+}
+if(!(SY.session&&SY.session.demo)){$('demo-btn').style.display='none'}
+else $('demo-btn').onclick=function(){
+  var twoMonths=new Date(Date.now()-60*86400000).toISOString();
+  var st=[{name:'Mark Harris',email:null,level:'A2/A-level',subjects:['Mathematics','English','Physics','Geography'],progress:76,weak:'Mathematics',pending:50,stage:'inactive',demo:true,updatedAt:twoMonths}];
+  var se=[{student:'Mark Harris',subject:'General',when:twoMonths,status:'scheduled',rate:parseFloat(profile.hourlyRate)||35,demo:true}];
+  SY.set('tutorStudents',SY.get('tutorStudents',[]).filter(function(x){return !x.demo}).concat(st));
+  SY.set('tutorSessions',SY.get('tutorSessions',[]).filter(function(x){return !x.demo}).concat(se));
+  var pf=SY.get('tutorProfile',{});pf.published=true;if(!pf.hourlyRate)pf.hourlyRate='35';if(!pf.subjects)pf.subjects='Mathematics, Physics';SY.set('tutorProfile',pf);
+  SY.log('demo','Tutor demo loaded','Sample student & session — no AI cost');location.reload();
+};
+})();
+</script>
+<script>
+(function(){
+  try{
+    var box=document.getElementById('psb');if(!box)return;
+    var studs=SY.get('tutorStudents',[])||[];
+    if(!studs.length){box.innerHTML='<div class="note">Link a student — their brief builds itself from their live OS record.</div>';return}
+    var esc=function(x){return String(x==null?'':x).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})};
+    box.innerHTML=studs.slice(0,3).map(function(st){
+      var email=st.email;var nm=(st.name||SY.accountName(email)||email).split(' ')[0];
+      var qz=SY.readAccount(email,'quizzes',[])||[];
+      var by={};qz.forEach(function(q){(by[q.subj]=by[q.subj]||[]).push(q.pct)});
+      var subs=Object.keys(by).map(function(s2){var a=by[s2];return [s2,Math.round(a.reduce(function(x,y){return x+y},0)/a.length)]}).sort(function(a,b){return a[1]-b[1]});
+      var weak=subs[0];
+      var acts=SY.readAccount(email,'activity',[])||[];
+      var recent=acts.slice(0,3).map(function(a){return a.t}).join(' · ')||'no recent activity';
+      var plan=SY.readAccount(email,'plan',null);var missed=0;
+      if(plan&&plan.plan){var total=plan.plan.reduce(function(a,w){return a+w.days.length},0);missed=total-Object.keys(plan.done||{}).length}
+      var old=subs.filter(function(x){return x[1]<60}).map(function(x){return x[0]}).slice(0,2).join(', ');
+      return '<div style="padding:10px 0;border-bottom:1px solid rgba(170,182,204,.08);font-size:12.5px">'+
+        '<b style="color:#EDF1F8">'+esc(nm)+'</b>'+(weak?' <span style="color:#e8c07a">· weakest: '+esc(weak[0])+' '+weak[1]+'%</span>':'')+
+        '<div class="note" style="margin-top:3px">Since last session: '+esc(recent)+(missed>0?' · <b style="color:#E0A93F">'+missed+' plan items outstanding</b>':'')+'</div>'+
+        '<div style="color:#8ee0a5;font-size:12px;margin-top:3px">Recommended objective: '+(weak?'rebuild '+esc(weak[0])+' fundamentals with 2 worked examples, then a marked mini-quiz':'consolidation + stretch — run an exam-style challenge')+(old?' · likely forgotten: '+esc(old):'')+'</div></div>';
+    }).join('');
+  }catch(e){}
+})();
+</script>
+</body></html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudYear — Reporting Suite</title><link rel="manifest" href="../../manifest.json"><link rel="icon" href="../../icon.svg" type="image/svg+xml"><meta name="theme-color" content="#060B18">
+<style>
+  :root{--navy-950:#060B18;--gold-300:#A9CFF2;--gold-500:#3D8FD1;--ink:#EDF1F8;--ink-2:#AAB6CC;--ink-3:#8795AE;--line:rgba(77,157,224,.14);--serif:Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{margin:0;padding:0;box-sizing:border-box}body{background:radial-gradient(1200px 700px at 82% -12%,rgba(77,157,224,.13),transparent 60%),var(--navy-950);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  .shell{display:flex;min-height:100vh;max-width:1440px;margin:0 auto}
+  aside{width:236px;flex:none;border-right:1px solid var(--line);padding:22px 14px 30px;position:sticky;top:0;align-self:flex-start;max-height:100vh;overflow-y:auto}
+  .slogo{font-family:var(--serif);font-size:19px;color:var(--ink);text-decoration:none;display:block;padding:4px 10px 14px}.slogo b{color:#4FA6E0;font-weight:600}
+  aside nav a{display:block;font-size:13px;color:var(--ink-2);text-decoration:none;padding:8px 10px;border-radius:8px;margin:1px 0}aside nav a:hover{color:var(--gold-300);background:rgba(77,157,224,.08)}aside nav a.on{color:var(--gold-300);background:rgba(77,157,224,.12)}
+  main{flex:1;padding:30px 30px 90px;min-width:0}@media(max-width:960px){.shell{flex-direction:column}aside{width:100%;position:sticky;top:0;z-index:60;max-height:46vh;overflow-y:auto;background:#060B18;border-right:none;border-bottom:1px solid var(--line)}aside nav{display:flex;flex-wrap:wrap;gap:2px}main{padding:22px 18px 70px}}
+  a{color:inherit}h1{font-family:var(--serif);font-weight:500;font-size:28px}p.lede{color:var(--ink-2);font-weight:300;margin-top:6px}
+  .card{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(16,27,51,.6),rgba(11,18,32,.9));padding:18px 20px;margin-top:18px}.card h3{font-family:var(--serif);font-weight:500;font-size:17px}.card .sub{font-size:12.5px;color:var(--ink-3);margin:5px 0 12px}
+  label.f{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:12px 0 5px}
+  select{width:100%;max-width:360px;background:rgba(6,11,24,.7);border:1px solid rgba(170,182,204,.22);border-radius:9px;color:var(--ink);font:400 14px var(--sans);padding:10px 12px;outline:none}select option{background:#101B33;color:#EDF1F8}
+  .btn{appearance:none;border:1px solid var(--gold-500);background:rgba(77,157,224,.12);color:var(--gold-300);font:600 12px var(--sans);border-radius:9px;padding:9px 15px;cursor:pointer;text-decoration:none;display:inline-block}.btn.solid{border:none;background:linear-gradient(135deg,#4FA6E0,#2E6BC4);color:#fff}
+  pre{white-space:pre-wrap;font-size:12.5px;color:var(--ink-2);background:rgba(6,11,24,.5);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:12px}
+  .note{font-size:11.5px;color:var(--ink-3);font-style:italic;margin-top:10px}
+</style></head><body>
+<script src="../../guard.js" data-role="school" data-base="../../"></script>
+<div class="shell">
+<aside><a class="slogo" href="../../">⌂ <b class="wm">StudYear</b></a><nav>
+  <a href="../">Command Centre</a><a href="../#risk">Risk intelligence</a><a href="../interventions/">Intervention war room</a><a href="../people/">People management</a><a href="../analytics/">Analytics</a><a href="../acu/">ACU command</a><a href="../assessments/">Assessments</a><a href="./" class="on">Executive reports</a><a href="../resources/">Knowledge hub</a><a href="../plans/">Top up ACUs</a><a href="../settings/">Settings</a>
+</nav></aside>
+<main>
+  <h1>Reporting Suite</h1><p class="lede">Generate downloadable exports from live school data (roster, at-risk list, executive summary).</p>
+  <div class="card"><h3>Generate a report</h3><div class="sub">Select a report type and download CSV or summary text.</div>
+    <label class="f">Report type</label>
+    <select id="rtype"><option value="summary">Executive summary (.txt)</option><option value="roster">Student roster (.csv)</option><option value="risk">At-risk register (.csv)</option><option value="acu">ACU usage (.txt)</option></select>
+    <div id="snapshot" style="margin-top:14px"></div>
+    <div style="margin-top:14px"><button class="btn solid" id="dl">Download report</button> <button class="btn" id="preview">Preview</button></div>
+    <pre id="out" style="display:none"></pre>
+    <div class="note">Reports use your school-linked student roster and dashboard signals. Exports work offline immediately; PDF branding can be added later.</div>
+  </div>
+</main>
+</div>
+<script>
+(function(){
+'use strict';var SY=window.SY;if(!SY)return;var S=SY.session;
+function $(id){return document.getElementById(id)}
+var code=SY.get('schoolCode',null);if(!code){code=(Math.random().toString(36).slice(2,10)).toUpperCase();SY.set('schoolCode',code)}
+var name=SY.get('profile',{}).name||S.name;
+var roster=SY.schoolGet(code,'roster',[]);
+function prog(email){var qz=SY.readAccount(email,'quizzes',[]),diag=(SY.readAccount(email,'diagnostics',[])||[])[0];var by={};qz.forEach(function(q){(by[q.subj]=by[q.subj]||[]).push(q.pct)});var subs=Object.keys(by);return subs.length?Math.round(subs.reduce(function(a,s){return a+by[s].reduce(function(x,z){return x+z},0)/by[s].length},0)/subs.length):(diag?diag.avg:0)}
+function risk(email){var diag=(SY.readAccount(email,'diagnostics',[])||[])[0];var p=prog(email);return diag?diag.risk:(p<40?'HIGH':p<60?'MEDIUM':'LOW')}
+var M=roster.map(function(r){return {email:r.email,name:SY.accountName(r.email)||r.name||r.email,year:SY.readAccount(r.email,'profile',{}).level||'',prog:prog(r.email),risk:risk(r.email)}});
+var atRisk=M.filter(function(m){return m.risk==='HIGH'||m.risk==='CRITICAL'});
+$('snapshot').innerHTML='<div style="font-size:12px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase">Current snapshot</div>'+
+  '<div style="font-size:13px;color:var(--ink-2);margin-top:4px">Students linked to school: <b style="color:var(--ink)">'+M.length+'</b> · At-risk entries: <b style="color:var(--ink)">'+atRisk.length+'</b></div>';
+function build(){var t=$('rtype').value;var pool=SY.schoolGet(code,'acu',{balance:0,burn:[]});
+  if(t==='summary'){var avg=M.length?Math.round(M.reduce(function(a,b){return a+b.prog},0)/M.length):0;
+    return {name:'executive-summary.txt',mime:'text/plain',body:'StudYear — Executive Summary\nSchool: '+name+'\nGenerated: '+new Date().toLocaleString('en-GB')+'\n\nStudents linked: '+M.length+'\nCohort average progress: '+avg+'%\nAt-risk students: '+atRisk.length+'\nACU pool balance: '+(pool.balance||0)+'\n\nAt-risk list:\n'+(atRisk.map(function(m){return '- '+m.name+' ('+m.year+') '+m.prog+'% ['+m.risk+']'}).join('\n')||'(none)')+'\n'};}
+  if(t==='roster')return {name:'roster.csv',mime:'text/csv',body:'Name,Email,Year group,Progress %,Risk\n'+M.map(function(m){return [m.name,m.email,m.year,m.prog,m.risk].map(function(x){return '"'+String(x).replace(/"/g,'""')+'"'}).join(',')}).join('\n')+'\n'};
+  if(t==='risk')return {name:'at-risk-register.csv',mime:'text/csv',body:'Name,Email,Year group,Progress %,Risk\n'+atRisk.map(function(m){return [m.name,m.email,m.year,m.prog,m.risk].map(function(x){return '"'+String(x).replace(/"/g,'""')+'"'}).join(',')}).join('\n')+'\n'};
+  return {name:'acu-usage.txt',mime:'text/plain',body:'StudYear — ACU Usage\nSchool: '+name+'\nPool balance: '+(pool.balance||0)+'\n7-day burn: '+((pool.burn||[]).reduce(function(a,b){return a+b},0))+'\n'};}
+$('preview').onclick=function(){var r=build();$('out').style.display='block';$('out').textContent=r.body};
+$('dl').onclick=function(){var r=build();var blob=new Blob([r.body],{type:r.mime});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=r.name;a.click();setTimeout(function(){URL.revokeObjectURL(url)},1000);SY.log('report','Report downloaded: '+r.name,'')};
+})();
+</script>
+</body></html>
