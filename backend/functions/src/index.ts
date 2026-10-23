@@ -227,9 +227,10 @@ export const acuAuthorize = onRequest({ region: 'europe-west2', cors: true }, as
     const userDoc = await db.doc(`users/${user.uid}`).get();
     const plan = (userDoc.data()?.plan as string) ?? 'child_free';
 
-    // Free-tier gates (commercial-model §6, resolved directives)
+    // Pay-per-use: AI tools are unlocked by ACU balance, not by plan tier
+    // (owner policy 2026-10). The only remaining free-tier gate is the human
+    // tutor marketplace, which is not an AI tool.
     if (plan === 'child_free') {
-      if (activity === 'assignment_review') throw httpError(403, 'Assignment Review requires a paid plan');
       if (!FREE_TIER.tutorMarketplaceAccess && req.body?.context === 'tutor_session')
         throw httpError(403, 'free accounts have no tutor access');
     }
@@ -918,9 +919,7 @@ export const aiProxy = onRequest({ region: 'europe-west2', cors: true, maxInstan
     const IMAGE_ACU = Number(process.env.AI_IMAGE_ACU) || 2;
     const cost = Math.max(1, (ACU_TARIFF as Record<string, number>)[activity] || 1) + (hasImage ? IMAGE_ACU : 0);
     if (ENFORCE) {
-      if (plan === 'child_free' && activity === 'assignment_review') {
-        res.status(403).json({ ok: false, error: 'Assignment Review requires a paid plan' }); return;
-      }
+      // Pay-per-use: no plan-tier gate on AI tools — ACU balance is the gate.
       let balance: number | null = null;
       try { await ensureFreeGrant(user.uid, plan); balance = await walletBalance(user.uid); }
       catch (e) { void audit('ACU_ENFORCE_ERROR', user.uid, { err: (e as Error).message }); void alertOwner('acu_enforce_error', 'ACU enforcement failed open (free AI served)', { uid: user.uid, err: (e as Error).message }); balance = null; } // fail-open
