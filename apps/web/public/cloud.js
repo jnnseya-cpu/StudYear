@@ -583,6 +583,11 @@
     restore: restore, push: push, schedulePush: schedulePush, upload: upload, token: token,
     resetPassword: resetPassword, sendVerify: sendVerify,
     reachable: function () { return CLOUD_UP; }, reconnect: reconnect,
+    /* true when this account has a stored cloud token — i.e. it was provisioned
+       into Firebase Auth at some point. Lets the self-heal tell a genuinely
+       local-only account (never provisioned) apart from one that's merely
+       offline right now, so it only prompts in the first case. */
+    hasToken: function (email) { return !!findTok(email); },
     dirPublish: dirPublish, dirResolve: dirResolve, dirConnect: dirConnect,
     dirDisconnect: dirDisconnect, dirLinks: dirLinks,
     marketList: marketList, marketPublish: marketPublish, marketRemove: marketRemove,

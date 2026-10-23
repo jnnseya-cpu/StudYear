@@ -138,6 +138,16 @@
     (document.head || document.documentElement).appendChild(cj);
   } catch (e) {}
 
+  // billing bridge: reconciles the AUTHORITATIVE plan + ACU balance from the
+  // server on EVERY console (not just the plans pages), so an admin-set or
+  // Stripe-set plan — and the live balance — are reflected everywhere, never
+  // stale on the study/account pages.
+  try {
+    var bj = document.createElement('script');
+    bj.src = base + 'billing.js'; bj.defer = true;
+    (document.head || document.documentElement).appendChild(bj);
+  } catch (e) {}
+
   // password show/hide toggle on every signed-in page with a password field
   // (change-password panels, re-auth prompts) — same control as the login page.
   try {
@@ -887,6 +897,59 @@
           }
         });
         if (_add) window.SY.schoolSet(_scode, 'roster', _r);
+      }).catch(function () {});
+    }
+  } catch (e) {}
+
+  // ---- account cloud self-heal (fixes "this account only lives on this device") ----
+  // An account that never provisioned into Firebase Auth is invisible to the
+  // admin console, can't be linked by a parent/school, and won't sync. We can't
+  // create the Auth account in the background (Firebase needs the password), but
+  // we can: (a) silently refresh the token when the account IS provisioned, and
+  // (b) when it's genuinely local-only (no stored token at all), surface ONE
+  // calm, dismissible prompt to finish setup — never a silent dead end, never a
+  // blocking modal, never a false alarm for someone who's just offline.
+  function _cloudHealBanner() {
+    try {
+      if (document.getElementById('sy-cloudheal')) return;
+      var bar = document.createElement('div');
+      bar.id = 'sy-cloudheal';
+      bar.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:99998;max-width:560px;margin:0 auto;' +
+        'background:#10203E;border:1px solid rgba(120,160,220,.4);border-radius:12px;padding:12px 14px;' +
+        'box-shadow:0 14px 40px rgba(0,0,0,.45);color:#EAF1FF;font:500 13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
+        'display:flex;gap:10px;align-items:center;flex-wrap:wrap';
+      bar.innerHTML = '<span style="flex:1;min-width:200px">🔐 This account only works on <b>this device</b> so far. Finish setup so it syncs everywhere and your school/parent can see it.</span>' +
+        '<button id="sy-ch-go" style="padding:8px 14px;border:none;border-radius:8px;background:#3D8FD1;color:#fff;font-weight:700;cursor:pointer">Finish setup</button>' +
+        '<button id="sy-ch-later" style="padding:8px 12px;border:1px solid rgba(150,170,210,.35);border-radius:8px;background:none;color:#AEBBD6;font-weight:600;cursor:pointer">Later</button>';
+      (document.body || document.documentElement).appendChild(bar);
+      document.getElementById('sy-ch-later').onclick = function () { try { bar.remove(); } catch (e) {} try { sessionStorage.setItem('sy-cloudheal-shown', '1'); } catch (e) {} };
+      document.getElementById('sy-ch-go').onclick = function () {
+        try { bar.remove(); } catch (e) {}
+        try {
+          window.SY.ensureCloud().then(function (ok) {
+            if (ok) { try { localStorage.removeItem('sy-cloud-pending:' + s.email); } catch (e) {} try { location.reload(); } catch (e) {} }
+          });
+        } catch (e) {}
+      };
+    } catch (e) {}
+  }
+  try {
+    if (!s.demo && s.email) {
+      window.SY.cloudAuthed().then(function (ok) {
+        if (ok) { try { localStorage.removeItem('sy-cloud-pending:' + s.email); } catch (e) {} return; }
+        cloudReady().then(function (cl) {
+          if (!cl) return;                                     // no cloud client on this build
+          var after = cl.whenReady ? cl.whenReady() : null;    // wait for config load to settle first
+          Promise.resolve(after).catch(function () {}).then(function () {
+            try { if (!(cl.ready && cl.ready())) return; } catch (e) { return; } // cloud not configured here → not the user's problem, don't nag
+            // provisioned but unreachable right now → will recover on its own, don't prompt
+            if (cl.hasToken && cl.hasToken(s.email)) return;
+            // genuinely local-only (never provisioned) → flag it and offer a one-tap finish, once per session
+            try { localStorage.setItem('sy-cloud-pending:' + s.email, '1'); } catch (e) {}
+            try { if (sessionStorage.getItem('sy-cloudheal-shown')) return; } catch (e) {}
+            setTimeout(_cloudHealBanner, 2000);
+          });
+        }).catch(function () {});
       }).catch(function () {});
     }
   } catch (e) {}

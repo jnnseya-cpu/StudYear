@@ -259,9 +259,23 @@ $('f').addEventListener('submit',async function(e){
     /* end-to-end encryption: mint the account's data key, wrapped by a
        password-derived key — servers only ever see ciphertext */
     try{if(window.SYE2E)await SYE2E.setupAccount(email,pw)}catch(err){}
-    /* go-live: mirror the account into Firebase Auth and start encrypted
-       cloud sync (silent no-op until firebase-config.json is filled in) */
-    try{if(window.SYCloud)await SYCloud.signUp(email,pw,name,role,{dob:dob,parentalConsent:parentalConsent})}catch(err){}
+    /* go-live: mirror the account into Firebase Auth and start encrypted cloud
+       sync. This MUST succeed for the account to be visible in admin, linkable
+       by a parent/school, and synced across devices — so we VERIFY it and, on a
+       transient failure (cloud not ready yet / network blip), retry a few times
+       with the password still in hand. If it still can't provision, we flag the
+       account so the background self-heal (guard.js) finishes it on the next
+       connected load, instead of silently leaving a local-only account. */
+    try{
+      var _prov=false;
+      if(window.SYCloud){ try{await SYCloud.whenReady();}catch(e){}
+        for(var _a=0;_a<3&&!_prov;_a++){
+          try{_prov=!!await SYCloud.signUp(email,pw,name,role,{dob:dob,parentalConsent:parentalConsent});}catch(err){_prov=false;}
+          if(!_prov)await new Promise(function(r){setTimeout(r,700*(_a+1));});
+        }
+      }
+      try{ if(_prov)localStorage.removeItem('sy-cloud-pending:'+email); else localStorage.setItem('sy-cloud-pending:'+email,'1'); }catch(e){}
+    }catch(err){}
     /* referral attribution: ?ref=CODE from a share link sticks to this account
        (drives the Growth Partner Programme's 250-ACU / % tiers) */
     try{
@@ -367,7 +381,11 @@ $('f').addEventListener('submit',async function(e){
          get anyway); on a working network both calls resolve well within it. */
       await Promise.race([
         (async function(){ var _ok=await SYCloud.signIn(email,pw);
-          if(!_ok&&SYCloud.signUp)await SYCloud.signUp(email,pw,authed.name,authed.role); })(),
+          if(!_ok&&SYCloud.signUp)_ok=!!await SYCloud.signUp(email,pw,authed.name,authed.role);
+          /* record the outcome so the background self-heal knows whether this
+             account still needs provisioning (login is a reliable moment to
+             provision because we have the password here). */
+          try{ if(_ok)localStorage.removeItem('sy-cloud-pending:'+email); else localStorage.setItem('sy-cloud-pending:'+email,'1'); }catch(e){} })(),
         new Promise(function(r){setTimeout(r,4500);})
       ]);
     }}}catch(err){}
