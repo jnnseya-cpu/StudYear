@@ -275,6 +275,7 @@ $('f').addEventListener('submit',async function(e){
         }
       }
       try{ if(_prov)localStorage.removeItem('sy-cloud-pending:'+email); else localStorage.setItem('sy-cloud-pending:'+email,'1'); }catch(e){}
+      try{ if(_prov)sessionStorage.setItem('sy-cloud-justprovisioned','1'); }catch(e){} // confirm cloud setup on the first console page
     }catch(err){}
     /* referral attribution: ?ref=CODE from a share link sticks to this account
        (drives the Growth Partner Programme's 250-ACU / % tiers) */
@@ -380,7 +381,7 @@ $('f').addEventListener('submit',async function(e){
          login never hangs when the cloud is genuinely unreachable (no token to
          get anyway); on a working network both calls resolve well within it. */
       await Promise.race([
-        (async function(){ var _ok=await SYCloud.signIn(email,pw);
+        (async function(){ var _ok=await SYCloud.signIn(email,pw); var _wasIn=_ok;
           /* retry provisioning a couple of times while we still hold the password
              — a transient cloud/network blip must not leave a local-only account. */
           for(var _a=0;!_ok&&_a<2&&SYCloud.signUp;_a++){
@@ -390,7 +391,9 @@ $('f').addEventListener('submit',async function(e){
           /* record the outcome so the background self-heal knows whether this
              account still needs provisioning (login is a reliable moment to
              provision because we have the password here). */
-          try{ if(_ok)localStorage.removeItem('sy-cloud-pending:'+email); else localStorage.setItem('sy-cloud-pending:'+email,'1'); }catch(e){} })(),
+          try{ if(_ok)localStorage.removeItem('sy-cloud-pending:'+email); else localStorage.setItem('sy-cloud-pending:'+email,'1'); }catch(e){}
+          /* account was local-only and we just provisioned it → confirm visibly on the next page */
+          try{ if(_ok&&!_wasIn)sessionStorage.setItem('sy-cloud-justprovisioned','1'); }catch(e){} })(),
         new Promise(function(r){setTimeout(r,6000);})
       ]);
     }}}catch(err){}

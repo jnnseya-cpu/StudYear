@@ -909,6 +909,21 @@
   // (b) when it's genuinely local-only (no stored token at all), surface ONE
   // calm, dismissible prompt to finish setup — never a silent dead end, never a
   // blocking modal, never a false alarm for someone who's just offline.
+  // a brief, self-dismissing green confirmation — shown when a previously
+  // local-only account finishes provisioning, so the person can SEE it worked.
+  function _cloudDoneToast(msg) {
+    try {
+      var t = document.createElement('div');
+      t.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;max-width:560px;margin:0 auto;' +
+        'background:#113524;border:1px solid rgba(92,187,123,.5);border-radius:12px;padding:12px 14px;' +
+        'box-shadow:0 14px 40px rgba(0,0,0,.45);color:#D9F7E4;font:600 13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
+        'opacity:0;transition:opacity .25s';
+      t.textContent = msg;
+      (document.body || document.documentElement).appendChild(t);
+      requestAnimationFrame(function () { t.style.opacity = '1'; });
+      setTimeout(function () { t.style.opacity = '0'; setTimeout(function () { try { t.remove(); } catch (e) {} }, 400); }, 5200);
+    } catch (e) {}
+  }
   function _cloudHealBanner() {
     try {
       if (document.getElementById('sy-cloudheal')) return;
@@ -924,19 +939,32 @@
       (document.body || document.documentElement).appendChild(bar);
       document.getElementById('sy-ch-later').onclick = function () { try { bar.remove(); } catch (e) {} try { sessionStorage.setItem('sy-cloudheal-shown', '1'); } catch (e) {} };
       document.getElementById('sy-ch-go').onclick = function () {
-        try { bar.remove(); } catch (e) {}
+        var b = this; b.disabled = true; b.textContent = 'Finishing setup…';
         try {
           window.SY.ensureCloud().then(function (ok) {
-            if (ok) { try { localStorage.removeItem('sy-cloud-pending:' + s.email); } catch (e) {} try { location.reload(); } catch (e) {} }
-          });
-        } catch (e) {}
+            if (ok) {
+              try { localStorage.removeItem('sy-cloud-pending:' + s.email); } catch (e) {}
+              try { sessionStorage.setItem('sy-cloud-justprovisioned', '1'); } catch (e) {} // confirmation shows after reload
+              try { bar.remove(); } catch (e) {}
+              try { location.reload(); } catch (e) {}
+            } else { b.disabled = false; b.textContent = 'Finish setup'; }
+          }).catch(function () { b.disabled = false; b.textContent = 'Finish setup'; });
+        } catch (e) { b.disabled = false; b.textContent = 'Finish setup'; }
       };
     } catch (e) {}
   }
   try {
     if (!s.demo && s.email) {
       window.SY.cloudAuthed().then(function (ok) {
-        if (ok) { try { localStorage.removeItem('sy-cloud-pending:' + s.email); } catch (e) {} return; }
+        if (ok) {
+          try { localStorage.removeItem('sy-cloud-pending:' + s.email); } catch (e) {}
+          // if this account was JUST provisioned (via login or Finish setup),
+          // confirm it visibly so the person sees it worked.
+          var _just = false; try { _just = sessionStorage.getItem('sy-cloud-justprovisioned') === '1'; } catch (e) {}
+          if (_just) { try { sessionStorage.removeItem('sy-cloud-justprovisioned'); } catch (e) {}
+            setTimeout(function () { _cloudDoneToast('✓ Cloud setup complete — this account now syncs across all your devices.'); }, 900); }
+          return;
+        }
         cloudReady().then(function (cl) {
           if (!cl) return;                                     // no cloud client on this build
           var after = cl.whenReady ? cl.whenReady() : null;    // wait for config load to settle first
