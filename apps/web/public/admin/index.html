@@ -572,6 +572,17 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return
 var tt;function toast(t){var e=$('toast');e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2200)}
 function store(k,d){try{var v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}}
 function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
+/* Accounts THIS device knows about that never reached the backend (no cloud:true).
+   Local-only accounts are, by nature, invisible to any central count — they live
+   only in their own device's storage — so this is necessarily device-scoped. */
+function unsyncedLocal(){
+  var TESTDOM=/@(local\.test|t\.test|e2e\.test|demo\.studyear|example\.(com|org|net|co\.uk))$/i;
+  var me=((SY.session&&SY.session.email)||'').toLowerCase();
+  return store('sy-users',[]).filter(function(u){
+    var em=(u&&u.email||'').toLowerCase();
+    return em && !u.cloud && em!==me && !TESTDOM.test(em);
+  });
+}
 function mask(e){
   e=String(e||'');
   if(/@(demo\.studyear|local\.test|t\.test|e2e\.test|studyear\.com)$/i.test(e))return e;
@@ -1630,7 +1641,9 @@ function cloudPull(retries){retries=retries||0;
         });
         save('sy-ai-usage',ulog.slice(0,1000));
         drawAll();
-        cloudStatus('✓ Synced to platform backend — '+((j.users||[]).length)+' account(s) live'+(added?(', '+added+' new this sync'):'')+'. New signups appear here automatically.','ok');
+        var _unsynced=unsyncedLocal().length;
+        cloudStatus('✓ Synced to platform backend — '+((j.users||[]).length)+' account(s) live'+(added?(', '+added+' new this sync'):'')+'. New signups appear here automatically.'+
+          (_unsynced?(' ⚠ '+_unsynced+' account(s) on THIS device haven’t reached the backend yet — they finish setup automatically the next time they’re opened on their own device, or use ➕ Add / provision account to add them here now.'):''),'ok');
         toast('☁ Platform sync: '+((j.users||[]).length)+' account(s), '+((j.inbox||[]).length)+' message(s) from the cloud'+(added?(' — '+added+' new'):''));
       });
   }).catch(function(){cloudStatus('⚠ Could not reach the platform backend — showing local accounts only. Check the network and that the backend is deployed.','err');});

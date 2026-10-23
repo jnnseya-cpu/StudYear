@@ -381,12 +381,17 @@ $('f').addEventListener('submit',async function(e){
          get anyway); on a working network both calls resolve well within it. */
       await Promise.race([
         (async function(){ var _ok=await SYCloud.signIn(email,pw);
-          if(!_ok&&SYCloud.signUp)_ok=!!await SYCloud.signUp(email,pw,authed.name,authed.role);
+          /* retry provisioning a couple of times while we still hold the password
+             — a transient cloud/network blip must not leave a local-only account. */
+          for(var _a=0;!_ok&&_a<2&&SYCloud.signUp;_a++){
+            try{_ok=!!await SYCloud.signUp(email,pw,authed.name,authed.role);}catch(e){_ok=false;}
+            if(!_ok)await new Promise(function(r){setTimeout(r,500);});
+          }
           /* record the outcome so the background self-heal knows whether this
              account still needs provisioning (login is a reliable moment to
              provision because we have the password here). */
           try{ if(_ok)localStorage.removeItem('sy-cloud-pending:'+email); else localStorage.setItem('sy-cloud-pending:'+email,'1'); }catch(e){} })(),
-        new Promise(function(r){setTimeout(r,4500);})
+        new Promise(function(r){setTimeout(r,6000);})
       ]);
     }}}catch(err){}
     if(wantRole&&authed.role!==wantRole){
