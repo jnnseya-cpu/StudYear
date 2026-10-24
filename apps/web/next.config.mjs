@@ -7,6 +7,8 @@
  *                     hosting, so CI copies public/landing.html to out/index.html and the
  *                     host is expected to set headers at the edge.
  */
+import { cspHeader } from '../../scripts/csp.mjs';
+
 const isExport = process.env.STATIC_EXPORT === '1';
 const basePath = process.env.PAGES_BASE_PATH || '';
 
@@ -42,20 +44,9 @@ const nextConfig = {
                 // framable), permissive on connect/img/media so the many first-
                 // and third-party API/asset hosts aren't broken. Inline scripts
                 // exist throughout the static bundle, hence 'unsafe-inline'.
-                { key: 'Content-Security-Policy', value: [
-                  "default-src 'self'",
-                  "base-uri 'none'",
-                  "object-src 'none'",
-                  "frame-ancestors 'none'",
-                  "form-action 'self' https://buy.stripe.com https://checkout.stripe.com",
-                  "script-src 'self' 'unsafe-inline' blob: https://connect.facebook.net https://www.googletagmanager.com https://www.google-analytics.com https://cdn.jsdelivr.net",
-                  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-                  "font-src 'self' data: https://fonts.gstatic.com",
-                  "img-src 'self' data: blob: https:",
-                  "media-src 'self' data: blob: https:",
-                  "connect-src 'self' https:",
-                  "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://meet.jit.si https://www.googletagmanager.com",
-                ].join('; ') },
+                // CSP from the shared single source of truth (scripts/csp.mjs),
+                // so the Vercel header and the GitHub-Pages <meta> never drift.
+                { key: 'Content-Security-Policy', value: cspHeader() },
                 { key: 'X-Frame-Options', value: 'DENY' },
                 { key: 'X-Content-Type-Options', value: 'nosniff' },
                 { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },

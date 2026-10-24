@@ -28,7 +28,10 @@ jobs:
         run: STATIC_EXPORT=1 PAGES_BASE_PATH=/StudYear npm run build --workspace apps/web
       - name: Landing page at the root + Pages plumbing
         run: |
-          cp apps/web/public/landing.html apps/web/out/index.html
+          # copy the EXPORTED landing (carries the injected CSP/referrer meta +
+          # frame-bust from inject-static-headers.mjs); the source public/ copy
+          # has none, so the homepage must come from out/, not public/.
+          cp apps/web/out/landing.html apps/web/out/index.html
           touch apps/web/out/.nojekyll
           # Vercel also sees gh-pages pushes; give it the root dir it expects
           # with an ignoreCommand so the row shows Skipped instead of Error
