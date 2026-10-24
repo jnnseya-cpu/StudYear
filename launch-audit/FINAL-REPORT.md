@@ -35,10 +35,10 @@ against the ledger. The record has been corrected; this is good news for financi
 
 | Gate | Status | Note |
 |------|--------|------|
-| 1 Build integrity | **PASS (build) / FAIL (tests)** | Deterministic build + clean typecheck across 3 workspaces; but the E2E gate has been red for weeks (SY-003). |
+| 1 Build integrity | **PASS** | Deterministic build + clean typecheck (3 workspaces); E2E suite now **GREEN in CI** (`verify` success on 6fcded5) after fixing SY-003/SY-015. |
 | 2 Truth & fitness | **PARTIAL** | Most claims REAL; fabricated dashboard metrics now labelled (SY-006); novice-on-real-device value path UNTESTED. |
 | 3 Critical functionality | **UNTESTED** | No live session/browser against a real backend. |
-| 4 Security | **CONDITIONAL** | P0 fixed+deployed; MEDIUM/LOW open (SY-004/005/009/010/011/012). |
+| 4 Security | **CONDITIONAL** | P0 fixed+deployed; SY-010 (checkout rate limit) + SY-012 (rules reconcile) fixed+deployed; SY-004/005/009/011 open. |
 | 5 Data integrity | **UNTESTED** | No DB access; no restore drill. |
 | 6 Financial integrity | **PARTIAL** | Server-side ACU metering IS enforced (SY-002 corrected); but payments (Stripe) are **UNTESTED** (no sandbox), no reconciliation/invariants run, minor check→debit race (SY-002a). |
 | 7 Performance | **UNTESTED** | No load infra. |
@@ -91,6 +91,10 @@ invariants report cannot be produced without DB access; the metering gap (SY-002
 | SY-008 | Removed client admin invite hash + public admin sign-up | frontend ✓ |
 | SY-003 (part) | `exam-test` + `prem-test` updated to pay-per-use; both pass | — |
 | SY-002 | **Corrected (not a bug)** — fixed the stale `aiProxy`/`acuAuthorize` comments that falsely claimed no server-side metering | backend (comment-only; no deploy needed) |
+| SY-003 | cloud-test mock made faithful (EMAIL_EXISTS); demo-test crash root-caused to SY-015 | **E2E GREEN in CI** ✓ |
+| SY-015 | Removed duplicate SW registration on landing.html (spurious first-visit reload) | frontend ✓ |
+| SY-010 | `createCheckout` now rate-limited (30/day/buyer) | backend deployed ✓ |
+| SY-012 | `firestore.rules`: isPlatformAdmin reads `roles` array + clients forbidden from writing `roles` (no self-escalation) | backend deployed ✓ |
 
 ## 16. Unresolved risks
 
