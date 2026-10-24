@@ -805,6 +805,9 @@ function safeReturnUrl(u: unknown, fallback: string): string {
 export const createCheckout = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
   try {
     const user = await requireUser(req.headers.authorization);
+    // bound Stripe-session creation per buyer per day (anti-spam; a real buyer
+    // never needs dozens). Amounts/prices remain fully server-controlled below.
+    await enforceRate(user.uid, 'checkout', Number(process.env.CHECKOUT_DAILY_CAP) || 30);
     const key = process.env.STRIPE_SECRET_KEY;
     if (!key) throw httpError(503, 'payments not configured');
     const planId = String(req.body?.planId ?? '').trim();
