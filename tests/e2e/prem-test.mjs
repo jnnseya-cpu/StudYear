@@ -28,24 +28,31 @@ function mockAI(page,reply){
   },reply);
 }
 
-/* ---- 1. Child Free: premium tools locked ---- */
+/* ---- 1. Pay-per-use: AI tools are unlocked by ACU balance, NOT a subscription
+   tier (owner policy 2026-10). No "Premium" badges, no subscription lock; the
+   only gate is whether the wallet can cover the ACU cost. ---- */
 let p=await newPage('child_free',100);
 await p.goto(B+'/study/#create',{waitUntil:'networkidle'});
-ok('AR card shows Premium badge', await p.locator('#tab-review .badge.prem').count()>0);
-ok('Create tools carry Premium badges (>=11)', await p.locator('#tab-create .badge.prem').count()>=11);
+ok('No subscription "Premium" badges on the create tools (pay-per-use)', await p.locator('#tab-create .badge.prem').count()===0);
+ok('No subscription "Premium" badge on Assignment Review', await p.locator('#tab-review .badge.prem').count()===0);
 ok('AR Type select defaults to Assignment', await p.evaluate(()=>document.getElementById('ar-type').value)==='Assignment');
 ok('AR Type offers full list incl. Dissertation/Thesis/Personal statement', await p.evaluate(()=>{const o=[...document.querySelectorAll('#ar-type option')].map(x=>x.value);return ['Homework','Assignment','Essay','Coursework','Report','Dissertation','Thesis','Personal statement','Other'].every(v=>o.includes(v))}));
 ok('AR drop zone advertises pdf + limits', /25 ?MB PDF/.test(await p.locator('#ar-filename').textContent()));
+/* a Child Free learner WITH ACUs is NOT blocked by a subscription lock */
+await p.evaluate(()=>{window.SYAI=null;}); // static path → deterministic deck, no live AI
 await p.fill('#g-fc-topic','Bonding'); await p.click('#g-fc-go');
-await p.waitForTimeout(300);
+await p.waitForTimeout(450);
 const t1=await p.evaluate(()=>document.body.innerText);
-ok('Child Free click on AI Flashcards is blocked with a visible unlock panel', /is a Premium tool/.test(t1) && /Unlock Premium/.test(t1));
-ok('No deck was generated for Child Free', !(await p.evaluate(()=>JSON.parse(localStorage.getItem('sy-u:t@t.test:mine')||'[]').length)));
-// Assignment Review also locked
+ok('Child Free is NOT blocked by a subscription lock (no "Premium tool" panel)', !/is a Premium tool/.test(t1) && !/Unlock Premium/.test(t1));
+ok('Child Free with ACUs CAN generate a flashcard deck (pay-per-use)', await p.evaluate(()=>JSON.parse(localStorage.getItem('sy-u:t@t.test:mine')||'[]').some(r=>r.type==='Flashcards')));
+/* dismiss the player modal that opens on create */
+await p.evaluate(()=>{try{if(window.closeModal)closeModal();}catch(e){}var m=document.getElementById('modal');if(m)m.classList.remove('on');});
+await p.waitForTimeout(120);
+/* with ZERO ACUs the balance gate (not a subscription) stops a spend */
+await p.evaluate(()=>{const x=JSON.parse(localStorage.getItem('sy-u:t@t.test:wallet'));x.acus=0;localStorage.setItem('sy-u:t@t.test:wallet',JSON.stringify(x))});
 await p.evaluate(()=>{location.hash='#review';});await p.waitForTimeout(150);
-await p.fill('#ar-text','x'.repeat(120)); await p.click('#ar-go'); await p.waitForTimeout(200);
-const bal1=await p.evaluate(()=>JSON.parse(localStorage.getItem('sy-u:t@t.test:wallet')).acus);
-ok('Child Free AR click spends nothing (locked)', bal1===100);
+await p.fill('#ar-text','x'.repeat(120)); await p.click('#ar-go'); await p.waitForTimeout(250);
+ok('Zero-ACU Assignment Review spends nothing (balance gate, not subscription)', await p.evaluate(()=>JSON.parse(localStorage.getItem('sy-u:t@t.test:wallet')).acus)===0);
 await p.close();
 
 /* ---- 2. Student Premium: tools unlock, AR spends 60 ACUs, live review renders ---- */

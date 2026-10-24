@@ -244,12 +244,13 @@ $('f').addEventListener('submit',async function(e){
     if(age<13&&!$('agree-ck').checked){say('An under-13 account must be created by a parent, guardian or school — please confirm the consent box.','err');return}
     var parentalConsent=$('agree-ck').checked;
     var role=pickedRole;
-    if(wantRole==='admin'){
-      var inv=$('invite').value.trim();
-      if(await hash('sy-admin',inv)!=='83a38e5bf7454013c6a5452b458dc59b2543b2ce20d61175702f7364419c53b6'){
-        say('Invalid invite code — admin accounts are provisioned internally.','err');return}
-      role='admin';
-    }else if(pickedRole==='admin'){say('Admin accounts are provisioned internally.','err');return}
+    // Admin accounts are provisioned internally (admin console / server-side
+    // bootstrap), never via public sign-up. We do NOT gate this on a shared
+    // invite-code hash in the client: a client-side secret is both bypassable
+    // and publicly readable (offline-brute-forceable). The real gate is the
+    // server's email allow-list + verification.
+    if(wantRole==='admin'||pickedRole==='admin'){
+      say('Admin accounts are provisioned internally, not via public sign-up.','err');return}
     if(users.some(function(u){return u.email===email&&u.role===role})){
       say('An account with this email already exists for that category — use Sign in.','err');return}
     var salt=Array.from(crypto.getRandomValues(new Uint8Array(12))).map(function(b){return b.toString(16).padStart(2,'0')}).join('');

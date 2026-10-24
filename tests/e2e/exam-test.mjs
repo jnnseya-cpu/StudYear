@@ -48,7 +48,7 @@ let p=await newPage('student',{role:'student',keys:{
   'sy-u:t@t.test:wallet':{acus:700,plan:'student_premium',month:new Date().toISOString().slice(0,7),planExpires:new Date(Date.now()+20*864e5).toISOString()},
 }});
 await p.goto(B+'/study/#create',{waitUntil:'networkidle'});
-ok('Student exam card present with Premium badge', await p.evaluate(()=>{const c=document.getElementById('exam-card');return !!(c&&c.querySelector('.badge.prem'))}));
+ok('Student exam card present (pay-per-use — no subscription badge)', await p.evaluate(()=>{const c=document.getElementById('exam-card');return !!c && !c.querySelector('.badge.prem')}));
 await mockExamAI(p);
 await p.selectOption('#sx-subj','History');
 await p.fill('#sx-n','50');
@@ -65,10 +65,12 @@ const ans=await p.locator('#sx-out').innerText();
 ok('Answer sheet has a mark-scheme answer per question', /ANSWER SHEET/.test(ans)&&/Q50\./.test(ans)&&(ans.match(/Point one earns a mark/g)||[]).length===50);
 const w=await p.evaluate(()=>JSON.parse(localStorage.getItem('sy-u:t@t.test:wallet')).acus);
 ok('Student spent 50 ACUs (700→650)', w===650);
-/* child_free student is locked out */
-await p.evaluate(()=>{const x=JSON.parse(localStorage.getItem('sy-u:t@t.test:wallet'));x.plan='child_free';localStorage.setItem('sy-u:t@t.test:wallet',JSON.stringify(x))});
-await p.click('#exam-go');await p.waitForTimeout(250);
-ok('Child Free blocked from exam builder', /Premium/.test(await p.evaluate(()=>document.body.innerText.match(/Exam Paper Builder is a Premium tool[^\n]*/)?.[0]||'')));
+/* pay-per-use: the gate is the ACU balance, not a subscription tier. A learner
+   with NO ACUs is stopped by the balance gate — not a "Premium tool" lock. */
+await p.evaluate(()=>{const x=JSON.parse(localStorage.getItem('sy-u:t@t.test:wallet'));x.plan='child_free';x.acus=0;localStorage.setItem('sy-u:t@t.test:wallet',JSON.stringify(x))});
+await p.click('#exam-go');await p.waitForTimeout(300);
+const gateMsg=await p.locator('#sx-status').innerText();
+ok('No ACUs → exam build stopped by the ACU balance gate (not a subscription gate)', /Not enough ACUs/i.test(gateMsg) && !/is a Premium tool/i.test(await p.evaluate(()=>document.body.innerText)));
 
 /* ---- 2. AR accepts .docx (any-format upload) ---- */
 await p.evaluate(()=>{const x=JSON.parse(localStorage.getItem('sy-u:t@t.test:wallet'));x.plan='student_premium';localStorage.setItem('sy-u:t@t.test:wallet',JSON.stringify(x))});
