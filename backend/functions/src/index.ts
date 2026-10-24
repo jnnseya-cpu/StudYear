@@ -209,13 +209,14 @@ export const health = onRequest({ region: 'europe-west2', cors: true }, async (r
  * and balance. On success writes the debit (at initiation, per §A3) and returns
  * the remaining balance.
  *
- * KNOWN GAP (owner decision needed): this is the server-authoritative ACU meter,
- * but no client currently calls it — AI spend is metered client-side in ai.js,
- * and aiProxy enforces only a call-count ceiling. So a client that clears its
- * local wallet or hits aiProxy directly is bounded only by that ceiling, not by
- * ACU balance. To make "no free AI action" server-enforced, wire aiProxy to
- * debit through this logic before calling the provider. Left intact (not
- * deleted) because that wiring is the intended direction.
+ * STATUS: superseded. aiProxy now meters ACUs server-side inline (reads the
+ * ledger balance, returns 402 on empty, and debits on success — see aiProxy).
+ * This standalone endpoint is NOT called by any client; it is retained only for
+ * API compatibility / possible future non-AI metered actions. It is auth-gated
+ * and only ever debits the caller's own wallet, so it is harmless if unused.
+ * (Residual: the inline meter's balance-check and debit are not a single atomic
+ * transaction, so highly-concurrent calls could overspend by a small bounded
+ * amount; the per-day call cap backstops this. Tracked as a low-severity item.)
  */
 export const acuAuthorize = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
   try {
@@ -676,10 +677,17 @@ export const redeemGift = onRequest({ region: 'europe-west2', cors: true }, asyn
 /**
  * POST /aiProxy { system, user, maxTokens?, temperature?, image? }
  * Server-side model gateway: provider keys live in env (never in browsers).
- * NOTE ON METERING: ACU balances are currently metered CLIENT-SIDE (ai.js
- * chargeAcus); this endpoint enforces only a per-day call-count abuse ceiling,
- * it does NOT debit ACUs. `acuAuthorize` is the server-authoritative meter but
- * is not yet wired into this path — see the KNOWN-GAP note on acuAuthorize.
+ * METERING (authoritative): this endpoint IS the real ACU meter. When
+ * AI_ENFORCE_ACUS != 0 it (1) reads the server ledger balance (walletBalance,
+ * the sum of acuTransactions) and returns 402 when it can't cover the cost,
+ * and (2) writes a `-cost` debit to acuTransactions on SUCCESS only. Cost is
+ * resolved from the server ACU_TARIFF by activity — the client-sent cost is
+ * never trusted. The browser wallet (ai.js chargeAcus) is only an optimistic
+ * display cache that billing.js reconciles back to this ledger, so there is no
+ * double-charge. A per-day call-count ceiling is a secondary abuse limit.
+ * Enforcement fails OPEN on an infra error (a bug must never black-hole AI),
+ * with an owner alert. (The standalone `acuAuthorize` endpoint predates this
+ * inline meter and is unused by the client — kept for API compatibility.)
  * Usage lands in aiUsageLogs (the Admin console's AI usage & costs panel).
  * The browser SYAI client swaps its direct-provider path for this endpoint
  * by setting sy-ai-live = { provider:'proxy', key:'session' }.

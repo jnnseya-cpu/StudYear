@@ -14,19 +14,20 @@ Confidence this is the correct verdict: **high (~0.9)**. Cycles run: 2 (recon + 
 
 One-paragraph reality: StudYear is a genuinely substantial, mostly-real edtech platform — the code is
 unusually clean, most public claims trace to real implementations, and the core AI/study features exist
-end-to-end. But it is **not launch-ready** for three honest reasons: (1) it carried a **P0 unauthenticated
-admin-takeover** (now fixed in code + deployed, with one owner step to fully close); (2) it has a **real
-financial-integrity gap** — AI usage is metered client-side only, so ACUs can be spent-free by bypassing
-the browser; and (3) **entire launch gates are untested** because they require a staging environment,
-sandbox payment keys, database and monitoring access I don't have. A platform with major untested gates
-is, by this standard, NO-GO until those are exercised.
+end-to-end. But it is **not launch-ready** for two honest reasons: (1) it carried a **P0 unauthenticated
+admin-takeover** (now fixed in code + deployed, with one owner step to fully close); and (2) **entire
+launch gates are untested** because they require a staging environment, sandbox payment keys, database
+and monitoring access I don't have. A platform with major untested gates is, by this standard, NO-GO
+until those are exercised. (Correction: an earlier finding — SY-002, "no server-side ACU metering" — was
+a **false positive** from a stale code comment; on verification `aiProxy` DOES enforce ACUs server-side
+against the ledger. The record has been corrected; this is good news for financial integrity.)
 
 ## 2. Immediate launch blockers
 
 | ID | Sev | Area | Defect | Status |
 |----|-----|------|--------|--------|
 | SY-001 | P0 | Security | Unauthenticated admin takeover via `adminBootstrap` (public invite hash) | **FIXED + deployed**; H1 to fully close |
-| SY-002 | P1 | Payments | No server-side ACU debit in `aiProxy` (denial-of-wallet) | OPEN |
+| ~~SY-002~~ | ~~P1~~ | Payments | ~~No server-side ACU debit~~ — **FALSE POSITIVE**: `aiProxy` does meter server-side. Record corrected. | RESOLVED |
 | SY-003 | P1 | QA | CI E2E suite red since 2026-10-04 | PARTIAL (2 of 4 fixed) |
 | SY-014 | — | Coverage | Payments, load, DR, DB, device/a11y, privacy, monitoring UNTESTED | BLOCKED (access) |
 
@@ -39,7 +40,7 @@ is, by this standard, NO-GO until those are exercised.
 | 3 Critical functionality | **UNTESTED** | No live session/browser against a real backend. |
 | 4 Security | **CONDITIONAL** | P0 fixed+deployed; MEDIUM/LOW open (SY-004/005/009/010/011/012). |
 | 5 Data integrity | **UNTESTED** | No DB access; no restore drill. |
-| 6 Financial integrity | **FAIL** | SY-002 server-side metering gap; no payments test; no reconciliation/invariants. |
+| 6 Financial integrity | **PARTIAL** | Server-side ACU metering IS enforced (SY-002 corrected); but payments (Stripe) are **UNTESTED** (no sandbox), no reconciliation/invariants run, minor check→debit race (SY-002a). |
 | 7 Performance | **UNTESTED** | No load infra. |
 | 8 Reliability | **UNTESTED** | No failure injection against live deps. |
 | 9 Observability | **PARTIAL** | Audit events + `alertOwner` exist; delivery unproven (H6). |
@@ -89,6 +90,7 @@ invariants report cannot be produced without DB access; the metering gap (SY-002
 | SY-007 | Removed 7 dead `/app/*` stubs (verified `/app/*` still served) | frontend ✓ |
 | SY-008 | Removed client admin invite hash + public admin sign-up | frontend ✓ |
 | SY-003 (part) | `exam-test` + `prem-test` updated to pay-per-use; both pass | — |
+| SY-002 | **Corrected (not a bug)** — fixed the stale `aiProxy`/`acuAuthorize` comments that falsely claimed no server-side metering | backend (comment-only; no deploy needed) |
 
 ## 16. Unresolved risks
 
@@ -97,12 +99,12 @@ SY-002 (financial), SY-003 (remaining E2E), SY-004/005 (headers/CSP), SY-009/010
 
 ## 17. Human Action List
 
-See `human-actions.md` (H1–H7). The blocking ones for GO: **H1** (rotate admin secret), **H3** (staging + sandbox),
-plus SY-002 fix and a real test pass.
+See `human-actions.md` (H1–H7). The blocking ones for GO: **H1** (rotate admin secret) and **H3** (staging +
+sandbox so critical journeys + payments are actually tested). SY-002 is resolved.
 
 ## 18. Pre-launch action plan
 
-- **Before ANY launch**: H1; fix SY-002; green the E2E suite; H3 to actually test critical journeys + payments.
+- **Before ANY launch**: H1; green the E2E suite; H3 to actually test critical journeys + payments.
 - **Before beta**: SY-004 (headers on Pages), SY-010 (checkout binding), H5/H6 (ownership + alerting), privacy-deletion drill (H7).
 - **Before public**: SY-005 (CSP nonce), SY-013 (deps), load/DR drills, full device/a11y pass.
 - **Within 7/30 days**: SY-009/011/012; monitoring dashboards; reconciliation job.
@@ -117,6 +119,6 @@ rollback = redeploy previous commit (backend) / Vercel rollback (web); kill-swit
 **This release is not approved for public launch.**
 
 It is close on code quality and realness, and a **restricted invite-only pilot** could be reachable after
-H1, SY-002, a green E2E run, and H3 (so critical journeys + payments are actually tested, not assumed).
+H1, a green E2E run, and H3 (so critical journeys + payments are actually tested, not assumed).
 No GO or CONDITIONAL GO can be honestly issued while core gates remain untested and a financial-integrity
 gap is open.
