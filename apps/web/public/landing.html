@@ -13,7 +13,9 @@
 <meta name="apple-mobile-web-app-title" content="StudYear">
 <script src="splash.js" defer></script>
 <script>try{var _r=new URLSearchParams(location.search).get('ref');if(_r)localStorage.setItem('sy-ref',String(_r).slice(0,32));}catch(e){}</script>
-<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});</script>
+<!-- service worker is registered by pwa.js (with update-checks + a guarded,
+     first-install-safe reload). A second inline registration here caused a
+     redundant controllerchange → a spurious one-time reload on first visit. -->
 <meta name="description" content="The AI operating system for UK education — a personal examiner, tutor and strategist for every student, plus live insight for parents, schools and authorities.">
 <!-- Open Graph / social preview -->
 <meta property="og:type" content="website">

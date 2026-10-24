@@ -8,12 +8,20 @@ const results=[];const ok=(n,c)=>results.push((c?'PASS':'FAIL')+' — '+n);
 
 const CFG={apiKey:'test-api-key',projectId:'test-proj',storageBucket:'test-proj.appspot.com',apiBase:'https://api.cloudtest.local'};
 const calls={signUp:0,signIn:0,register:null,sync:null,pulls:0};
+/* emails that have been provisioned, SHARED across contexts — real Firebase
+   returns EMAIL_EXISTS on a second signUp of the same address, which is exactly
+   how reauth disambiguates a wrong password from a never-mirrored account. A
+   per-context mock that always 200s on signUp would wrongly "accept" a bad
+   password; this set keeps the stub faithful to Firebase. */
+const registered=new Set();
 
 async function wire(ctx){
   await ctx.route('**/firebase-config.json',r=>r.fulfill({json:CFG}));
   await ctx.route('https://identitytoolkit.googleapis.com/**',async r=>{
     const url=r.request().url(), body=r.request().postDataJSON()||{};
     if(url.includes('accounts:signUp')){calls.signUp++;
+      if(registered.has(body.email))return r.fulfill({status:400,json:{error:{message:'EMAIL_EXISTS'}}});
+      registered.add(body.email);
       return r.fulfill({json:{localId:'uid-cloud-1',email:body.email,idToken:'tok-1',refreshToken:'ref-1',expiresIn:'3600'}});}
     if(url.includes('accounts:signInWithPassword')){calls.signIn++;
       if(body.password!=='CloudPass!77')return r.fulfill({status:400,json:{error:{message:'INVALID_LOGIN_CREDENTIALS'}}});
