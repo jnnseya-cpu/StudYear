@@ -1574,13 +1574,20 @@ function cloudStatus(msg,kind,btn){var e=document.getElementById('u-cloud-status
    email). Set the cloud password server-side via /adminBootstrap, gated by the
    admin invite code, then sign in with it — no Firebase console needed. */
 function adminRepairPassword(){
-  var code=prompt('Enter your admin invite code (the one used to create admin accounts):');
-  if(code==null||!code.trim())return;
+  // A signed-in admin re-provisions via their Bearer token (no shared code
+  // needed). The invite code is only for the locked-out case, and only works
+  // when a FRESH ADMIN_INVITE_HASH secret is configured — the old public code
+  // is permanently disabled server-side.
+  var code=prompt('Admin invite code (leave blank if you are already signed in as admin):')||'';
   var pw=prompt('Set a NEW cloud password for '+SY.session.email+' (at least 6 characters):');
   if(pw==null)return; if(String(pw).length<6){cloudStatus('⚠ Password must be at least 6 characters.','warn',{label:'Set admin password',onclick:adminRepairPassword});return;}
   cloudStatus('Setting your admin cloud password…');
-  fetch(cloudApi()+'/adminBootstrap',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({email:SY.session.email,password:pw,code:code.trim()})})
+  Promise.resolve((window.SYCloud&&SYCloud.token)?SYCloud.token(SY.session.email).catch(function(){return null;}):null).then(function(tk){
+    var headers={'Content-Type':'application/json'};
+    if(tk)headers['Authorization']='Bearer '+tk;
+    return fetch(cloudApi()+'/adminBootstrap',{method:'POST',headers:headers,
+      body:JSON.stringify({email:SY.session.email,password:pw,code:code.trim()})});
+  })
     .then(function(r){return r.json().then(function(j){return {status:r.status,j:j}})})
     .then(function(res){
       if(!res.j||!res.j.ok){cloudStatus('⚠ Couldn’t set the password ('+(res.j&&res.j.error||('HTTP '+res.status))+').','err',{label:'Try again',onclick:adminRepairPassword});return;}

@@ -1282,11 +1282,16 @@ async function requireAdmin(authHeader: string | undefined) {
   return u;
 }
 
-/** SHA-256 of the admin invite code, computed exactly as the auth page does
-    (`SHA-256('sy-admin' + '·' + code)`, hex). Overridable via ADMIN_INVITE_HASH.
-    The default matches the code the owner already uses to provision admins. */
-const ADMIN_INVITE_HASH = (process.env.ADMIN_INVITE_HASH ??
-  '83a38e5bf7454013c6a5452b458dc59b2543b2ce20d61175702f7364419c53b6').toLowerCase();
+/** The invite-code hash that was committed to this (public) repo and shipped in
+    the client bundle. The code behind it is BURNED — it can be recovered offline
+    by anyone, so it must never be accepted again. Kept here only as a denylist. */
+const BURNED_INVITE_HASH = '83a38e5bf7454013c6a5452b458dc59b2543b2ce20d61175702f7364419c53b6';
+/** The ACTIVE admin invite-code hash. Comes ONLY from the ADMIN_INVITE_HASH
+    secret now — there is no committed default. The invite-code path is enabled
+    only when a FRESH secret is configured (not the burned public value);
+    otherwise admin provisioning requires an already-authenticated admin. */
+const ADMIN_INVITE_HASH = (process.env.ADMIN_INVITE_HASH ?? '').toLowerCase();
+const INVITE_CODE_ENABLED = !!ADMIN_INVITE_HASH && ADMIN_INVITE_HASH !== BURNED_INVITE_HASH;
 
 /**
  * POST /adminBootstrap { email, password, code }
@@ -1309,9 +1314,21 @@ export const adminBootstrap = onRequest({ region: 'europe-west2', cors: true }, 
     if (!ADMIN_EMAILS.includes(email) || !ADMIN_VERIFY_EXEMPT.includes(email))
       throw httpError(403, 'not a login-only admin address');
     if (password.length < 6) throw httpError(400, 'password must be at least 6 characters');
-    const codeHash = createHash('sha256').update('sy-admin' + '·' + code).digest('hex');
-    const a = Buffer.from(codeHash), b = Buffer.from(ADMIN_INVITE_HASH);
-    if (a.length !== b.length || !timingSafeEqual(a, b)) throw httpError(403, 'invalid admin code');
+    // Authorisation, closed against the public-repo takeover (CVE-class P0):
+    //  (a) an already-authenticated admin may always (re)provision — safe recovery
+    //      while signed in; OR
+    //  (b) a FRESH invite secret (ADMIN_INVITE_HASH, NOT the burned public value)
+    //      must be configured AND the presented code must match it in constant time.
+    // The old committed/public code no longer works under any circumstances.
+    let authedAdmin = false;
+    try { await requireAdmin(req.headers.authorization); authedAdmin = true; } catch (e) { /* not signed in — fall through to the invite path */ }
+    if (!authedAdmin) {
+      if (!INVITE_CODE_ENABLED)
+        throw httpError(403, 'admin provisioning is disabled: set a fresh ADMIN_INVITE_HASH secret, or sign in as an existing admin to re-provision');
+      const codeHash = createHash('sha256').update('sy-admin' + '·' + code).digest('hex');
+      const a = Buffer.from(codeHash), b = Buffer.from(ADMIN_INVITE_HASH);
+      if (a.length !== b.length || !timingSafeEqual(a, b)) throw httpError(403, 'invalid admin code');
+    }
     let uid: string; let created = false;
     try {
       uid = (await getAuth().getUserByEmail(email)).uid;
@@ -1320,7 +1337,8 @@ export const adminBootstrap = onRequest({ region: 'europe-west2', cors: true }, 
       uid = (await getAuth().createUser({ email, password, emailVerified: true })).uid;
       created = true;
     }
-    await audit('ADMIN_BOOTSTRAP', uid, { email, created });
+    await audit('ADMIN_BOOTSTRAP', uid, { email, created, authed: authedAdmin });
+    void alertOwner('admin_bootstrap', 'Admin password (re)set via adminBootstrap', { email, created, viaAuthedAdmin: authedAdmin });
     res.json({ ok: true, email, created });
   } catch (e) {
     const err = e as Error & { status?: number };
