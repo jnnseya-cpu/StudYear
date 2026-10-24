@@ -38,7 +38,7 @@ against the ledger. The record has been corrected; this is good news for financi
 | 1 Build integrity | **PASS** | Deterministic build + clean typecheck (3 workspaces); E2E suite now **GREEN in CI** (`verify` success on 6fcded5) after fixing SY-003/SY-015. |
 | 2 Truth & fitness | **PARTIAL** | Most claims REAL; fabricated dashboard metrics now labelled (SY-006); novice-on-real-device value path UNTESTED. |
 | 3 Critical functionality | **UNTESTED** | No live session/browser against a real backend. |
-| 4 Security | **CONDITIONAL** | P0 fixed+deployed; SY-010 (checkout rate limit) + SY-012 (rules reconcile) fixed+deployed; SY-004/005/009/011 open. |
+| 4 Security | **CONDITIONAL** | P0 fixed+deployed; SY-010 (checkout rate limit) + SY-012 (rules reconcile) + SY-004 (Pages CSP/headers via meta injection) fixed+deployed; SY-005/009/011 open. |
 | 5 Data integrity | **UNTESTED** | No DB access; no restore drill. |
 | 6 Financial integrity | **PARTIAL** | Server-side ACU metering IS enforced (SY-002 corrected); but payments (Stripe) are **UNTESTED** (no sandbox), no reconciliation/invariants run, minor check→debit race (SY-002a). |
 | 7 Performance | **UNTESTED** | No load infra. |
@@ -95,10 +95,11 @@ invariants report cannot be produced without DB access; the metering gap (SY-002
 | SY-015 | Removed duplicate SW registration on landing.html (spurious first-visit reload) | frontend ✓ |
 | SY-010 | `createCheckout` now rate-limited (30/day/buyer) | backend deployed ✓ |
 | SY-012 | `firestore.rules`: isPlatformAdmin reads `roles` array + clients forbidden from writing `roles` (no self-escalation) | backend deployed ✓ |
+| SY-004 | CSP `<meta>` + referrer meta + frame-bust injected into every static-export page (`inject-static-headers.mjs`) from a shared CSP source (`scripts/csp.mjs`); Vercel header reads the same source | gh-pages deployed ✓ (build-and-publish green) |
 
 ## 16. Unresolved risks
 
-SY-002 (financial), SY-003 (remaining E2E), SY-004/005 (headers/CSP), SY-009/010/011/012 (hardening), SY-013
+SY-002 (financial), SY-003 (remaining E2E), SY-005 (CSP nonce), SY-009/010/011/012 (hardening), SY-013
 (deps), SY-014 (untested gates). None safely closable without owner input or access.
 
 ## 17. Human Action List
@@ -109,7 +110,7 @@ sandbox so critical journeys + payments are actually tested). SY-002 is resolved
 ## 18. Pre-launch action plan
 
 - **Before ANY launch**: H1; green the E2E suite; H3 to actually test critical journeys + payments.
-- **Before beta**: SY-004 (headers on Pages), SY-010 (checkout binding), H5/H6 (ownership + alerting), privacy-deletion drill (H7).
+- **Before beta**: SY-010 (checkout binding), H5/H6 (ownership + alerting), privacy-deletion drill (H7). _(SY-004 headers-on-Pages: done.)_
 - **Before public**: SY-005 (CSP nonce), SY-013 (deps), load/DR drills, full device/a11y pass.
 - **Within 7/30 days**: SY-009/011/012; monitoring dashboards; reconciliation job.
 
