@@ -120,10 +120,70 @@ async function enforceRate(uid: string, name: string, cap: number): Promise<void
   await ref.set({ count: FieldValue.increment(1), day, uid, name, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
 }
 
+// ----------------------------------------------------- platform key vault ----
+/**
+ * Admin-managed API-key vault. The owner sets live keys from the admin account
+ * (admin/gateway) → they are stored server-side in `platformSecrets/vault`, a
+ * doc NO client can read or write (firestore.rules deny all; it is written only
+ * by the requireAdmin `platformConfig` Function through the Admin SDK). Every
+ * secret read in this file already goes through `process.env`, so this loader
+ * overlays the stored values ONTO process.env, which keeps the change tiny and
+ * every existing call site unchanged:
+ *   - a value set in admin WINS over a build-time env of the same name (that is
+ *     the whole point of "manage keys from the admin account");
+ *   - a key cleared in admin REVERTS to the deploy-time env captured at cold
+ *     start (ORIGINAL_ENV), so clearing never strands a stale override;
+ *   - anything never set in admin simply keeps its deploy-time env.
+ * Cached for 60s (a rotation takes effect within a minute, no Firestore read
+ * per request) and fully fail-safe: on any error env is left exactly as-is.
+ */
+const MANAGED_SECRET_KEYS = [
+  'OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GEMINI_API_KEY', 'AI_PROVIDER', 'AI_PROVIDER_KEY', 'AI_MODEL',
+  'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET',
+  'MAIL_HOST', 'MAIL_PORT', 'MAIL_SECURE', 'MAIL_USER', 'MAIL_PASS', 'MAIL_FROM',
+  'NEWSLETTER_SECRET',
+] as const;
+const MANAGED_SECRET_SET = new Set<string>(MANAGED_SECRET_KEYS);
+// Non-secret config among the managed keys — safe to echo back in full on the
+// status screen; everything else is masked to a last-4 hint and never returned.
+const NON_SECRET_KEYS = new Set<string>(['AI_PROVIDER', 'AI_MODEL', 'MAIL_HOST', 'MAIL_PORT', 'MAIL_SECURE', 'MAIL_FROM']);
+const SECRET_VAULT_DOC = 'platformSecrets/vault';
+// Deploy-time env captured ONCE at cold start, so clearing an admin override
+// can restore the original value rather than leaving the overlaid one behind.
+const ORIGINAL_ENV: Record<string, string | undefined> = {};
+for (const k of MANAGED_SECRET_KEYS) ORIGINAL_ENV[k] = process.env[k];
+let _secretsLoadedAt = 0;
+let _secretsLoading: Promise<void> | null = null;
+async function loadPlatformSecrets(force = false): Promise<void> {
+  if (!force && Date.now() - _secretsLoadedAt < 60000) return;  // fresh enough
+  if (_secretsLoading) return _secretsLoading;                   // coalesce concurrent loads
+  _secretsLoading = (async () => {
+    try {
+      const d = await db.doc(SECRET_VAULT_DOC).get();
+      const data = (d.exists ? d.data() : {}) || {};
+      for (const k of MANAGED_SECRET_KEYS) {
+        const v = (data as Record<string, unknown>)[k];
+        if (typeof v === 'string' && v.length > 0) process.env[k] = v;        // admin value wins
+        else if (ORIGINAL_ENV[k] !== undefined) process.env[k] = ORIGINAL_ENV[k]; // revert to deploy env
+        else delete process.env[k];                                           // never set anywhere
+      }
+      _secretsLoadedAt = Date.now();
+    } catch { /* fail-safe: keep whatever env already has */ }
+    finally { _secretsLoading = null; }
+  })();
+  return _secretsLoading;
+}
+/** Last-4 hint for the status screen; full value only for non-secret config. */
+function secretHint(key: string, v: string): string {
+  if (NON_SECRET_KEYS.has(key)) return v.slice(0, 120);
+  return v.length <= 4 ? '••••' : '••••' + v.slice(-4);
+}
+
 // -------------------------------------------------------------------- mail ----
 /** Single source of truth for outbound SMTP. Returns a nodemailer transport, or
     null when MAIL_* is not configured (callers degrade gracefully). */
 async function mailTransport(): Promise<import('nodemailer').Transporter | null> {
+  await loadPlatformSecrets(); // pick up admin-managed MAIL_* before reading env
   if (!process.env.MAIL_HOST) return null;
   const nodemailer = await import('nodemailer');
   return nodemailer.createTransport({
@@ -186,6 +246,7 @@ export const health = onRequest({ region: 'europe-west2', cors: true }, async (r
   if (auth) {
     try {
       await requireAdmin(auth);
+      await loadPlatformSecrets(); // reflect admin-managed keys in readiness
       const aiProviders = aiProviderChain().map((p) => p.provider);
       const ai = aiProviders.length > 0;
       const stripe = !!process.env.STRIPE_SECRET_KEY;
@@ -367,6 +428,7 @@ async function adjustAcus(ownerKey: string, delta: number, activity: string, sou
  * atomic idempotency via `stripeEvents/{id}` so a Stripe retry never double-credits.
  */
 export const stripeWebhook = onRequest({ region: 'europe-west2' }, async (req, res) => {
+  await loadPlatformSecrets(); // admin-managed STRIPE_WEBHOOK_SECRET
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret) { res.status(500).json({ ok: false, error: 'STRIPE_WEBHOOK_SECRET not configured' }); return; }
   const sig = req.headers['stripe-signature'] as string | undefined;
@@ -808,6 +870,7 @@ export const createCheckout = onRequest({ region: 'europe-west2', cors: true }, 
     // bound Stripe-session creation per buyer per day (anti-spam; a real buyer
     // never needs dozens). Amounts/prices remain fully server-controlled below.
     await enforceRate(user.uid, 'checkout', Number(process.env.CHECKOUT_DAILY_CAP) || 30);
+    await loadPlatformSecrets(); // admin-managed STRIPE_SECRET_KEY
     const key = process.env.STRIPE_SECRET_KEY;
     if (!key) throw httpError(503, 'payments not configured');
     const planId = String(req.body?.planId ?? '').trim();
@@ -869,6 +932,7 @@ export const aiProxy = onRequest({ region: 'europe-west2', cors: true, maxInstan
   const rid = reqId();
   res.set('X-Request-Id', rid); // correlate a user report to the exact log line
   try {
+    await loadPlatformSecrets(); // admin-managed AI provider keys
     const user = await requireUser(req.headers.authorization);
     // Denial-of-wallet backstop: cap calls per account per day. This is an abuse
     // ceiling (well above any legitimate use), NOT the ACU meter. It is now
@@ -987,6 +1051,7 @@ export const aiProxy = onRequest({ region: 'europe-west2', cors: true, maxInstan
  */
 export const tts = onRequest({ region: 'europe-west2', cors: true, maxInstances: 10 }, async (req, res) => {
   try {
+    await loadPlatformSecrets(); // admin-managed OPENAI_API_KEY (speech)
     const user = await requireUser(req.headers.authorization);
     const text = String(req.body?.text ?? '').trim().slice(0, 300);
     if (!text) throw httpError(400, 'text required');
@@ -1675,6 +1740,7 @@ export const dailyBackup = onSchedule({ schedule: '0 2 * * *', timeZone: 'Europe
 /** GET /unsubscribe?u=&t= — one-click opt-out (no login). Only ever sets the
     newsletter preference to false, so a forged link can't do harm. */
 export const unsubscribe = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  await loadPlatformSecrets(); // admin-managed NEWSLETTER_SECRET used to verify the token
   const uid = String(req.query.u ?? '');
   const token = String(req.query.t ?? '');
   const ok = uid && verifyUnsub(uid, token);
@@ -1926,6 +1992,73 @@ export const market = onRequest({ region: 'europe-west2', cors: true }, async (r
       const ref = db.doc(`pathwaysMarket/${id}`);
       const d = await ref.get();
       if (d.exists && d.data()!.ownerId === user.uid) await ref.delete();
+      res.json({ ok: true });
+      return;
+    }
+
+    throw httpError(400, 'unknown op');
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
+// ------------------------------------------------------- platform key vault ----
+/**
+ * POST /platformConfig — the admin-managed API-key vault behind the AI Gateway
+ * screen. requireAdmin-gated.
+ *   op:'status' → { keys: { NAME: { set, source:'admin'|'env'|'none', hint } } }
+ *                 Reports ONLY whether each key resolves and from where, plus a
+ *                 last-4 hint (full value for non-secret config). The secret is
+ *                 NEVER returned — not even to an admin.
+ *   op:'set'    → { key, value } store or rotate a key; an empty value clears it
+ *                 (reverts to the deploy-time env). `key` must be on the managed
+ *                 allow-list. Writes `platformSecrets/vault`, a doc no client can
+ *                 read or write (firestore.rules) — only this Admin-SDK path.
+ * The runtime reads every secret from process.env; loadPlatformSecrets() overlays
+ * this vault onto env (admin value wins, 60s cache), so a save here takes effect
+ * platform-wide within a minute with no redeploy.
+ */
+export const platformConfig = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const admin = await requireAdmin(req.headers.authorization);
+    const op = String(req.query.op ?? req.body?.op ?? 'status');
+    const ref = db.doc(SECRET_VAULT_DOC);
+
+    if (op === 'status') {
+      const d = await ref.get();
+      const stored = (d.exists ? d.data() : {}) || {};
+      const keys: Record<string, { set: boolean; source: 'admin' | 'env' | 'none'; hint: string; secret: boolean }> = {};
+      for (const k of MANAGED_SECRET_KEYS) {
+        const sv = (stored as Record<string, unknown>)[k];
+        const hasAdmin = typeof sv === 'string' && sv.length > 0;
+        const envVal = ORIGINAL_ENV[k] ?? '';
+        const effective = hasAdmin ? String(sv) : envVal;
+        keys[k] = {
+          set: !!effective,
+          source: hasAdmin ? 'admin' : (envVal ? 'env' : 'none'),
+          hint: effective ? secretHint(k, effective) : '',
+          secret: !NON_SECRET_KEYS.has(k),
+        };
+      }
+      res.json({ ok: true, keys });
+      return;
+    }
+
+    if (op === 'set') {
+      const key = String(req.body?.key ?? '').trim();
+      if (!MANAGED_SECRET_SET.has(key)) throw httpError(400, 'unknown or unmanaged key');
+      const raw = req.body?.value;
+      const value = raw == null ? '' : String(raw).trim();
+      if (value.length > 4096) throw httpError(400, 'value too long');
+      if (value) {
+        await ref.set({ [key]: value, updatedAt: FieldValue.serverTimestamp(), updatedBy: admin.email ?? admin.uid }, { merge: true });
+      } else {
+        await ref.set({ [key]: FieldValue.delete() }, { merge: true });
+      }
+      await loadPlatformSecrets(true); // apply on this instance immediately
+      await audit('PLATFORM_CONFIG_SET', admin.uid, { key, action: value ? 'set' : 'cleared' });
+      void alertOwner('platform_config', `API key ${value ? 'updated' : 'cleared'}: ${key}`, { key, by: admin.email ?? admin.uid });
       res.json({ ok: true });
       return;
     }

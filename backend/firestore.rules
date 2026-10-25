@@ -138,6 +138,14 @@ service cloud.firestore {
       allow write: if false; // generated server-side
     }
 
+    // ------------- admin-managed API-key vault (Admin SDK ONLY) -------------
+    // Live provider/Stripe/SMTP secrets set from the admin console. NO client
+    // may read or write it — not even a platform admin from the browser; writes
+    // go only through the requireAdmin `platformConfig` Function (Admin SDK),
+    // and the secret values are never returned to any client. (The catch-all
+    // below already denies this; stated explicitly as a hard invariant.)
+    match /platformSecrets/{doc} { allow read, write: if false; }
+
     match /{document=**} { allow read, write: if false; } // deny by default
   }
 }

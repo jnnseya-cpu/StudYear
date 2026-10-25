@@ -35,10 +35,23 @@
 </nav></aside>
 <main>
   <h1>AI Gateway</h1>
-  <p class="lede">Route every AI action across your own model providers. Set keys for Google Gemini, OpenAI and Anthropic Claude, choose a primary and fallbacks, and control which model handles which task — so you optimise quality and cost.</p>
-  <div class="e2ebar">🔒 Keys are AES-GCM encrypted on-device in this preview</div>
+  <p class="lede">Set every live API key the platform needs — AI providers, Stripe and email — once, in the secure vault below. Then choose your provider routing. Keys you enter in the vault are stored only on your backend and never reach a browser.</p>
 
-  <div class="warn">⚠ <b>Security:</b> In production, provider keys live only in the server-side gateway and are never sent to the browser. This preview stores them encrypted locally so you can configure routing — use restricted/test keys here, not production secrets.</div>
+  <!-- ===== PRODUCTION: admin-managed secure key vault (server-side) ===== -->
+  <div class="card" id="vault-card" style="border-color:rgba(92,187,123,.5)">
+    <h3>🔐 Live API keys — saved to your secure backend</h3>
+    <div class="sub">Enter each key once. It is stored server-side in a locked vault that <b>only your backend can read</b> — never sent back to any browser, never in the public code — and takes effect across the whole platform within a minute, no redeploy. A key you set here overrides the deploy-time value; <b>Clear</b> removes it and reverts to the deploy value if one exists. The screen only ever shows whether a key is set and its last 4 characters, never the key itself.</div>
+    <div id="vault-status" class="note" style="margin:8px 0 2px">Loading…</div>
+    <div id="vault-groups"></div>
+  </div>
+
+  <div style="margin:30px 0 4px;border-top:1px solid var(--line);padding-top:18px">
+    <h3 style="font-family:var(--serif);font-weight:500;font-size:18px">Provider routing &amp; on-device preview</h3>
+    <div class="sub" style="color:var(--ink-3);margin-top:4px">Choose which provider runs by default and the fallback order. The key boxes in this section are an <b>on-device preview</b> (encrypted in this browser only) for trying providers out — your real production keys live in the secure vault above.</div>
+  </div>
+  <div class="e2ebar">🔒 Preview keys below are AES-GCM encrypted on-device only</div>
+
+  <div class="warn">⚠ <b>Use a restricted/test key in the preview boxes below</b>, not a production secret — they are stored in this browser. Your production secrets belong in the secure vault at the top of this page.</div>
 
   <div id="providers"></div>
 
@@ -92,6 +105,92 @@
 function $(id){return document.getElementById(id)}function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e}
 var tt;function toast(t){var e=$('toast');e.textContent=t;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(function(){e.style.opacity=0},2400)}
 $('signout').onclick=function(e){e.preventDefault();SY.signOut()};
+
+/* ===== Production secure key vault (server-side, admin-managed) ===== */
+function cloudApi(){try{return((JSON.parse(localStorage.getItem('sy-cloud-config'))||{}).apiBase||'').replace(/\/$/,'')}catch(e){return''}}
+var VAULT_GROUPS=[
+  {title:'AI providers',fields:[
+    {k:'OPENAI_API_KEY',label:'OpenAI API key',ph:'sk-…'},
+    {k:'ANTHROPIC_API_KEY',label:'Anthropic (Claude) API key',ph:'sk-ant-…'},
+    {k:'GEMINI_API_KEY',label:'Google Gemini API key',ph:'AIza…'},
+    {k:'AI_PROVIDER',label:'Primary provider (openai / anthropic / gemini)',ph:'openai'},
+    {k:'AI_MODEL',label:'Default model — optional override',ph:'gpt-4o-mini'}
+  ]},
+  {title:'Payments — Stripe',fields:[
+    {k:'STRIPE_SECRET_KEY',label:'Stripe secret key',ph:'sk_live_…'},
+    {k:'STRIPE_WEBHOOK_SECRET',label:'Stripe webhook signing secret',ph:'whsec_…'}
+  ]},
+  {title:'Email — SMTP',fields:[
+    {k:'MAIL_HOST',label:'SMTP host',ph:'smtp.hostinger.com'},
+    {k:'MAIL_PORT',label:'SMTP port',ph:'465'},
+    {k:'MAIL_SECURE',label:'Use TLS (true / false)',ph:'true'},
+    {k:'MAIL_USER',label:'SMTP username',ph:'hello@studyear.com'},
+    {k:'MAIL_PASS',label:'SMTP password',ph:'••••••••'},
+    {k:'MAIL_FROM',label:'From address',ph:'StudYear <hello@studyear.com>'}
+  ]},
+  {title:'Newsletter',fields:[
+    {k:'NEWSLETTER_SECRET',label:'Newsletter token secret (random string)',ph:'(random string)'}
+  ]}
+];
+function vaultCall(body){
+  var base=cloudApi();if(!base)return Promise.reject(new Error('backend not connected'));
+  var email=(window.SY&&SY.session&&SY.session.email)||'';
+  return SYCloud.token(email).then(function(tk){
+    if(!tk)throw new Error('Sign in again to manage keys');
+    return fetch(base+'/platformConfig',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+tk},
+      body:JSON.stringify(body)}).then(function(r){return r.json()});
+  });
+}
+function vaultPill(info){
+  if(info.source==='admin')return '<span class="status on">● set · admin'+(info.hint?' · '+esc(info.hint):'')+'</span>';
+  if(info.source==='env')return '<span class="status on" style="color:var(--gold-300);border-color:rgba(77,157,224,.4)">● set · deploy'+(info.hint?' · '+esc(info.hint):'')+'</span>';
+  return '<span class="status off">not set</span>';
+}
+function drawVault(){
+  var box=$('vault-groups'),st=$('vault-status');if(!box)return;
+  if(!window.SYCloud||!cloudApi()){
+    st.innerHTML='<span style="color:var(--warn)">⚠ Connect this admin to the platform backend first (main admin console → sync status), then reload. Until then, use the on-device preview below.</span>';box.innerHTML='';return;
+  }
+  st.textContent='Loading current status…';
+  vaultCall({op:'status'}).then(function(j){
+    if(!j||!j.ok){st.innerHTML='<span style="color:#f0a0a0">'+esc((j&&j.error)||'Could not load key status')+'</span>';return;}
+    st.innerHTML='<span style="color:var(--good)">● Secure vault connected — values are stored on the server and never shown here.</span>';
+    box.innerHTML=VAULT_GROUPS.map(function(g){
+      return '<div style="margin-top:16px"><div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px">'+esc(g.title)+'</div>'+
+        g.fields.map(function(f){
+          var info=(j.keys&&j.keys[f.k])||{set:false,source:'none',hint:''};
+          return '<div class="prov" style="margin-top:8px"><div class="ph"><b style="flex:1">'+esc(f.label)+'</b>'+vaultPill(info)+'</div>'+
+            '<div class="keyrow" style="margin-top:8px"><div><input type="password" id="vk-'+f.k+'" placeholder="'+esc(f.ph)+'" autocomplete="off"></div>'+
+            '<button class="btn sm solid" data-vsave="'+f.k+'" type="button">Save</button>'+
+            '<button class="btn sm ghost" data-vclear="'+f.k+'" type="button">Clear</button></div></div>';
+        }).join('')+'</div>';
+    }).join('');
+    box.querySelectorAll('[data-vsave]').forEach(function(b){b.onclick=function(){
+      var k=b.getAttribute('data-vsave'),inp=$('vk-'+k),v=((inp&&inp.value)||'').trim();
+      if(!v){toast('Enter a value first (or use Clear to remove it)');return;}
+      b.disabled=true;b.textContent='Saving…';
+      vaultCall({op:'set',key:k,value:v}).then(function(j){
+        b.disabled=false;b.textContent='Save';
+        if(j&&j.ok){if(inp)inp.value='';SY.log('gateway','API key updated',k);toast(k+' saved to the secure vault');drawVault();}
+        else toast((j&&j.error)||'Save failed');
+      }).catch(function(e){b.disabled=false;b.textContent='Save';toast(String(e.message||e))});
+    }});
+    box.querySelectorAll('[data-vclear]').forEach(function(b){b.onclick=function(){
+      var k=b.getAttribute('data-vclear');b.disabled=true;
+      vaultCall({op:'set',key:k,value:''}).then(function(j){
+        b.disabled=false;
+        if(j&&j.ok){SY.log('gateway','API key cleared',k);toast(k+' cleared — reverted to the deploy value if one exists');drawVault();}
+        else toast((j&&j.error)||'Clear failed');
+      }).catch(function(e){b.disabled=false;toast(String(e.message||e))});
+    }});
+  }).catch(function(e){st.innerHTML='<span style="color:#f0a0a0">'+esc(String(e.message||e))+'</span>'});
+}
+(function vaultBoot(n){
+  if(!cloudApi()){try{drawVault();}catch(e){}return;}        // no backend configured → show guidance immediately
+  if(window.SYCloud||n>40){try{drawVault();}catch(e){}return;} // SYCloud injected by guard.js (async) — wait briefly
+  setTimeout(function(){vaultBoot(n+1)},150);
+})(0);
 
 var PROVIDERS=[
   {k:'gemini',i:'✦',name:'Google Gemini',models:['gemini-2.5-flash','gemini-2.5-pro','gemini-2.0-flash'],ph:'AIza…'},
