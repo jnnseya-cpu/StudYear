@@ -133,13 +133,20 @@ var VAULT_GROUPS=[
   ]}
 ];
 function vaultCall(body){
-  var base=cloudApi();if(!base)return Promise.reject(new Error('backend not connected'));
+  var direct=cloudApi();if(!direct)return Promise.reject(new Error('backend not connected'));
+  if(!window.SYCloud)return Promise.reject(new Error('Cloud bridge unavailable'));
   var email=(window.SY&&SY.session&&SY.session.email)||'';
-  return SYCloud.token(email).then(function(tk){
+  return SYCloud.token(email).then(function(tk){   // also runs whenReady() → validates /gapi and sets __SYGAPI
     if(!tk)throw new Error('Sign in again to manage keys');
-    return fetch(base+'/platformConfig',{method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+tk},
-      body:JSON.stringify(body)}).then(function(r){return r.json()});
+    var hdr={'Content-Type':'application/json','Authorization':'Bearer '+tk},payload=JSON.stringify(body);
+    /* Prefer the same-origin /gapi/fn proxy (reachable even where the functions
+       host is blocked on this network); if it throws at request time, fall back
+       to calling the function host directly. Mirrors ai.js so the vault reaches
+       the backend on exactly the networks every other cloud call does. */
+    var gp=(window.__SYGAPI&&window.__SYGAPI.fn)?window.__SYGAPI.fn:direct;
+    return fetch(gp+'/platformConfig',{method:'POST',headers:hdr,body:payload})
+      .catch(function(e){if(gp===direct)throw e;return fetch(direct+'/platformConfig',{method:'POST',headers:hdr,body:payload});})
+      .then(function(r){return r.json().catch(function(){return{ok:false,error:'Gateway '+r.status};});});
   });
 }
 function vaultPill(info){
