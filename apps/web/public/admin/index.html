@@ -696,6 +696,9 @@ function drawUsers(){
   tb.innerHTML=us.map(function(u,i){
     var w=acct(u.email,'wallet',null)||{plan:'child_free',acus:0};
     var plan=PLAN_NAMES[w.plan]||PLAN_NAMES.child_free;
+    // cloud accounts show the SERVER-authoritative balance (from adminOverview);
+    // local-only accounts fall back to this device's cached figure.
+    var shownAcus=(u.cloud&&typeof u.acus==='number')?u.acus:(w.acus||0);
     var student=u.role==='student';
     return '<tr>'+
       '<td><input type="checkbox" class="u-sel" data-i="'+i+'" style="width:auto" aria-label="Select '+esc(u.name||u.email)+'"></td>'+
@@ -703,7 +706,7 @@ function drawUsers(){
       '<td>'+esc(mask(u.email))+'</td>'+
       '<td><span class="pill role">'+esc(u.role||'—')+'</span></td>'+
       '<td><span class="pill plan">'+esc(plan)+'</span></td>'+
-      '<td>'+(w.acus||0).toLocaleString()+'</td>'+
+      '<td>'+shownAcus.toLocaleString()+'</td>'+
       '<td><div class="acts">'+
         '<button class="btn ghost sm" data-act="edit" data-i="'+i+'">Edit</button>'+
         (student?'<button class="btn ghost sm" data-act="parent" data-i="'+i+'">Link Parent</button>'+
@@ -754,24 +757,29 @@ function userAct(act,u){
   }
   if(act==='grant'){
     var wg=acct(u.email,'wallet',null)||{plan:'child_free',acus:0};
-    var g=prompt('Grant FREE ACUs to '+mask(u.email)+' (current '+(wg.acus||0)+'):','250');
+    var curG=(u.cloud&&typeof u.acus==='number')?u.acus:(wg.acus||0);
+    var g=prompt('Grant FREE ACUs to '+mask(u.email)+' (current '+curG+'):','250');
     if(g===null)return;var gn=Math.abs(parseInt(g,10));if(isNaN(gn)||!gn){toast('Enter a number like 250');return}
-    var grantLocal=function(src){wg.acus=(wg.acus||0)+gn;acctSet(u.email,'wallet',wg);
-      var gf=acct(u.email,'activity',[]);gf.unshift({k:'billing',t:'Free ACUs granted — +'+gn+' ACUs',d:src+' Balance now '+wg.acus+' ACUs.',when:new Date().toISOString()});
-      acctSet(u.email,'activity',gf.slice(0,100));drawUsers();drawDashboard();};
+    var logGrant=function(src,bal){var gf=acct(u.email,'activity',[]);gf.unshift({k:'billing',t:'Free ACUs granted — +'+gn+' ACUs',d:src+' Balance now '+bal+' ACUs.',when:new Date().toISOString()});acctSet(u.email,'activity',gf.slice(0,100));};
     // SERVER-FIRST for cloud accounts: write the grant to the authoritative ledger
     // so it actually reaches the student and survives sync (a local-only grant is
-    // overwritten on reconcile). Local display updates on confirmed success.
+    // overwritten on reconcile). Show the REAL returned server balance — never
+    // re-add the grant locally (that double-counts).
     if(u.cloud&&u.uid&&window.cloudUserOp){
-      cloudUserOp('grantAcus',u.uid,gn,function(j){ if(j&&typeof j.balance==='number'){wg.acus=j.balance;acctSet(u.email,'wallet',wg);drawUsers();drawDashboard();} grantLocal('Credited to the server wallet.'); });
+      cloudUserOp('grantAcus',u.uid,gn,function(j){
+        var bal=(j&&typeof j.balance==='number')?j.balance:((wg.acus||0)+gn);
+        wg.acus=bal;acctSet(u.email,'wallet',wg);logGrant('Credited to the server wallet.',bal);drawUsers();drawDashboard();
+      });
       return;
     }
-    grantLocal('Local grant — this account is not on the server yet, so it will sync once they sign in online.');
-    toast('+'+gn+' local ACUs — not synced (account not on the server yet)');return;
+    wg.acus=(wg.acus||0)+gn;acctSet(u.email,'wallet',wg);
+    logGrant('Local grant — this account is not on the server yet, so it will sync once they sign in online.',wg.acus);
+    toast('+'+gn+' local ACUs — not synced (account not on the server yet)');drawUsers();drawDashboard();return;
   }
   if(act==='acus'){
     var w2=acct(u.email,'wallet',null)||{plan:'child_free',acus:0};
-    var delta=prompt('Adjust ACUs for '+mask(u.email)+' (current '+(w2.acus||0)+'). Enter +/- amount:','+100');
+    var curA=(u.cloud&&typeof u.acus==='number')?u.acus:(w2.acus||0);
+    var delta=prompt('Adjust ACUs for '+mask(u.email)+' (current '+curA+'). Enter +/- amount:','+100');
     if(delta===null)return;var n=parseInt(delta,10);if(isNaN(n)||!n){toast('Enter a number like +100 or -50');return}
     var adjLocal=function(src){w2.acus=Math.max(0,(w2.acus||0)+n);acctSet(u.email,'wallet',w2);
       var feed=acct(u.email,'activity',[]);feed.unshift({k:'billing',t:'Admin ACU adjustment — '+(n>0?'+':'')+n+' ACUs',d:src+' Balance now '+w2.acus+' ACUs.',when:new Date().toISOString()});
@@ -1639,8 +1647,8 @@ function cloudPull(retries){retries=retries||0;
           roles.forEach(function(role){
             if(!us.some(function(x){return x.email===cu.email&&x.role===role})){
               us.push({name:cu.name||cu.email.split('@')[0],email:cu.email,role:role,
-                cloud:true,uid:cu.uid,created:cu.created,plan:cu.plan,disabled:cu.disabled});added++;
-            }else{us.forEach(function(x){if(x.email===cu.email&&x.role===role){x.cloud=true;x.uid=cu.uid;x.disabled=cu.disabled}})}
+                cloud:true,uid:cu.uid,created:cu.created,plan:cu.plan,disabled:cu.disabled,acus:cu.acus});added++;
+            }else{us.forEach(function(x){if(x.email===cu.email&&x.role===role){x.cloud=true;x.uid=cu.uid;x.disabled=cu.disabled;x.acus=cu.acus}})}
           });
         });
         save('sy-users',us);

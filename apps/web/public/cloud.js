@@ -246,9 +246,26 @@
     var tk = await token(email);
     if (!tk) throw new Error('not signed in to cloud');
     var direct = CFG && CFG.apiBase ? CFG.apiBase.replace(/\/$/, '') : '';
+    // Cold-start resilience: a gen2 Cloud Function scaling from zero can drop the
+    // first cross-origin hit (an infra error carries no CORS header → the browser
+    // throws "Failed to fetch") or return a transient 5xx. Retry a few times with
+    // backoff so wallet sync (reconcile), admin reads and provisioning recover
+    // instead of dead-ending on a sleeping backend — a warmed instance answers.
+    async function hit(base) {
+      var lastE = null;
+      for (var i = 0; i < 3; i++) {
+        try {
+          var rr = await apiAt(base, path, method, tk, body);
+          if (rr.status >= 500 && rr.status < 600 && i < 2) { lastE = new Error('HTTP ' + rr.status); }
+          else return rr;
+        } catch (e) { lastE = e; }
+        await new Promise(function (res) { setTimeout(res, 600 * (i + 1)); });
+      }
+      throw lastE || new Error('request failed');
+    }
     var r;
-    try { r = await apiAt(gbase('fn'), path, method, tk, body); }
-    catch (e) { if (!GAPI || !direct) throw e; r = await apiAt(direct, path, method, tk, body); } // proxy dead → direct
+    try { r = await hit(gbase('fn')); }
+    catch (e) { if (!GAPI || !direct) throw e; r = await hit(direct); } // proxy dead → direct
     var j = await r.json().catch(function () { return {}; });
     if (!r.ok) throw new Error(j.error || ('api ' + r.status));
     return j;

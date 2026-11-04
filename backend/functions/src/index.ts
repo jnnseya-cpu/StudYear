@@ -1432,15 +1432,21 @@ export const adminBootstrap = onRequest({ region: 'europe-west2', cors: true }, 
 export const adminOverview = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
   try {
     const admin = await requireAdmin(req.headers.authorization);
-    const [authUsers, userDocs, inbox, audits, usage] = await Promise.all([
+    const [authUsers, userDocs, inbox, audits, usage, acuTx] = await Promise.all([
       getAuth().listUsers(1000),
       db.collection('users').get(),
       db.collection('contactInbox').orderBy('createdAt', 'desc').limit(200).get(),
       db.collection('auditEvents').orderBy('createdAt', 'desc').limit(100).get(),
       db.collection('aiUsageLogs').orderBy('createdAt', 'desc').limit(500).get(),
+      db.collection('acuTransactions').get(), // authoritative balances (sum of deltas)
     ]);
     const docs: Record<string, FirebaseFirestore.DocumentData> = {};
     userDocs.forEach((d) => { docs[d.id] = d.data(); });
+    // Real ACU balance per owner from the append-only ledger, in ONE read — so the
+    // admin list shows the SERVER truth, not the per-device cache. (For scale this
+    // should move to a cached balance on the wallet doc; fine at current volume.)
+    const balances: Record<string, number> = {};
+    acuTx.forEach((d) => { const o = d.data().ownerId as string; if (o) balances[o] = (balances[o] || 0) + (Number(d.data().delta) || 0); });
     const iso = (v: { toDate?: () => Date } | undefined) => v?.toDate?.()?.toISOString() ?? null;
     await audit('ADMIN_OVERVIEW_READ', admin.uid);
     res.json({
@@ -1450,6 +1456,7 @@ export const adminOverview = onRequest({ region: 'europe-west2', cors: true }, a
         name: (docs[u.uid]?.name as string) ?? u.displayName ?? null,
         roles: (docs[u.uid]?.roles as string[]) ?? [],
         plan: (docs[u.uid]?.plan as string) ?? 'child_free',
+        acus: balances[u.uid] || 0, // server-authoritative balance
         created: u.metadata.creationTime, lastLogin: u.metadata.lastSignInTime,
         disabled: u.disabled,
       })),
