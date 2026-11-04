@@ -756,19 +756,32 @@ function userAct(act,u){
     var wg=acct(u.email,'wallet',null)||{plan:'child_free',acus:0};
     var g=prompt('Grant FREE ACUs to '+mask(u.email)+' (current '+(wg.acus||0)+'):','250');
     if(g===null)return;var gn=Math.abs(parseInt(g,10));if(isNaN(gn)||!gn){toast('Enter a number like 250');return}
-    wg.acus=(wg.acus||0)+gn;acctSet(u.email,'wallet',wg);
-    var gf=acct(u.email,'activity',[]);gf.unshift({k:'billing',t:'Free ACUs granted — +'+gn+' ACUs',d:'A gift from the StudYear team. Balance now '+wg.acus+' ACUs.',when:new Date().toISOString()});
-    acctSet(u.email,'activity',gf.slice(0,100));
-    toast('+'+gn+' free ACUs granted — wallet now '+wg.acus);drawUsers();drawDashboard();return;
+    var grantLocal=function(src){wg.acus=(wg.acus||0)+gn;acctSet(u.email,'wallet',wg);
+      var gf=acct(u.email,'activity',[]);gf.unshift({k:'billing',t:'Free ACUs granted — +'+gn+' ACUs',d:src+' Balance now '+wg.acus+' ACUs.',when:new Date().toISOString()});
+      acctSet(u.email,'activity',gf.slice(0,100));drawUsers();drawDashboard();};
+    // SERVER-FIRST for cloud accounts: write the grant to the authoritative ledger
+    // so it actually reaches the student and survives sync (a local-only grant is
+    // overwritten on reconcile). Local display updates on confirmed success.
+    if(u.cloud&&u.uid&&window.cloudUserOp){
+      cloudUserOp('grantAcus',u.uid,gn,function(j){ if(j&&typeof j.balance==='number'){wg.acus=j.balance;acctSet(u.email,'wallet',wg);drawUsers();drawDashboard();} grantLocal('Credited to the server wallet.'); });
+      return;
+    }
+    grantLocal('Local grant — this account is not on the server yet, so it will sync once they sign in online.');
+    toast('+'+gn+' local ACUs — not synced (account not on the server yet)');return;
   }
   if(act==='acus'){
     var w2=acct(u.email,'wallet',null)||{plan:'child_free',acus:0};
     var delta=prompt('Adjust ACUs for '+mask(u.email)+' (current '+(w2.acus||0)+'). Enter +/- amount:','+100');
-    if(delta===null)return;var n=parseInt(delta,10);if(isNaN(n)){toast('Enter a number like +100 or -50');return}
-    w2.acus=Math.max(0,(w2.acus||0)+n);acctSet(u.email,'wallet',w2);
-    var feed=acct(u.email,'activity',[]);feed.unshift({k:'billing',t:'Admin ACU adjustment — '+(n>0?'+':'')+n+' ACUs',d:'Balance now '+w2.acus+' ACUs.',when:new Date().toISOString()});
-    acctSet(u.email,'activity',feed.slice(0,100));
-    toast('Wallet now '+w2.acus+' ACUs');drawUsers();drawDashboard();return;
+    if(delta===null)return;var n=parseInt(delta,10);if(isNaN(n)||!n){toast('Enter a number like +100 or -50');return}
+    var adjLocal=function(src){w2.acus=Math.max(0,(w2.acus||0)+n);acctSet(u.email,'wallet',w2);
+      var feed=acct(u.email,'activity',[]);feed.unshift({k:'billing',t:'Admin ACU adjustment — '+(n>0?'+':'')+n+' ACUs',d:src+' Balance now '+w2.acus+' ACUs.',when:new Date().toISOString()});
+      acctSet(u.email,'activity',feed.slice(0,100));drawUsers();drawDashboard();};
+    if(u.cloud&&u.uid&&window.cloudUserOp){
+      cloudUserOp('grantAcus',u.uid,n,function(j){ if(j&&typeof j.balance==='number'){w2.acus=j.balance;acctSet(u.email,'wallet',w2);drawUsers();drawDashboard();} else adjLocal('Applied to the server wallet.'); });
+      return;
+    }
+    adjLocal('Local adjustment — not on the server yet.');
+    toast('Wallet now '+w2.acus+' ACUs (local only — account not on the server)');return;
   }
   if(act==='parent'){
     var parents=uniqUsers().filter(function(x){return x.role==='parent'});
@@ -1517,8 +1530,9 @@ window.cloudUserOp=function(op,uid,value,done){
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tk},
       body:JSON.stringify({op:op,uid:uid,value:value})})
       .then(function(r){return r.json()}).then(function(j){
-        toast(j.ok?('Cloud account '+op+' done'):('Cloud: '+(j.error||'failed')));
-        if(j.ok&&done)done();
+        var msg=j.ok?(op==='grantAcus'?('ACUs updated — server balance now '+(j.balance!=null?j.balance:'?')):('Cloud account '+op+' done')):('Cloud: '+(j.error||'failed'));
+        toast(msg);
+        if(j.ok&&done)done(j);
       });
   }).catch(function(){toast('Cloud unreachable')});
 };

@@ -79,8 +79,19 @@ jobs:
               "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}"; do
               [ -n "${kv#*=}" ] && echo "$kv"
             done
-          } > backend/functions/.env || true
-          echo "provisioned $(grep -c '=' backend/functions/.env || echo 0) key(s)"
+          } > "$RUNNER_TEMP/fnenv" || true
+          # SAFETY: only write .env when at least one key is present. If no repo
+          # secrets are set, do NOT write an empty .env — that would clear the
+          # live keys already on the Functions. Leaving no .env preserves the
+          # existing runtime env (and the admin key vault, which the code reads
+          # regardless of env). This makes a deploy safe even with no secrets set.
+          if [ -s "$RUNNER_TEMP/fnenv" ]; then
+            mv "$RUNNER_TEMP/fnenv" backend/functions/.env
+            echo "provisioned $(grep -c '=' backend/functions/.env || echo 0) key(s) from repo secrets"
+          else
+            rm -f backend/functions/.env
+            echo "No keys in repo secrets — NOT writing .env; existing Functions keys are preserved."
+          fi
       - name: Deploy functions + Firestore rules/indexes
         id: deploy
         working-directory: backend

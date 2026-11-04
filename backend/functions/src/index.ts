@@ -1517,6 +1517,19 @@ export const adminUserOp = onRequest({ region: 'europe-west2', cors: true }, asy
       await getAuth().updateUser(uid, { disabled: op === 'disable' });
     } else if (op === 'setPlan') {
       await db.doc(`users/${uid}`).set({ plan: String(req.body?.value ?? 'child_free') }, { merge: true });
+    } else if (op === 'grantAcus') {
+      // Credit (or deduct, if negative) ACUs on the AUTHORITATIVE server ledger,
+      // so an admin grant actually reaches the account and survives the client
+      // reconcile. A local-only admin wallet edit gets overwritten; this does not.
+      const acus = Math.round(Number(req.body?.value ?? 0));
+      if (!Number.isFinite(acus) || acus === 0) throw httpError(400, 'enter a non-zero ACU amount');
+      if (Math.abs(acus) > 1_000_000) throw httpError(400, 'amount too large');
+      const reason = String(req.body?.reason ?? 'admin grant').slice(0, 120);
+      await adjustAcus(uid, acus, 'admin_grant', 'admin', { by: admin.email ?? admin.uid, reason }, `admingrant_${uid}_${Date.now()}`);
+      const balance = await walletBalance(uid);
+      await audit('ADMIN_USER_GRANTACUS', admin.uid, { target: uid, acus, reason, balance });
+      res.json({ ok: true, balance });
+      return;
     } else throw httpError(400, 'unknown op');
     await audit('ADMIN_USER_' + op.toUpperCase(), admin.uid, { target: uid });
     res.json({ ok: true });
