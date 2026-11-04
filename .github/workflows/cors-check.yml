@@ -5,6 +5,9 @@ name: CORS check (diagnostic)
 
 on:
   workflow_dispatch:
+  push:
+    branches: [claude/continue-from-here-y37pvu]
+    paths: ['.github/workflows/cors-check.yml']
 
 jobs:
   probe:
