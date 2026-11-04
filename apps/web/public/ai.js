@@ -93,6 +93,23 @@
       localStorage.setItem('sy-ai-usage',JSON.stringify(log.slice(0,200)));
     }catch(e){}
   }
+  /* Cross-origin calls to a gen2 Cloud Function scaling from zero can drop the
+     first hit — a cold-start/infra error carries no CORS header, so the browser
+     throws "Failed to fetch". Retry a few times with backoff; a warmed instance
+     then answers. Also retries a 5xx. This is what fixes the intermittent
+     "Failed to fetch" / "Live AI error" on an idle backend. */
+  async function fetchRetry(url, opts, tries){
+    tries = tries || 3; var lastE = null;
+    for (var i = 0; i < tries; i++){
+      try{
+        var r = await fetch(url, opts);
+        if (r.status >= 500 && r.status < 600 && i < tries - 1){ lastE = new Error('HTTP ' + r.status); }
+        else return r;
+      }catch(e){ lastE = e; }
+      await new Promise(function(res){ setTimeout(res, 600 * (i + 1)); });
+    }
+    throw lastE || new Error('request failed');
+  }
   async function ask(system, user, opts){
     var c=cfg();if(!c||(!c.key&&c.provider!=='proxy'))throw new Error('No AI key configured');
     /* house style for every tool: natural student-readable text, never raw markup */
@@ -139,8 +156,8 @@
       var direct=cc.apiBase.replace(/\/$/,'');
       var gp=(window.__SYGAPI&&window.__SYGAPI.fn)?window.__SYGAPI.fn:direct;
       var rp;
-      try{ rp=await fetch(gp+'/aiProxy',{method:'POST',headers:hdr,body:body}); }
-      catch(e){ if(gp===direct)throw e; rp=await fetch(direct+'/aiProxy',{method:'POST',headers:hdr,body:body}); }
+      try{ rp=await fetchRetry(gp+'/aiProxy',{method:'POST',headers:hdr,body:body}); }
+      catch(e){ if(gp===direct)throw e; rp=await fetchRetry(direct+'/aiProxy',{method:'POST',headers:hdr,body:body}); }
       var jp=await rp.json().catch(function(){return{}});
       /* server-side ACU meter said the wallet can't cover this — surface the same
          clear message as the client pre-check (a forged local balance no longer

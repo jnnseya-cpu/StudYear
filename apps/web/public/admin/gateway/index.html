@@ -132,6 +132,20 @@ var VAULT_GROUPS=[
     {k:'NEWSLETTER_SECRET',label:'Newsletter token secret (random string)',ph:'(random string)'}
   ]}
 ];
+/* Retry a few times with backoff: a gen2 function scaling from zero can drop
+   the first cross-origin hit (cold-start/infra error → no CORS header → the
+   browser throws "Failed to fetch"). A warmed instance then answers — this is
+   what makes the vault connect reliably instead of flapping. Also retries 5xx. */
+function vaultFetch(url,opts,tries){
+  tries=tries||3;
+  return fetch(url,opts).then(function(r){
+    if(r.status>=500&&r.status<600&&tries>1)throw new Error('HTTP '+r.status);
+    return r;
+  }).catch(function(e){
+    if(tries<=1)throw e;
+    return new Promise(function(res){setTimeout(res,600)}).then(function(){return vaultFetch(url,opts,tries-1)});
+  });
+}
 function vaultCall(body){
   var direct=cloudApi();if(!direct)return Promise.reject(new Error('backend not connected'));
   if(!window.SYCloud)return Promise.reject(new Error('Cloud bridge unavailable'));
@@ -140,12 +154,11 @@ function vaultCall(body){
     if(!tk)throw new Error('Sign in again to manage keys');
     var hdr={'Content-Type':'application/json','Authorization':'Bearer '+tk},payload=JSON.stringify(body);
     /* Prefer the same-origin /gapi/fn proxy (reachable even where the functions
-       host is blocked on this network); if it throws at request time, fall back
-       to calling the function host directly. Mirrors ai.js so the vault reaches
-       the backend on exactly the networks every other cloud call does. */
+       host is blocked on this network); if it throws, fall back to the direct
+       host. Each path retries (cold-start resilience). */
     var gp=(window.__SYGAPI&&window.__SYGAPI.fn)?window.__SYGAPI.fn:direct;
-    return fetch(gp+'/platformConfig',{method:'POST',headers:hdr,body:payload})
-      .catch(function(e){if(gp===direct)throw e;return fetch(direct+'/platformConfig',{method:'POST',headers:hdr,body:payload});})
+    return vaultFetch(gp+'/platformConfig',{method:'POST',headers:hdr,body:payload},3)
+      .catch(function(e){if(gp===direct)throw e;return vaultFetch(direct+'/platformConfig',{method:'POST',headers:hdr,body:payload},3);})
       .then(function(r){return r.json().catch(function(){return{ok:false,error:'Gateway '+r.status};});});
   });
 }
