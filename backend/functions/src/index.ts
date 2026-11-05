@@ -1348,13 +1348,20 @@ const ADMIN_VERIFY_EXEMPT = (process.env.ADMIN_VERIFY_EXEMPT ?? 'admin@studyear.
   .toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
 async function requireAdmin(authHeader: string | undefined) {
   const u = await requireUser(authHeader);
+  // PRIMARY gate: a server-set custom claim (admin:true), writable only via the
+  // Admin SDK (adminBootstrap / adminUserOp:setAdminClaim). Immune to the
+  // email-signup vector — a claim can never be obtained by registering an
+  // allow-listed address through public sign-up.
+  if ((u as { admin?: unknown }).admin === true) return u;
   const email = (u.email ?? '').toLowerCase();
   if (!email || !ADMIN_EMAILS.includes(email)) throw httpError(403, 'admin only');
-  // Require a VERIFIED email: Firebase lets anyone register an arbitrary
-  // unverified address, so an allow-list match alone would let someone claim an
-  // admin address that isn't yet a real account and pass this gate. Exempt only
-  // the explicitly listed login-only admin addresses, which cannot be verified.
-  if (!u.email_verified && !ADMIN_VERIFY_EXEMPT.includes(email)) throw httpError(403, 'admin email not verified');
+  // FALLBACK (allow-list): the email MUST be verified — NO exemption. The former
+  // ADMIN_VERIFY_EXEMPT bypass let an attacker register a login-only admin
+  // address via open public sign-up (unverified) and pass this gate (P0 account
+  // takeover). Genuine login-only admins are provisioned by adminBootstrap, which
+  // sets emailVerified AND the custom claim above, so they still pass with no
+  // exemption.
+  if (!u.email_verified) throw httpError(403, 'admin email not verified');
   return u;
 }
 
@@ -1413,6 +1420,10 @@ export const adminBootstrap = onRequest({ region: 'europe-west2', cors: true }, 
       uid = (await getAuth().createUser({ email, password, emailVerified: true })).uid;
       created = true;
     }
+    // Give login-only admins a DURABLE custom claim so admin authority no longer
+    // depends on the (bypassable) email allow-list, and survives even if
+    // emailVerified is ever cleared.
+    try { await getAuth().setCustomUserClaims(uid, { admin: true }); } catch (e) { /* non-fatal */ }
     await audit('ADMIN_BOOTSTRAP', uid, { email, created, authed: authedAdmin });
     void alertOwner('admin_bootstrap', 'Admin password (re)set via adminBootstrap', { email, created, viaAuthedAdmin: authedAdmin });
     res.json({ ok: true, email, created });
@@ -1457,6 +1468,7 @@ export const adminOverview = onRequest({ region: 'europe-west2', cors: true }, a
         roles: (docs[u.uid]?.roles as string[]) ?? [],
         plan: (docs[u.uid]?.plan as string) ?? 'child_free',
         acus: balances[u.uid] || 0, // server-authoritative balance
+        admin: (u.customClaims as { admin?: unknown } | undefined)?.admin === true, // durable admin claim
         created: u.metadata.creationTime, lastLogin: u.metadata.lastSignInTime,
         disabled: u.disabled,
       })),
@@ -1515,6 +1527,7 @@ export const adminUserOp = onRequest({ region: 'europe-west2', cors: true }, asy
     const uid = String(req.body?.uid ?? '');
     if (!uid) throw httpError(400, 'uid required');
     if (op === 'delete') {
+      await getAuth().revokeRefreshTokens(uid).catch(() => null);
       await getAuth().deleteUser(uid).catch(() => null);
       await db.doc(`users/${uid}`).delete().catch(() => null);
       await db.doc(`e2eKeys/${uid}`).delete().catch(() => null);
@@ -1522,6 +1535,9 @@ export const adminUserOp = onRequest({ region: 'europe-west2', cors: true }, asy
       const batch = db.batch(); blobs.forEach((d) => batch.delete(d.ref)); await batch.commit();
     } else if (op === 'disable' || op === 'enable') {
       await getAuth().updateUser(uid, { disabled: op === 'disable' });
+      // Kill live sessions immediately on disable — otherwise the existing ID
+      // token stays valid for up to ~1h and the account keeps working.
+      if (op === 'disable') await getAuth().revokeRefreshTokens(uid).catch(() => null);
     } else if (op === 'setPlan') {
       await db.doc(`users/${uid}`).set({ plan: String(req.body?.value ?? 'child_free') }, { merge: true });
     } else if (op === 'grantAcus') {
@@ -1536,6 +1552,18 @@ export const adminUserOp = onRequest({ region: 'europe-west2', cors: true }, asy
       const balance = await walletBalance(uid);
       await audit('ADMIN_USER_GRANTACUS', admin.uid, { target: uid, acus, reason, balance });
       res.json({ ok: true, balance });
+      return;
+    } else if (op === 'setAdminClaim') {
+      // Grant/revoke the durable admin custom claim (the PRIMARY admin gate in
+      // requireAdmin). This is how new admins are made the safe way — no reliance
+      // on the email allow-list — and how admin is cleanly removed. Revoking the
+      // user's refresh tokens forces re-auth so the claim change takes effect at
+      // once rather than lingering for the ~1h token lifetime.
+      const on = req.body?.value === true || String(req.body?.value) === 'true';
+      await getAuth().setCustomUserClaims(uid, on ? { admin: true } : {});
+      await getAuth().revokeRefreshTokens(uid).catch(() => null);
+      await audit('ADMIN_SET_CLAIM', admin.uid, { target: uid, admin: on });
+      res.json({ ok: true, admin: on });
       return;
     } else throw httpError(400, 'unknown op');
     await audit('ADMIN_USER_' + op.toUpperCase(), admin.uid, { target: uid });

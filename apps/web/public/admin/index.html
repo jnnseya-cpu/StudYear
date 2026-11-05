@@ -715,6 +715,7 @@ function drawUsers(){
         '<button class="btn ghost sm" data-act="grant" data-i="'+i+'">Grant free ACUs</button>'+
         '<button class="btn ghost sm" data-act="view" data-i="'+i+'">View as User</button>'+
         (u.cloud?'<button class="btn ghost sm" data-act="ban" data-i="'+i+'">'+(u.disabled?'Unban':'Ban')+'</button>':'')+
+        (u.cloud?'<button class="btn ghost sm" data-act="admin" data-i="'+i+'">'+(u.admin?'Remove admin':'Make admin')+'</button>':'')+
         '<button class="btn danger sm" data-act="del" data-i="'+i+'">Delete</button>'+
       '</div></td></tr>';
   }).join('')||'<tr><td colspan="7" class="note">No accounts match.</td></tr>';
@@ -825,6 +826,13 @@ function userAct(act,u){
   if(act==='ban'){
     if(!u.cloud||!u.uid){toast('Ban applies to cloud accounts');return}
     cloudUserOp(u.disabled?'enable':'disable',u.uid,null,function(){u.disabled=!u.disabled;drawUsers()});
+    return;
+  }
+  if(act==='admin'){
+    if(!u.cloud||!u.uid){toast('Admin rights apply to cloud accounts only');return}
+    var on=!u.admin;
+    if(!confirm((on?'Grant':'Remove')+' platform ADMIN rights for '+(u.name||mask(u.email))+'?\n\nAdmin can see and act on every account. '+(on?'Only do this for people you trust completely.':'They will be signed out to apply the change.')))return;
+    cloudUserOp('setAdminClaim',u.uid,on,function(j){u.admin=!!j.admin;drawUsers();});
     return;
   }
 }
@@ -1647,8 +1655,8 @@ function cloudPull(retries){retries=retries||0;
           roles.forEach(function(role){
             if(!us.some(function(x){return x.email===cu.email&&x.role===role})){
               us.push({name:cu.name||cu.email.split('@')[0],email:cu.email,role:role,
-                cloud:true,uid:cu.uid,created:cu.created,plan:cu.plan,disabled:cu.disabled,acus:cu.acus});added++;
-            }else{us.forEach(function(x){if(x.email===cu.email&&x.role===role){x.cloud=true;x.uid=cu.uid;x.disabled=cu.disabled;x.acus=cu.acus}})}
+                cloud:true,uid:cu.uid,created:cu.created,plan:cu.plan,disabled:cu.disabled,acus:cu.acus,admin:!!cu.admin});added++;
+            }else{us.forEach(function(x){if(x.email===cu.email&&x.role===role){x.cloud=true;x.uid=cu.uid;x.disabled=cu.disabled;x.acus=cu.acus;x.admin=!!cu.admin}})}
           });
         });
         save('sy-users',us);
