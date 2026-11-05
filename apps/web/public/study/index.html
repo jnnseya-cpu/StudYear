@@ -3824,17 +3824,22 @@ function applyJump(){
     if(j.h==="#lesson"){
       setSelect("il-subj",j.subj);
       const t=document.getElementById("il-topic");if(t&&j.topic)t.value=j.topic;
-      const g=document.getElementById("il-go");if(g){g.scrollIntoView({behavior:"smooth",block:"center"});g.classList.add("pulse");setTimeout(()=>g.classList.remove("pulse"),1600)}
-      toast("Lesson set up: "+(j.topic||j.subj)+" — press Generate Lesson");
+      const g=document.getElementById("il-go");
+      if(j.go&&g){ toast("Opening your lesson on "+(j.topic||j.subj)+"…"); setTimeout(()=>{try{g.click()}catch(e){}},150); }
+      else if(g){g.scrollIntoView({behavior:"smooth",block:"center"});g.classList.add("pulse");setTimeout(()=>g.classList.remove("pulse"),1600);toast("Lesson set up: "+(j.topic||j.subj)+" — press Generate Lesson");}
     }else if(j.h==="#tutor"){
       const c=document.getElementById("chat-in");
       if(c){c.value="Help me master "+(j.topic?j.topic+" ("+j.subj+")":j.subj)+" — teach me step by step.";c.focus()}
-      toast("AI Tutor primed with "+(j.topic||j.subj)+" — press send");
+      const sb=document.getElementById("chat-send");
+      if(j.go&&sb){ toast("Starting your tutor on "+(j.topic||j.subj)+"…"); setTimeout(()=>{try{sb.click()}catch(e){}},150); }
+      else toast("AI Tutor primed with "+(j.topic||j.subj)+" — press send");
     }else if(j.h==="#create"){
       setSelect("g-qz-subj",j.subj);setSelect("g-fc-subj",j.subj);
       const qt=document.getElementById("g-qz-topic");if(qt&&j.topic)qt.value=j.topic;
       const ft=document.getElementById("g-fc-topic");if(ft&&j.topic)ft.value=j.topic;
-      toast("Creators pre-filled: "+j.subj+(j.topic?" · "+j.topic:""));
+      const qg=document.getElementById("g-qz-go");
+      if(j.go&&qg){ toast("Building your check quiz on "+(j.topic||j.subj)+"…"); setTimeout(()=>{try{qg.click()}catch(e){}},150); }
+      else toast("Creators pre-filled: "+j.subj+(j.topic?" · "+j.topic:""));
     }else if(j.h==="#papers"){
       setSelect("pp-subj",j.subj);
       toast("Past papers filtered to "+j.subj);
@@ -4820,10 +4825,16 @@ function courseModuleActions(subj,moduleTitle){
 }
 function wireCourse(subj,courseKey){
   const out=document.getElementById("cg-out");
-  out.querySelectorAll("[data-cj]").forEach(a=>{a.onclick=()=>{
+  out.querySelectorAll("[data-cj]").forEach(a=>{a.onclick=(ev)=>{
+    if(ev&&ev.preventDefault)ev.preventDefault();
     const [kind,topic]=a.dataset.cj.split("::");
     const h=kind==="lesson"?"#lesson":kind==="tutor"?"#tutor":"#create";
-    try{sessionStorage.setItem("sy-jump",JSON.stringify({h:h,subj:subj,topic:topic}))}catch(e){}
+    // go:true → the target tool AUTO-STARTS (the course promises each module
+    // "opens into a real lesson/tutor/quiz" — not a form to fill in again).
+    try{sessionStorage.setItem("sy-jump",JSON.stringify({h:h,subj:subj,topic:topic,go:true}))}catch(e){}
+    // navigate robustly: setting the hash fires applyHash (showTab + applyJump);
+    // if the hash is already there, call applyHash directly so it still runs.
+    if(location.hash!==h){location.hash=h;} else {try{applyHash()}catch(e){}}
   }});
   /* per-module progress ticks, persisted per course */
   const key="courseDone:"+courseKey;
