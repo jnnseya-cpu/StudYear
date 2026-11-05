@@ -2334,19 +2334,38 @@ export const sync = onRequest({ region: 'europe-west2', cors: true }, async (req
     if (!b.e2e || !b.e2e.wrapPw || !b.e2e.salt) throw httpError(400, 'missing e2e key record — refusing unencrypted sync');
     if (b.e2e.wrapDev) throw httpError(400, 'device-wrapped keys must never leave the device');
     const data = (b.data ?? {}) as Record<string, unknown>;
+    const mtimes = (b.mtimes ?? {}) as Record<string, unknown>;
     for (const [k, v] of Object.entries(data)) {
       const env = v as { __e2e?: number; n?: string; c?: string };
       if (!env || env.__e2e !== 1 || typeof env.n !== 'string' || typeof env.c !== 'string')
         throw httpError(400, `plaintext value rejected for key "${k}" — personal data must be end-to-end encrypted`);
     }
+    // CLOBBER PROTECTION (last-write-wins): read the server's current per-key
+    // modification clocks first. A blob is only overwritten when the incoming
+    // copy is at least as new as the stored one. This stops a device whose local
+    // store was reset/emptied from silently destroying the good cloud copy (the
+    // root cause of permanent "my work is gone" data loss), while still letting a
+    // genuinely newer edit (a larger client timestamp) win.
+    const existing = await db.collection(`e2eData/${user.uid}/blobs`).get();
+    const curMt: Record<string, number> = {};
+    existing.forEach((d) => { const m = d.data().mtime; if (typeof m === 'number') curMt[decodeURIComponent(d.id)] = m; });
     const batch = db.batch();
     batch.set(db.doc(`e2eKeys/${user.uid}`), { v: b.e2e.v ?? 1, salt: b.e2e.salt, wrapPw: b.e2e.wrapPw,
       updatedAt: FieldValue.serverTimestamp() });
-    for (const [k, v] of Object.entries(data))
-      batch.set(db.doc(`e2eData/${user.uid}/blobs/${encodeURIComponent(k)}`), { env: v, updatedAt: FieldValue.serverTimestamp() });
+    let stored = 0, kept = 0;
+    for (const [k, v] of Object.entries(data)) {
+      const inMt = Number(mtimes[k] ?? 0);
+      const haveMt = curMt[k];
+      // keep the server copy only when it has a real clock strictly newer than
+      // the incoming one (missing/0 incoming never beats a real server clock)
+      if (typeof haveMt === 'number' && haveMt > inMt) { kept++; continue; }
+      batch.set(db.doc(`e2eData/${user.uid}/blobs/${encodeURIComponent(k)}`),
+        { env: v, mtime: inMt, updatedAt: FieldValue.serverTimestamp() });
+      stored++;
+    }
     await batch.commit();
-    await audit('DATA_SYNCED', user.uid, { blobs: Object.keys(data).length });
-    res.json({ ok: true, stored: Object.keys(data).length });
+    await audit('DATA_SYNCED', user.uid, { blobs: stored, keptNewer: kept });
+    res.json({ ok: true, stored, kept });
   } catch (e) {
     const err = e as Error & { status?: number };
     res.status(err.status ?? 500).json({ ok: false, error: err.message });
@@ -2368,7 +2387,14 @@ export const syncPull = onRequest({ region: 'europe-west2', cors: true }, async 
       db.collection(`e2eData/${user.uid}/blobs`).get(),
     ]);
     const data: Record<string, unknown> = {};
-    blobs.forEach((d) => { data[decodeURIComponent(d.id)] = d.data().env; });
+    const mtimes: Record<string, number> = {};
+    blobs.forEach((d) => {
+      const key = decodeURIComponent(d.id);
+      data[key] = d.data().env;
+      const m = d.data().mtime;
+      const u = d.data().updatedAt as { toMillis?: () => number } | undefined;
+      mtimes[key] = typeof m === 'number' ? m : (u?.toMillis?.() ?? 0);
+    });
     const u = userDoc.data();
     await audit('ACCOUNT_RESTORED', user.uid, { blobs: blobs.size });
     res.json({
@@ -2376,6 +2402,7 @@ export const syncPull = onRequest({ region: 'europe-west2', cors: true }, async 
       e2e: keyDoc.exists ? { v: keyDoc.data()!.v ?? 1, salt: keyDoc.data()!.salt, wrapPw: keyDoc.data()!.wrapPw } : null,
       user: u ? { name: u.name ?? null, roles: (u.roles as string[]) ?? [], plan: u.plan ?? 'child_free' } : null,
       data,
+      mtimes,
     });
   } catch (e) {
     const err = e as Error & { status?: number };

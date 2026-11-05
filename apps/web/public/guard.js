@@ -191,15 +191,32 @@
     catch (e) { return d; }
   }
 
+  /* Per-key modification clock (local-write-wins reconcile). Each namespaced
+     write stamps sy-mtime:<email> = { <key>: <epoch ms> }. The cloud bridge
+     sends these to the server and compares them on pull, so a device that was
+     reset/emptied can no longer silently overwrite the good server copy, and a
+     stale device heals from the newer one. Kept OUTSIDE the sy-u:<email>:*
+     namespace so it is never itself part of the encrypted sync payload. */
+  function _mkey(email) { return 'sy-mtime:' + (email || 'anon'); }
+  function _bumpMtime(email, k) {
+    try {
+      var mk = _mkey(email), m = JSON.parse(localStorage.getItem(mk) || '{}') || {};
+      m[k] = Date.now();
+      localStorage.setItem(mk, JSON.stringify(m));
+    } catch (e) {}
+  }
+
   window.SY = {
     session: s,
     base: base,
     ns: NS,
     e2eActive: function () { return canE2E(s.email); },
+    _bumpMtime: _bumpMtime,
     get: function (k, d) {
       try { return readStored(NS + k, s.email, d); } catch (e) { return d; }
     },
     set: function (k, v) {
+      _bumpMtime(s.email, k);
       if (canE2E(s.email)) {
         var env = window.SYE2E.encryptValue(v, s.email);
         if (env) { localStorage.setItem(NS + k, env); return; }
@@ -634,6 +651,7 @@
         TARGET account's key when it has one */
     writeAccount: function (email, k, v) {
       var full = 'sy-u:' + email + ':' + k;
+      _bumpMtime(email, k);
       if (window.SYE2E && window.SYE2E.enabled(email)) {
         var env = window.SYE2E.encryptValue(v, email);
         if (env) { localStorage.setItem(full, env); return; }
@@ -980,6 +998,32 @@
         }).catch(function () {});
       }).catch(function () {});
     }
+  } catch (e) {}
+
+  // ---- cloud reconcile notice ----
+  // When the cloud bridge pulls a NEWER copy of the account's work on load
+  // (e.g. this device was reset/stale and healed from the server), any page that
+  // already rendered the old/empty state needs a refresh to show it. Offer one
+  // calm, dismissible banner — never an automatic reload mid-task.
+  try {
+    window.addEventListener('sy-reconciled', function (ev) {
+      try {
+        var n = (ev && ev.detail && ev.detail.count) || 0;
+        if (!n || document.getElementById('sy-recbar')) return;
+        var bar = document.createElement('div');
+        bar.id = 'sy-recbar';
+        bar.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:99998;max-width:560px;margin:0 auto;' +
+          'background:#113524;border:1px solid rgba(92,187,123,.5);border-radius:12px;padding:12px 14px;' +
+          'box-shadow:0 14px 40px rgba(0,0,0,.45);color:#D9F7E4;font:500 13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
+          'display:flex;gap:10px;align-items:center;flex-wrap:wrap';
+        bar.innerHTML = '<span style="flex:1;min-width:200px">☁ Restored your latest saved work from the cloud.</span>' +
+          '<button id="sy-rec-go" style="padding:8px 14px;border:none;border-radius:8px;background:#5CBB7B;color:#07210F;font-weight:700;cursor:pointer">Refresh</button>' +
+          '<button id="sy-rec-later" style="padding:8px 12px;border:1px solid rgba(150,210,170,.35);border-radius:8px;background:none;color:#A9D8BA;font-weight:600;cursor:pointer">Dismiss</button>';
+        (document.body || document.documentElement).appendChild(bar);
+        document.getElementById('sy-rec-later').onclick = function () { try { bar.remove(); } catch (e) {} };
+        document.getElementById('sy-rec-go').onclick = function () { try { location.reload(); } catch (e) {} };
+      } catch (e) {}
+    });
   } catch (e) {}
 
   // ---- gentle self-healing connectivity indicator ----

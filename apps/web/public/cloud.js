@@ -380,11 +380,19 @@
     try {
       if (j.e2e && j.e2e.wrapPw && !localStorage.getItem('sy-e2e:' + email))
         localStorage.setItem('sy-e2e:' + email, JSON.stringify({ v: j.e2e.v || 1, salt: j.e2e.salt, wrapPw: j.e2e.wrapPw }));
-      var data = j.data || {};
+      var data = j.data || {}, smt = j.mtimes || {};
+      var lmtKey = 'sy-mtime:' + email, lmt = {};
+      try { lmt = JSON.parse(localStorage.getItem(lmtKey) || '{}') || {}; } catch (e) {}
       for (var k in data) {
         var full = 'sy-u:' + email + ':' + k;
-        if (localStorage.getItem(full) === null) localStorage.setItem(full, JSON.stringify(data[k]));
+        if (localStorage.getItem(full) === null) {
+          localStorage.setItem(full, JSON.stringify(data[k]));
+          /* seed the local clock from the server so a freshly restored device
+             doesn't immediately think its copy is newer and push it back */
+          lmt[k] = Number(smt[k] || 0);
+        }
       }
+      try { localStorage.setItem(lmtKey, JSON.stringify(lmt)); } catch (e) {}
       var user = j.user || {};
       var roles = user.roles || [];
       var users = []; try { users = JSON.parse(localStorage.getItem('sy-users')) || []; } catch (e) {}
@@ -414,6 +422,41 @@
     var payload = SYE2E.syncPayload(email);
     if (!payload.e2e || !payload.e2e.wrapPw) return false;
     try { await api('/sync', 'POST', payload, email); return true; } catch (e) { return false; }
+  }
+
+  /** SAME-DEVICE reconcile (the single-source-of-truth pull). Unlike restore()
+      — which only runs on a brand-new device and only fills MISSING keys — this
+      runs on every console load for a signed-in account and applies the server
+      copy of a key whenever the local copy is missing OR the server's
+      modification clock is newer (last-write-wins). This is what ends the
+      "my planning/work is gone" class of bugs: a device whose local store was
+      cleared, reset or overwritten now heals from the authoritative cloud copy
+      instead of showing (and then re-pushing) an empty state. Pulls ciphertext
+      only; values stay end-to-end encrypted and are decrypted on read as usual.
+      Returns the number of keys refreshed. */
+  async function reconcile(email) {
+    await whenReady(); if (!CFG || !email) return 0;
+    if (!window.SYE2E || !SYE2E.enabled(email)) return 0; // need the data key for the pulled blobs to be readable
+    var j;
+    try { j = await race(api('/syncPull', 'GET', null, email), 10000); } catch (e) { return 0; }
+    if (!j || !j.ok) return 0;
+    var data = j.data || {}, smt = j.mtimes || {};
+    var lmtKey = 'sy-mtime:' + email, lmt = {};
+    try { lmt = JSON.parse(localStorage.getItem(lmtKey) || '{}') || {}; } catch (e) {}
+    var changed = 0;
+    for (var k in data) {
+      var full = 'sy-u:' + email + ':' + k;
+      var cur = localStorage.getItem(full);
+      var serverMt = Number(smt[k] || 0), localMt = Number(lmt[k] || 0);
+      if (cur === null || serverMt > localMt) {
+        try { localStorage.setItem(full, JSON.stringify(data[k])); } catch (e) { continue; }
+        lmt[k] = serverMt || localMt || 0;
+        changed++;
+      }
+    }
+    try { localStorage.setItem(lmtKey, JSON.stringify(lmt)); } catch (e) {}
+    if (changed) { try { window.dispatchEvent(new CustomEvent('sy-reconciled', { detail: { count: changed } })); } catch (e) {} }
+    return changed;
   }
 
   /* ------------------------------------------------- storage ------------- */
@@ -597,7 +640,7 @@
   }
 
   window.SYCloud = { ready: ready, whenReady: whenReady, signUp: signUp, signIn: signIn, reauth: reauth,
-    restore: restore, push: push, schedulePush: schedulePush, upload: upload, token: token,
+    restore: restore, push: push, reconcile: reconcile, schedulePush: schedulePush, upload: upload, token: token,
     resetPassword: resetPassword, sendVerify: sendVerify,
     reachable: function () { return CLOUD_UP; }, reconnect: reconnect,
     /* true when this account has a stored cloud token — i.e. it was provisioned
@@ -677,7 +720,12 @@
         SY[fn] = function () { var r = orig.apply(SY, arguments); schedulePush(s.email); return r; };
         SY[fn].__cloud = true;
       });
-      schedulePush(s.email);
+      /* Pull the authoritative cloud copy FIRST (heals a reset/stale device),
+         THEN schedule the first push — so we never push an empty local state
+         over good server data on load. If reconcile can't run (offline, locked),
+         we still schedule the push so normal sync continues. */
+      reconcile(s.email).then(function () { schedulePush(s.email); })
+        .catch(function () { schedulePush(s.email); });
     } catch (e) {}
   }
   CFG_READY.then(function () {

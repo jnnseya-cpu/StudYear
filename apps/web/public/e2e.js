@@ -112,13 +112,21 @@
      backend /sync endpoint enforces (it rejects any plaintext value). */
   function syncPayload(email) {
     var r = rec(email);
-    var out = { email: email, e2e: r ? { v: r.v, salt: r.salt, wrapPw: r.wrapPw } : null, data: {} };
+    var out = { email: email, e2e: r ? { v: r.v, salt: r.salt, wrapPw: r.wrapPw } : null, data: {}, mtimes: {} };
     var ns = 'sy-u:' + email + ':';
+    var mt = {};
+    try { mt = JSON.parse(localStorage.getItem('sy-mtime:' + email) || '{}') || {}; } catch (e) {}
     for (var i = 0; i < localStorage.length; i++) {
       var k = localStorage.key(i);
       if (k && k.indexOf(ns) === 0) {
         var raw = localStorage.getItem(k);
-        if (isEnvelope(raw)) out.data[k.slice(ns.length)] = JSON.parse(raw);
+        if (isEnvelope(raw)) {
+          var sk = k.slice(ns.length);
+          out.data[sk] = JSON.parse(raw);
+          /* per-key modification clock (0 = legacy/untracked); the server keeps
+             the newer copy so a reset device can't clobber good cloud data */
+          out.mtimes[sk] = Number(mt[sk] || 0);
+        }
       }
     }
     return out;
