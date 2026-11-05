@@ -2366,6 +2366,23 @@ pAdd.addEventListener("input",function(){
 })();
 
 /* autosave the form */
+/* Target-grade options must match the learner's stage: a primary (KS1/KS2/11+)
+   child has NO GCSE 9–1 or A-level grades — they work to KS2 bands. Populate the
+   dropdown from the resolved tier so a 9-year-old never sees "Grade 9 / A*". */
+function targetGradeOpts(){
+  var t=(typeof dgTier==='function')?dgTier():'gcse';
+  if(t==='primary')return ['Greater Depth','Expected Standard','Working Towards'];
+  if(t==='alevel')return ['A*','A','B','C','D','E'];
+  return ['9','8','7','6','5','4','3'];
+}
+function populateTargetGrades(){
+  var sel=document.getElementById('p-target'); if(!sel)return;
+  var primary=(typeof dgTier==='function'&&dgTier()==='primary');
+  var cur=sel.value, opts=targetGradeOpts();
+  sel.innerHTML='<option value="">'+(primary?'Select a target':'Select a grade')+'</option>'+
+    opts.map(function(o){return '<option'+(o===cur?' selected':'')+'>'+o+'</option>'}).join('');
+  try{var lab=sel.previousElementSibling; if(lab&&lab.classList&&lab.classList.contains('f'))lab.textContent=primary?'Overall Target':'Overall Target Grade';}catch(e){}
+}
 const PFORM_IDS=["p-exam","p-hours","p-target","p-style","p-weak","p-strong"];
 function savePlanForm(){
   const f={scope:pScope.value,selected:selectedSubs};PFORM_IDS.forEach(id=>f[id]=document.getElementById(id).value);
@@ -2376,6 +2393,7 @@ function savePlanForm(){
   if(f){ if(f.scope&&[...pScope.options].some(o=>o.value===f.scope))pScope.value=f.scope;
     if(Array.isArray(f.selected)&&f.selected.length)selectedSubs=f.selected.slice();
     PFORM_IDS.forEach(id=>{if(f[id])document.getElementById(id).value=f[id]}) }
+  try{populateTargetGrades();}catch(e){}   // stage-correct grade options (primary ≠ GCSE)
   drawChips();
 })();
 PFORM_IDS.forEach(id=>document.getElementById(id).addEventListener("input",savePlanForm));
@@ -2491,6 +2509,7 @@ function renderMyTerms(){
   };
 }
 function onPlannerOpen(){
+  try{populateTargetGrades();}catch(e){}   // re-apply stage-correct grades in case the profile changed
   resolveHolidayWindows(); updateHolidaySrc(); renderMyTerms();
   /* a linked school's dates may still be arriving from the cloud — re-resolve shortly after */
   setTimeout(function(){try{resolveHolidayWindows();updateHolidaySrc();}catch(e){}},1200);
