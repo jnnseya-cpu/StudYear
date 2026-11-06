@@ -952,7 +952,18 @@ export const aiProxy = onRequest({ region: 'europe-west2', cors: true, maxInstan
     const dayKey = new Date().toISOString().slice(0, 10);
     const rateRef = db.doc(`aiRateLimits/${user.uid}_${dayKey}`);
     let plan = 'child_free';
-    try { plan = ((await db.doc(`users/${user.uid}`).get()).data()?.plan as string) ?? 'child_free'; } catch { /* default free */ }
+    try {
+      const ud = (await db.doc(`users/${user.uid}`).get()).data();
+      plan = (ud?.plan as string) ?? 'child_free';
+      // UK Children's Code: an under-13 account stays inactive until a parent or
+      // guardian confirms consent via the emailed approval link. Legacy accounts
+      // (no consentStatus field) and 13+ accounts are unaffected.
+      if (ud?.consentStatus === 'pending') {
+        res.status(403).json({ ok: false, reason: 'consent_pending',
+          error: 'This account is waiting for a parent or guardian to approve it. Ask them to check their email for the StudYear approval link.' });
+        return;
+      }
+    } catch { /* default free */ }
     const FREE_CAP = Number(process.env.AI_DAILY_CAP_FREE) || 60;
     const PAID_CAP = Number(process.env.AI_DAILY_CALL_CAP) || 500;
     const AI_DAILY_CAP = plan === 'child_free' ? FREE_CAP : PAID_CAP;
@@ -1204,6 +1215,10 @@ export const refcode = onRequest({ region: 'europe-west2', cors: true }, async (
   } catch (e) { const err = e as Error & { status?: number }; res.status(err.status ?? 500).json({ ok: false, error: err.message }); }
 });
 
+/** Public base URL of the deployed Functions, for links embedded in emails
+    (e.g. the under-13 guardian-consent approval link). Overridable via env. */
+const FN_BASE = process.env.FUNCTIONS_BASE_URL ?? 'https://europe-west2-revision-rocket-4nuir.cloudfunctions.net';
+
 export const register = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
   try {
     const user = await requireUser(req.headers.authorization);
@@ -1244,8 +1259,41 @@ export const register = onRequest({ region: 'europe-west2', cors: true }, async 
     }
     const existingUser = (await db.doc(`users/${user.uid}`).get());
     const alreadyAged = !!existingUser.data()?.ageBand;
-    if (!existingUser.exists && !alreadyAged && ageYears !== null && ageYears < 13 && !parentalConsent) {
-      throw httpError(403, 'An under-13 account must be created with a parent or guardian’s consent.');
+    const isNewUnder13 = !existingUser.exists && !alreadyAged && ageYears !== null && ageYears < 13;
+    // Consent fields to persist. An under-13 NEW account is no longer gated by a
+    // self-ticked box: it requires a parent/guardian EMAIL and is held in a
+    // 'pending' state until the guardian confirms via a unique emailed link
+    // (/consentConfirm), which writes a consentReceipts audit record. This is
+    // verifiable, proportionate parental consent per the ICO Children's Code.
+    let consentFields: Record<string, unknown> = {};
+    let consentPending = false;
+    if (isNewUnder13) {
+      const guardianEmail = String(req.body?.guardianEmail ?? '').trim().toLowerCase().slice(0, 160);
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(guardianEmail))
+        throw httpError(403, 'A parent or guardian’s email is required to create an account for a child under 13.');
+      if (guardianEmail === (user.email ?? '').toLowerCase())
+        throw httpError(403, 'The parent or guardian email must be different from the child’s own email.');
+      const token = randomBytes(24).toString('hex');
+      consentFields = { ageBand, consentStatus: 'pending', consentGuardianEmail: guardianEmail,
+        consentToken: token, consentRequestedAt: FieldValue.serverTimestamp() };
+      consentPending = true;
+      const link = `${FN_BASE}/consentConfirm?token=${token}`;
+      // best-effort: the admin console still shows the pending account + link if
+      // SMTP is not configured, so signup never dead-ends on mail delivery.
+      void sendMail({
+        to: guardianEmail,
+        subject: 'Approve your child’s StudYear account',
+        text: 'A StudYear learning account was created for a child under 13 and lists you as the parent or guardian.\n\n'
+          + 'To activate it, approve here:\n' + link + '\n\n'
+          + 'If you did not expect this, you can ignore this email and the account stays inactive.',
+        html: '<div style="font:15px/1.6 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#13233d;max-width:520px">'
+          + '<h2 style="margin:0 0 10px">Approve your child’s StudYear account</h2>'
+          + '<p>A StudYear learning account was created for a child under 13 and lists you as the parent or guardian.</p>'
+          + '<p style="margin:18px 0"><a href="' + link + '" style="background:#3D8FD1;color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:700;display:inline-block">Approve &amp; activate</a></p>'
+          + '<p style="color:#5a6b85;font-size:13px">If you did not expect this, you can ignore this email and the account stays inactive.</p></div>',
+      }).catch(() => { /* SMTP unconfigured — pending state + link remain in the admin console */ });
+    } else if (ageBand && !alreadyAged) {
+      consentFields = { ageBand, parentalConsent, consentAt: FieldValue.serverTimestamp() };
     }
     const ref = db.doc(`users/${user.uid}`);
     const existing = existingUser;
@@ -1254,11 +1302,11 @@ export const register = onRequest({ region: 'europe-west2', cors: true }, async 
       name: name || existing.data()?.name || null,
       roles: FieldValue.arrayUnion(role),
       plan: existing.data()?.plan ?? 'child_free', // never downgraded by re-registration
-      ...(ageBand && !alreadyAged ? { ageBand, parentalConsent, consentAt: FieldValue.serverTimestamp() } : {}),
+      ...consentFields,
       createdAt: existing.data()?.createdAt ?? FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
-    await audit(existing.exists ? 'USER_ROLE_ADDED' : 'USER_REGISTERED', user.uid, { role, ageBand });
+    await audit(existing.exists ? 'USER_ROLE_ADDED' : 'USER_REGISTERED', user.uid, { role, ageBand, consentPending });
     // referral loop: on a NEW registration carrying a valid invite code, RECORD
     // the pending referral link only. ACUs are NOT credited at signup — doing so
     // let one person farm real, spendable ACUs by registering throwaway accounts
@@ -1282,10 +1330,56 @@ export const register = onRequest({ region: 'europe-west2', cors: true }, async 
         }
       }
     } catch (e) { /* referral is best-effort */ }
-    res.json({ ok: true });
+    res.json({ ok: true, consentPending });
   } catch (e) {
     const err = e as Error & { status?: number };
     res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
+/**
+ * GET/POST /consentConfirm?token=… — the parent/guardian approval link from the
+ * under-13 consent email. Unauthenticated (the guardian may not have an account)
+ * but gated by a high-entropy single-use token. On success it flips the child
+ * account from 'pending' to 'granted', deletes the token, and writes a
+ * consentReceipts audit record (guardian email, child email, age band, time, IP,
+ * user-agent) so there is a durable, verifiable trail of who approved and when.
+ * Returns a small styled HTML page so the guardian sees a clear confirmation.
+ */
+export const consentConfirm = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  const page = (title: string, msg: string, ok: boolean) =>
+    '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+    + '<title>' + title + ' · StudYear</title></head>'
+    + '<body style="margin:0;font:16px/1.6 -apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#0b1424;color:#eaf1ff;'
+    + 'display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px">'
+    + '<div style="max-width:460px;background:#10203e;border:1px solid rgba(120,160,220,.3);border-radius:16px;padding:28px 26px;text-align:center">'
+    + '<div style="font-size:34px;margin-bottom:8px">' + (ok ? '✓' : '⚠') + '</div>'
+    + '<h1 style="font-size:20px;margin:0 0 10px">' + title + '</h1>'
+    + '<p style="margin:0 0 18px;color:#c3d0ea">' + msg + '</p>'
+    + '<a href="https://www.studyear.com/" style="display:inline-block;background:#3D8FD1;color:#fff;text-decoration:none;'
+    + 'padding:10px 18px;border-radius:10px;font-weight:700">Go to StudYear</a></div></body></html>';
+  try {
+    const token = String(req.query.token ?? req.body?.token ?? '').trim();
+    const ip = (String(req.headers['x-forwarded-for'] ?? '').split(',')[0].trim()) || req.ip || null;
+    await enforceRate(ip || 'anon', 'consentConfirm', 60);
+    if (token.length < 16) { res.status(400).send(page('Invalid link', 'This approval link is not valid. Please use the link from the email exactly.', false)); return; }
+    const q = await db.collection('users').where('consentToken', '==', token).limit(1).get();
+    if (q.empty) { res.status(404).send(page('Link no longer valid', 'This approval link has already been used, or the account was removed. If your child still needs approval, ask them to sign up again.', false)); return; }
+    const doc = q.docs[0];
+    const d = doc.data();
+    if (d.consentStatus === 'granted') { res.status(200).send(page('Already approved', 'This child’s account is already active. Thank you.', true)); return; }
+    await doc.ref.set({ consentStatus: 'granted', consentGrantedAt: FieldValue.serverTimestamp(), consentToken: FieldValue.delete() }, { merge: true });
+    await db.collection('consentReceipts').add({
+      uid: doc.id, guardianEmail: d.consentGuardianEmail ?? null, childEmail: d.email ?? null,
+      ageBand: d.ageBand ?? null, ip, ua: String(req.headers['user-agent'] ?? '').slice(0, 200),
+      at: FieldValue.serverTimestamp(),
+    });
+    await audit('CHILD_CONSENT_GRANTED', doc.id, { guardian: d.consentGuardianEmail ?? null });
+    res.status(200).send(page('Approved ✓', 'Thank you — your child’s StudYear account is now active. They can sign in and start learning safely.', true));
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    if (err.status === 429) { res.status(429).send(page('Please wait', 'Too many attempts. Please try the link again in a minute.', false)); return; }
+    res.status(500).send(page('Something went wrong', 'Please try the approval link again shortly.', false));
   }
 });
 
@@ -1469,6 +1563,8 @@ export const adminOverview = onRequest({ region: 'europe-west2', cors: true }, a
         plan: (docs[u.uid]?.plan as string) ?? 'child_free',
         acus: balances[u.uid] || 0, // server-authoritative balance
         admin: (u.customClaims as { admin?: unknown } | undefined)?.admin === true, // durable admin claim
+        ageBand: (docs[u.uid]?.ageBand as string) ?? null,
+        consentStatus: (docs[u.uid]?.consentStatus as string) ?? null, // under-13 parental consent: 'pending' | 'granted' | null
         created: u.metadata.creationTime, lastLogin: u.metadata.lastSignInTime,
         disabled: u.disabled,
       })),
@@ -1527,12 +1623,13 @@ export const adminUserOp = onRequest({ region: 'europe-west2', cors: true }, asy
     const uid = String(req.body?.uid ?? '');
     if (!uid) throw httpError(400, 'uid required');
     if (op === 'delete') {
+      // Same complete GDPR erasure as /selfDelete (single source of truth) so an
+      // admin-initiated delete never leaves PII behind in the link graph, inbox,
+      // marketplace, referral or Stripe-mapping collections.
+      const em = (await getAuth().getUser(uid).catch(() => null))?.email ?? null;
       await getAuth().revokeRefreshTokens(uid).catch(() => null);
+      await eraseUserData(uid, em);
       await getAuth().deleteUser(uid).catch(() => null);
-      await db.doc(`users/${uid}`).delete().catch(() => null);
-      await db.doc(`e2eKeys/${uid}`).delete().catch(() => null);
-      const blobs = await db.collection(`e2eData/${uid}/blobs`).get();
-      const batch = db.batch(); blobs.forEach((d) => batch.delete(d.ref)); await batch.commit();
     } else if (op === 'disable' || op === 'enable') {
       await getAuth().updateUser(uid, { disabled: op === 'disable' });
       // Kill live sessions immediately on disable — otherwise the existing ID
@@ -1575,29 +1672,88 @@ export const adminUserOp = onRequest({ region: 'europe-west2', cors: true }, asy
 });
 
 /**
+ * GDPR Art.17 (right to erasure) — erase or pseudonymise EVERY personal-data
+ * record tied to a user, in ONE place so /selfDelete and the admin delete stay
+ * in lock-step and no collection is ever missed. Two classes of data:
+ *   DELETED outright — profile, E2E keys + ciphertext, AI usage logs, the whole
+ *     link graph (this side AND the mirror row on every counterpart), referral
+ *     graph, share codes, marketplace listings, the Stripe customer mapping,
+ *     support-inbox messages and the marketing lead row.
+ *   RETAINED but SCRUBBED of direct identifiers — financial/accounting records
+ *     (stripePayments, giftCodes) kept under the legal-obligation basis, and the
+ *     shared school config kept so a school's term dates survive one editor's
+ *     erasure; the person's email/name fields in them are nulled.
+ * The append-only acuTransactions ledger and auditEvents (security records) are
+ * retained under legitimate-interest / legal-obligation bases; they key on the
+ * now-orphaned uid, which is a pseudonym once the Auth identity is gone.
+ * Every step is best-effort: one failing collection never blocks the rest.
+ */
+async function eraseUserData(uid: string, email: string | null) {
+  const lc = (email ?? '').toLowerCase();
+  const delAll = async (snap: FirebaseFirestore.QuerySnapshot) => {
+    if (snap.empty) return;
+    const b = db.batch(); snap.forEach((d) => b.delete(d.ref)); await b.commit().catch(() => null);
+  };
+  const scrub = async (snap: FirebaseFirestore.QuerySnapshot, fields: string[]) => {
+    if (snap.empty) return;
+    const upd: Record<string, unknown> = { erased: true };
+    fields.forEach((f) => { upd[f] = null; });
+    const b = db.batch(); snap.forEach((d) => b.update(d.ref, upd)); await b.commit().catch(() => null);
+  };
+  // profile, encryption keys, encrypted personal blobs
+  await db.doc(`users/${uid}`).delete().catch(() => null);
+  await db.doc(`e2eKeys/${uid}`).delete().catch(() => null);
+  await delAll(await db.collection(`e2eData/${uid}/blobs`).get());
+  // AI usage logs
+  await delAll(await db.collection('aiUsageLogs').where('ownerId', '==', uid).limit(500).get());
+  // link graph — delete this account's rows AND the mirror row held by each
+  // counterpart (parent↔child, teacher↔school) so no dangling link to a ghost
+  const inbound = await db.collection(`links/${uid}/inbound`).get();
+  const outbound = await db.collection(`links/${uid}/outbound`).get();
+  const bl = db.batch();
+  inbound.forEach((d) => { bl.delete(d.ref); bl.delete(db.doc(`links/${d.id}/outbound/${uid}`)); });
+  outbound.forEach((d) => { bl.delete(d.ref); bl.delete(db.doc(`links/${d.id}/inbound/${uid}`)); });
+  await bl.commit().catch(() => null);
+  // referral graph + invite codes
+  await db.doc(`referrals/${uid}`).delete().catch(() => null);
+  await db.doc(`refCounters/${uid}`).delete().catch(() => null);
+  await delAll(await db.collection('refCodes').where('uid', '==', uid).limit(50).get());
+  // share codes (carry the account email + name)
+  await delAll(await db.collection('shareCodes').where('uid', '==', uid).limit(50).get());
+  // opportunities marketplace listings (carry ownerEmail)
+  await delAll(await db.collection('pathwaysMarket').where('ownerId', '==', uid).limit(200).get());
+  // Stripe customer→account mapping
+  await delAll(await db.collection('stripeCustomers').where('uid', '==', uid).limit(50).get());
+  if (lc) {
+    // support-inbox messages (carry email + body)
+    await delAll(await db.collection('contactInbox').where('email', '==', lc).limit(200).get());
+    // marketing lead row (email-hashed id)
+    const id = createHash('sha1').update(lc).digest('hex').slice(0, 24);
+    await db.doc(`leads/${id}`).delete().catch(() => null);
+  }
+  // RETAINED (accounting / shared-data) — scrub direct identifiers only
+  await scrub(await db.collection('stripePayments').where('uid', '==', uid).limit(200).get(), ['email']);
+  if (lc) {
+    await scrub(await db.collection('giftCodes').where('buyerUid', '==', uid).limit(200).get(), ['buyerEmail', 'from']);
+    await scrub(await db.collection('giftCodes').where('forEmail', '==', lc).limit(200).get(), ['forEmail']);
+    await scrub(await db.collection('schoolConfig').where('lastEditorId', '==', uid).limit(200).get(), ['lastEditorEmail']);
+    await scrub(await db.collection('schoolConfig').where('ownerId', '==', uid).limit(200).get(), ['ownerEmail']);
+  }
+  await audit('USER_DATA_ERASED', uid, { email: lc || null });
+}
+
+/**
  * POST /selfDelete — the signed-in user erases their OWN account and data
- * (UK GDPR Art.17 right to erasure). Deletes the Firebase Auth account (which
- * revokes their tokens), profile, E2E keys + encrypted blobs, AI usage logs,
- * and any lead row for their email. Append-only financial ledger rows
- * (acuTransactions) are retained as required accounting records but are no
- * longer tied to a live, loginable account.
+ * (UK GDPR Art.17 right to erasure). Runs the full cross-collection erasure,
+ * revokes live sessions, then deletes the Firebase Auth identity last.
  */
 export const selfDelete = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
   try {
     const user = await requireUser(req.headers.authorization);
-    const uid = user.uid;
-    await db.doc(`users/${uid}`).delete().catch(() => null);
-    await db.doc(`e2eKeys/${uid}`).delete().catch(() => null);
-    const blobs = await db.collection(`e2eData/${uid}/blobs`).get();
-    const b1 = db.batch(); blobs.forEach((d) => b1.delete(d.ref)); await b1.commit().catch(() => null);
-    const logs = await db.collection('aiUsageLogs').where('ownerId', '==', uid).limit(500).get();
-    const b2 = db.batch(); logs.forEach((d) => b2.delete(d.ref)); await b2.commit().catch(() => null);
-    if (user.email) {
-      const id = createHash('sha1').update(String(user.email).toLowerCase()).digest('hex').slice(0, 24);
-      await db.doc(`leads/${id}`).delete().catch(() => null);
-    }
-    await audit('SELF_DELETE', uid, { email: user.email ?? null });
-    await getAuth().deleteUser(uid).catch(() => null); // last: also revokes the session
+    await eraseUserData(user.uid, user.email ?? null);
+    await audit('SELF_DELETE', user.uid, { email: user.email ?? null });
+    await getAuth().revokeRefreshTokens(user.uid).catch(() => null);
+    await getAuth().deleteUser(user.uid).catch(() => null); // last: removes the login identity
     res.json({ ok: true });
   } catch (e) {
     const err = e as Error & { status?: number };

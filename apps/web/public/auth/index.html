@@ -75,8 +75,13 @@
     </div>
     <div id="row-dob" style="display:none">
       <label for="dob">Date of birth</label>
-      <input id="dob" type="date" autocomplete="bday" max="2025-12-31">
+      <input id="dob" type="date" autocomplete="bday">
       <div class="note" style="font-size:12px;margin-top:2px">Used to keep the experience age-appropriate. Under-13s must be set up by a parent, guardian or school.</div>
+    </div>
+    <div id="row-guardian" style="display:none">
+      <label for="guardian-email">Parent or guardian’s email</label>
+      <input id="guardian-email" type="email" autocomplete="off" placeholder="grown-up@example.com">
+      <div class="note" style="font-size:12px;margin-top:2px">Because this account is for a child under 13, we’ll email a parent or guardian a link to approve it. The account stays inactive until they do.</div>
     </div>
     <label for="email">Email</label>
     <input id="email" type="email" autocomplete="email" placeholder="you@example.com">
@@ -179,11 +184,19 @@ function setMode(m){
   $('row-role').style.display=m==='up'&&!adminFlow?'block':'none';
   $('row-invite').style.display=m==='up'&&adminFlow?'block':'none';
   $('row-consent').style.display=m==='up'?'block':'none';
+  if(m!=='up'&&$('row-guardian'))$('row-guardian').style.display='none';
   $('go').textContent=m==='up'?'Create my account →':'Sign in →';
   $('pw').autocomplete=m==='up'?'new-password':'current-password';
 }
 $('t-in').onclick=function(){setMode('in')};
 $('t-up').onclick=function(){setMode('up')};
+/* DOB can't be in the future — set the cap to today (no stale hardcoded year) */
+try{$('dob').max=new Date().toISOString().slice(0,10);}catch(e){}
+/* Reveal the parent/guardian email as soon as the entered DOB is under 13, so
+   the verifiable-consent requirement is visible before they submit. */
+function _ageFromDob(d){var t=new Date(),b=new Date(d);if(isNaN(b))return -1;var a=t.getFullYear()-b.getFullYear();var m=t.getMonth()-b.getMonth();if(m<0||(m===0&&t.getDate()<b.getDate()))a--;return a;}
+function _syncGuardianRow(){try{var g=$('row-guardian');if(!g)return;var show=mode==='up'&&_ageFromDob($('dob').value)>=0&&_ageFromDob($('dob').value)<13;g.style.display=show?'block':'none';}catch(e){}}
+try{$('dob').addEventListener('input',_syncGuardianRow);$('dob').addEventListener('change',_syncGuardianRow);}catch(e){}
 
 // context banners
 var session=store('sy-session',null);
@@ -239,9 +252,17 @@ $('f').addEventListener('submit',async function(e){
     var age=(function(d){var t=new Date(),b=new Date(d);if(isNaN(b))return -1;var a=t.getFullYear()-b.getFullYear();var m=t.getMonth()-b.getMonth();if(m<0||(m===0&&t.getDate()<b.getDate()))a--;return a;})(dob);
     if(age<0||age>120){say('Enter a valid date of birth.','err');$('dob').focus();return}
     if(!$('agree-ck').checked){say('Please accept the Terms &amp; Privacy Policy and confirm you are 18+ or a parent/guardian.','err');$('agree-ck').focus();return}
-    // UK Children's Code / GDPR-K: an under-13 account must be set up with a
-    // parent/guardian/school — the consent checkbox is that attestation.
-    if(age<13&&!$('agree-ck').checked){say('An under-13 account must be created by a parent, guardian or school — please confirm the consent box.','err');return}
+    // UK Children's Code / GDPR-K: an under-13 account requires VERIFIABLE
+    // parental consent, not a self-ticked box. Collect a parent/guardian email;
+    // the server emails them a one-click approval link and holds the account
+    // inactive until they confirm.
+    var guardianEmail='';
+    if(age<13){
+      guardianEmail=(($('guardian-email')||{}).value||'').trim().toLowerCase();
+      $('row-guardian').style.display='block';
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(guardianEmail)){say('Enter a parent or guardian’s email — we’ll send them a link to approve this child account.','err');$('guardian-email').focus();return}
+      if(guardianEmail===email){say('The parent or guardian’s email must be different from the child’s own email.','err');$('guardian-email').focus();return}
+    }
     var parentalConsent=$('agree-ck').checked;
     var role=pickedRole;
     // Admin accounts are provisioned internally (admin console / server-side
@@ -271,10 +292,11 @@ $('f').addEventListener('submit',async function(e){
       var _prov=false;
       if(window.SYCloud){ try{await SYCloud.whenReady();}catch(e){}
         for(var _a=0;_a<3&&!_prov;_a++){
-          try{_prov=!!await SYCloud.signUp(email,pw,name,role,{dob:dob,parentalConsent:parentalConsent});}catch(err){_prov=false;}
+          try{_prov=await SYCloud.signUp(email,pw,name,role,{dob:dob,parentalConsent:parentalConsent,guardianEmail:guardianEmail});}catch(err){_prov=false;}
           if(!_prov)await new Promise(function(r){setTimeout(r,700*(_a+1));});
         }
       }
+      var _consentPending=!!(_prov&&_prov.consentPending);
       try{ if(_prov)localStorage.removeItem('sy-cloud-pending:'+email); else localStorage.setItem('sy-cloud-pending:'+email,'1'); }catch(e){}
       try{ if(_prov)sessionStorage.setItem('sy-cloud-justprovisioned','1'); }catch(e){} // confirm cloud setup on the first console page
     }catch(err){}
@@ -289,6 +311,21 @@ $('f').addEventListener('submit',async function(e){
         localStorage.setItem('sy-partner-refs',JSON.stringify(rf));
       }
     }catch(err){}
+    /* Under-13 awaiting verifiable parental consent: do NOT sign the child in.
+       Hold them on a clear, friendly notice — the account activates only once the
+       guardian clicks the emailed approval link. */
+    if(typeof _consentPending!=='undefined'&&_consentPending){
+      try{if(window.SYTrack)SYTrack.signup({method:role});}catch(e){}
+      var card=document.querySelector('.card')||document.body;
+      card.innerHTML='<div style="text-align:center;padding:8px 4px">'
+        +'<div style="font-size:40px;margin-bottom:6px">📧</div>'
+        +'<h2 style="margin:0 0 10px">Almost there — ask a grown-up</h2>'
+        +'<p style="color:#c3d0ea;line-height:1.6;margin:0 0 14px">We’ve emailed <b>'+(guardianEmail.replace(/</g,'&lt;'))+'</b> a link to approve this account. '
+        +'Your StudYear won’t switch on until a parent or guardian clicks it.</p>'
+        +'<p style="color:#8ea2c4;font-size:13px;margin:0 0 18px">Already approved? Come back and sign in.</p>'
+        +'<a href="./" style="display:inline-block;background:#3D8FD1;color:#fff;text-decoration:none;padding:10px 18px;border-radius:10px;font-weight:700">Back to sign in</a></div>';
+      return;
+    }
     save('sy-session',{name:name,email:email,role:role,ts:new Date().toISOString()});
     try{if(window.SYTrack)SYTrack.signup({method:role});}catch(e){}
     // new students onboard by building their personalised profile first

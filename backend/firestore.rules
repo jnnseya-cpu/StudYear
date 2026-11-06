@@ -35,12 +35,17 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if signedIn() && (uid() == userId || isPlatformAdmin() || isGuardianOf(userId));
       // role(s), tenant & plan are server-assigned; a client may not seed them on
-      // create (else a fresh account self-assigns roles:['platform_admin'])
+      // create (else a fresh account self-assigns roles:['platform_admin']).
+      // The age band and the under-13 consent fields are ALSO server-only — a
+      // child must not be able to self-grant parental consent (consentStatus) or
+      // forge/clear the approval token by writing their own user doc directly.
       allow create: if signedIn() && uid() == userId
-        && !request.resource.data.keys().hasAny(['role', 'roles', 'tenantId', 'plan']);
-      // …nor self-elevate on update
+        && !request.resource.data.keys().hasAny(['role', 'roles', 'tenantId', 'plan',
+            'ageBand', 'consentStatus', 'consentToken', 'consentGuardianEmail', 'consentGrantedAt', 'consentRequestedAt']);
+      // …nor self-elevate or self-approve on update
       allow update: if signedIn() && uid() == userId
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'roles', 'tenantId', 'plan']);
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'roles', 'tenantId', 'plan',
+            'ageBand', 'consentStatus', 'consentToken', 'consentGuardianEmail', 'consentGrantedAt', 'consentRequestedAt']);
       allow delete: if false; // GDPR deletion runs server-side with retention checks
     }
 
