@@ -256,6 +256,7 @@
 <script src="../vocab.js"></script>
 <script src="../invite.js"></script>
 <script src="../ai.js"></script>
+<script src="../curriculum-ext.js"></script>
 <script src="../export.js"></script>
 <script src="../exam.js"></script>
 <script src="../homework.js"></script>
@@ -5012,16 +5013,31 @@ function curricFor(topic,level){
   const t=" "+String(topic).toLowerCase().trim();
   const hit=CURRIC_ALIAS.find(a=>t.includes(a[0]));
   if(!hit)return null;
-  const subj=CURRICULUM[hit[1]];if(!subj)return null;
-  /* CURRICULUM only holds GCSE/A-level spec structures. A primary child must
-     NOT be grounded on the GCSE spec (quadratics, moles, Cells & organs) — return
-     null so the course is built from the level+stageStyle prompt alone / the
-     honest "no verified outline" card, never a GCSE module list. */
+  const key=hit[1];
+  const subj=CURRICULUM[key];
+  const EXT=(window.SYCURRIC_EXT||{});
+  /* CURRICULUM holds only GCSE/A-level spec structures. A primary child must NOT
+     be grounded on the GCSE spec (quadratics, moles, Cells & organs). Where we
+     now hold a VERIFIED national-curriculum structure (KS1/KS2 core subjects),
+     ground on that; EYFS/11+-only prep stays AI-built via the honest card. */
   const isPrimary=/eyfs|reception|nursery|key stage [12]|\bks[12]\b|infant|junior|primary|11 ?\+|year ?[1-6]\b|years? ?[1-6]/i.test(String(level));
-  if(isPrimary)return null;
+  if(isPrimary){
+    if(/eyfs|reception|nursery/i.test(String(level)))return null; // EYFS framework, not the knowledge NC
+    const ks=/key stage 1|\bks1\b|infant|year ?[12]\b|years? ?1\b|years? ?1[-–]2\b/i.test(String(level))?'ks1':'ks2';
+    const pm=EXT.primary&&EXT.primary[ks]&&EXT.primary[ks][key];
+    if(pm)return {key:key,modules:pm,tier:(ks==='ks1'?'Key Stage 1':'Key Stage 2')+' national curriculum'};
+    return null;
+  }
   const wantA=/a2|a-level|alevel|as\b|higher|baccalaureate|university/i.test(level);
-  const mods=wantA?(subj.alevel||subj.gcse):(subj.gcse||subj.alevel);
-  return mods?{key:hit[1],modules:mods,tier:wantA&&subj.alevel?"A-level":"GCSE"}:null;
+  const extA=EXT.alevel&&EXT.alevel[key];
+  if(wantA){
+    const aMods=(subj&&subj.alevel)||extA;              // inline AQA wins, else verified extension
+    if(aMods)return {key:key,modules:aMods,tier:"A-level"};
+    const gMods=subj&&subj.gcse;                         // fall back to GCSE structure if that is all we have
+    return gMods?{key:key,modules:gMods,tier:"GCSE"}:null;
+  }
+  const gMods=(subj&&subj.gcse)||(subj&&subj.alevel)||extA;
+  return gMods?{key:key,modules:gMods,tier:"GCSE"}:null;
 }
 function cgStatic(subject,level,board,cap,focus){
   const found=curricFor(subject,level);
