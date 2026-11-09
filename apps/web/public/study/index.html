@@ -4810,7 +4810,19 @@ document.getElementById("cg-go").onclick=()=>{
          HTML so it displays properly when reopened from Saved Resources) */
       try{autoSaveMine({type:"AI Course",title:cap+(focus?" — "+focus:"")+" — AI course",subj:subject||"",level:level,body:(window.SYAI&&SYAI.render?SYAI.render(txt):txt)});}catch(e){}
       const sv=document.getElementById("cg-savecourse");if(sv)sv.onclick=()=>{saveMine({type:"Revision Notes",title:cap+(focus?" — "+focus:"")+" — AI course",subj:"",level:level,body:txt},"co","Course saved",[])};
-    }).catch(e=>{toast("Live AI error — using the verified outline");cgStatic(subject,level,board,cap,focus)});
+    }).catch(e=>{
+      /* Surface the REAL reason instead of a blanket "Live AI error", so an ACU
+         gate, an email-verify gate and a provider outage are told apart — then
+         fall back to the verified specification outline either way. */
+      var msg=String((e&&e.message)||'');
+      var friendly;
+      if(/enough ACUs|top up|Gateway 402|insufficient/i.test(msg)) friendly='Not enough ACUs for a live AI course — showing the verified outline. Top up in My account, or an admin can grant ACUs.';
+      else if(/verify your email/i.test(msg)) friendly=msg;
+      else if(/Gateway 5|temporarily unavailable|Failed to fetch|timeout|unreachable|Reconnect/i.test(msg)) friendly='Live AI is busy right now — showing the verified outline. Try again in a moment.';
+      else friendly='Live AI error ('+(msg.slice(0,90)||'unknown')+') — showing the verified outline.';
+      toast(friendly);
+      cgStatic(subject,level,board,cap,focus);
+    });
     return;
   }
   cgStatic(subject,level,board,cap,focus);

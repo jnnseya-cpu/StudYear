@@ -808,7 +808,7 @@ async function aiCall(provider: AiProvider, key: string, body: AiBody): Promise<
         generationConfig: { maxOutputTokens: maxTokens, temperature },
       }),
     });
-    if (!r.ok) throw httpError(502, `gemini ${r.status}`);
+    if (!r.ok) throw httpError(502, `gemini ${r.status} ${(await r.text().catch(() => '')).slice(0, 180)}`);
     const j = (await r.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
     return { text: (j.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? '').join(''), model };
   }
@@ -827,7 +827,7 @@ async function aiCall(provider: AiProvider, key: string, body: AiBody): Promise<
         messages: [{ role: 'user', content }],
       }),
     });
-    if (!r.ok) throw httpError(502, `anthropic ${r.status}`);
+    if (!r.ok) throw httpError(502, `anthropic ${r.status} ${(await r.text().catch(() => '')).slice(0, 180)}`);
     const j = (await r.json()) as { content?: { type: string; text?: string }[] };
     return { text: (j.content ?? []).filter((b) => b.type === 'text').map((b) => b.text ?? '').join(''), model };
   }
@@ -838,15 +838,22 @@ async function aiCall(provider: AiProvider, key: string, body: AiBody): Promise<
          ? { type: 'file', file: { filename: 'upload.pdf', file_data: body.image } }
          : { type: 'image_url', image_url: { url: body.image } }]
     : String(body.user ?? '');
-  const r = await fetchT('https://api.openai.com/v1/chat/completions', {
+  const messages = [...(body.system ? [{ role: 'system', content: body.system }] : []), { role: 'user', content: userContent }];
+  const callOpenAI = (tokenField: 'max_tokens' | 'max_completion_tokens') => fetchT('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-    body: JSON.stringify({
-      model, max_tokens: maxTokens, temperature,
-      messages: [...(body.system ? [{ role: 'system', content: body.system }] : []), { role: 'user', content: userContent }],
-    }),
+    body: JSON.stringify({ model, [tokenField]: maxTokens, temperature, messages }),
   });
-  if (!r.ok) throw httpError(502, `openai ${r.status}`);
+  let r = await callOpenAI('max_tokens');
+  // Newer OpenAI models reject `max_tokens` and require `max_completion_tokens`.
+  // On that specific 400, retry once with the new field so a model upgrade in the
+  // vault/env never silently breaks every AI tool.
+  if (r.status === 400) {
+    const errText = await r.text().catch(() => '');
+    if (/max_completion_tokens|'?max_tokens'?/i.test(errText)) r = await callOpenAI('max_completion_tokens');
+    else throw httpError(502, `openai 400 ${errText.slice(0, 180)}`);
+  }
+  if (!r.ok) throw httpError(502, `openai ${r.status} ${(await r.text().catch(() => '')).slice(0, 180)}`);
   const j = (await r.json()) as { choices?: { message?: { content?: string } }[] };
   return { text: j.choices?.[0]?.message?.content ?? '', model };
 }
