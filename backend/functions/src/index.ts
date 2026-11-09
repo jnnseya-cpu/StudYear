@@ -1518,6 +1518,22 @@ export const adminBootstrap = onRequest({ region: 'europe-west2', cors: true }, 
     // depends on the (bypassable) email allow-list, and survives even if
     // emailVerified is ever cleared.
     try { await getAuth().setCustomUserClaims(uid, { admin: true }); } catch (e) { /* non-fatal */ }
+    try { await getAuth().revokeRefreshTokens(uid); } catch (e) { /* non-fatal */ } // force a fresh token carrying the claim
+    // ONE recovery restores EVERY founding admin: grant the same durable claim to
+    // any other allow-listed admin account that already exists (claim ONLY — no
+    // password or verification change to those accounts). This is what lets the
+    // owner, once locked out by the new verified-email requirement, get all their
+    // admin accounts — including inbox-backed Gmail ones — working again from a
+    // single invite-gated bootstrap, with no Firebase console access needed.
+    for (const other of ADMIN_EMAILS) {
+      if (other === email) continue;
+      try {
+        const ou = await getAuth().getUserByEmail(other);
+        await getAuth().setCustomUserClaims(ou.uid, { admin: true });
+        await getAuth().revokeRefreshTokens(ou.uid);
+        await audit('ADMIN_CLAIM_BACKFILLED', ou.uid, { email: other, via: email });
+      } catch (e) { /* that admin account doesn't exist yet — skip */ }
+    }
     await audit('ADMIN_BOOTSTRAP', uid, { email, created, authed: authedAdmin });
     void alertOwner('admin_bootstrap', 'Admin password (re)set via adminBootstrap', { email, created, viaAuthedAdmin: authedAdmin });
     res.json({ ok: true, email, created });
