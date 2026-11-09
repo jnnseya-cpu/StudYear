@@ -174,7 +174,13 @@ function drawVault(){
   }
   st.textContent='Loading current status…';
   vaultCall({op:'status'}).then(function(j){
-    if(!j||!j.ok){st.innerHTML='<span style="color:#f0a0a0">'+esc((j&&j.error)||'Could not load key status')+'</span>';return;}
+    if(!j||!j.ok){
+      var err=(j&&j.error)||'Could not load key status';
+      var needsAdmin=/not verified|admin only|not an admin|admin email/i.test(err);
+      st.innerHTML='<span style="color:#f0a0a0">'+esc(err)+'</span>'+
+        (needsAdmin?'<div style="margin-top:8px;color:var(--ink-2);font-size:13px">This admin account isn’t recognised by the backend yet. Open the <a href="../" style="color:var(--gold-300,#e6c65b);font-weight:600">main admin console</a> and use <b>Set admin password</b> with your invite code to restore access, then reload this page.</div>':'');
+      return;
+    }
     st.innerHTML='<span style="color:var(--good)">● Secure vault connected — values are stored on the server and never shown here.</span>';
     box.innerHTML=VAULT_GROUPS.map(function(g){
       return '<div style="margin-top:16px"><div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px">'+esc(g.title)+'</div>'+

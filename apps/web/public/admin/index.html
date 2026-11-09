@@ -1645,7 +1645,18 @@ function cloudPull(retries){retries=retries||0;
     return fetch(cloudApi()+'/adminOverview',{headers:{Authorization:'Bearer '+tk}})
       .then(function(r){return r.json().then(function(j){return {status:r.status,j:j}})}).then(function(res){
         var j=res.j;
-        if(!j||!j.ok){cloudStatus('⚠ Platform sync failed (HTTP '+res.status+')'+(res.status===403?' — this admin account is not verified or not allow-listed for the backend.':(' — '+((j&&j.error)||'backend unreachable'))),'err');return;}
+        if(!j||!j.ok){
+          /* A 403 here means the signed-in account isn't recognised as admin by
+             the backend yet (e.g. email not verified and no admin claim). Offer
+             the self-serve rescue directly, so a locked-out owner can restore the
+             durable admin claim with their invite code without a dead end. */
+          if(res.status===403){
+            cloudStatus('⚠ This admin account isn’t verified for the backend yet. Set your admin password with your invite code to restore access — it grants a durable admin claim to all your admin accounts.','err',{label:'Set admin password',onclick:adminRepairPassword});
+          } else {
+            cloudStatus('⚠ Platform sync failed (HTTP '+res.status+') — '+((j&&j.error)||'backend unreachable'),'err',{label:'Try again',onclick:function(){cloudPull(0);}});
+          }
+          return;
+        }
         window.CLOUD=j;
         /* merge platform accounts into the registry (never duplicating) */
         var us=store('sy-users',[]);var added=0;
