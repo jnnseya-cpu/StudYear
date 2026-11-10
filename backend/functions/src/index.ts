@@ -1479,15 +1479,17 @@ const INVITE_CODE_ENABLED = !!ADMIN_INVITE_HASH && ADMIN_INVITE_HASH !== BURNED_
 
 /**
  * POST /adminBootstrap { email, password, code }
- * Set (or create) the CLOUD password for a LOGIN-ONLY admin address that has no
- * inbox — so the owner can establish or repair it without the Firebase console
- * or a verification email. Deliberately unauthenticated (the admin can't sign
- * in yet), but gated three ways: (1) the email must be on BOTH the admin
- * allow-list and the login-only ADMIN_VERIFY_EXEMPT list — it can never touch a
- * normal user or an inbox-backed admin; (2) the caller must present the admin
- * invite code (same shared secret that provisions admins), compared in constant
- * time; (3) hard per-day rate limit. Marks the account emailVerified so it
- * needs no inbox. Same threat model as the existing invite-code admin signup.
+ * Set (or create) the CLOUD password for an admin allow-list address and stamp
+ * the durable admin claim — so the owner can establish or repair ANY of their
+ * admin accounts (the login-only admin@studyear.com OR an inbox-backed Gmail
+ * admin that isn't email-verified yet) without the Firebase console. Gated three
+ * ways: (1) the email must be on the admin allow-list (ADMIN_EMAILS) — it can
+ * never touch a normal user; (2) the caller is an already-authenticated admin,
+ * OR presents the admin invite code (the same fresh shared secret that provisions
+ * admins, ADMIN_INVITE_HASH, compared in constant time — the burned public value
+ * never works); (3) a hard per-day rate limit. The invite code is the admin
+ * trust anchor, so widening from the login-only address to the whole allow-list
+ * keeps the existing threat model: only the code holder can provision an admin.
  */
 export const adminBootstrap = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
   try {
@@ -1495,8 +1497,8 @@ export const adminBootstrap = onRequest({ region: 'europe-west2', cors: true }, 
     const password = String(req.body?.password ?? '');
     const code = String(req.body?.code ?? '');
     await enforceRate('adminBootstrap', 'adminBootstrap', 20);
-    if (!ADMIN_EMAILS.includes(email) || !ADMIN_VERIFY_EXEMPT.includes(email))
-      throw httpError(403, 'not a login-only admin address');
+    if (!ADMIN_EMAILS.includes(email))
+      throw httpError(403, 'not an admin address');
     if (password.length < 6) throw httpError(400, 'password must be at least 6 characters');
     // Authorisation, closed against the public-repo takeover (CVE-class P0):
     //  (a) an already-authenticated admin may always (re)provision — safe recovery
