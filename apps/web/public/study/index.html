@@ -847,6 +847,7 @@
       <div style="margin-top:14px"><button class="btn" id="il-go">Generate Lesson</button></div>
       <div class="note" id="il-cost">Uses <b id="il-price"></b> ACUs per lesson. <span id="il-bal"></span></div>
     </div>
+    <div id="course-nav" style="display:none"></div>
     <div class="card c7">
       <h3>Your lesson</h3><div class="sub" id="il-sub">Enter a topic and generate a lesson to begin.</div>
       <div id="il-out"></div>
@@ -3828,6 +3829,7 @@ function applyJump(){
   if(!j)return;sessionStorage.removeItem("sy-jump");
   try{
     if(j.h==="#lesson"){
+      window.__courseJump=j.course||null; // consumed by il-go to show the module-nav bar
       setSelect("il-subj",j.subj);
       const t=document.getElementById("il-topic");if(t&&j.topic)t.value=j.topic;
       const g=document.getElementById("il-go");
@@ -4457,6 +4459,22 @@ function faithGuidance(f){return ({
   })();
   syncFaithRow();
 })();
+/* Typing a fresh topic by hand drops any course context, so a standalone lesson
+   never shows the module-nav bar from a previous course. */
+(function(){var t=document.getElementById("il-topic");if(t)t.addEventListener("input",function(){window.__courseJump=null;try{renderCourseNav(null);}catch(e){}});})();
+/* Resume the last generated course on load, so leaving the tab or reloading the
+   page brings the outline back instead of forcing a regenerate. */
+(function resumeActiveCourse(){
+  try{
+    var ac=store.get("activeCourse",null);if(!ac||!ac.html)return;
+    var out=document.getElementById("cg-out");if(!out)return;
+    if(out.querySelector(".empty")||!out.querySelector("[data-cj]")){
+      out.innerHTML=ac.html;
+      var sub=document.getElementById("cg-sub");if(sub)sub.textContent=(ac.cap||"Your course")+" · resumed — continue any module below";
+      if(typeof wireCourse==="function")wireCourse(ac.subj||"",ac.cap||"Course");
+    }
+  }catch(e){}
+})();
 /* ---- personalised lesson picks: StudYear learns you — weakest subjects from
    your quiz history + diagnostic, plus the thread you last pulled ---- */
 (function(){
@@ -4752,7 +4770,9 @@ document.getElementById("il-go").onclick=()=>{
   const topic=document.getElementById("il-topic").value.trim();
   if(!topic){toast("Enter a topic to learn about");return}
   if(!spendAcus(IL_PRICE,"Interactive lesson: "+topic))return;
+  const __cj=window.__courseJump;window.__courseJump=null; // course context for the module-nav bar (one-shot)
   const level=document.getElementById("il-level").value,subj=document.getElementById("il-subj").value;
+  try{renderCourseNav(__cj||null);}catch(e){}
   _L=buildLesson(topic,level,subj);_ls={i:0,correct:0,practiceTotal:0,quizScore:0,confidence:null};
   addPoints(10);touchStreak();
   /* keep every lesson in the library automatically — refreshed once the live AI
@@ -4940,19 +4960,48 @@ function courseModuleActions(subj,moduleTitle){
     <a class="btn sm" href="#create" data-cj="quiz::${esc(moduleTitle)}">✅ Check quiz</a>
   </div>`;
 }
+/* The sticky module-navigation bar shown on the lesson while working THROUGH a
+   course, so a learner never gets stranded after a module/quiz and never has to
+   regenerate: it shows "Module i of N" with "‹ Course outline" and "Next module ›".
+   Driven by window.__courseJump, a one-shot context the course buttons set. */
+function renderCourseNav(ctx){
+  var el=document.getElementById("course-nav");if(!el)return;
+  if(!ctx||!ctx.titles||!ctx.titles.length||ctx.i<0){el.style.display="none";el.innerHTML="";return;}
+  var i=ctx.i,N=ctx.titles.length,next=(i+1<N)?ctx.titles[i+1]:null;
+  el.style.display="block";
+  el.innerHTML='<div class="card" style="background:rgba(201,162,39,.09);border-color:rgba(201,162,39,.4);margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">'+
+    '<div style="flex:1;min-width:170px"><div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)">'+esc(ctx.cap||"Your course")+'</div><b>Module '+(i+1)+' of '+N+'</b></div>'+
+    '<button class="btn sm ghost" id="cn-back" type="button">‹ Course outline</button>'+
+    (next?'<button class="btn sm solid" id="cn-next" type="button">Next module ›</button>':'<span class="note" style="font-style:normal;color:var(--good)">Final module 🎉</span>')+'</div>';
+  var back=document.getElementById("cn-back");if(back)back.onclick=function(){location.hash="#course";};
+  var nb=document.getElementById("cn-next");if(nb&&next)nb.onclick=function(){
+    window.__courseJump={cap:ctx.cap,titles:ctx.titles,i:i+1,subj:ctx.subj};
+    var t=document.getElementById("il-topic");if(t)t.value=next;
+    var sb=document.getElementById("il-subj");if(sb&&ctx.subj){try{setSelect("il-subj",ctx.subj);}catch(e){}}
+    var g=document.getElementById("il-go");if(g)g.click();
+    try{document.getElementById("course-nav").scrollIntoView({behavior:"smooth",block:"start"});}catch(e){}
+  };
+}
 function wireCourse(subj,courseKey){
   const out=document.getElementById("cg-out");
+  /* module titles in order = the "Learn this module" buttons, so the lesson flow
+     can step Module 1 → 2 → 3 without returning here to regenerate */
+  const titles=[...out.querySelectorAll("[data-cj]")].filter(a=>a.dataset.cj.indexOf("lesson::")===0).map(a=>a.dataset.cj.split("::").slice(1).join("::"));
   out.querySelectorAll("[data-cj]").forEach(a=>{a.onclick=(ev)=>{
     if(ev&&ev.preventDefault)ev.preventDefault();
-    const [kind,topic]=a.dataset.cj.split("::");
+    const parts=a.dataset.cj.split("::"),kind=parts[0],topic=parts.slice(1).join("::");
     const h=kind==="lesson"?"#lesson":kind==="tutor"?"#tutor":"#create";
+    const idx=titles.indexOf(topic);
     // go:true → the target tool AUTO-STARTS (the course promises each module
     // "opens into a real lesson/tutor/quiz" — not a form to fill in again).
-    try{sessionStorage.setItem("sy-jump",JSON.stringify({h:h,subj:subj,topic:topic,go:true}))}catch(e){}
+    try{sessionStorage.setItem("sy-jump",JSON.stringify({h:h,subj:subj,topic:topic,go:true,course:{cap:courseKey,titles:titles,i:idx,subj:subj}}))}catch(e){}
     // navigate robustly: setting the hash fires applyHash (showTab + applyJump);
     // if the hash is already there, call applyHash directly so it still runs.
     if(location.hash!==h){location.hash=h;} else {try{applyHash()}catch(e){}}
   }});
+  /* remember this as the ACTIVE course so "‹ Course outline" and a page reload
+     both bring it back — no regenerating. Stores the rendered outline. */
+  try{store.set("activeCourse",{cap:courseKey,subj:subj,titles:titles,html:out.innerHTML,when:Date.now()});}catch(e){}
   /* per-module progress ticks, persisted per course */
   const key="courseDone:"+courseKey;
   const done=store.get(key,{});
