@@ -4402,16 +4402,59 @@ function faithGuidance(f){return ({
   fsel.innerHTML='<option value="">Select your school’s faith…</option>'+faiths.map(function(f){return '<option value="'+f.v+'">'+esc(f.label)+'</option>'}).join("");
   var saved=(PROFILE&&PROFILE.schoolFaith)||"";
   if(saved){try{fsel.value=saved;}catch(e){}}
+  /* map a school's stored faith (a reFaiths label, or already a key) → faith key */
+  function labelToFaithKey(s){
+    s=String(s||"").trim();if(!s)return "";
+    for(var i=0;i<faiths.length;i++){if(faiths[i].v===s.toLowerCase())return faiths[i].v;}
+    for(var j=0;j<faiths.length;j++){if(faiths[j].label.toLowerCase()===s.toLowerCase())return faiths[j].v;}
+    return "";
+  }
   function syncFaithRow(){
     var row=document.getElementById("cg-faith-row");if(!row)return;
     var subjSel=(document.getElementById("cg-subject")||{}).value||"";
-    row.style.display=isREsubject(subjSel)?"block":"none";
+    var show=isREsubject(subjSel);
+    row.style.display=show?"block":"none";
+    if(!show)return;
+    /* When the school sets the faith, the student never chooses it — hide the
+       selector and show which tradition their RE is taught through. */
+    var managed=!!(window.PROFILE&&PROFILE.schoolFaithManaged&&PROFILE.schoolFaith);
+    var note=document.getElementById("cg-faith-managed");
+    if(managed){
+      fsel.style.display="none";
+      var lbl=(faiths.filter(function(x){return x.v===PROFILE.schoolFaith})[0]||{label:PROFILE.schoolFaith}).label;
+      if(!note){note=document.createElement("div");note.id="cg-faith-managed";note.className="note";note.style.cssText="font-size:12.5px;margin-top:4px;color:var(--gold-300)";fsel.parentNode.insertBefore(note,fsel.nextSibling);}
+      note.textContent="🏫 Set by your school: "+lbl+" — RE is taught through this.";note.style.display="block";
+    }else{
+      fsel.style.display="";if(note)note.style.display="none";
+    }
   }
   var subjEl=document.getElementById("cg-subject");
   if(subjEl)subjEl.addEventListener("change",syncFaithRow);
   fsel.addEventListener("change",function(){
     try{var p=window.SY.get("profile",{})||{};p.schoolFaith=fsel.value;window.SY.set("profile",p);if(window.PROFILE)PROFILE.schoolFaith=fsel.value;}catch(e){}
   });
+  /* Inherit the faith from the student's LINKED SCHOOL (same-device store first,
+     then the cloud school config for cross-device) so a Catholic school's pupils
+     never see the choice — RE is simply taught through the school's tradition. */
+  function applyManagedFaith(key){
+    if(!key)return;
+    try{var p=window.SY.get("profile",{})||{};if(p.schoolFaith!==key||!p.schoolFaithManaged){p.schoolFaith=key;p.schoolFaithManaged=true;window.SY.set("profile",p);}}catch(e){}
+    if(window.PROFILE){PROFILE.schoolFaith=key;PROFILE.schoolFaithManaged=true;}
+    try{fsel.value=key;}catch(e){}
+    syncFaithRow();
+  }
+  (function resolveSchoolFaith(){
+    try{
+      var link=window.SY.get("schoolLink",null);var code=link&&link.code;if(!code)return;
+      var local=window.SY.schoolGet?window.SY.schoolGet(code,"faith",""):"";
+      if(local){applyManagedFaith(labelToFaithKey(local));return;}
+      if(window.SYCloud&&SYCloud.schoolConfigGet){
+        SYCloud.schoolConfigGet(code,"faith",(window.SY.session&&SY.session.email)).then(function(jj){
+          if(jj&&jj.value)applyManagedFaith(labelToFaithKey(jj.value));
+        }).catch(function(){});
+      }
+    }catch(e){}
+  })();
   syncFaithRow();
 })();
 /* ---- personalised lesson picks: StudYear learns you — weakest subjects from

@@ -111,6 +111,10 @@ if(!data.name){data.name=data.name||(SY.get('profile',{}).name)||S.name||''}
 /* ---------- schema ---------- */
 var SCHOOL_TYPES=['Primary','Secondary','Sixth Form','College','University','Academy','Independent School','International School','Online School','Special Education'];
 var OWNERSHIP=['Public','Private','Charity','Religious'];
+/* UK Religious Education is taught through the school's religious character.
+   These labels MUST match SYCURRIC_EXT.reFaiths so the student side maps them to
+   the right RE tradition. */
+var FAITH_OPTS=['Community / non-faith (locally-agreed syllabus)','Roman Catholic','Church of England','Other Christian','Jewish','Muslim / Islamic','Hindu','Sikh','Multi-faith / interfaith'];
 var COUNTRIES=['United Kingdom','Ireland','United States','Canada','Australia','France','Germany','Spain','UAE','Nigeria','Ghana','Kenya','South Africa','India','Other'];
 var CURRICULA=['UK National Curriculum','GCSE','A-Level','IB','American','Cambridge','French','Other'];
 var SUBSCRIPTIONS=['Free trial','Essential','Professional','Trust / Enterprise','Custom'];
@@ -145,6 +149,7 @@ var SECTIONS=[
    {k:'website',l:'School website',t:'text',ph:'https://…'},
    {k:'type',l:'School type',t:'select',opts:SCHOOL_TYPES,req:1},
    {k:'ownership',l:'Ownership',t:'select',opts:OWNERSHIP},
+   {k:'faith',l:'Religious character (sets RE for your students)',t:'select',opts:FAITH_OPTS},
    {k:'regNumber',l:'Registration number',t:'text'},
    {k:'govNumber',l:'Government school number',t:'text'},
    {k:'ofsted',l:'Ofsted number (UK)',t:'text'},
@@ -473,6 +478,10 @@ $('save').onclick=function(){
   var profile=SY.get('profile',{});profile.name=name;if(data.logo)profile.photo=data.logo;if(data.banner)profile.cover=data.banner;SY.set('profile',profile);
   try{var us=JSON.parse(localStorage.getItem('sy-users'))||[];var me=us.find(function(u){return u.email===S.email&&u.role==='school'});if(me){me.name=name;localStorage.setItem('sy-users',JSON.stringify(us))}S.name=name;localStorage.setItem('sy-session',JSON.stringify(S))}catch(e){}
   SY.schoolSet(code,'name',name);if(data.logo)SY.schoolSet(code,'logo',data.logo);
+  /* publish the school's religious character so every linked student's RE is
+     taught through it — locally AND to the cloud (cross-device inheritance). */
+  SY.schoolSet(code,'faith',data.faith||'');
+  try{ if(window.SYCloud&&SYCloud.schoolConfigSet){ SYCloud.schoolConfigSet(code,'faith',data.faith||'',name,(S&&S.email)||'').catch(function(){}); } }catch(e){}
   /* publish curriculum to the shared school store so linked teachers pre-fill their sections from it */
   SY.schoolSet(code,'curriculum',{subjectsOffered:data.subjectsOffered||'',yearGroups:data.yearGroups||'',examBoards:data.examBoards||'',curriculumType:data.curriculumType||[]});
   SY.log('settings','School registration saved',name+' · '+(data.type||''));
