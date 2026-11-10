@@ -108,6 +108,13 @@ jobs:
         run: npx firebase-tools deploy --only storage --project ${{ inputs.target }} --non-interactive --force
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+      - name: Ensure founding-admin claims (self-healing lockout guard)
+        if: steps.deploy.outcome == 'success'
+        continue-on-error: true
+        run: node backend/functions/scripts/ensure-admin-claims.cjs
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+          ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
       - name: Smoke-test the deployment
         if: steps.deploy.outcome == 'success'
         run: node scripts/verify-deployment.mjs
