@@ -1855,35 +1855,65 @@ type TrendOpportunity = {
   topic: string; label: string; subject: string | null; source: string;
   current: number; baseline: number; total: number; lift: number; z: number; class: string;
   score: number; confidence: number; breakdown: { demand: number; fit: number; intent: number; timing: number; readiness: number };
-  grades: Record<string, number>; weeks: number[];
+  grades: Record<string, number>; weeks: number[]; families: string[];
   brief: { topic: string; subject: string | null; source: string; audience: string; intent: string; objective: string; angle: string; allowed_channels: string[] };
 };
+/** Per-source-family calibrated quality (0–100) for the confidence model. First-
+ *  party leads are a high-intent owned signal; public feeds are attention/
+ *  discovery signals that corroborate but rank lower on their own. */
+const TREND_SOURCE_QUALITY: Record<string, number> = { leads: 85, google_trends: 55, wikimedia: 50 };
 async function detectTrends(): Promise<TrendOpportunity[]> {
   const now = Date.now();
   const WEEK = 7 * 86400000;
   const WINDOWS = 9; // index 0 = current 7 days, 1..8 = baseline weeks
-  const snap = await db.collection('leads').orderBy('createdAt', 'desc').limit(5000).get();
-  const weeksByTopic: Record<string, number[]> = {};
+  // family → topic → weekly counts, so a topic can carry independent evidence
+  // from first-party leads AND public feeds (corroboration lifts confidence).
+  const fam: Record<string, Record<string, number[]>> = {};
   const meta: Record<string, { subject: string; source: string; grades: Record<string, number> }> = {};
-  snap.forEach((d) => {
+  function bucket(family: string, topic: string, subject: string, source: string, wk: number, value: number) {
+    if (!fam[family]) fam[family] = {};
+    if (!fam[family][topic]) fam[family][topic] = new Array(WINDOWS).fill(0);
+    if (!meta[topic]) meta[topic] = { subject, source, grades: {} };
+    fam[family][topic][wk] += value;
+  }
+  // first-party leads (high-intent owned signal)
+  const leadsSnap = await db.collection('leads').orderBy('createdAt', 'desc').limit(5000).get();
+  leadsSnap.forEach((d) => {
     const v = d.data();
-    const t = (v.createdAt as { toMillis?: () => number } | undefined)?.toMillis?.();
-    if (!t) return;
-    const wk = Math.floor((now - t) / WEEK);
-    if (wk < 0 || wk >= WINDOWS) return;
+    const t = (v.createdAt as { toMillis?: () => number } | undefined)?.toMillis?.(); if (!t) return;
+    const wk = Math.floor((now - t) / WEEK); if (wk < 0 || wk >= WINDOWS) return;
     const subject = String(v.subject ?? '').trim().toLowerCase();
     const source = String(v.source ?? 'free').trim().toLowerCase();
-    const topic = subject || source;
-    if (!topic) return;
-    if (!weeksByTopic[topic]) { weeksByTopic[topic] = new Array(WINDOWS).fill(0); meta[topic] = { subject, source, grades: {} }; }
-    weeksByTopic[topic][wk]++;
+    const topic = subject || source; if (!topic) return;
+    bucket('leads', topic, subject, source, wk, 1);
     const g = String(v.grade ?? '').trim(); if (g) meta[topic].grades[g] = (meta[topic].grades[g] || 0) + 1;
+  });
+  // public keyless feeds, normalised into trendSignals { source, topic, subject?, observedAt, value }
+  const sigSnap = await db.collection('trendSignals').orderBy('observedAt', 'desc').limit(8000).get();
+  sigSnap.forEach((d) => {
+    const v = d.data();
+    const t = (v.observedAt as { toMillis?: () => number } | undefined)?.toMillis?.(); if (!t) return;
+    const wk = Math.floor((now - t) / WEEK); if (wk < 0 || wk >= WINDOWS) return;
+    const family = String(v.source ?? 'public').trim().toLowerCase();
+    const subject = String(v.subject ?? '').trim().toLowerCase();
+    const topic = String(v.topic ?? subject).trim().toLowerCase(); if (!topic) return;
+    bucket(family, topic, subject, family, wk, Math.max(1, Number(v.value) || 1));
   });
   const log1p = (x: number) => Math.log(1 + x);
   const median = (a: number[]) => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); const m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
   const mad = (a: number[], med: number) => median(a.map((x) => Math.abs(x - med)));
   const cap = (s: string) => s.replace(/\b\w/g, (c) => c.toUpperCase());
-  return Object.entries(weeksByTopic).map(([topic, weeks]) => {
+  const topics = new Set<string>();
+  Object.values(fam).forEach((byTopic) => Object.keys(byTopic).forEach((t) => topics.add(t)));
+  const out: TrendOpportunity[] = [];
+  topics.forEach((topic) => {
+    const famsHere = Object.keys(fam).filter((f) => fam[f][topic]);
+    const totals: Record<string, number> = {};
+    famsHere.forEach((f) => { totals[f] = fam[f][topic].reduce((s, x) => s + x, 0); });
+    // primary family drives the movement maths, by a fixed priority so a spiky
+    // discovery feed isn't masked by a high-volume but stable one
+    const primary = (['leads', 'google_trends', 'wikimedia'].find((f) => famsHere.includes(f))) || famsHere[0];
+    const weeks = fam[primary][topic];
     const c = weeks[0];
     const hist = weeks.slice(1);
     const logHist = hist.map(log1p);
@@ -1892,7 +1922,7 @@ async function detectTrends(): Promise<TrendOpportunity[]> {
     const lift = log1p(c) - log1p(baseline);
     const z = (log1p(c) - medLog) / Math.max(1.4826 * mad(logHist, medLog), 0.2);
     const prior = median(hist);
-    const total = weeks.reduce((s, x) => s + x, 0);
+    const total = famsHere.reduce((s, f) => s + totals[f], 0);
     let klass: string;
     if (z >= 2 && c >= 3) klass = (c > prior * 2) ? 'breaking' : 'trending';
     else if (c > 0 && prior > 0 && Math.abs(c - prior) <= Math.max(1, prior * 0.25)) klass = 'persistent';
@@ -1900,14 +1930,20 @@ async function detectTrends(): Promise<TrendOpportunity[]> {
     else klass = 'flat';
     const demand = Math.max(0, Math.min(100, 50 + 12 * z));
     const fit = meta[topic].subject ? 90 : 60;
-    const intent = 85;
+    const intent = famsHere.includes('leads') ? 85 : 55; // a lead is intent; a public feed is attention
     const timing = klass === 'breaking' ? 90 : klass === 'trending' ? 75 : klass === 'persistent' ? 60 : 30;
     const readiness = 80;
     const score = 0.25 * demand + 0.25 * fit + 0.20 * intent + 0.15 * timing + 0.15 * readiness;
+    // confidence with real corroboration: distinct families active in the CURRENT window
+    const corrFams = famsHere.filter((f) => fam[f][topic][0] > 0);
+    const nFam = corrFams.length;
+    const corroboration = nFam >= 3 ? 100 : nFam === 2 ? 80 : 0;
+    const sourceQuality = famsHere.reduce((s, f) => s + (TREND_SOURCE_QUALITY[f] ?? 50), 0) / famsHere.length;
     const periods = hist.filter((x) => x > 0).length;
     const coverage = Math.min(100, (periods / 8) * 100);
     const freshness = c > 0 ? 100 : 0;
-    const confidence = Math.min(69, 0.35 * 60 + 0.25 * 0 + 0.20 * coverage + 0.20 * freshness);
+    let confidence = 0.35 * sourceQuality + 0.25 * corroboration + 0.20 * coverage + 0.20 * freshness;
+    if (nFam < 2) confidence = Math.min(69, confidence); // single source family is capped at 69 (spec §5)
     const label = meta[topic].subject ? cap(meta[topic].subject) : cap(meta[topic].source);
     const brief = {
       topic, subject: meta[topic].subject || null, source: meta[topic].source,
@@ -1917,14 +1953,15 @@ async function detectTrends(): Promise<TrendOpportunity[]> {
       angle: `Capture rising demand for ${label}: a short SEO blog post linking to studyear.com/free.`,
       allowed_channels: ['seo', 'organic_social'],
     };
-    return {
+    out.push({
       topic, label, subject: meta[topic].subject || null, source: meta[topic].source,
       current: c, baseline, total, lift: Number(lift.toFixed(3)), z: Number(z.toFixed(2)), class: klass,
       score: Number(score.toFixed(1)), confidence: Number(confidence.toFixed(1)),
       breakdown: { demand: Math.round(demand), fit, intent, timing, readiness },
-      grades: meta[topic].grades, weeks, brief,
-    };
-  }).filter((o) => o.total >= 2).sort((a, b) => (b.score - a.score) || (b.z - a.z));
+      grades: meta[topic].grades, weeks, families: famsHere, brief,
+    });
+  });
+  return out.filter((o) => o.total >= 2).sort((a, b) => (b.score - a.score) || (b.z - a.z));
 }
 
 /**
@@ -2013,9 +2050,111 @@ export const trendAutopilot = onSchedule({ schedule: '0 3 * * *', timeZone: 'Eur
       seoScore: 0, published: true, date: new Date().toISOString(), reviewed: new Date().toISOString(),
       authorEmail: null, autoGenerated: true, topic: o.topic, trendScore: o.score, updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
-    await ref.set({ topic: o.topic, label: o.label, lastPublishedAt: FieldValue.serverTimestamp(), lastPostId: id, lastScore: o.score, count: FieldValue.increment(1) }, { merge: true });
+    await ref.set({ topic: o.topic, label: o.label, lastPublishedAt: FieldValue.serverTimestamp(), lastPostId: id, lastSlug: slug, lastScore: o.score, count: FieldValue.increment(1) }, { merge: true });
     await audit('TREND_AUTOPILOT_PUBLISH', 'system', { topic: o.topic, id, score: o.score, class: o.class });
     published++;
+  }
+});
+
+/** Education relevance for the public keyless feeds (so broad trends are filtered
+ *  down to StudYear's actual market before they ever influence detection). */
+const TREND_EDU_SUBJECTS = ['mathematics', 'maths', 'english', 'biology', 'chemistry', 'physics', 'science', 'history', 'geography', 'french', 'spanish', 'german', 'computer science', 'computing', 'business', 'economics', 'psychology', 'sociology', 'religious studies', 'art', 'music', 'law', 'politics'];
+const TREND_EDU_KEYWORDS = ['gcse', 'igcse', 'a-level', 'a level', 'as level', 'ks1', 'ks2', 'ks3', 'sats', '11+', 'eleven plus', 'revision', 'exam', 'past paper', 'mark scheme', 'ucas', 'results day', 'a-levels', 'gcses', 'tutor', 'homework', 'curriculum', 'bitesize'];
+const TREND_WIKI_ARTICLES: Record<string, string> = { mathematics: 'Mathematics', english: 'English_language', biology: 'Biology', chemistry: 'Chemistry', physics: 'Physics', history: 'History', geography: 'Geography', 'computer science': 'Computer_science', economics: 'Economics', psychology: 'Psychology' };
+
+/**
+ * trendCollect — keyless public-feed collector (invisible, scheduled). Widens
+ * detection beyond first-party leads using feeds that need NO credentials:
+ *   • Google Trends "Trending Now" RSS (GB) — news-led rising searches, filtered
+ *     to education relevance (discovery signal).
+ *   • Wikimedia per-article pageviews for core subjects — attention corroboration.
+ * Each run writes normalised observations to `trendSignals`, deduped by
+ * (source, topic, day). detectTrends merges these as independent source families,
+ * so a topic corroborated by a public feed lifts above the single-family
+ * confidence cap. All public records; no PII; no keys.
+ */
+export const trendCollect = onSchedule({ schedule: '0 */6 * * *', timeZone: 'Europe/London', region: 'europe-west2' }, async () => {
+  if ((process.env.TREND_COLLECT ?? '1') === '0') return;
+  const day = new Date().toISOString().slice(0, 10);
+  const writes: { source: string; topic: string; subject: string | null; value: number; title: string }[] = [];
+  // 1) Google Trends Trending Now (GB) RSS
+  try {
+    const url = process.env.TREND_RSS_URL ?? 'https://trends.google.com/trending/rss?geo=GB';
+    const r = await fetch(url, { headers: { 'User-Agent': 'StudYear-TrendBot/1.0 (+studyear.com)' } });
+    if (r.ok) {
+      const xml = await r.text();
+      for (const it of xml.split(/<item>/i).slice(1, 60)) {
+        const tm = it.match(/<title>([\s\S]*?)<\/title>/i);
+        const title = tm ? tm[1].replace(/<!\[CDATA\[|\]\]>/g, '').trim() : '';
+        if (!title) continue;
+        const lc = title.toLowerCase();
+        const subject = TREND_EDU_SUBJECTS.find((s) => lc.includes(s)) || '';
+        if (!subject && !TREND_EDU_KEYWORDS.some((k) => lc.includes(k))) continue; // not education → ignore
+        writes.push({ source: 'google_trends', topic: (subject || lc).slice(0, 60), subject: subject || null, value: 1, title });
+      }
+    }
+  } catch (e) { void audit('TREND_COLLECT_ERROR', 'system', { feed: 'google_trends', err: (e as Error).message }); }
+  // 2) Wikimedia per-article pageviews for core subjects (lags ~1–2 days)
+  try {
+    const end = new Date(Date.now() - 2 * 86400000), start = new Date(Date.now() - 8 * 86400000);
+    const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, '');
+    for (const [subj, article] of Object.entries(TREND_WIKI_ARTICLES)) {
+      try {
+        const u = `https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/all-agents/${article}/daily/${fmt(start)}/${fmt(end)}`;
+        const rr = await fetch(u, { headers: { 'User-Agent': 'StudYear-TrendBot/1.0 (+studyear.com)' } });
+        if (!rr.ok) continue;
+        const j = (await rr.json()) as { items?: { views?: number }[] };
+        const views = (j.items ?? []).reduce((s, x) => s + (Number(x.views) || 0), 0);
+        if (views > 0) writes.push({ source: 'wikimedia', topic: subj, subject: subj, value: Math.max(1, Math.round(views / 10000)), title: article });
+      } catch { /* skip this subject */ }
+    }
+  } catch (e) { void audit('TREND_COLLECT_ERROR', 'system', { feed: 'wikimedia', err: (e as Error).message }); }
+  if (writes.length) {
+    const batch = db.batch();
+    for (const w of writes.slice(0, 450)) {
+      const key = `${w.source}__${w.topic.replace(/[^a-z0-9]+/gi, '_').slice(0, 60)}__${day}`;
+      batch.set(db.doc(`trendSignals/${key}`), { source: w.source, topic: w.topic, subject: w.subject, value: w.value, title: w.title.slice(0, 120), market: 'GB', observedAt: FieldValue.serverTimestamp(), day }, { merge: true });
+    }
+    await batch.commit().catch(() => null);
+  }
+  await audit('TREND_COLLECT', 'system', { signals: writes.length });
+});
+
+/**
+ * trendMeasure — the invisible measurement loop (scheduled). For each autopilot
+ * post that is past its outcome window, it compares first-party leads for the
+ * topic in the window BEFORE vs AFTER publication and records the post's blog
+ * views, writing an outcome verdict back onto the `trendActions` row. This is the
+ * spec's measure-and-adapt evidence: a positive topic can be trusted sooner, a
+ * negative one held back — no UI, fully automatic.
+ */
+export const trendMeasure = onSchedule({ schedule: '0 4 * * *', timeZone: 'Europe/London', region: 'europe-west2' }, async () => {
+  if ((process.env.TREND_MEASURE ?? '1') === '0') return;
+  const WINDOW = (Number(process.env.TREND_MEASURE_WINDOW_DAYS) || 7) * 86400000;
+  const now = Date.now();
+  const acts = await db.collection('trendActions').limit(200).get();
+  for (const d of acts.docs) {
+    const a = d.data();
+    const pubAt = (a.lastPublishedAt as { toMillis?: () => number } | undefined)?.toMillis?.();
+    if (!pubAt || now - pubAt < WINDOW) continue;           // need a full post-window of data
+    if (a.measuredPostId && a.measuredPostId === a.lastPostId) continue; // already measured this post
+    const topic = String(a.topic || ''); if (!topic) continue;
+    const since = new Date(pubAt - WINDOW), until = new Date(pubAt + WINDOW);
+    const leadsSnap = await db.collection('leads').where('createdAt', '>=', since).where('createdAt', '<=', until).limit(5000).get();
+    let before = 0, after = 0;
+    leadsSnap.forEach((ld) => {
+      const v = ld.data();
+      const tpc = (String(v.subject ?? '').trim().toLowerCase()) || (String(v.source ?? '').trim().toLowerCase());
+      if (tpc !== topic) return;
+      const t = (v.createdAt as { toMillis?: () => number } | undefined)?.toMillis?.() || 0;
+      if (t < pubAt) before++; else after++;
+    });
+    let views = 0;
+    try { const bv = await db.doc(`blogViews/${a.lastSlug || a.lastPostId}`).get(); views = Number(bv.data()?.count) || 0; } catch { /* no views doc yet */ }
+    const delta = after - before;
+    const verdict = (before + after) < 3 ? 'insufficient' : delta > 0 ? 'positive' : delta < 0 ? 'negative' : 'flat';
+    await d.ref.set({ outcome: { postId: a.lastPostId, leadsBefore: before, leadsAfter: after, delta, views, verdict, measuredAt: FieldValue.serverTimestamp() }, measuredPostId: a.lastPostId }, { merge: true });
+    await audit('TREND_MEASURE', 'system', { topic, postId: a.lastPostId, before, after, views, verdict });
   }
 });
 

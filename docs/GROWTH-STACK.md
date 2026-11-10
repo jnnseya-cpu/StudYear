@@ -43,6 +43,16 @@ blog post via `aiProxy` and publishes it to the owned blog surface, pointing at
 keyless/deterministic. The admin-only `trendIntel` read endpoint exists for
 inspection but is not surfaced in any UI.
 
+Two more invisible scheduled jobs complete the loop: **`trendCollect`** (every
+6h) pulls keyless public feeds — Google Trends "Trending Now" RSS (GB) and
+Wikimedia per-article pageviews for core subjects — filters them to education
+relevance, and writes `trendSignals`; `detectTrends` merges these as independent
+source families so a corroborated topic lifts above the single-family confidence
+cap of 69. **`trendMeasure`** (daily) compares first-party leads for a published
+topic before vs after publication and records blog views, writing an outcome
+verdict to `trendActions` (the measure-and-adapt evidence). All env-gated
+(`TREND_COLLECT`, `TREND_MEASURE`), no PII, no keys.
+
 **Owner-only tools (appear only when `SY.session.role === 'admin'`):**
 - **📅 Content calendar** — a rolling 28-idea acquisition calendar (every angle
   points at `studyear.com/free`); AI-writes today's short-video script or a
