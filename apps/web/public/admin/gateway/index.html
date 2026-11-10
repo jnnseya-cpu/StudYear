@@ -167,6 +167,33 @@ function vaultPill(info){
   if(info.source==='env')return '<span class="status on" style="color:var(--gold-300);border-color:rgba(77,157,224,.4)">● set · deploy'+(info.hint?' · '+esc(info.hint):'')+'</span>';
   return '<span class="status off">not set</span>';
 }
+/* In-place admin recovery (no need to leave the vault page). Sets the cloud
+   password + durable admin claim for the signed-in allow-listed admin via
+   /adminBootstrap, gated by the ops invite code, then signs in fresh so the new
+   claim is carried. Surfaces the EXACT backend result so a disabled invite path
+   ("admin provisioning is disabled") is visible rather than a silent failure. */
+function gatewayRepairAdmin(){
+  var email=(window.SY&&SY.session&&SY.session.email)||'';
+  var st=$('vault-status');
+  if(!email){if(st)st.innerHTML='<span style="color:#f0a0a0">Sign in as your admin account first.</span>';return;}
+  var code=prompt('Ops invite code for '+email+':')||'';
+  var pw=prompt('Set/confirm a cloud password for '+email+' (at least 6 characters):');
+  if(pw==null)return;
+  if(String(pw).length<6){if(st)st.innerHTML='<span style="color:#f0a0a0">Password must be at least 6 characters.</span>';return;}
+  if(st)st.textContent='Restoring admin access…';
+  Promise.resolve((window.SYCloud&&SYCloud.token)?SYCloud.token(email).catch(function(){return null;}):null).then(function(tk){
+    var headers={'Content-Type':'application/json'};if(tk)headers['Authorization']='Bearer '+tk;
+    return fetch(cloudApi()+'/adminBootstrap',{method:'POST',headers:headers,body:JSON.stringify({email:email,password:pw,code:code.trim()})});
+  }).then(function(r){return r.json().then(function(j){return {status:r.status,j:j};});}).then(function(res){
+    if(!res.j||!res.j.ok){
+      if(st)st.innerHTML='<span style="color:#f0a0a0">⚠ Couldn’t restore access: '+esc((res.j&&res.j.error)||('HTTP '+res.status))+'</span>'+
+        '<div style="margin-top:6px;color:var(--ink-3);font-size:12px">If this says “admin provisioning is disabled”, the ADMIN_INVITE_HASH secret isn’t set on the backend — tell your engineer and they’ll enable the email-verify path instead.</div>';
+      return;
+    }
+    if(st)st.innerHTML='<span style="color:var(--good)">✓ Admin access restored — signing you in…</span>';
+    Promise.resolve(SYCloud.reauth?SYCloud.reauth(email,pw):(SYCloud.signIn?SYCloud.signIn(email,pw):null)).then(function(){setTimeout(function(){location.reload();},800);});
+  }).catch(function(){if(st)st.innerHTML='<span style="color:#f0a0a0">⚠ Couldn’t reach the backend to restore access. Try again in a moment.</span>';});
+}
 function drawVault(){
   var box=$('vault-groups'),st=$('vault-status');if(!box)return;
   if(!window.SYCloud||!cloudApi()){
@@ -176,9 +203,11 @@ function drawVault(){
   vaultCall({op:'status'}).then(function(j){
     if(!j||!j.ok){
       var err=(j&&j.error)||'Could not load key status';
-      var needsAdmin=/not verified|admin only|not an admin|admin email/i.test(err);
+      var needsAdmin=/not verified|admin only|not an admin|admin email|admin address/i.test(err);
       st.innerHTML='<span style="color:#f0a0a0">'+esc(err)+'</span>'+
-        (needsAdmin?'<div style="margin-top:8px;color:var(--ink-2);font-size:13px">This admin account isn’t recognised by the backend yet. Open the <a href="../" style="color:var(--gold-300,#e6c65b);font-weight:600">main admin console</a> and use <b>Set admin password</b> with your invite code to restore access, then reload this page.</div>':'');
+        (needsAdmin?'<div style="margin-top:10px;color:var(--ink-2);font-size:13px">This admin account isn’t recognised by the backend yet. Restore it here with your ops invite code — <b>'+esc((window.SY&&SY.session&&SY.session.email)||'this account')+'</b> has no inbox, so this is how it’s verified.</div>'+
+          '<div style="margin-top:8px"><button id="gw-repair" class="btn sm solid" type="button">Set admin password &amp; restore access</button></div>':'');
+      if(needsAdmin){var rb=document.getElementById('gw-repair');if(rb)rb.onclick=gatewayRepairAdmin;}
       return;
     }
     st.innerHTML='<span style="color:var(--good)">● Secure vault connected — values are stored on the server and never shown here.</span>';
