@@ -1843,6 +1843,91 @@ export const adminLeadMark = onRequest({ region: 'europe-west2', cors: true }, a
 });
 
 /**
+ * Trend detection — the deterministic core shared by the admin read endpoint and
+ * the invisible autopilot. Reads the first-party demand signal (free-tool lead
+ * captures tagged by subject/source/grade/time) and applies the spec's §5 maths:
+ * per-topic log-lift, a robust MAD anomaly z-score over complete weekly windows,
+ * a 0–100 opportunity score (25/25/20/15/15) and a confidence score (single
+ * source family capped at 69). No AI, no new credentials. Returns ranked
+ * opportunities, highest score first.
+ */
+type TrendOpportunity = {
+  topic: string; label: string; subject: string | null; source: string;
+  current: number; baseline: number; total: number; lift: number; z: number; class: string;
+  score: number; confidence: number; breakdown: { demand: number; fit: number; intent: number; timing: number; readiness: number };
+  grades: Record<string, number>; weeks: number[];
+  brief: { topic: string; subject: string | null; source: string; audience: string; intent: string; objective: string; angle: string; allowed_channels: string[] };
+};
+async function detectTrends(): Promise<TrendOpportunity[]> {
+  const now = Date.now();
+  const WEEK = 7 * 86400000;
+  const WINDOWS = 9; // index 0 = current 7 days, 1..8 = baseline weeks
+  const snap = await db.collection('leads').orderBy('createdAt', 'desc').limit(5000).get();
+  const weeksByTopic: Record<string, number[]> = {};
+  const meta: Record<string, { subject: string; source: string; grades: Record<string, number> }> = {};
+  snap.forEach((d) => {
+    const v = d.data();
+    const t = (v.createdAt as { toMillis?: () => number } | undefined)?.toMillis?.();
+    if (!t) return;
+    const wk = Math.floor((now - t) / WEEK);
+    if (wk < 0 || wk >= WINDOWS) return;
+    const subject = String(v.subject ?? '').trim().toLowerCase();
+    const source = String(v.source ?? 'free').trim().toLowerCase();
+    const topic = subject || source;
+    if (!topic) return;
+    if (!weeksByTopic[topic]) { weeksByTopic[topic] = new Array(WINDOWS).fill(0); meta[topic] = { subject, source, grades: {} }; }
+    weeksByTopic[topic][wk]++;
+    const g = String(v.grade ?? '').trim(); if (g) meta[topic].grades[g] = (meta[topic].grades[g] || 0) + 1;
+  });
+  const log1p = (x: number) => Math.log(1 + x);
+  const median = (a: number[]) => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); const m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+  const mad = (a: number[], med: number) => median(a.map((x) => Math.abs(x - med)));
+  const cap = (s: string) => s.replace(/\b\w/g, (c) => c.toUpperCase());
+  return Object.entries(weeksByTopic).map(([topic, weeks]) => {
+    const c = weeks[0];
+    const hist = weeks.slice(1);
+    const logHist = hist.map(log1p);
+    const medLog = median(logHist);
+    const baseline = Math.max(0, Math.round(Math.exp(medLog) - 1));
+    const lift = log1p(c) - log1p(baseline);
+    const z = (log1p(c) - medLog) / Math.max(1.4826 * mad(logHist, medLog), 0.2);
+    const prior = median(hist);
+    const total = weeks.reduce((s, x) => s + x, 0);
+    let klass: string;
+    if (z >= 2 && c >= 3) klass = (c > prior * 2) ? 'breaking' : 'trending';
+    else if (c > 0 && prior > 0 && Math.abs(c - prior) <= Math.max(1, prior * 0.25)) klass = 'persistent';
+    else if (c < prior) klass = 'declining';
+    else klass = 'flat';
+    const demand = Math.max(0, Math.min(100, 50 + 12 * z));
+    const fit = meta[topic].subject ? 90 : 60;
+    const intent = 85;
+    const timing = klass === 'breaking' ? 90 : klass === 'trending' ? 75 : klass === 'persistent' ? 60 : 30;
+    const readiness = 80;
+    const score = 0.25 * demand + 0.25 * fit + 0.20 * intent + 0.15 * timing + 0.15 * readiness;
+    const periods = hist.filter((x) => x > 0).length;
+    const coverage = Math.min(100, (periods / 8) * 100);
+    const freshness = c > 0 ? 100 : 0;
+    const confidence = Math.min(69, 0.35 * 60 + 0.25 * 0 + 0.20 * coverage + 0.20 * freshness);
+    const label = meta[topic].subject ? cap(meta[topic].subject) : cap(meta[topic].source);
+    const brief = {
+      topic, subject: meta[topic].subject || null, source: meta[topic].source,
+      audience: meta[topic].subject ? `${label} learners and their parents` : 'Prospective StudYear learners',
+      intent: `rising interest in ${label}`,
+      objective: 'qualified free-tool leads and sign-ups',
+      angle: `Capture rising demand for ${label}: a short SEO blog post linking to studyear.com/free.`,
+      allowed_channels: ['seo', 'organic_social'],
+    };
+    return {
+      topic, label, subject: meta[topic].subject || null, source: meta[topic].source,
+      current: c, baseline, total, lift: Number(lift.toFixed(3)), z: Number(z.toFixed(2)), class: klass,
+      score: Number(score.toFixed(1)), confidence: Number(confidence.toFixed(1)),
+      breakdown: { demand: Math.round(demand), fit, intent, timing, readiness },
+      grades: meta[topic].grades, weeks, brief,
+    };
+  }).filter((o) => o.total >= 2).sort((a, b) => (b.score - a.score) || (b.z - a.z));
+}
+
+/**
  * GET /trendIntel — Trend Intelligence (admin-only), the StudYear-native slice of
  * the Trend Intelligence build spec. It reads the FIRST-PARTY demand signal that
  * is server-readable under StudYear's end-to-end-encrypted design — free-tool
@@ -1861,77 +1946,76 @@ export const adminLeadMark = onRequest({ region: 'europe-west2', cors: true }, a
 export const trendIntel = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
   try {
     const admin = await requireAdmin(req.headers.authorization);
-    const now = Date.now();
-    const WEEK = 7 * 86400000;
-    const WINDOWS = 9; // index 0 = current 7 days, 1..8 = baseline weeks
-    const snap = await db.collection('leads').orderBy('createdAt', 'desc').limit(5000).get();
-    const weeksByTopic: Record<string, number[]> = {};
-    const meta: Record<string, { subject: string; source: string; grades: Record<string, number> }> = {};
-    snap.forEach((d) => {
-      const v = d.data();
-      const t = (v.createdAt as { toMillis?: () => number } | undefined)?.toMillis?.();
-      if (!t) return;
-      const wk = Math.floor((now - t) / WEEK);
-      if (wk < 0 || wk >= WINDOWS) return;
-      const subject = String(v.subject ?? '').trim().toLowerCase();
-      const source = String(v.source ?? 'free').trim().toLowerCase();
-      const topic = subject || source;
-      if (!topic) return;
-      if (!weeksByTopic[topic]) { weeksByTopic[topic] = new Array(WINDOWS).fill(0); meta[topic] = { subject, source, grades: {} }; }
-      weeksByTopic[topic][wk]++;
-      const g = String(v.grade ?? '').trim(); if (g) meta[topic].grades[g] = (meta[topic].grades[g] || 0) + 1;
-    });
-    const log1p = (x: number) => Math.log(1 + x);
-    const median = (a: number[]) => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); const m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
-    const mad = (a: number[], med: number) => median(a.map((x) => Math.abs(x - med)));
-    const cap = (s: string) => s.replace(/\b\w/g, (c) => c.toUpperCase());
-    const opportunities = Object.entries(weeksByTopic).map(([topic, weeks]) => {
-      const c = weeks[0];
-      const hist = weeks.slice(1);
-      const logHist = hist.map(log1p);
-      const medLog = median(logHist);
-      const baseline = Math.max(0, Math.round(Math.exp(medLog) - 1));
-      const lift = log1p(c) - log1p(baseline);
-      const z = (log1p(c) - medLog) / Math.max(1.4826 * mad(logHist, medLog), 0.2);
-      const prior = median(hist);
-      const total = weeks.reduce((s, x) => s + x, 0);
-      let klass: string;
-      if (z >= 2 && c >= 3) klass = (c > prior * 2) ? 'breaking' : 'trending';
-      else if (c > 0 && prior > 0 && Math.abs(c - prior) <= Math.max(1, prior * 0.25)) klass = 'persistent';
-      else if (c < prior) klass = 'declining';
-      else klass = 'flat';
-      const demand = Math.max(0, Math.min(100, 50 + 12 * z));
-      const fit = meta[topic].subject ? 90 : 60;     // a named subject is squarely in-offer; a raw tool/source is weaker fit
-      const intent = 85;                              // a captured lead is a high-intent action, not mere attention
-      const timing = klass === 'breaking' ? 90 : klass === 'trending' ? 75 : klass === 'persistent' ? 60 : 30;
-      const readiness = 80;                           // StudYear can generate a resource/blog/landing for any topic
-      const score = 0.25 * demand + 0.25 * fit + 0.20 * intent + 0.15 * timing + 0.15 * readiness;
-      const periods = hist.filter((x) => x > 0).length;
-      const coverage = Math.min(100, (periods / 8) * 100);
-      const freshness = c > 0 ? 100 : 0;
-      const confidence = Math.min(69, 0.35 * 60 + 0.25 * 0 + 0.20 * coverage + 0.20 * freshness);
-      const label = meta[topic].subject ? cap(meta[topic].subject) : cap(meta[topic].source);
-      const brief = {
-        topic, subject: meta[topic].subject || null, source: meta[topic].source,
-        audience: meta[topic].subject ? `${label} learners and their parents` : 'Prospective StudYear learners',
-        intent: `rising interest in ${label}`,
-        objective: 'qualified free-tool leads and sign-ups',
-        angle: `Capture rising demand for ${label}: refresh/create a free ${label} resource and a short blog post, link both to studyear.com/free.`,
-        allowed_channels: ['seo', 'organic_social'],
-      };
-      return {
-        topic, label, subject: meta[topic].subject || null, source: meta[topic].source,
-        current: c, baseline, total, lift: Number(lift.toFixed(3)), z: Number(z.toFixed(2)), class: klass,
-        score: Number(score.toFixed(1)), confidence: Number(confidence.toFixed(1)),
-        breakdown: { demand: Math.round(demand), fit, intent, timing, readiness },
-        grades: meta[topic].grades, weeks, brief,
-      };
-    }).filter((o) => o.total >= 2).sort((a, b) => (b.score - a.score) || (b.z - a.z));
+    const opportunities = await detectTrends();
     await audit('TREND_INTEL_READ', admin.uid, { topics: opportunities.length });
     res.json({ ok: true, generatedAt: new Date().toISOString(), windowDays: 7, baselineWeeks: 8, opportunities: opportunities.slice(0, 40) });
   } catch (e) {
     const err = e as Error & { status?: number };
     res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
+/**
+ * trendAutopilot — the INVISIBLE activation loop (no UI, no owner action). A
+ * scheduled job runs trend detection and, for the top qualifying opportunity
+ * (genuinely rising, score ≥ threshold, not in a per-topic cooldown), generates
+ * an SEO blog post via the host AI provider chain and publishes it to the owned
+ * blog surface, pointing at the free tools — exactly the spec's detect → brief →
+ * draft → activate-on-owned-surface flow, embedded and automatic. Safety rails:
+ * a kill switch (TREND_AUTOPILOT=0), a per-run cap, a per-topic cooldown, dedup
+ * + audit in `trendActions`, and full reversibility (the post can be removed).
+ * Keyless: detection is deterministic and generation reuses the host AI route.
+ */
+export const trendAutopilot = onSchedule({ schedule: '0 3 * * *', timeZone: 'Europe/London', region: 'europe-west2' }, async () => {
+  if ((process.env.TREND_AUTOPILOT ?? '1') === '0') return;        // kill switch
+  await loadPlatformSecrets();
+  const chain = aiProviderChain();
+  if (!chain.length) return;                                        // no host AI route → produce no public post
+  const MIN_SCORE = Number(process.env.TREND_AUTOPILOT_MIN_SCORE) || 75;
+  const CAP = Math.max(1, Number(process.env.TREND_AUTOPILOT_CAP) || 1);
+  const COOLDOWN = (Number(process.env.TREND_AUTOPILOT_COOLDOWN_DAYS) || 14) * 86400000;
+  const opps = await detectTrends();
+  let published = 0;
+  for (const o of opps) {
+    if (published >= CAP) break;
+    if (o.score < MIN_SCORE) break;                                 // sorted desc → nothing below the bar remains
+    if (o.class !== 'breaking' && o.class !== 'trending') continue; // only act on genuinely rising demand
+    const key = (o.topic.replace(/[^a-z0-9]+/gi, '_').slice(0, 80)) || 'topic';
+    const ref = db.doc(`trendActions/${key}`);
+    const prev = await ref.get();
+    const lastAt = (prev.exists ? (prev.data()!.lastPublishedAt as { toMillis?: () => number } | undefined)?.toMillis?.() : 0) ?? 0;
+    if (Date.now() - lastAt < COOLDOWN) continue;                   // per-topic cooldown prevents oscillation/spam
+    const sys = 'You are StudYear\'s SEO content writer for a UK education platform with a genuinely free tier at studyear.com/free. Write accurate, genuinely useful British English with exactly one clear call to action to the free tools. Respond with STRICT JSON only — no prose, no code fences.';
+    const user = `A demand trend is rising for "${o.label}"${o.subject ? ` (subject: ${o.subject})` : ''}. Write an SEO blog post for UK learners and their parents. Return JSON with keys: title (<=70 chars), metaDesc (<=150 chars), excerpt (<=280 chars), category (one of: Revision, Exams, Study Skills, Subjects, Parents), tags (array of up to 6 short strings), keyword, body (markdown, 320-520 words, ## headings, specific to ${o.label}, ending by inviting the reader to try StudYear's free tools at studyear.com/free).`;
+    type GenPost = { title?: string; metaDesc?: string; excerpt?: string; category?: string; tags?: unknown[]; keyword?: string; body?: string };
+    let post: GenPost | null = null;
+    for (const { provider, key: pk } of chain) {
+      try {
+        const { text } = await aiCall(provider, pk, { system: sys, user, maxTokens: 1800, temperature: 0.6 } as AiBody);
+        const clean = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+        const parsed = JSON.parse(clean) as GenPost;
+        if (parsed && parsed.title && parsed.body) { post = parsed; break; }
+      } catch { /* try the next provider in the chain */ }
+    }
+    if (!post || !post.title || !post.body) { await audit('TREND_AUTOPILOT_SKIP', 'system', { topic: o.topic, reason: 'generation_failed' }); continue; }
+    const id = (`trend-${key}-${new Date().toISOString().slice(0, 10)}`).replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 64);
+    const body = String(post.body).slice(0, 40000);
+    const slug = (String(post.title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80)) || id;
+    const words = body.split(/\s+/).filter(Boolean).length;
+    await db.doc(`blogPosts/${id}`).set({
+      title: String(post.title).slice(0, 200), slug,
+      category: String(post.category ?? 'Revision').slice(0, 60),
+      excerpt: String(post.excerpt ?? '').slice(0, 400),
+      metaDesc: String(post.metaDesc ?? '').slice(0, 320),
+      body, tags: Array.isArray(post.tags) ? post.tags.slice(0, 8).map((t) => String(t).slice(0, 40)) : [],
+      keyword: String(post.keyword ?? o.label).slice(0, 80),
+      readTime: Math.max(1, Math.min(60, Math.round(words / 200))),
+      seoScore: 0, published: true, date: new Date().toISOString(), reviewed: new Date().toISOString(),
+      authorEmail: null, autoGenerated: true, topic: o.topic, trendScore: o.score, updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    await ref.set({ topic: o.topic, label: o.label, lastPublishedAt: FieldValue.serverTimestamp(), lastPostId: id, lastScore: o.score, count: FieldValue.increment(1) }, { merge: true });
+    await audit('TREND_AUTOPILOT_PUBLISH', 'system', { topic: o.topic, id, score: o.score, class: o.class });
+    published++;
   }
 });
 

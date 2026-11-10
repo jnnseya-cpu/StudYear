@@ -31,6 +31,18 @@ generator · 4. Landing page builder (downloadable HTML) · 5. Hashtag generator
 optimisation · 9. Campaign analytics (computes CTR/CPC/CPM/CPA/ROAS locally,
 then AI reads) · 10. Best posting time.
 
+**Trend Intelligence — INVISIBLE / automatic (no UI).** Runs entirely
+server-side as a scheduled autopilot (`trendAutopilot`), embedded in the
+platform, with no admin tool or user-facing control. It detects rising demand
+from the first-party lead signal (deterministic log-lift + anomaly z-score +
+0–100 opportunity/confidence scoring — the StudYear-native slice of the Trend
+Intelligence spec), and for a qualifying opportunity it auto-generates an SEO
+blog post via `aiProxy` and publishes it to the owned blog surface, pointing at
+`studyear.com/free`. Safety rails: per-topic cooldown + per-run cap +
+`trendActions` dedup/audit; reversible (blog posts can be removed). Detection is
+keyless/deterministic. The admin-only `trendIntel` read endpoint exists for
+inspection but is not surfaced in any UI.
+
 **Owner-only tools (appear only when `SY.session.role === 'admin'`):**
 - **📅 Content calendar** — a rolling 28-idea acquisition calendar (every angle
   points at `studyear.com/free`); AI-writes today's short-video script or a
