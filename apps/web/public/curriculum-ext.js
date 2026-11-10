@@ -342,5 +342,144 @@
     }
   };
 
-  window.SYCURRIC_EXT = { alevel: alevel, primary: primary, boards: {} };
+  /* ---------------------------- Religious Education by school faith --------- */
+  /* UK RE is determined by the school's religious character: a Catholic school
+     teaches Catholic Christianity, a Church of England school teaches Christianity
+     (Understanding Christianity) + world faiths, a community (non-faith) school
+     follows its locally-agreed (SACRE) multi-faith syllabus, and a single-faith
+     school (Jewish/Muslim/Hindu/Sikh) centres that faith. These outlines ground
+     RE content on the right tradition. Keyed by faith → { ks2, gcse }. */
+  var reFaiths = [
+    { v: 'community', label: 'Community / non-faith (locally-agreed syllabus)' },
+    { v: 'catholic', label: 'Roman Catholic' },
+    { v: 'anglican', label: 'Church of England' },
+    { v: 'christian', label: 'Other Christian' },
+    { v: 'jewish', label: 'Jewish' },
+    { v: 'muslim', label: 'Muslim / Islamic' },
+    { v: 'hindu', label: 'Hindu' },
+    { v: 'sikh', label: 'Sikh' },
+    { v: 'multifaith', label: 'Multi-faith / interfaith' }
+  ];
+  var re = {
+    community: {
+      gcse: [
+        { t: 'Christianity: beliefs and practices', topics: ['The nature of God, creation and the afterlife', 'Jesus — incarnation, crucifixion, resurrection and salvation', 'Worship, sacraments, pilgrimage and the Church in the community'] },
+        { t: 'A second religion: beliefs and practices', topics: ['Commonly Islam or Judaism — the nature of God and key beliefs', 'Sources of authority and worship', 'Festivals, rites of passage and practices'] },
+        { t: 'Theme: relationships and families', topics: ['Marriage, divorce and family life', 'Sexuality and contraception', 'Gender equality — religious and non-religious views'] },
+        { t: 'Theme: religion and life', topics: ['Origins of the universe and the value of the world', 'Abortion and euthanasia', 'Religious and non-religious responses'] },
+        { t: 'Theme: peace, conflict, crime and punishment', topics: ['Just war, holy war and pacifism', 'Aims of punishment and the death penalty', 'Forgiveness and reconciliation'] }
+      ],
+      ks2: [
+        { t: 'Christianity', topics: ['Beliefs about God, Jesus and the Bible', 'The Church, Christmas and Easter'] },
+        { t: 'Islam', topics: ['Beliefs about Allah, the Prophet and the Qur’an', 'The mosque and the Five Pillars'] },
+        { t: 'Judaism', topics: ['The Torah and the synagogue', 'Shabbat and festivals'] },
+        { t: 'Hinduism and Sikhism', topics: ['Key beliefs, worship and festivals'] },
+        { t: 'Big questions (thematic)', topics: ['Belonging, right and wrong, caring for the world', 'What different religious and non-religious worldviews say'] }
+      ]
+    },
+    catholic: {
+      gcse: [
+        { t: 'Creation and the Trinity', topics: ['The nature of God as Trinity; creation and imago Dei (Genesis)', 'The Fall and original sin; stewardship of creation', 'Sources — Scripture, the Catechism and the Magisterium'] },
+        { t: 'Incarnation and the Paschal Mystery', topics: ['Jesus as true God and true man', 'The Passion, death, resurrection and ascension', 'Grace, salvation and the role of the sacraments'] },
+        { t: 'Eschatology — the last things', topics: ['Death, judgement, heaven, hell and purgatory', 'The resurrection of the body', 'Catholic funeral rites and prayers for the dead'] },
+        { t: 'The Church and the sacraments', topics: ['The Church as the Body of Christ; the Four Marks', 'The seven sacraments, especially Baptism and the Eucharist (the Mass)', 'Mary, the saints and the communion of saints'] },
+        { t: 'Forms of worship and expression', topics: ['Liturgy, the liturgical year and prayer (the Rosary, lectio divina)', 'Sacred art, architecture, music and pilgrimage'] },
+        { t: 'Judaism: beliefs and practices', topics: ['The covenant, the Shema and the nature of God', 'Mitzvot, the synagogue and worship', 'Shabbat, festivals and rites of passage'] },
+        { t: 'Catholic moral life', topics: ['Teaching on marriage, family and the sanctity of life', 'Abortion, euthanasia and justice', 'Catholic social teaching and the common good'] }
+      ],
+      ks2: [
+        { t: 'Creation and covenant', topics: ['God as loving creator', 'Abraham, Moses and the covenant'] },
+        { t: 'Prophecy and promise (Advent & Christmas)', topics: ['Waiting and the prophets', 'The Incarnation — God with us'] },
+        { t: 'From Galilee to Jerusalem (Lent & Easter)', topics: ['Jesus’ ministry and teaching', 'The Last Supper and the Paschal mystery'] },
+        { t: 'To the ends of the earth (Pentecost)', topics: ['The Holy Spirit and the early Church', 'The sacraments and the Mass'] },
+        { t: 'Other faiths', topics: ['An introduction to Judaism and one other world religion'] }
+      ]
+    },
+    anglican: {
+      gcse: [
+        { t: 'Christian beliefs: God and creation', topics: ['The nature of God as Trinity', 'Creation and the Fall', 'The problem of evil and suffering'] },
+        { t: 'Incarnation, salvation and atonement', topics: ['Jesus as the Son of God', 'Crucifixion, resurrection and ascension', 'Sin, salvation, grace and atonement'] },
+        { t: 'The Kingdom of God and the afterlife', topics: ['Jesus’ teaching on the Kingdom', 'Judgement, heaven and hell', 'Resurrection and eternal life'] },
+        { t: 'Christian practices', topics: ['Liturgical and informal worship', 'The sacraments — Baptism and the Eucharist', 'Prayer, mission and the Church in the local and worldwide community'] },
+        { t: 'A second religion: beliefs and practices', topics: ['Commonly Islam or Judaism — core beliefs', 'Worship and sources of authority', 'Festivals and rites of passage'] },
+        { t: 'Themes: relationships, life, peace and justice', topics: ['Applied ethics from a Christian perspective', 'Religious and non-religious responses'] }
+      ],
+      ks2: [
+        { t: 'God and creation', topics: ['What Christians believe about God', 'Creation and caring for the world'] },
+        { t: 'People of God and the Fall', topics: ['The big story of the Bible', 'Covenant and promise'] },
+        { t: 'Incarnation and Gospel', topics: ['Why Jesus came', 'His teaching and example'] },
+        { t: 'Salvation and the Kingdom of God', topics: ['Easter and its meaning', 'How Christians live and serve'] },
+        { t: 'Other faiths and worldviews', topics: ['An introduction to other religions represented in Britain'] }
+      ]
+    },
+    jewish: {
+      gcse: [
+        { t: 'Judaism: beliefs', topics: ['The nature of God — one, creator, lawgiver and judge', 'The covenant with Abraham and Moses; the Messiah', 'The Torah, the mitzvot and life after death'] },
+        { t: 'Judaism: practices', topics: ['The synagogue, worship and prayer (the Shema, the Tenakh)', 'Shabbat and keeping it holy', 'Festivals — Rosh Hashanah, Yom Kippur, Pesach, Sukkot', 'Rites of passage — Brit Milah, Bar/Bat Mitzvah, marriage, mourning'] },
+        { t: 'Jewish ethics and a second religion', topics: ['Tzedakah, justice and the sanctity of life', 'A comparative study of a second religion’s beliefs and practices'] }
+      ],
+      ks2: [
+        { t: 'The Torah and the Tenakh', topics: ['God’s word and the commandments'] },
+        { t: 'God and the covenant', topics: ['One God; Abraham and Moses'] },
+        { t: 'The synagogue and Shabbat', topics: ['Worship, prayer and the day of rest'] },
+        { t: 'Festivals and values', topics: ['Pesach, Rosh Hashanah; tzedakah and community'] }
+      ]
+    },
+    muslim: {
+      gcse: [
+        { t: 'Islam: beliefs', topics: ['Tawhid — the oneness of Allah; the 99 names', 'The six articles of faith / five roots of Usul ad-Din', 'Prophethood (Risalah), holy books, angels, predestination and the afterlife (Akhirah)'] },
+        { t: 'Islam: practices', topics: ['The Five Pillars — Shahadah, Salah, Zakah, Sawm, Hajj', 'Jihad — greater and lesser', 'Festivals — Id-ul-Fitr, Id-ul-Adha; the mosque and worship'] },
+        { t: 'Islamic ethics and a second religion', topics: ['The sanctity of life, justice and charity', 'A comparative study of a second religion’s beliefs and practices'] }
+      ],
+      ks2: [
+        { t: 'The oneness of Allah', topics: ['Beliefs about Allah and creation'] },
+        { t: 'The Prophet Muhammad and the Qur’an', topics: ['The final prophet and the holy book'] },
+        { t: 'The mosque and the Five Pillars', topics: ['Worship, prayer and charity'] },
+        { t: 'Festivals and values', topics: ['Id celebrations; community and respect'] }
+      ]
+    },
+    hindu: {
+      gcse: [
+        { t: 'Hindu beliefs', topics: ['Brahman and the atman; the nature of the divine', 'Dharma, karma and samsara', 'Moksha and the deities (Trimurti and avatars)'] },
+        { t: 'Hindu practices', topics: ['Puja, the mandir and worship at home', 'Festivals — Diwali and Holi; pilgrimage', 'Rites of passage and the ashramas'] },
+        { t: 'Hindu ethics and a second religion', topics: ['Ahimsa, duty and the environment', 'A comparative study of a second religion'] }
+      ],
+      ks2: [
+        { t: 'Brahman and the deities', topics: ['One divine reality shown in many forms'] },
+        { t: 'Dharma and karma', topics: ['Duty, actions and consequences'] },
+        { t: 'Puja and the mandir', topics: ['Worship at home and in the temple'] },
+        { t: 'Festivals', topics: ['Diwali and Holi'] }
+      ]
+    },
+    sikh: {
+      gcse: [
+        { t: 'Sikh beliefs', topics: ['Waheguru — one God; the Mool Mantar', 'The ten Gurus and the Guru Granth Sahib', 'The cycle of rebirth and mukti; equality and seva'] },
+        { t: 'Sikh practices', topics: ['The Gurdwara and the langar', 'The Khalsa and the Five Ks', 'Festivals — Vaisakhi; the Gurpurbs and rites of passage'] },
+        { t: 'Sikh ethics and a second religion', topics: ['Sewa, justice and equality', 'A comparative study of a second religion'] }
+      ],
+      ks2: [
+        { t: 'One God — Waheguru', topics: ['Belief in one God and the Mool Mantar'] },
+        { t: 'The Gurus and the Guru Granth Sahib', topics: ['The teachers and the holy book'] },
+        { t: 'The Gurdwara and the langar', topics: ['Worship, service and the shared meal'] },
+        { t: 'The Five Ks and equality', topics: ['Identity, sewa and Vaisakhi'] }
+      ]
+    }
+  };
+  /* Resolve the RE outline for a school faith at the learner's level. Primary
+     levels map to ks2; KS3/GCSE/A-level map to gcse. 'christian' and 'multifaith'
+     fall back to the Church-of-England and community outlines respectively. */
+  function reFor(faith, level) {
+    var f = String(faith || '').toLowerCase();
+    if (f === 'christian') f = 'anglican';
+    if (f === 'multifaith') f = 'community';
+    var entry = re[f]; if (!entry) return null;
+    var lv = String(level || '');
+    var isPrimary = /eyfs|reception|nursery|key stage [12]|\bks[12]\b|infant|junior|primary|11 ?\+|year ?[1-6]\b|years? ?[1-6]/i.test(lv);
+    var mods = isPrimary ? (entry.ks2 || entry.gcse) : (entry.gcse || entry.ks2);
+    if (!mods) return null;
+    var faithLabel = (reFaiths.filter(function (x) { return x.v === String(faith || '').toLowerCase(); })[0] || { label: faith }).label;
+    return { modules: mods, tier: (isPrimary ? 'primary RE' : 'GCSE RE') + ' (' + faithLabel + ')', faith: String(faith || '').toLowerCase(), faithLabel: faithLabel };
+  }
+
+  window.SYCURRIC_EXT = { alevel: alevel, primary: primary, re: re, reFaiths: reFaiths, reFor: reFor, boards: {} };
 })();
