@@ -592,6 +592,14 @@
     try { return await api('/adminLeads', 'GET', null, email); }
     catch (e) { return null; }
   }
+  /* ADMIN — Trend Intelligence: ranked, scored demand opportunities from the
+     first-party lead signal (deterministic detection; see /trendIntel). Null on
+     offline/not-admin so the console degrades to "no data". */
+  async function trendIntel(email) {
+    await whenReady(); if (!CFG || !email) return null;
+    try { var j = await api('/trendIntel', 'GET', null, email); return j && j.ok ? j : null; }
+    catch (e) { return null; }
+  }
   async function leadMark(ids, email) {
     await whenReady(); if (!CFG || !email || !(ids && ids.length)) return false;
     try { var j = await api('/adminLeadMark', 'POST', { ids: ids }, email); return !!(j && j.ok); }
@@ -664,7 +672,7 @@
     walletState: walletState,
     blogList: blogList, blogPublish: blogPublish, blogRemove: blogRemove,
     blogView: blogView, blogViews: blogViews,
-    lead: lead, refCode: refCode, leadsList: leadsList, leadMark: leadMark, newsletter: newsletter,
+    lead: lead, refCode: refCode, leadsList: leadsList, leadMark: leadMark, newsletter: newsletter, trendIntel: trendIntel,
     /* redeem a StudYear bonus/promo code server-side (validated window/limits/
        audience, ledgered once per user, ACUs credited on the server). Resolves
        to { ok, bonusAcus, discountPct, label } or throws with the reason. */

@@ -1842,6 +1842,99 @@ export const adminLeadMark = onRequest({ region: 'europe-west2', cors: true }, a
   }
 });
 
+/**
+ * GET /trendIntel — Trend Intelligence (admin-only), the StudYear-native slice of
+ * the Trend Intelligence build spec. It reads the FIRST-PARTY demand signal that
+ * is server-readable under StudYear's end-to-end-encrypted design — free-tool
+ * lead captures, each tagged with subject/source/grade/time — and applies the
+ * spec's deterministic §5 detection and scoring:
+ *   • per-topic log-lift  lift = ln((c+1)/(b+1))
+ *   • robust anomaly      z = (log1p(c) − median(log1p(x))) / max(1.4826·MAD, 0.2)
+ *   • opportunity score   25% demand, 25% fit, 20% intent, 15% timing, 15% readiness
+ *   • confidence          35% source-quality, 25% corroboration, 20% coverage,
+ *                         20% freshness, capped at 69 for a single source family
+ * over complete weekly windows (current week vs the prior 8). No AI and NO new
+ * credentials — detection is deterministic; drafting the resulting Growth Brief
+ * reuses the existing growth engine + aiProxy. Returns ranked opportunities with
+ * evidence, a score breakdown and a draft brief per opportunity.
+ */
+export const trendIntel = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    const admin = await requireAdmin(req.headers.authorization);
+    const now = Date.now();
+    const WEEK = 7 * 86400000;
+    const WINDOWS = 9; // index 0 = current 7 days, 1..8 = baseline weeks
+    const snap = await db.collection('leads').orderBy('createdAt', 'desc').limit(5000).get();
+    const weeksByTopic: Record<string, number[]> = {};
+    const meta: Record<string, { subject: string; source: string; grades: Record<string, number> }> = {};
+    snap.forEach((d) => {
+      const v = d.data();
+      const t = (v.createdAt as { toMillis?: () => number } | undefined)?.toMillis?.();
+      if (!t) return;
+      const wk = Math.floor((now - t) / WEEK);
+      if (wk < 0 || wk >= WINDOWS) return;
+      const subject = String(v.subject ?? '').trim().toLowerCase();
+      const source = String(v.source ?? 'free').trim().toLowerCase();
+      const topic = subject || source;
+      if (!topic) return;
+      if (!weeksByTopic[topic]) { weeksByTopic[topic] = new Array(WINDOWS).fill(0); meta[topic] = { subject, source, grades: {} }; }
+      weeksByTopic[topic][wk]++;
+      const g = String(v.grade ?? '').trim(); if (g) meta[topic].grades[g] = (meta[topic].grades[g] || 0) + 1;
+    });
+    const log1p = (x: number) => Math.log(1 + x);
+    const median = (a: number[]) => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); const m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+    const mad = (a: number[], med: number) => median(a.map((x) => Math.abs(x - med)));
+    const cap = (s: string) => s.replace(/\b\w/g, (c) => c.toUpperCase());
+    const opportunities = Object.entries(weeksByTopic).map(([topic, weeks]) => {
+      const c = weeks[0];
+      const hist = weeks.slice(1);
+      const logHist = hist.map(log1p);
+      const medLog = median(logHist);
+      const baseline = Math.max(0, Math.round(Math.exp(medLog) - 1));
+      const lift = log1p(c) - log1p(baseline);
+      const z = (log1p(c) - medLog) / Math.max(1.4826 * mad(logHist, medLog), 0.2);
+      const prior = median(hist);
+      const total = weeks.reduce((s, x) => s + x, 0);
+      let klass: string;
+      if (z >= 2 && c >= 3) klass = (c > prior * 2) ? 'breaking' : 'trending';
+      else if (c > 0 && prior > 0 && Math.abs(c - prior) <= Math.max(1, prior * 0.25)) klass = 'persistent';
+      else if (c < prior) klass = 'declining';
+      else klass = 'flat';
+      const demand = Math.max(0, Math.min(100, 50 + 12 * z));
+      const fit = meta[topic].subject ? 90 : 60;     // a named subject is squarely in-offer; a raw tool/source is weaker fit
+      const intent = 85;                              // a captured lead is a high-intent action, not mere attention
+      const timing = klass === 'breaking' ? 90 : klass === 'trending' ? 75 : klass === 'persistent' ? 60 : 30;
+      const readiness = 80;                           // StudYear can generate a resource/blog/landing for any topic
+      const score = 0.25 * demand + 0.25 * fit + 0.20 * intent + 0.15 * timing + 0.15 * readiness;
+      const periods = hist.filter((x) => x > 0).length;
+      const coverage = Math.min(100, (periods / 8) * 100);
+      const freshness = c > 0 ? 100 : 0;
+      const confidence = Math.min(69, 0.35 * 60 + 0.25 * 0 + 0.20 * coverage + 0.20 * freshness);
+      const label = meta[topic].subject ? cap(meta[topic].subject) : cap(meta[topic].source);
+      const brief = {
+        topic, subject: meta[topic].subject || null, source: meta[topic].source,
+        audience: meta[topic].subject ? `${label} learners and their parents` : 'Prospective StudYear learners',
+        intent: `rising interest in ${label}`,
+        objective: 'qualified free-tool leads and sign-ups',
+        angle: `Capture rising demand for ${label}: refresh/create a free ${label} resource and a short blog post, link both to studyear.com/free.`,
+        allowed_channels: ['seo', 'organic_social'],
+      };
+      return {
+        topic, label, subject: meta[topic].subject || null, source: meta[topic].source,
+        current: c, baseline, total, lift: Number(lift.toFixed(3)), z: Number(z.toFixed(2)), class: klass,
+        score: Number(score.toFixed(1)), confidence: Number(confidence.toFixed(1)),
+        breakdown: { demand: Math.round(demand), fit, intent, timing, readiness },
+        grades: meta[topic].grades, weeks, brief,
+      };
+    }).filter((o) => o.total >= 2).sort((a, b) => (b.score - a.score) || (b.z - a.z));
+    await audit('TREND_INTEL_READ', admin.uid, { topics: opportunities.length });
+    res.json({ ok: true, generatedAt: new Date().toISOString(), windowDays: 7, baselineWeeks: 8, opportunities: opportunities.slice(0, 40) });
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
+  }
+});
+
 // -------------------------------------------------------------- notify (email) ----
 /**
  * POST /notify { subject, text } — sends an email to the CALLER's own
