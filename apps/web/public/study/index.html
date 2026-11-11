@@ -5530,12 +5530,27 @@ function cgStatic(subject,level,board,cap,focus){
   document.getElementById("sp-voicenote").textContent=canSpeak?"":"No device voice — the word will flash briefly instead.";
   function band(lv){return /Reception|EYFS|Key Stage 1|\bYears? 1-2\b/i.test(lv)?"ks1":
     /Key Stage 2|11\+/i.test(lv)?"ks2":/KS3|Years? 7-9/i.test(lv)?"ks3":"senior";}
+  /* Real UK curriculum / statutory spelling lists — large pools so each test is
+     genuinely different. KS2 is the Years 3–4 + 5–6 statutory word lists. */
   var BANK={
-    ks1:["the","said","you","they","because","school","friend","people","water","where","there","went","little","house","night","play","today","again","many","would"],
-    ks2:["separate","believe","different","favourite","because","caught","thought","weight","early","famous","natural","special","actually","material","possible","promise","various","surprise","strength","business"],
-    ks3:["definitely","necessary","embarrass","rhythm","conscience","government","occurred","parallel","privilege","recommend","argument","environment","independent","exaggerate","interrupt","persuade","relevant","sincerely","technique","vehicle"],
-    senior:["accommodate","conscientious","phenomenon","liaison","bureaucracy","entrepreneur","hierarchy","questionnaire","millennium","occurrence","perseverance","pronunciation","reminiscence","sovereignty","unforeseen","acquiesce","idiosyncrasy","juxtaposition","malfeasance","conscious"]
+    ks1:["the","said","says","are","were","was","his","has","you","your","they","be","he","me","she","we","no","go","so","by","my","here","there","where","love","come","some","one","once","ask","friend","school","put","push","pull","full","house","our","door","floor","poor","because","find","kind","mind","behind","child","children","wild","climb","most","only","both","old","cold","gold","hold","told","every","everybody","great","break","steak","pretty","beautiful","after","fast","last","past","father","class","grass","pass","plant","path","bath","hour","move","prove","improve","sure","sugar","eye","could","should","would","who","whole","any","many","clothes","busy","people","water","again","half","money","parents","Christmas"],
+    ks2:["accident","actual","actually","address","answer","appear","arrive","believe","bicycle","breath","breathe","build","busy","business","calendar","caught","centre","century","certain","circle","complete","consider","continue","decide","describe","different","difficult","disappear","early","earth","eight","eighth","enough","exercise","experience","experiment","extreme","famous","favourite","February","forward","fruit","grammar","group","guard","guide","heard","heart","height","history","imagine","increase","important","interest","island","knowledge","learn","length","library","material","medicine","mention","minute","natural","naughty","notice","occasion","occasionally","often","opposite","ordinary","particular","peculiar","perhaps","popular","position","possess","possible","potatoes","pressure","probably","promise","purpose","quarter","question","recent","regular","reign","remember","sentence","separate","special","straight","strange","strength","suppose","surprise","therefore","though","although","thought","through","various","weight","woman","women","accommodate","accompany","according","achieve","aggressive","amateur","ancient","apparent","appreciate","attached","available","average","awkward","bargain","bruise","category","cemetery","committee","communicate","community","competition","conscience","conscious","controversy","convenience","correspond","criticise","curiosity","definite","desperate","determined","develop","dictionary","disastrous","embarrass","environment","equipped","equipment","especially","exaggerate","excellent","existence","explanation","familiar","foreign","forty","frequently","government","guarantee","harass","hindrance","identity","immediate","immediately","individual","interfere","interrupt","language","leisure","lightning","marvellous","mischievous","muscle","necessary","neighbour","nuisance","occupy","opportunity","parliament","persuade","physical","prejudice","privilege","profession","programme","pronunciation","queue","recognise","recommend","relevant","restaurant","rhyme","rhythm","sacrifice","secretary","shoulder","signature","sincere","sincerely","soldier","stomach","sufficient","suggest","symbol","system","temperature","thorough","twelfth","variety","vegetable","vehicle","yacht"],
+    ks3:["definitely","necessary","embarrass","rhythm","conscience","government","occurred","occurrence","parallel","privilege","recommend","argument","environment","independent","exaggerate","interrupt","persuade","relevant","sincerely","technique","vehicle","accommodate","acknowledge","acquire","apparent","appearance","beginning","believe","business","calendar","category","cemetery","colleague","committee","conscious","consensus","coolly","criticism","deceive","desperate","disappoint","ecstasy","embarrassment","existence","foreign","fulfil","grammar","guarantee","harass","humorous","hypocrisy","immediately","indispensable","inoculate","intelligence","knowledge","liaison","maintenance","manoeuvre","millennium","miniature","minuscule","mischievous","misspell","noticeable","occasion","possession","prejudice","pronunciation","publicly","questionnaire","receive","referred","restaurant","separate","supersede","threshold","tomorrow","twelfth","tyranny","until","vacuum","weird","withhold"],
+    senior:["accommodate","conscientious","phenomenon","liaison","bureaucracy","entrepreneur","hierarchy","questionnaire","millennium","occurrence","perseverance","pronunciation","reminiscence","sovereignty","unforeseen","acquiesce","idiosyncrasy","juxtaposition","conscious","aberration","belligerent","camaraderie","chauvinism","connoisseur","consensus","demagogue","dilettante","disingenuous","ebullient","exacerbate","facetious","fluorescent","gauge","grandeur","harangue","idiosyncratic","inoculate","interrogate","labyrinth","maintenance","memento","minuscule","misogyny","obsequious","onomatopoeia","paraphernalia","pastime","playwright","pneumonia","prerogative","privilege","renaissance","rendezvous","repertoire","sacrilegious","supersede","surveillance","threshold","ubiquitous","vacuum","vengeance","weird"]
   };
+  /* Remember recently-tested words so consecutive tests don't repeat. */
+  function spRecent(){try{return JSON.parse(localStorage.getItem('sp-recent')||'[]')||[];}catch(e){return[];}}
+  function spPushRecent(ws){try{localStorage.setItem('sp-recent',JSON.stringify(spRecent().concat(ws).slice(-48)));}catch(e){}}
+  function pickSpell(lv,n){
+    var pool=(BANK[band(lv)]||BANK.ks2).slice(), recent=spRecent();
+    var recentSet={}; recent.forEach(function(w){recentSet[w]=1;});
+    var fresh=pool.filter(function(w){return !recentSet[w];});
+    if(fresh.length<n)fresh=pool.slice();                     // exhausted the pool → allow repeats again
+    var picked=shuffle(fresh).slice(0,Math.min(n,fresh.length));
+    if(picked.length<n){var seen={};picked.forEach(function(w){seen[w]=1;});picked=picked.concat(shuffle(pool.filter(function(w){return !seen[w];})).slice(0,n-picked.length));}
+    spPushRecent(picked);
+    return picked;
+  }
   var state=null;
   /* Robust dictation voice: pick a clear English voice, force full volume, and
      work around the Chrome bugs that made it quiet / cut out — speak() dropped
@@ -5786,16 +5801,21 @@ function cgStatic(subject,level,board,cap,focus){
   renderStats();
   document.getElementById("sp-go").onclick=function(){
     var lv=lvlSel.value,setk=setSel.value,go=document.getElementById("sp-go");
-    if(setk==="tricky"){startWith(shuffle(BANK[band(lv)].slice()).slice(0,12));return;}
-    var topic=setk==="topic"?((document.getElementById("sp-topic").value||"general knowledge").trim()):("the "+lv+" curriculum");
+    /* Curriculum & commonly-misspelled: draw a fresh RANDOM set from the real
+       (large) curriculum list, skipping recently-used words — no AI, so it's
+       reliable, offline-proof and genuinely different every time. */
+    if(setk!=="topic"){ startWith(pickSpell(lv,12)); return; }
+    /* Custom topic: AI-generated, with a random seed + recent-avoid so it also
+       varies each run; falls back to the built-in random list. */
+    var topic=((document.getElementById("sp-topic").value||"general knowledge").trim());
     if(window.SYAI&&SYAI.ready()){
       go.disabled=true;go.textContent="Preparing words…";
-      SYAI.ask("List 12 spelling words suitable for a "+lv+" student"+(setk==="topic"?(" about "+topic):(" from the "+lv+" curriculum"))+". Age-appropriate difficulty, real single words only. Return ONLY the words separated by commas.","Level: "+lv,{maxTokens:200}).then(function(t){
+      SYAI.ask("List 12 DIFFERENT spelling words suitable for a "+lv+" student about "+topic+". Age-appropriate difficulty, real single words only. Avoid these recently-used words: "+spRecent().slice(-20).join(", ")+". Return ONLY the words separated by commas.","Level: "+lv+" · variety-seed "+Math.random().toString(36).slice(2,9),{maxTokens:200,temperature:0.9}).then(function(t){
         var ws=String(t).split(/[,\n]/).map(function(s){return s.trim().replace(/[^A-Za-z'-]/g,"")}).filter(function(s){return s.length>1}).slice(0,12);
         go.disabled=false;go.textContent="🔊 Start spelling test";
-        if(ws.length<4){startWith(shuffle(BANK[band(lv)].slice()).slice(0,12));toast("Using the built-in list");}else startWith(ws);
-      }).catch(function(){go.disabled=false;go.textContent="🔊 Start spelling test";startWith(shuffle(BANK[band(lv)].slice()).slice(0,12));});
-    } else {startWith(shuffle(BANK[band(lv)].slice()).slice(0,12));toast("Offline — using the built-in list");}
+        if(ws.length<4){startWith(pickSpell(lv,12));toast("Using the built-in list");}else{spPushRecent(ws);startWith(ws);}
+      }).catch(function(){go.disabled=false;go.textContent="🔊 Start spelling test";startWith(pickSpell(lv,12));});
+    } else {startWith(pickSpell(lv,12));toast("Offline — using the built-in list");}
   };
 })();
 
