@@ -2690,7 +2690,11 @@ document.getElementById("gen-plan").onclick=()=>{
     ? "Final push: consolidate the highest-priority topics, drill exam questions, and review your weakest areas first."
     : "Phase 1 — establish a strong foundation in your core subjects, review fundamental concepts, and identify areas that need the most attention.";
 
-  store.set("plan",{made:isoOf(today),hours,target,style,summary,phase,plan,masterySnap:masterySnap(),done:store.get("plan",{done:{}}).done||{}});
+  /* A freshly generated plan starts with NOTHING done. Completion keys are
+     positional (week-index), so carrying the previous plan's `done` map over
+     would mark unrelated new sessions as already complete — the "new plan shows
+     courses already done" bug. Start clean every generation. */
+  store.set("plan",{made:isoOf(today),hours,target,style,summary,phase,plan,masterySnap:masterySnap(),done:{}});
   savePlanForm();
   renderPlan(); addPoints(20); touchStreak();
   logEvent("plan","Study plan generated",subs.length+" subject"+(subs.length>1?"s":"")+" · "+hours+" hrs/week"+(target?" · target "+target:"")+" — "+studyDates.length+" study days scheduled by date.");
