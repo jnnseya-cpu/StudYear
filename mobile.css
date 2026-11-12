@@ -1,0 +1,73 @@
+/* StudYear mobile / PWA presentation layer.
+   Activated by mobile.js (body.sy-mobile) when the OS runs installed
+   (display-mode: standalone) or on a narrow screen. Desktop keeps its own
+   look untouched. Console sidebars collapse into a slide-in drawer, a
+   compact app bar sits on top, and a thumb-reach bottom tab bar carries the
+   core destinations. */
+body.sy-mobile aside,
+body.sy-mobile aside.side{display:none !important}
+body.sy-mobile .shell{display:block !important}
+body.sy-mobile main,body.sy-mobile main.content{
+  max-width:100% !important;padding:70px 14px 96px !important}
+body.sy-mobile .wrap{padding-left:14px !important;padding-right:14px !important;
+  padding-top:64px !important;padding-bottom:96px !important}
+body.sy-mobile .grid{grid-template-columns:1fr !important}
+body.sy-mobile .grid>*{grid-column:span 1 !important}
+body.sy-mobile .kpis{grid-template-columns:repeat(2,1fr) !important}
+body.sy-mobile .two,body.sy-mobile .three{grid-template-columns:1fr !important}
+body.sy-mobile h1{font-size:23px !important}
+body.sy-mobile .btn{min-height:42px}
+body.sy-mobile table{font-size:11.5px}
+body.sy-mobile .tabs{overflow-x:auto;flex-wrap:nowrap !important;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+body.sy-mobile .tabs::-webkit-scrollbar{display:none}
+
+/* app bar */
+.sy-appbar{display:none}
+body.sy-mobile .sy-appbar{
+  display:flex;position:fixed;top:0;left:0;right:0;z-index:900;
+  align-items:center;gap:10px;height:54px;padding:0 12px;
+  background:rgba(6,11,24,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(120,140,190,.25)}
+.sy-appbar button{appearance:none;background:none;border:none;color:#EDF1F8;
+  font-size:21px;padding:8px 10px;cursor:pointer;border-radius:10px}
+.sy-appbar button:active{background:rgba(79,166,224,.15)}
+.sy-appbar .t{flex:1;font-family:Georgia,serif;font-size:16px;color:#EDF1F8;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sy-appbar .r{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:#F2CE7B;border:1px solid rgba(217,174,85,.4);border-radius:12px;padding:3px 8px}
+
+/* drawer */
+.sy-drawer{position:fixed;inset:0;z-index:950;pointer-events:none}
+.sy-drawer .scrim{position:absolute;inset:0;background:rgba(4,8,18,.6);
+  opacity:0;transition:opacity .22s}
+.sy-drawer .panel{position:absolute;top:0;bottom:0;left:0;width:min(310px,84vw);
+  background:#0B1428;border-right:1px solid rgba(217,174,85,.35);
+  transform:translateX(-102%);transition:transform .24s ease;
+  overflow-y:auto;padding:16px 12px 30px;
+  box-shadow:14px 0 44px rgba(0,0,0,.5)}
+.sy-drawer.open{pointer-events:auto}
+.sy-drawer.open .scrim{opacity:1}
+.sy-drawer.open .panel{transform:none}
+.sy-drawer .hd{font-family:Georgia,serif;font-size:18px;color:#EDF1F8;
+  padding:6px 10px 14px;border-bottom:1px solid rgba(120,140,190,.2);margin-bottom:8px}
+.sy-drawer .hd b{color:#4FA6E0}
+.sy-drawer a{display:block;color:#AAB6CC;text-decoration:none;font-size:14.5px;
+  padding:12px 12px;border-radius:10px;margin:1px 0}
+.sy-drawer a:active{background:rgba(79,166,224,.14);color:#EDF1F8}
+.sy-drawer .grp{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:#77839B;padding:14px 12px 4px}
+
+/* bottom tab bar */
+.sy-tabbar{display:none}
+body.sy-mobile .sy-tabbar{
+  display:grid;position:fixed;left:0;right:0;bottom:0;z-index:900;
+  grid-auto-flow:column;grid-auto-columns:1fr;
+  background:rgba(6,11,24,.94);backdrop-filter:blur(12px);
+  border-top:1px solid rgba(120,140,190,.25);
+  padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+.sy-tabbar a,.sy-tabbar button{appearance:none;background:none;border:none;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  color:#77839B;text-decoration:none;font-size:10px;padding:5px 2px;cursor:pointer}
+.sy-tabbar .ic{font-size:19px;line-height:1}
+.sy-tabbar .on{color:#F2CE7B}

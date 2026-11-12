@@ -1,0 +1,10 @@
+{
+  "_comment": "Go-live config for project 'StudYear' (revision-rocket-4nuir). These web config values are public identifiers, not secrets — access is enforced by Firebase Auth + security rules. The cloud bridge is ACTIVE with these values; it degrades silently to local-only whenever Auth or the Functions API is unreachable.",
+  "apiKey": "AIzaSyBwVAVAUF_xyjqbHz8kip_ZEUA9Mcw1fZs",
+  "authDomain": "revision-rocket-4nuir.firebaseapp.com",
+  "projectId": "revision-rocket-4nuir",
+  "storageBucket": "revision-rocket-4nuir.firebasestorage.app",
+  "messagingSenderId": "928694318960",
+  "appId": "1:928694318960:web:60d4ce44bbfe6332eac1b5",
+  "apiBase": "https://europe-west2-revision-rocket-4nuir.cloudfunctions.net"
+}
