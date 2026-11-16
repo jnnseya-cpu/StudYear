@@ -4475,7 +4475,7 @@ function faithGuidance(f){return ({
     if(out.querySelector(".empty")||!out.querySelector("[data-cj]")){
       out.innerHTML=ac.html;
       var sub=document.getElementById("cg-sub");if(sub)sub.textContent=(ac.cap||"Your course")+" · resumed — continue any module below";
-      if(typeof wireCourse==="function")wireCourse(ac.subj||"",ac.cap||"Course");
+      if(typeof wireCourse==="function")wireCourse(ac.subj||"",ac.key||ac.cap||"Course",ac.cap||"Course");
     }
   }catch(e){}
 })();
@@ -4837,6 +4837,34 @@ function openInlineQuiz(r){ r.id=r.id||("gen"+Date.now()); LIB.push(r); openRes(
 /* one-click: build a full structured course from a planner session — pre-fills
    the AI Course form (adding the exact subject/level as options if needed) and
    fires the generator, so the plan's subject + topic go straight to a course. */
+/* Stable identity for a course = subject + focus topic + level (case/space
+   normalised), so the SAME scheduled subject always maps to the SAME saved
+   course and the SAME per-module progress — a student resumes their remaining
+   modules instead of regenerating from Module 1 every time. */
+function courseKeyFor(subj,focus,level){
+  var n=function(s){return String(s||"").toLowerCase().replace(/\s+/g," ").trim();};
+  return "c:"+n(subj)+"|"+n(focus)+"|"+n(level);
+}
+/* On resume, jump to the FIRST module that isn't ticked done and highlight it,
+   so "get back to the remaining modules" is literally where the page lands.
+   Returns the 0-based index landed on, or -1 if every module is complete. */
+function courseScrollToNext(courseKey){
+  try{
+    var out=document.getElementById("cg-out");if(!out)return -1;
+    var done=store.get("courseDone:"+courseKey,{})||{};
+    var btns=out.querySelectorAll("[data-cdone]");
+    for(var i=0;i<btns.length;i++){
+      if(!done[btns[i].getAttribute("data-cdone")]){
+        var card=btns[i].closest(".card")||btns[i];
+        try{card.scrollIntoView({behavior:"smooth",block:"center"});}catch(e){}
+        try{card.style.boxShadow="0 0 0 2px var(--gold-500,#c9a227)";
+          setTimeout(function(){try{card.style.boxShadow="";}catch(e){}},2600);}catch(e){}
+        return i;
+      }
+    }
+    return -1;
+  }catch(e){return -1;}
+}
 function courseFromPlan(subj,topic,level){
   showTab("course");
   var sel=document.getElementById("cg-subject");
@@ -4845,13 +4873,38 @@ function courseFromPlan(subj,topic,level){
     if(!has){var o=document.createElement("option");o.text=subj;o.value=subj;sel.insertBefore(o,sel.options[sel.options.length-1]);}
     sel.value=subj;
   }
-  var tp=document.getElementById("cg-topic"); if(tp)tp.value=(topic&&subj&&topic.toLowerCase()!==subj.toLowerCase())?topic:"";
+  /* effective focus must match what cg-go reads from the topic box, so the
+     generated course and the resume lookup compute the SAME key. */
+  var effFocus=(topic&&subj&&topic.toLowerCase()!==subj.toLowerCase())?topic:"";
+  var tp=document.getElementById("cg-topic"); if(tp)tp.value=effFocus;
   var lv=document.getElementById("cg-level");
-  if(lv){var lvl=level||(PROFILE&&PROFILE.level)||lv.value||"";
-    if(lvl){var hasL=Array.prototype.some.call(lv.options,function(o){return o.value===lvl||o.text===lvl;});
-      if(!hasL){var ol=document.createElement("option");ol.text=lvl;ol.value=lvl;lv.appendChild(ol);} lv.value=lvl;}}
+  var lvl=level||(PROFILE&&PROFILE.level)||(lv&&lv.value)||"";
+  if(lv&&lvl){var hasL=Array.prototype.some.call(lv.options,function(o){return o.value===lvl||o.text===lvl;});
+    if(!hasL){var ol=document.createElement("option");ol.text=lvl;ol.value=lvl;lv.appendChild(ol);} lv.value=lvl;}
   var bd=document.getElementById("cg-board"); if(bd&&PROFILE&&PROFILE.board&&PROFILE.board!=="—"){try{bd.value=PROFILE.board;}catch(e){}}
-  var go=document.getElementById("cg-go"); if(go)go.click();  // one click → generate
+  /* RESUME if this subject's course was already generated — restore it, re-wire
+     the module buttons, and land on the first incomplete module. No regenerate,
+     no re-charge, no restart: the remaining modules continue from here. The
+     student only reaches them when this subject is next scheduled. */
+  var ckey=courseKeyFor(subj,effFocus,lvl);
+  var lib=store.get("savedCourses",{})||{};
+  var saved=lib[ckey];
+  if(saved&&saved.html){
+    var out=document.getElementById("cg-out");
+    if(out){
+      out.innerHTML=saved.html;
+      var done=store.get("courseDone:"+ckey,{})||{};
+      var total=(saved.titles&&saved.titles.length)||out.querySelectorAll("[data-cdone]").length||0;
+      var ndone=Object.keys(done).filter(function(k){return done[k]}).length;
+      var sub=document.getElementById("cg-sub");
+      if(sub)sub.textContent=(saved.cap||subj)+" · resumed — "+ndone+"/"+(total||"?")+" modules done, continue where you left off";
+      if(typeof wireCourse==="function")wireCourse(saved.subj||subj,ckey,saved.cap||subj);
+      var at=courseScrollToNext(ckey);
+      toast(at<0?("Course complete — "+(saved.cap||subj)+" ✓"):("Resumed "+(saved.cap||subj)+" — module "+(at+1)+" of "+(total||"?")+" is next"));
+    }
+    return;
+  }
+  var go=document.getElementById("cg-go"); if(go)go.click();  // first time → generate & save under this key
 }
 
 /* open a planner session as an Interactive Lesson — pre-fills topic/subject/level */
@@ -4896,6 +4949,9 @@ document.getElementById("cg-go").onclick=()=>{
   if(!spendAcus(CG_PRICE,"AI course: "+subject))return;
   const board=document.getElementById("cg-board").value;
   const cap=subject.replace(/\b\w/g,c=>c.toUpperCase());
+  /* stable identity so this course + its per-module progress persist and RESUME
+     next time the subject is scheduled (same key courseFromPlan looks up). */
+  const ckey=courseKeyFor(subject,focus,level);
   const head=cap+(focus?" — "+focus:"")+" · "+level+(board?" · "+board:"");
   /* live model authors the full course when a key is configured */
   if(window.SYAI&&SYAI.ready()){
@@ -4928,11 +4984,11 @@ document.getElementById("cg-go").onclick=()=>{
           </div>`}).join("")+
           (outro?`<div class="note" style="margin-top:4px"><b>How to study this course:</b> ${esc(outro.body).slice(0,600)}</div>`:"")+
           '<div style="margin-top:8px"><button class="btn sm" id="cg-savecourse">Save course to library</button></div>';
-        wireCourse(subject,cap);
+        wireCourse(subject,ckey,cap);
       }else{
         document.getElementById("cg-out").innerHTML='<div class="card">'+SYAI.render(txt)+courseModuleActions(subject,cap+(focus?" — "+focus:""))+'</div>'+
           '<div style="margin-top:8px"><button class="btn sm" id="cg-savecourse">Save course to library</button></div>';
-        wireCourse(subject,cap);
+        wireCourse(subject,ckey,cap);
       }
       /* keep the generated course in the library automatically (store rendered
          HTML so it displays properly when reopened from Saved Resources) */
@@ -4986,8 +5042,9 @@ function renderCourseNav(ctx){
     try{document.getElementById("course-nav").scrollIntoView({behavior:"smooth",block:"start"});}catch(e){}
   };
 }
-function wireCourse(subj,courseKey){
+function wireCourse(subj,courseKey,displayCap){
   const out=document.getElementById("cg-out");
+  const cap=displayCap||courseKey;
   /* module titles in order = the "Learn this module" buttons, so the lesson flow
      can step Module 1 → 2 → 3 without returning here to regenerate */
   const titles=[...out.querySelectorAll("[data-cj]")].filter(a=>a.dataset.cj.indexOf("lesson::")===0).map(a=>a.dataset.cj.split("::").slice(1).join("::"));
@@ -4998,15 +5055,23 @@ function wireCourse(subj,courseKey){
     const idx=titles.indexOf(topic);
     // go:true → the target tool AUTO-STARTS (the course promises each module
     // "opens into a real lesson/tutor/quiz" — not a form to fill in again).
-    try{sessionStorage.setItem("sy-jump",JSON.stringify({h:h,subj:subj,topic:topic,go:true,course:{cap:courseKey,titles:titles,i:idx,subj:subj}}))}catch(e){}
+    try{sessionStorage.setItem("sy-jump",JSON.stringify({h:h,subj:subj,topic:topic,go:true,course:{cap:cap,key:courseKey,titles:titles,i:idx,subj:subj}}))}catch(e){}
     // navigate robustly: setting the hash fires applyHash (showTab + applyJump);
     // if the hash is already there, call applyHash directly so it still runs.
     if(location.hash!==h){location.hash=h;} else {try{applyHash()}catch(e){}}
   }});
-  /* remember this as the ACTIVE course so "‹ Course outline" and a page reload
-     both bring it back — no regenerating. Stores the rendered outline. */
-  try{store.set("activeCourse",{cap:courseKey,subj:subj,titles:titles,html:out.innerHTML,when:Date.now()});}catch(e){}
-  /* per-module progress ticks, persisted per course */
+  /* Persist this course under its STABLE key (the per-subject library) AND as the
+     ACTIVE course. The library lets each scheduled subject keep its OWN course
+     and resume its remaining modules; activeCourse brings the last-viewed one
+     back on "‹ Course outline" / reload. Both store the rendered outline. */
+  try{
+    var rec={key:courseKey,cap:cap,subj:subj,titles:titles,html:out.innerHTML,when:Date.now()};
+    store.set("activeCourse",rec);
+    var lib=store.get("savedCourses",{})||{};
+    lib[courseKey]=rec;
+    store.set("savedCourses",lib);
+  }catch(e){}
+  /* per-module progress ticks, persisted per course under the stable key */
   const key="courseDone:"+courseKey;
   const done=store.get(key,{});
   out.querySelectorAll("[data-cdone]").forEach(b=>{
@@ -5245,7 +5310,7 @@ function cgStatic(subject,level,board,cap,focus){
     </div>`).join("")+
     `<div class="note">Built from the real ${esc(found.tier)} specification structure${board?" ("+esc(board)+"-aligned)":""}.
       Every module opens into a real lesson, tutor session and check quiz.</div>`;
-  wireCourse(subject,cap);
+  wireCourse(subject,courseKeyFor(subject,focus,level),cap);
 };
 
 /* ==================== COMPREHENSION & REASONING ==================== */
