@@ -3837,7 +3837,20 @@ function applyJump(){
       setSelect("il-subj",j.subj);
       const t=document.getElementById("il-topic");if(t&&j.topic)t.value=j.topic;
       const g=document.getElementById("il-go");
-      if(j.go&&g){ toast("Opening your lesson on "+(j.topic||j.subj)+"…"); setTimeout(()=>{try{g.click()}catch(e){}},150); }
+      /* Auto-launch from a course module. If the balance can't cover the lesson,
+         DON'T just fire il-go (it would fail on spendAcus and leave this tab blank
+         with only a fleeting toast — the "clicked a module, nothing loads" bug).
+         Show a clear, persistent in-panel message with what to do instead. */
+      var _bal=(typeof walletBalance==="function")?walletBalance():null;
+      if(j.go&&g&&_bal!=null&&_bal<IL_PRICE){
+        var lo=document.getElementById("il-out");
+        if(lo)lo.innerHTML='<div class="card" style="border-color:rgba(242,206,123,.6);background:rgba(242,206,123,.09)">'+
+          '<b>This lesson needs '+IL_PRICE+' ACUs — you have '+_bal+'.</b>'+
+          '<div class="note" style="font-style:normal;margin-top:6px">Top up in <b>My account → Plans &amp; top-up</b> (an admin can also grant ACUs), then press <b>Generate Lesson</b>. Your course and your progress are saved — nothing is lost.</div></div>';
+        var ls=document.getElementById("il-sub");if(ls)ls.textContent=(j.topic||j.subj)+" · needs "+IL_PRICE+" ACUs to open — top up to continue";
+        toast("Not enough ACUs for this lesson ("+_bal+"/"+IL_PRICE+")");
+        try{g.scrollIntoView({behavior:"smooth",block:"center"});}catch(e){}
+      } else if(j.go&&g){ toast("Opening your lesson on "+(j.topic||j.subj)+"…"); setTimeout(()=>{try{g.click()}catch(e){}},150); }
       else if(g){g.scrollIntoView({behavior:"smooth",block:"center"});g.classList.add("pulse");setTimeout(()=>g.classList.remove("pulse"),1600);toast("Lesson set up: "+(j.topic||j.subj)+" — press Generate Lesson");}
     }else if(j.h==="#tutor"){
       const c=document.getElementById("chat-in");
@@ -5053,12 +5066,62 @@ function renderCourseNav(ctx){
     (next?'<button class="btn sm solid" id="cn-next" type="button">Next module ›</button>':'<span class="note" style="font-style:normal;color:var(--good)">Final module 🎉</span>')+'</div>';
   var back=document.getElementById("cn-back");if(back)back.onclick=function(){location.hash="#course";};
   var nb=document.getElementById("cn-next");if(nb&&next)nb.onclick=function(){
-    window.__courseJump={cap:ctx.cap,titles:ctx.titles,i:i+1,subj:ctx.subj};
-    var t=document.getElementById("il-topic");if(t)t.value=next;
-    var sb=document.getElementById("il-subj");if(sb&&ctx.subj){try{setSelect("il-subj",ctx.subj);}catch(e){}}
-    var g=document.getElementById("il-go");if(g)g.click();
-    try{document.getElementById("course-nav").scrollIntoView({behavior:"smooth",block:"start"});}catch(e){}
+    // continue to the next module as a FREE review (same as "Learn this module"),
+    // not a fresh paid AI lesson — keeps stepping through the course at no cost.
+    openCourseModuleLesson({cap:ctx.cap,key:ctx.key,titles:ctx.titles,i:i+1,subj:ctx.subj});
   };
+}
+/* Pull ONE module's teaching content out of the stored course HTML (the course
+   the student already generated), stripped of its action buttons / "mark done"
+   row, so it can be shown as a free lesson. */
+function moduleBodyFromCourse(courseKey,title){
+  try{
+    var rec=(store.get("savedCourses",{})||{})[courseKey]||store.get("activeCourse",null);
+    if(!rec||!rec.html)return "";
+    var tmp=document.createElement("div");tmp.innerHTML=rec.html;
+    var card=null;
+    tmp.querySelectorAll("[data-cj]").forEach(function(b){if(!card&&b.dataset.cj==="lesson::"+title)card=b.closest(".card");});
+    if(!card)return "";
+    var c=card.cloneNode(true);
+    c.querySelectorAll("[data-cj]").forEach(function(b){var p=b.parentElement;if(p)p.remove();});
+    var md=c.querySelector("[data-cdone]");if(md){var row=md.closest("div");if(row)row.remove();}
+    return c.innerHTML;
+  }catch(e){return "";}
+}
+/* Open a course module as a FREE lesson from its already-generated content — no
+   ACU charge, no new AI call, so it works at any balance. The module-nav bar
+   (‹ Course outline · Next module ›) drives Module 1→2→3 the same free way. A
+   clearly-priced "Deeper AI walkthrough" opt-in runs the full live-AI lesson. */
+function openCourseModuleLesson(ctx){
+  if(!ctx){return;}
+  var title=(ctx.titles&&ctx.titles[ctx.i])||ctx.cap||"";
+  var subj=ctx.subj||"";
+  showTab("lesson");
+  try{var t=document.getElementById("il-topic");if(t)t.value=title;}catch(e){}
+  window.__courseJump=ctx;
+  try{renderCourseNav(ctx);}catch(e){}
+  var body=moduleBodyFromCourse(ctx.key,title);
+  var sub=document.getElementById("il-sub");if(sub)sub.textContent=title+" · from your AI course — free to review, no ACUs";
+  var out=document.getElementById("il-out");
+  if(out)out.innerHTML='<div class="card">'+
+    '<div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px">Module lesson · free to review</div>'+
+    (body||('<h3 style="font-family:var(--serif);font-weight:500;color:var(--gold-300)">'+esc(title)+'</h3><p class="sub" style="margin-top:6px">Open the AI Course tab to see this module’s full content.</p>'))+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">'+
+      '<button class="btn sm" id="ml-tutor" type="button">🤖 Tutor me on it</button>'+
+      '<button class="btn sm" id="ml-quiz" type="button">✅ Check quiz</button>'+
+      '<button class="btn sm solid" id="ml-ai" type="button">✨ Deeper AI walkthrough ('+IL_PRICE+' ACUs)</button>'+
+    '</div></div>';
+  try{addPoints(6);touchStreak();logEvent("lesson","Module lesson: "+title,(subj||"")+" — reviewed free from your AI course.");}catch(e){}
+  var jump=function(h){try{sessionStorage.setItem("sy-jump",JSON.stringify({h:h,subj:subj,topic:title,go:true,course:ctx}));}catch(e){} if(location.hash!==h){location.hash=h;}else{try{applyHash()}catch(e){}}};
+  var tu=document.getElementById("ml-tutor");if(tu)tu.onclick=function(){jump("#tutor");};
+  var qz=document.getElementById("ml-quiz");if(qz)qz.onclick=function(){jump("#create");};
+  var ai=document.getElementById("ml-ai");if(ai)ai.onclick=function(){
+    // full live-AI interactive lesson — charges IL_PRICE via il-go (no free flag)
+    window.__courseJump=ctx;
+    try{var tp=document.getElementById("il-topic");if(tp)tp.value=title;setSelect("il-subj",subj);}catch(e){}
+    var g=document.getElementById("il-go");if(g)g.click();
+  };
+  try{document.getElementById("course-nav").scrollIntoView({behavior:"smooth",block:"start"});}catch(e){}
 }
 function wireCourse(subj,courseKey,displayCap){
   const out=document.getElementById("cg-out");
@@ -5069,11 +5132,16 @@ function wireCourse(subj,courseKey,displayCap){
   out.querySelectorAll("[data-cj]").forEach(a=>{a.onclick=(ev)=>{
     if(ev&&ev.preventDefault)ev.preventDefault();
     const parts=a.dataset.cj.split("::"),kind=parts[0],topic=parts.slice(1).join("::");
-    const h=kind==="lesson"?"#lesson":kind==="tutor"?"#tutor":"#create";
     const idx=titles.indexOf(topic);
-    // go:true → the target tool AUTO-STARTS (the course promises each module
-    // "opens into a real lesson/tutor/quiz" — not a form to fill in again).
-    try{sessionStorage.setItem("sy-jump",JSON.stringify({h:h,subj:subj,topic:topic,go:true,course:{cap:cap,key:courseKey,titles:titles,i:idx,subj:subj}}))}catch(e){}
+    const ctx={cap:cap,key:courseKey,titles:titles,i:idx,subj:subj};
+    // "Learn this module" opens the module's ALREADY-GENERATED content as a FREE
+    // lesson (you paid to generate the course — reviewing a module costs no ACUs
+    // and makes no new AI call, so it always works even at a zero balance). The
+    // deeper live-AI walkthrough stays available inside, clearly priced.
+    if(kind==="lesson"){ openCourseModuleLesson(ctx); return; }
+    // tutor / quiz still auto-start their tools (go:true).
+    const h=kind==="tutor"?"#tutor":"#create";
+    try{sessionStorage.setItem("sy-jump",JSON.stringify({h:h,subj:subj,topic:topic,go:true,course:ctx}))}catch(e){}
     // navigate robustly: setting the hash fires applyHash (showTab + applyJump);
     // if the hash is already there, call applyHash directly so it still runs.
     if(location.hash!==h){location.hash=h;} else {try{applyHash()}catch(e){}}
