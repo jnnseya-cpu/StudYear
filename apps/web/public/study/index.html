@@ -4904,6 +4904,14 @@ function courseFromPlan(subj,topic,level){
     }
     return;
   }
+  /* First time for THIS subject → generate. Clear any course still on screen from
+     a DIFFERENT subject first, so the student never sees mismatched content while
+     the new one is written or while a gate (e.g. RE needs the school's faith) is
+     satisfied. */
+  var out0=document.getElementById("cg-out");
+  if(out0)out0.innerHTML='<div class="note">Preparing your '+esc(subj||"course")+(effFocus?" — "+esc(effFocus):"")+' course…</div>';
+  var sub0=document.getElementById("cg-sub");
+  if(sub0)sub0.textContent=(subj||"Course")+(effFocus?" — "+effFocus:"")+" · setting up…";
   var go=document.getElementById("cg-go"); if(go)go.click();  // first time → generate & save under this key
 }
 
@@ -4938,7 +4946,17 @@ document.getElementById("cg-go").onclick=()=>{
     faith=((fsel&&fsel.value)||(PROFILE&&PROFILE.schoolFaith)||"").toLowerCase();
     if(!faith){
       const row=document.getElementById("cg-faith-row");if(row)row.style.display="block";
+      /* Replace whatever course is on screen with a clear RE prompt — never leave
+         a previously-generated course from ANOTHER subject visible (the "RE shows
+         History" mismatch). */
+      const reName=subject.replace(/\b\w/g,c=>c.toUpperCase());
+      const o=document.getElementById("cg-out");
+      if(o)o.innerHTML='<div class="card" style="border-color:rgba(201,162,39,.45);background:rgba(201,162,39,.08)">'+
+        '<b>Pick your school’s faith to build this Religious Education course</b>'+
+        '<div class="note" style="font-style:normal;margin-top:6px">RE is taught <i>through</i> your school’s faith tradition, so your course is written in that tradition. Choose the faith just above, then press <b>Generate course</b>.</div></div>';
+      const s=document.getElementById("cg-sub");if(s)s.textContent=reName+" · choose your school’s faith first — RE is taught through it";
       toast("Select your school’s faith — RE is taught through it.");
+      try{(row||fsel).scrollIntoView({behavior:"smooth",block:"center"});}catch(e){}
       if(fsel)try{fsel.focus();}catch(e){}
       return;
     }
