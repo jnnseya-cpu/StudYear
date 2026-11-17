@@ -27,6 +27,8 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function hash(s) { var h = 5381; s = String(s || ''); for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h; }
   function seeded(key, lo, hi) { return Math.round(lo + (hash(key) % 1000) / 1000 * (hi - lo)); }
+  function ts(x) { if (!x) return 0; if (typeof x === 'number') return x; var t = Date.parse(x); return isNaN(t) ? 0 : t; }
+  var DAY = 86400000;
 
   /* ---------------- assessment model (transparent + weighted) ---------------- */
   var W = { attendance: 0.28, attainment: 0.24, fluency: 0.18, engagement: 0.15, behaviour: 0.15 };
@@ -51,7 +53,9 @@
     attainment: { p: 'Targeted catch-up (Maths Heroes / reading) + class intervention', s: 'Subject intervention + tutor match + a Career Passport goal' },
     fluency: { p: 'Daily fluency practice — SkillRush / Number Rock Stars', s: 'Fluency booster + exam-skills sessions' },
     engagement: { p: 'Aspiration encounter + mentor match (Pathways)', s: 'Employer encounter / work experience + mentor (Pathways)' },
-    behaviour: { p: 'Behaviour support plan + mentor + parent partnership', s: 'Behaviour support plan + mentor + parent partnership' }
+    behaviour: { p: 'Behaviour support plan + mentor + parent partnership', s: 'Behaviour support plan + mentor + parent partnership' },
+    trend: { p: 'Early re-engagement: a quick win + a warm check-in on what changed, before it compounds', s: 'Early re-engagement conversation + a motivating goal (Career Passport) before attainment dips' },
+    recency: { p: 'Welfare / attendance check-in + a warm “come back” nudge to the family', s: 'Re-engagement outreach + attendance check-in before absence sets in' }
   };
   var FLAG_ADD = { pp: 'Pupil-Premium-funded support eligible', send: 'SEND support review', eal: 'EAL language support', absence: 'Escalate to attendance lead', carer: 'Young-carer support + flexible plan' };
 
@@ -74,7 +78,26 @@
     });
     var score = den ? Math.round(num / den) : null;
     var status = score == null ? 'unknown' : score >= 70 ? 'on-track' : score >= 48 ? 'watch' : 'priority';
-    drivers.sort(function (a, b) { return a.v - b.v; });
+    /* EARLY WARNING — the point of detecting "very early" is to catch a child by
+       their TRAJECTORY, before their attainment has actually fallen. A declining
+       engagement/attainment trend, or the onset of disengagement (not active for
+       a while after having been active), escalates the status one band and adds a
+       visible early-warning driver — so support starts on the slope, not the floor.
+       This is a NEEDS signal about the child's own momentum, never a context flag,
+       so it only ever widens help (consistent with the ethics above). */
+    var trend = (sig.trend == null || isNaN(sig.trend)) ? null : Number(sig.trend);
+    var lad = (sig.lastActiveDays == null || isNaN(sig.lastActiveDays)) ? null : Number(sig.lastActiveDays);
+    var early = null;
+    if (trend != null && trend <= -12) early = 'trend';
+    if (lad != null && lad >= 14) early = early || 'recency';
+    if (early) {
+      if (status === 'on-track') status = 'watch';
+      else if (status === 'watch' && ((trend != null && trend <= -28) || (lad != null && lad >= 28))) status = 'priority';
+      else if (status === 'unknown') status = 'watch';
+      drivers.unshift({ k: early, early: true, v: score == null ? 0 : score,
+        label: early === 'recency' ? 'Disengaging — not active recently (early warning)' : 'Engagement slipping — caught early' });
+    }
+    drivers.sort(function (a, b) { return (b.early ? -1 : 0) - (a.early ? -1 : 0) || a.v - b.v; });
     var activeFlags = Object.keys(FLAGS).filter(function (f) { return flags[f]; });
     // recommended action: top need (age-aware) + first flag add-on
     var rec = '';
@@ -102,7 +125,11 @@
         attainment: seeded(key + 'atn', base[0], base[1]),
         fluency: seeded(key + 'flu', base[0], base[1]),
         engagement: seeded(key + 'eng', base[0], base[1]),
-        behaviour: seeded(key + 'beh', lowBias ? 45 : 70, lowBias ? 85 : 99)
+        behaviour: seeded(key + 'beh', lowBias ? 45 : 70, lowBias ? 85 : 99),
+        // trajectory: a slice of otherwise on-track pupils are quietly slipping —
+        // the early-warning catches them before levels fall.
+        trend: lowBias ? seeded(key + 'tr', -36, -10) : (i % 5 === 0 ? seeded(key + 'tr', -24, -13) : seeded(key + 'tr', -8, 16)),
+        lastActiveDays: lowBias ? seeded(key + 'la', 8, 22) : (i % 7 === 0 ? seeded(key + 'la', 14, 19) : seeded(key + 'la', 0, 6))
       };
       var flags = { pp: hash(key + 'pp') % 100 < 27, send: hash(key + 'send') % 100 < 14, eal: hash(key + 'eal') % 100 < 18, absence: sig.attendance < 90, carer: hash(key + 'yc') % 100 < 4 };
       out.push({ key: key, name: nm, year: (seedKey.indexOf('primary') >= 0 ? 'Year ' + (2 + (i % 4)) : 'Year ' + (7 + (i % 5))), signals: sig, flags: flags, sample: true });
@@ -121,6 +148,11 @@
       engagement: m.engagement != null ? num(m.engagement, null) : (overall != null ? overall - seeded((r.email || '') + 'e', -6, 10) : null),
       behaviour: m.behaviour != null ? num(m.behaviour, null) : (att != null ? att : null)
     };
+    // trajectory signals — carried from a published live snapshot so the engine
+    // can catch a slipping child early (not just score current levels).
+    sig.trend = (m.trend != null) ? num(m.trend, null) : null;
+    sig.lastActiveDays = (m.lastActive != null) ? Math.max(0, Math.floor((Date.now() - ts(m.lastActive)) / DAY))
+      : (m.lastActiveDays != null ? num(m.lastActiveDays, null) : null);
     var risk = String(m.risk || '').toUpperCase();
     if (sig.attainment == null && risk) sig.attainment = risk === 'HIGH' ? 42 : risk === 'MEDIUM' ? 58 : 78;
     var flags = { pp: !!(m.pp || r.pp), send: !!(m.send || r.send), eal: !!(m.eal || r.eal), absence: (att != null && att < 90), carer: !!(m.carer) };
@@ -144,6 +176,82 @@
       }), sample: false };
     } catch (e) {}
     return { list: sampleCohort(2, 'family'), sample: true };
+  }
+
+  /* ---------------- live early-warning from a learner's OWN data ----------------
+     The earliest NEET-risk signals are behavioural (engagement + its trajectory)
+     and fluency — long before formal attainment moves. This reads them straight
+     from the student's live StudYear use so detection starts from the very first
+     signs, and publishes a low-sensitivity snapshot to the roster so a learner on
+     a school's roll is assessed on REAL data, not left as "more data needed".
+     It publishes summary stats only (engagement, attainment, fluency, trend,
+     last-active, status) — never raw content — and never overwrites school-held
+     attendance/behaviour. */
+  function avg(a) { return a && a.length ? a.reduce(function (x, y) { return x + y; }, 0) / a.length : null; }
+  function signalsFromStore(get) {
+    get = get || function (k, d) { try { return SY.get(k, d); } catch (e) { return d; } };
+    var now = Date.now();
+    var acts = (get('activity', []) || []).filter(function (a) { return a && a.when; });
+    var last7 = 0, prev7 = 0, lastTs = 0;
+    acts.forEach(function (a) { var t = ts(a.when); if (t > lastTs) lastTs = t; var d = (now - t) / DAY; if (d <= 7) last7++; else if (d <= 14) prev7++; });
+    var quizzes = (get('quizzes', []) || []).filter(function (q) { return q && (q.when || q.t); });
+    quizzes.forEach(function (q) { var t = ts(q.when); if (t > lastTs) lastTs = t; });
+    var lastActiveDays = lastTs ? Math.max(0, Math.floor((now - lastTs) / DAY)) : null; // null = never active (new), NOT disengaged
+    var streak = get('streak', { days: [] }) || { days: [] }; var sdays = streak.days || [];
+    // engagement 0–100: recent activity + recency + streak history
+    var eng = Math.min(50, last7 * 10) + Math.max(0, 20 - (lastActiveDays == null ? 20 : lastActiveDays) * 3) + Math.min(30, sdays.length * 3);
+    // plan adherence nudges engagement
+    try { var plan = get('plan', null); if (plan && plan.plan) { var total = 0, done = 0, dm = plan.done || {}; plan.plan.forEach(function (wk) { (wk.days || []).forEach(function (s, i) { total++; if (dm[wk.n + '-' + i]) done++; }); }); if (total) eng = eng * 0.72 + (done / total * 100) * 0.28; } } catch (e) {}
+    eng = Math.max(0, Math.min(100, Math.round(eng)));
+    // attainment: recent quiz average; trend from recent vs prior window
+    var pcts = quizzes.map(function (q) { return +q.pct; }).filter(function (x) { return !isNaN(x); });
+    var recent = pcts.slice(-6), older = pcts.slice(-12, -6);
+    var attn = avg(recent); if (attn != null) attn = Math.round(attn);
+    // fluency: spelling/number-fluency scores if present, else just below attainment
+    var flu = null;
+    try { var sp = get('spelling', null); if (sp && typeof sp === 'object') { var ss = (sp.scores || sp.recent || sp.history || []).map(Number).filter(function (x) { return !isNaN(x); }); if (ss.length) flu = Math.round(avg(ss.slice(-6))); } } catch (e) {}
+    if (flu == null && attn != null) flu = Math.max(20, attn - 5);
+    var engTrend = (last7 - prev7) * 12;
+    var attnTrend = (recent.length && older.length) ? (avg(recent) - avg(older)) : 0;
+    var trend = Math.round(Math.max(-100, Math.min(100, engTrend * 0.6 + attnTrend * 0.9)));
+    if (lastActiveDays != null && lastActiveDays >= 10) trend = Math.min(trend, -20); // disengagement onset dominates
+    var signals = {};
+    if (attn != null) signals.attainment = attn;
+    if (flu != null) signals.fluency = flu;
+    signals.engagement = eng;
+    signals.trend = trend;
+    if (lastActiveDays != null) signals.lastActiveDays = lastActiveDays;
+    return { signals: signals, flags: {}, trend: trend, lastActiveDays: lastActiveDays, hasData: !!(acts.length || quizzes.length) };
+  }
+  /* Publish the learner's own early-warning snapshot to any school roster they are
+     on, so staff see real, early detection. Runs quietly on student pages. */
+  function publishSelf() {
+    try {
+      if (role() !== 'student') return;
+      var sig = signalsFromStore();
+      if (!sig.hasData) return; // nothing to say yet — don't flag a brand-new account
+      var prof = SY.get('profile', {}) || {};
+      var a = assess(sig.signals, {}, prof.level, null);
+      var snap = { updated: new Date().toISOString(), lastActive: Date.now(), trend: sig.trend,
+        status: a.status, score: a.score, risk: a.status === 'priority' ? 'HIGH' : a.status === 'watch' ? 'MEDIUM' : 'LOW' };
+      if (sig.signals.attainment != null) { snap.overall = sig.signals.attainment; snap.mastery = sig.signals.attainment; }
+      if (sig.signals.fluency != null) snap.fluency = sig.signals.fluency;
+      snap.engagement = sig.signals.engagement;
+      try { SY.set('readinessSnapshot', snap); } catch (e) {}
+      var email = ((SY.session && SY.session.email) || '').toLowerCase(); if (!email) return;
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i), m = k && k.match(/^sy-school:([^:]+):roster$/); if (!m) continue;
+        var code = m[1], r = SY.schoolGet(code, 'roster', []) || [], changed = false;
+        for (var j = 0; j < r.length; j++) {
+          if (String(r[j].email || '').toLowerCase() === email) {
+            r[j].m = Object.assign({}, r[j].m || {}, snap); // merge — keep school-held attendance/behaviour
+            if (!r[j].year && prof.level) r[j].year = prof.level;
+            changed = true;
+          }
+        }
+        if (changed) { try { SY.schoolSet(code, 'roster', r); } catch (e) {} }
+      }
+    } catch (e) {}
   }
 
   /* ---------------- intervention log (permissioned store) ---------------- */
@@ -363,8 +471,11 @@
     return host;
   }
 
-  window.SYReady = { assess: assess, mount: mount, summarise: summarise, equity: equity, evidencePack: evidencePack };
+  window.SYReady = { assess: assess, mount: mount, summarise: summarise, equity: equity, evidencePack: evidencePack, signals: signalsFromStore, publishSelf: publishSelf };
 
-  function auto() { if (document.getElementById('readiness-root')) mount(); }
+  function auto() {
+    try { if (role() === 'student') { publishSelf(); return; } } catch (e) {}
+    if (document.getElementById('readiness-root')) mount();
+  }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', auto); else auto();
 })();
