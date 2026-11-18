@@ -415,8 +415,114 @@
     host.innerHTML = h; proBanner(host, live.sample);
   }
 
+  /* ---------------- authority rollup (REAL cross-area NEET view) ----------------
+     Schools push an anonymised NEET-risk aggregate (counts only, no pupil data)
+     up to the authority. The authority sums them so an area can TRACK the number
+     of children needing early support, MONITOR the trend, see which schools and
+     which disadvantaged groups carry the risk, and commission accordingly. */
+  function cohortReadiness(list) {
+    var agg = { total: 0, 'on-track': 0, watch: 0, priority: 0, early: 0,
+      pp: { n: 0, priority: 0 }, send: { n: 0, priority: 0 }, eal: { n: 0, priority: 0 }, trendSum: 0, trendN: 0 };
+    (list || []).forEach(function (c) {
+      var a = assess(c.signals, c.flags, c.year);
+      if (a.status === 'unknown') return; // no data yet — never counts
+      agg.total++; agg[a.status]++;
+      if (a.drivers && a.drivers[0] && a.drivers[0].early) agg.early++;
+      ['pp', 'send', 'eal'].forEach(function (g) { if (c.flags && c.flags[g]) { agg[g].n++; if (a.status === 'priority') agg[g].priority++; } });
+      if (c.signals && c.signals.trend != null) { agg.trendSum += c.signals.trend; agg.trendN++; }
+    });
+    agg.trendAvg = agg.trendN ? Math.round(agg.trendSum / agg.trendN) : null;
+    delete agg.trendSum; delete agg.trendN;
+    return agg;
+  }
+  function schoolReadiness(code) {
+    try {
+      var c = code || schoolCode(); if (!c) return null;
+      var roster = (SY.schoolGet(c, 'roster', []) || []).filter(function (r) { return r && (r.email || r.name); });
+      if (!roster.length) return null;
+      return cohortReadiness(roster.map(fromRoster));
+    } catch (e) { return null; }
+  }
+  function authorityCode() { try { return (window.SY && (SY.get('authorityCode', null) || SY.get('authorityLink', null))) || null; } catch (e) { return null; } }
+  function authoritySchools() {
+    var code = authorityCode(), out = []; if (!code) return out;
+    var re = new RegExp('^sy-la:' + code.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ':school:(.+)$');
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (re.test(k)) { try { out.push(JSON.parse(localStorage.getItem(k))); } catch (e) {} } } } catch (e) {}
+    return out;
+  }
+  // a school that has not yet pushed a real neet aggregate → rough band from its
+  // headline summary so the area view is never blank (clearly marked estimated).
+  function neetFromSummary(s) {
+    if (s && s.neet && s.neet.total) return s.neet;
+    var n = (s && s.students) || 0; if (!n) return null;
+    var av = (s && s.avg != null) ? s.avg : 60, pa = (s && s.persistentAbs != null) ? s.persistentAbs : 8;
+    var priority = Math.round(n * Math.max(0.03, Math.min(0.5, (72 - av) / 120 + pa / 160)));
+    var watch = Math.round(n * Math.max(0.08, Math.min(0.4, (80 - av) / 140 + 0.12)));
+    return { total: n, priority: priority, watch: watch, 'on-track': Math.max(0, n - priority - watch),
+      early: Math.round(watch * 0.5), estimated: true, pp: { n: 0, priority: 0 }, send: { n: 0, priority: 0 }, eal: { n: 0, priority: 0 }, trendAvg: null };
+  }
+  function authorityNeet() {
+    var schools = authoritySchools();
+    var rows = schools.map(function (s) { var n = neetFromSummary(s); return n ? { name: (s && (s.name || s.schoolCode)) || 'School', n: n } : null; }).filter(Boolean);
+    var A = { total: 0, priority: 0, watch: 0, onTrack: 0, early: 0, schools: rows.length, hasReal: false,
+      pp: { n: 0, priority: 0 }, send: { n: 0, priority: 0 }, eal: { n: 0, priority: 0 }, trendSum: 0, trendN: 0, perSchool: [] };
+    rows.forEach(function (row) { var n = row.n;
+      A.total += n.total || 0; A.priority += n.priority || 0; A.watch += n.watch || 0; A.onTrack += (n['on-track'] || 0); A.early += (n.early || 0);
+      if (!n.estimated) A.hasReal = true;
+      ['pp', 'send', 'eal'].forEach(function (g) { if (n[g]) { A[g].n += n[g].n || 0; A[g].priority += n[g].priority || 0; } });
+      if (n.trendAvg != null) { A.trendSum += n.trendAvg; A.trendN++; }
+      A.perSchool.push({ name: row.name, total: n.total || 0, priority: n.priority || 0, watch: n.watch || 0, early: n.early || 0,
+        rate: n.total ? Math.round(n.priority / n.total * 100) : 0, estimated: !!n.estimated });
+    });
+    A.trendAvg = A.trendN ? Math.round(A.trendSum / A.trendN) : null;
+    A.perSchool.sort(function (a, b) { return b.rate - a.rate || b.priority - a.priority; });
+    return A;
+  }
+
   function drawAuthority(host) {
-    // anonymised, PII-masked area cohort — Dublin-style cross-agency view
+    var A = authorityNeet();
+    if (!A.schools || !A.total) return drawAuthoritySynthetic(host); // nothing connected yet
+    var pct = function (x) { return A.total ? Math.round(x / A.total * 100) : 0; };
+    var opp = 0; try { opp = (window.SYPathways && SYPathways.marketList ? (SYPathways.marketList() || []).length : 0); } catch (e) {}
+    var baseRate = A.total ? A.priority / A.total : 0;
+    var groupRow = function (key, label) { var g = A[key]; if (!g.n) return '';
+      var r = g.priority / g.n, over = r > baseRate + 0.2;
+      return '<div class="row"><div class="top"><b>' + label + '</b> <span style="color:var(--ink-3,#8795AE);font-size:12px">' + g.n + ' pupils</span>' +
+        '<span class="st ' + (over ? 'crit' : 'warn') + '" style="margin-left:auto">' + Math.round(r * 100) + '% priority</span></div>' +
+        (over ? '<div class="rec" style="color:#F0888F">⚠ Over-represented vs area (' + Math.round(baseRate * 100) + '%) — direct targeted resource and check for bias.</div>' : '') + '</div>'; };
+    var trendTxt = A.trendAvg == null ? '' : (A.trendAvg < -4 ? '<span class="crit">▼ cohort momentum falling (' + A.trendAvg + ')</span>' : A.trendAvg > 4 ? '<span class="ok">▲ cohort momentum rising (+' + A.trendAvg + ')</span>' : '<span class="mute">cohort momentum steady</span>');
+    var h = '<div class="sy-r">' + ETHICS.replace('a child’s', 'a cohort’s').replace('confirm. Records are permissioned and audit-logged.', 'act on. Figures are anonymised counts — no pupil names or data leave the school.') +
+      '<div class="tiles">' +
+        tile(A.priority, 'Priority for support (' + pct(A.priority) + '%)', 'crit') +
+        tile(A.watch, 'Keep watch (' + pct(A.watch) + '%)', 'warn') +
+        tile(A.onTrack, 'On track', 'ok') +
+        tile(A.early, 'Caught early (early warning)', '') +
+      '</div>' +
+      '<div class="rec" style="margin:2px 0 10px"><b>' + A.total.toLocaleString() + '</b> pupils monitored across <b>' + A.schools + '</b> connected school' + (A.schools > 1 ? 's' : '') + ' · ' + trendTxt + (A.hasReal ? '' : ' · <span class="mute">estimated until schools publish live data</span>') + '</div>';
+    // cohort equity breakdown (only when disadvantage flags are fed)
+    var groups = groupRow('pp', 'Disadvantaged (Pupil Premium)') + groupRow('send', 'SEND') + groupRow('eal', 'EAL');
+    if (groups) h += '<h4>Who carries the risk — disadvantaged groups</h4>' + groups;
+    // schools ranked by share needing priority support — where to direct resource
+    h += '<h4>Schools by share needing priority support</h4>';
+    A.perSchool.slice(0, 12).forEach(function (s) { var col = s.rate >= 25 ? '#F0888F' : s.rate >= 12 ? '#E0AE5A' : '#5CBB7B';
+      h += '<div class="row"><div class="top"><b>' + esc(s.name) + '</b>' + (s.estimated ? ' <span class="chip">est.</span>' : '') +
+        '<span style="margin-left:auto;color:' + col + ';font-weight:700">' + s.priority + ' priority</span></div>' +
+        '<div class="bar" style="margin-top:8px"><i style="width:' + s.rate + '%;background:' + col + '"></i></div>' +
+        '<div class="rec" style="margin-top:6px">' + s.total + ' pupils · ' + s.rate + '% priority · ' + s.watch + ' keep-watch · ' + s.early + ' caught early</div></div>'; });
+    h += '<div class="alert" style="margin-top:12px"><b>Commission on the evidence:</b> ' + A.priority + ' pupils need priority support and ' + A.early + ' were caught early — match them to the <b>' + opp + '</b> live employer/college opportunities in Pathways, fund mentoring at the highest-risk schools, and track outcomes per pound.</div>' +
+      '<div class="act"><button class="rb solid" id="sy-r-aexport">Download area NEET evidence pack (Word)</button><button class="rb" id="sy-r-prog">Create a NEET-prevention programme</button><button class="rb" id="sy-r-match">Open Pathways marketplace</button></div></div>';
+    host.innerHTML = h;
+    var m = host.querySelector('#sy-r-match'); if (m) m.onclick = function () { try { window.location.hash = '#programmes'; } catch (e) {} };
+    var pr = host.querySelector('#sy-r-prog'); if (pr) pr.onclick = function () { try { location.hash = '#programmes'; var el = document.getElementById('p-type'); if (el) { for (var i = 0; i < el.options.length; i++) if (/neet/i.test(el.options[i].text)) el.selectedIndex = i; } var pn = document.getElementById('p-name'); if (pn) pn.focus(); } catch (e) {} };
+    var ex = host.querySelector('#sy-r-aexport'); if (ex) ex.onclick = function () {
+      var synth = A.perSchool.map(function (s) { return { key: s.name, name: s.name, year: 'School', signals: { attainment: 100 - s.rate }, flags: {},
+        _a: { status: s.rate >= 25 ? 'priority' : s.rate >= 12 ? 'watch' : 'on-track', drivers: [{ label: s.priority + ' priority · ' + s.watch + ' keep-watch · ' + s.early + ' caught early' }], rec: 'Target mentoring + Pathways encounters', score: 100 - s.rate } }; });
+      evidencePack(synth, { title: 'Authority NEET-risk — ' + A.total + ' pupils across ' + A.schools + ' schools', mask: true });
+    };
+  }
+
+  function drawAuthoritySynthetic(host) {
+    // anonymised, PII-masked area cohort — shown until live school data connects
     var seed = 'area-' + (schoolCode() || 'region');
     var cohorts = [
       { g: 'Whole area', key: 'all' }, { g: 'Disadvantaged (PP)', key: 'pp' },
@@ -471,7 +577,7 @@
     return host;
   }
 
-  window.SYReady = { assess: assess, mount: mount, summarise: summarise, equity: equity, evidencePack: evidencePack, signals: signalsFromStore, publishSelf: publishSelf };
+  window.SYReady = { assess: assess, mount: mount, summarise: summarise, equity: equity, evidencePack: evidencePack, signals: signalsFromStore, publishSelf: publishSelf, cohortReadiness: cohortReadiness, schoolReadiness: schoolReadiness, authorityNeet: authorityNeet };
 
   function auto() {
     try { if (role() === 'student') { publishSelf(); return; } } catch (e) {}

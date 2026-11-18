@@ -102,6 +102,7 @@
     <div class="card stat"><div class="v" id="k-p8">—</div><div class="k2">Avg Progress 8</div></div>
     <div class="card stat"><div class="v" id="k-gap">—</div><div class="k2">Disadvantage gap</div></div>
     <div class="card stat"><div class="v" id="k-pa">—</div><div class="k2">Persistent absence</div></div>
+    <div class="card stat clik" id="k-neet-card"><div class="v" id="k-neet">—</div><div class="k2">NEET priority (pupils)</div><div class="d" id="k-neet-d"></div></div>
     <div class="card stat"><div class="v" id="k-progs">0</div><div class="k2">Active programmes</div></div>
     <div class="card stat"><div class="v" id="k-fund">£0</div><div class="k2">Funding deployed</div></div>
     <div class="card stat"><div class="v" id="k-roi">—</div><div class="k2">Avg mastery gain</div></div>
@@ -349,6 +350,12 @@ function draw(){
   $('k-gap').textContent=gapVals.length?(avg(gapVals)+' pts'):'—';
   $('k-pa').textContent=paVals.length?(avg(paVals)+'%'):'—';
   $('k-progs').textContent=active.length;$('k-fund').textContent=money(fund);
+  /* NEET early-support tracking — live aggregate across connected schools */
+  var NEET=null;try{if(window.SYReady&&SYReady.authorityNeet)NEET=SYReady.authorityNeet();}catch(e){}
+  if(NEET&&NEET.total){$('k-neet').textContent=NEET.priority.toLocaleString();
+    $('k-neet-d').innerHTML='<span class="up">'+NEET.early+' caught early</span> · '+NEET.watch+' watch';
+    var kc=$('k-neet-card');if(kc)kc.onclick=function(){var el=document.getElementById('readiness-root');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})};
+  } else {$('k-neet').textContent='—';$('k-neet-d').textContent='';}
   var gains=progs.filter(function(p){return p.current!=null&&p.baseline!=null}).map(function(p){return p.current-p.baseline});
   $('k-roi').textContent=gains.length?('+'+avg(gains)+' pts'):'—';
   var effs=progs.filter(function(p){return p.cost&&p.current!=null&&p.baseline!=null}).map(function(p){return (p.current-p.baseline)/(p.cost/1000)});

@@ -819,7 +819,10 @@ function renderLA(){
     var wellbeing=Math.round(avg(M.map(function(m){return fld(m,'wellbeing',72)})));
     var progress=Math.round(avg(M.map(function(m){return fld(m,'progress',Math.max(0,m.overall-55))})));
     var dest={};M.forEach(function(m){var d=m.destination||(m.overall>=75?'University':m.overall>=60?'Sixth Form / College':m.overall>=45?'Apprenticeship':'Needs support');dest[d]=(dest[d]||0)+1});
-    return {schoolCode:code,name:schoolName,students:M.length,avg:cohort,progress:progress,attendance:attendance,wellbeing:wellbeing,safeguard:atRisk.filter(function(m){return m.risk==='CRITICAL'}).length,dest:dest,updatedAt:new Date().toISOString()};
+    /* Anonymised NEET-risk aggregate (counts only — no pupil data) from the live
+       Future-Readiness engine, so the authority can track, monitor and act. */
+    var neet=null;try{if(window.SYReady&&SYReady.schoolReadiness)neet=SYReady.schoolReadiness(code);}catch(e){}
+    return {schoolCode:code,name:schoolName,students:M.length,avg:cohort,progress:progress,attendance:attendance,wellbeing:wellbeing,safeguard:atRisk.filter(function(m){return m.risk==='CRITICAL'}).length,dest:dest,neet:neet,updatedAt:new Date().toISOString()};
   }
   function publish(lc){try{localStorage.setItem('sy-la:'+lc+':school:'+code,JSON.stringify(summary()))}catch(e){}}
   if(laCode){
