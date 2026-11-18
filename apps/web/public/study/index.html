@@ -257,6 +257,9 @@
 <!-- Future-Readiness: quietly publishes the learner's own early-warning signals
      (engagement, trajectory, fluency) so a school sees NEET risk detected early. -->
 <script src="../readiness.js"></script>
+<!-- Challenge Engine: pushes faster/stronger recovery + shows how far ahead of a
+     typical learner the student is pulling (goal: 80–100% ahead). -->
+<script src="../challenge.js"></script>
 <script src="../invite.js"></script>
 <script src="../ai.js"></script>
 <script src="../curriculum-ext.js"></script>
@@ -6072,6 +6075,9 @@ function renderToday(){
      '<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-300)">Recommended right now</div>'+
      '<div style="font-size:15.5px;margin:6px 0 10px;line-height:1.5">'+rec.text+'</div>'+
      '<button class="btn" data-td="'+esc(rec.hash)+'">'+esc(rec.cta)+' →</button></div>';
+  /* Challenge Engine — push faster, stronger recovery and show how far ahead of a
+     typical learner this student is pulling (goal: 80–100% ahead). */
+  try{if(window.SYChallenge)h+=SYChallenge.cardHTML();}catch(e){}
   h+='<div class="card" style="margin-bottom:14px"><h3 style="font-family:var(--serif)">Today’s missions <span class="note" style="font-weight:400">('+done+'/'+ms.length+' done · +'+toEarn+' KP to earn)</span></h3>'+
      ms.map(function(x){return '<div style="display:flex;align-items:center;gap:10px;margin:9px 0">'+
        '<span style="font-size:18px">'+(x.done?'✅':'⬜')+'</span>'+
@@ -6092,6 +6098,7 @@ function renderToday(){
      (mo.restToday?'<div class="note" style="color:var(--good)">✓ Rest day set for today — your momentum is protected.</div>':'<button class="btn ghost sm" id="td-rest">Take a rest day (protects today)</button>')+'</div>';
   mt.innerHTML=h;
   mt.querySelectorAll("[data-td]").forEach(function(b){b.onclick=function(){tdGo(b.getAttribute("data-td"));};});
+  try{if(window.SYChallenge)SYChallenge.wire(mt);}catch(e){}
   var rb=document.getElementById("td-rest");if(rb)rb.onclick=function(){
     var m2=store.get("momentum",{best:0,rest:[]});m2.rest=(m2.rest||[]);if(m2.rest.indexOf(todayKey())<0)m2.rest.push(todayKey());m2.rest=m2.rest.slice(-60);store.set("momentum",m2);
     try{toast("Rest day set — your momentum is safe today. 💙");}catch(e){}renderToday();};
