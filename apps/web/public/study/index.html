@@ -5770,25 +5770,35 @@ function cgStatic(subject,level,board,cap,focus){
   function playBoosted(buf,gain){
     return new Promise(function(res,rej){
       var ac=audioCtx();if(!ac){rej(new Error("no audio"));return;}
-      try{if(ac.state==="suspended"&&ac.resume)ac.resume();}catch(e){}
-      try{ac.decodeAudioData(buf.slice(0),function(audio){
-        /* If the context is still locked (it was resumed too late — outside the
-           click gesture — so the browser kept it suspended), playing here would be
-           SILENT. Reject so say() falls back to the device voice instead of muting. */
+      var play=function(){
+        /* Resume has settled by now. If it is STILL not running the context is
+           genuinely locked (no gesture ever reached it) — reject so say() uses the
+           device voice rather than playing into silence. */
         if(ac.state!=="running"){rej(new Error("audio-locked"));return;}
+        try{ac.decodeAudioData(buf.slice(0),function(audio){
         var src=ac.createBufferSource();src.buffer=audio;
         /* Loud AND clear: a compressor lifts the quiet parts and hard-limits the
            peaks so a big makeup gain can't clip into distortion (distortion is
            what made it unintelligible, not just quietness). */
         var comp=ac.createDynamicsCompressor();
-        try{comp.threshold.value=-32;comp.knee.value=24;comp.ratio.value=16;comp.attack.value=0.003;comp.release.value=0.25;}catch(e){}
-        var g=ac.createGain();g.gain.value=gain||5.5;   /* well above device-normal */
-        /* brick-wall limiter right before output — guarantees no clipping */
+        /* GENTLE levelling only — lift the quiet parts a little. The old settings
+           (threshold -32, ratio 16) squashed everything down to ~-30 dBFS, so even
+           a big makeup gain left it quiet. A soft 3:1 at -24 keeps the level up. */
+        try{comp.threshold.value=-24;comp.knee.value=18;comp.ratio.value=3;comp.attack.value=0.005;comp.release.value=0.18;}catch(e){}
+        var g=ac.createGain();g.gain.value=gain||12;   /* big makeup — the limiter below stops it clipping */
+        /* brick-wall limiter right before output — drives the level up to a loud,
+           clean ceiling and guarantees no clipping no matter how big the gain is */
         var lim=ac.createDynamicsCompressor();
-        try{lim.threshold.value=-2;lim.knee.value=0;lim.ratio.value=20;lim.attack.value=0.001;lim.release.value=0.1;}catch(e){}
+        try{lim.threshold.value=-1.5;lim.knee.value=0;lim.ratio.value=20;lim.attack.value=0.001;lim.release.value=0.12;}catch(e){}
         src.connect(comp);comp.connect(g);g.connect(lim);lim.connect(ac.destination);
         src.onended=function(){res();};src.start(0);
-      },function(e){rej(e||new Error("decode"));});}catch(e){rej(e);}
+        },function(e){rej(e||new Error("decode"));});}catch(e){rej(e);}
+      };
+      /* ac.resume() is async — WAIT for it before playing, so a transient
+         "suspended" isn't misread as locked (which would drop to the quiet device
+         voice even though the loud boosted audio was about to play). */
+      if(ac.state==="suspended"&&ac.resume){try{var pr=ac.resume();if(pr&&pr.then)pr.then(play,play);else play();}catch(e){play();}}
+      else play();
     });
   }
   function cloudCanSpeak(){try{return !!(window.SYCloud&&SYCloud.speak&&window.SY&&SY.session&&!SY.session.demo);}catch(e){return false;}}
@@ -5803,7 +5813,7 @@ function cgStatic(subject,level,board,cap,focus){
       try{audioCtx();}catch(e){}
       try{
         SYCloud.speak(text,{voice:"fable",speed:Math.max(0.6,Math.min(1.2,rate*1.05))})
-          .then(function(buf){_cloudTtsOk=true;try{updateVolNote();}catch(e){}return playBoosted(buf,7);})
+          .then(function(buf){_cloudTtsOk=true;try{updateVolNote();}catch(e){}return playBoosted(buf,14);})
           .catch(function(){_cloudTtsOk=false;try{updateVolNote();}catch(e){}sayLocal(text,rate);});
         return;
       }catch(e){/* fall through to the built-in voice */}
