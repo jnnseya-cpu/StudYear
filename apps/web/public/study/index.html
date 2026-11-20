@@ -5770,7 +5770,12 @@ function cgStatic(subject,level,board,cap,focus){
   function playBoosted(buf,gain){
     return new Promise(function(res,rej){
       var ac=audioCtx();if(!ac){rej(new Error("no audio"));return;}
+      try{if(ac.state==="suspended"&&ac.resume)ac.resume();}catch(e){}
       try{ac.decodeAudioData(buf.slice(0),function(audio){
+        /* If the context is still locked (it was resumed too late — outside the
+           click gesture — so the browser kept it suspended), playing here would be
+           SILENT. Reject so say() falls back to the device voice instead of muting. */
+        if(ac.state!=="running"){rej(new Error("audio-locked"));return;}
         var src=ac.createBufferSource();src.buffer=audio;
         /* Loud AND clear: a compressor lifts the quiet parts and hard-limits the
            peaks so a big makeup gain can't clip into distortion (distortion is
@@ -5792,6 +5797,10 @@ function cgStatic(subject,level,board,cap,focus){
     var pref=voicePref();
     var useDevice=(pref&&pref!=='online');   /* learner chose a specific device voice */
     if(!useDevice&&cloudCanSpeak()){
+      /* Unlock/resume the AudioContext NOW, while we're still inside the click
+         gesture — if we wait until the audio returns from the server the browser
+         keeps it suspended and the word plays silently. */
+      try{audioCtx();}catch(e){}
       try{
         SYCloud.speak(text,{voice:"fable",speed:Math.max(0.6,Math.min(1.2,rate*1.05))})
           .then(function(buf){_cloudTtsOk=true;try{updateVolNote();}catch(e){}return playBoosted(buf,7);})
@@ -5961,6 +5970,7 @@ function cgStatic(subject,level,board,cap,focus){
   }
   renderStats();
   document.getElementById("sp-go").onclick=function(){
+    try{audioCtx();}catch(e){}   /* unlock audio on this click so later words aren't silent */
     var lv=lvlSel.value,setk=setSel.value,go=document.getElementById("sp-go");
     /* Curriculum & commonly-misspelled: draw a fresh RANDOM set from the real
        (large) curriculum list, skipping recently-used words — no AI, so it's
