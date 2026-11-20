@@ -349,10 +349,18 @@ function verifyStripeSig(raw: Buffer, header: string, secret: string, toleranceS
     const v1 = parts.v1;
     if (!ts || !v1) return false;
     if (Math.abs(Date.now() / 1000 - Number(ts)) > toleranceSec) return false; // replayed / stale
-    const expected = createHmac('sha256', secret).update(`${ts}.${raw.toString('utf8')}`).digest('hex');
-    const a = Buffer.from(expected, 'utf8');
     const b = Buffer.from(v1, 'utf8');
-    return a.length === b.length && timingSafeEqual(a, b);
+    // Accept MULTIPLE active signing secrets (comma / whitespace separated). When
+    // Stripe's signing secret is rotated, add the new secret alongside the old one
+    // here and NEITHER delivery ever fails — the outage where a rotated secret
+    // silently rejected every payment (taking money without crediting) can't recur.
+    const secrets = String(secret).split(/[,\s]+/).map((x) => x.trim()).filter(Boolean);
+    for (const sec of secrets) {
+      const expected = createHmac('sha256', sec).update(`${ts}.${raw.toString('utf8')}`).digest('hex');
+      const a = Buffer.from(expected, 'utf8');
+      if (a.length === b.length && timingSafeEqual(a, b)) return true;
+    }
+    return false;
   } catch {
     return false;
   }
@@ -504,7 +512,10 @@ export const stripeWebhook = onRequest({ region: 'europe-west2' }, async (req, r
           await audit('STRIPE_GIFT_FUNDED', buyer.uid ?? buyer.ownerKey, { code, acus: item.acus });
         }
       } else if (applied) {
-        await creditAcus(buyer.ownerKey, item.acus, `stripe:${event.type}`, { planId, ref, sessionId: s.id ?? null, eventId: event.id }, `credit_${event.id}`);
+        // Idempotency key is the SESSION, not the event: one payment = one session,
+        // so a webhook retry AND the admin reconcile tool both resolve to the same
+        // key and can never credit a payment twice.
+        await creditAcus(buyer.ownerKey, item.acus, `stripe:${event.type}`, { planId, ref, sessionId: s.id ?? null, eventId: event.id }, `credit_${s.id ?? event.id}`);
         if (item.kind === 'subscription') {
           if (buyer.kind === 'user' && buyer.uid)
             await db.doc(`users/${buyer.uid}`).set({ plan: planId, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
@@ -577,6 +588,96 @@ export const stripeWebhook = onRequest({ region: 'europe-west2' }, async (req, r
     const err = e as Error;
     void alertOwner('stripe_webhook_fail', 'Stripe webhook processing failed', { error: err.message });
     res.status(500).json({ ok: false, error: 'payment processing error' }); // no internal detail to the caller
+  }
+});
+
+// ----------------------------------------------------- payments reconcile ----
+/**
+ * POST /stripeReconcile — admin-only safety net for "paid but never credited"
+ * (e.g. a webhook outage from a rotated signing secret). Pulls recent PAID
+ * Checkout Sessions straight from Stripe and credits any the ledger is missing,
+ * using the SAME rules and the SAME session-scoped idempotency key as the webhook
+ * — so it can never double-credit, and a later webhook retry for the same payment
+ * is a no-op. Dry-run by default; pass { apply: true } to actually credit.
+ *   body: { apply?: boolean, sinceHours?: number (default 120, max 1080),
+ *           email?: string, limit?: number (<=500) }
+ */
+export const stripeReconcile = onRequest({ region: 'europe-west2', cors: true }, async (req, res) => {
+  try {
+    await requireAdmin(req.headers.authorization);
+    await loadPlatformSecrets(); // admin-managed STRIPE_SECRET_KEY
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) throw httpError(503, 'payments not configured');
+    const apply = req.body?.apply === true;
+    const sinceHours = Math.min(1080, Math.max(1, Number(req.body?.sinceHours) || 120));
+    const since = Math.floor(Date.now() / 1000 - sinceHours * 3600);
+    const emailFilter = String(req.body?.email ?? '').trim().toLowerCase();
+    const maxRows = Math.min(500, Math.max(1, Number(req.body?.limit) || 200));
+
+    // Page through recent Checkout Sessions from Stripe (REST, no SDK — same as checkout).
+    const sessions: Record<string, unknown>[] = [];
+    let startingAfter = '';
+    for (let page = 0; page < 10 && sessions.length < maxRows; page++) {
+      const qs = new URLSearchParams();
+      qs.set('limit', '100');
+      qs.set('created[gte]', String(since));
+      if (startingAfter) qs.set('starting_after', startingAfter);
+      const r = await fetch(`https://api.stripe.com/v1/checkout/sessions?${qs.toString()}`, {
+        headers: { 'Authorization': `Bearer ${key}` },
+      });
+      const j = (await r.json()) as { data?: Record<string, unknown>[]; has_more?: boolean; error?: { message?: string } };
+      if (!r.ok) throw httpError(502, j.error?.message || `stripe ${r.status}`);
+      const data = j.data ?? [];
+      sessions.push(...data);
+      if (!j.has_more || !data.length) break;
+      startingAfter = String(data[data.length - 1].id ?? '');
+      if (!startingAfter) break;
+    }
+
+    const out = {
+      scanned: sessions.length, paid: 0, alreadyCredited: 0, credited: 0, creditedAcus: 0,
+      skippedUnpaid: 0, skippedNoPlan: 0, skippedNoAccount: 0, skippedPriceMismatch: 0, skippedGift: 0, apply,
+      items: [] as Array<Record<string, unknown>>,
+    };
+
+    for (const s of sessions) {
+      const isPaid = String(s.payment_status ?? 'unpaid') === 'paid' && String(s.status ?? '') === 'complete';
+      if (!isPaid) { out.skippedUnpaid++; continue; }
+      out.paid++;
+      const email = String(s.customer_email ?? '').toLowerCase();
+      const { planId, ref } = planAndRef(s);
+      if (emailFilter && email !== emailFilter && ref.toLowerCase() !== emailFilter) continue;
+      const sid = String(s.id ?? '');
+      const meta = (s.metadata as Record<string, string> | undefined) ?? {};
+      if (meta.gift === '1') { out.skippedGift++; out.items.push({ sid, email, status: 'gift — handle via gift codes' }); continue; }
+      // Already credited? Query by sessionId so BOTH old event-keyed and new
+      // session-keyed credit rows count — never double-credit a healed payment.
+      const existing = sid ? await db.collection('acuTransactions').where('sessionId', '==', sid).limit(1).get() : null;
+      if (existing && !existing.empty) { out.alreadyCredited++; continue; }
+      const item = STRIPE_CATALOG[planId];
+      if (!item) { out.skippedNoPlan++; out.items.push({ sid, email, planId, status: 'no catalogue plan' }); continue; }
+      const buyer = await resolveBuyer(ref);
+      if (!buyer.ownerKey) { out.skippedNoAccount++; out.items.push({ sid, email, ref, status: 'no account yet — will credit once they sign up' }); continue; }
+      const amt = typeof s.amount_total === 'number' ? s.amount_total : null;
+      const priceOk = !!meta.planId || amt == null ? true : amt >= item.pence;
+      const zeroPaidTopup = item.kind === 'topup' && amt != null && amt <= 0;
+      if (!priceOk || zeroPaidTopup) { out.skippedPriceMismatch++; out.items.push({ sid, email, planId, amt, status: 'price mismatch / zero-paid — review' }); continue; }
+      out.items.push({ sid, email, planId, acus: item.acus, kind: item.kind, status: apply ? 'credited' : 'would credit' });
+      if (!apply) continue;
+      await creditAcus(buyer.ownerKey, item.acus, 'stripe:reconcile', { planId, ref, sessionId: sid, reconciled: true }, `credit_${sid}`);
+      out.credited++; out.creditedAcus += item.acus;
+      if (item.kind === 'subscription') {
+        if (buyer.kind === 'user' && buyer.uid) await db.doc(`users/${buyer.uid}`).set({ plan: planId, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+        else if (buyer.kind === 'school') await db.doc(`schools/${buyer.ownerKey.replace('school:', '')}`).set({ plan: planId, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+        if (s.customer) await db.doc(`stripeCustomers/${String(s.customer)}`).set({ ownerKey: buyer.ownerKey, uid: buyer.uid ?? null, kind: buyer.kind, planId, acus: item.acus, ref, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      }
+      await audit('STRIPE_RECONCILE_CREDIT', buyer.uid ?? buyer.ownerKey, { planId, acus: item.acus, sessionId: sid });
+      if (buyer.kind === 'user' && buyer.uid) { try { await redeemReferralOnPayment(buyer.uid); } catch { /* best-effort */ } }
+    }
+    res.json({ ok: true, ...out });
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    res.status(err.status ?? 500).json({ ok: false, error: err.message });
   }
 });
 

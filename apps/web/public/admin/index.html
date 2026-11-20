@@ -393,6 +393,18 @@
     <div style="margin-top:10px"><button class="btn ghost sm" id="stripe-recheck">Re-check connection</button>
       <a class="btn sm" href="gateway/" style="text-decoration:none">Configure in AI Gateway</a></div>
   </div>
+  <div class="card"><h3>🩹 Reconcile payments (paid but not credited)</h3>
+    <div class="sub">If the Stripe webhook was ever down, customers were charged but not credited. This reads the real paid
+      Checkout Sessions from Stripe and credits any the ledger is missing — idempotent, so it can never double-credit.
+      <b>Preview</b> first (changes nothing), then <b>Apply</b>.</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:4px 0 10px">
+      <div><label class="f">Look back (hours)</label><input id="rc-hours" type="number" value="120" style="width:100%"></div>
+      <div><label class="f">Only this email (optional)</label><input id="rc-email" placeholder="customer@example.com" style="width:100%"></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" id="rc-preview">Preview (dry run)</button>
+      <button class="btn sm" id="rc-apply" style="background:rgba(201,162,39,.16);border:1px solid var(--gold-500,#c9a227);color:var(--gold-300,#e6c65b)">Apply credits</button></div>
+    <div id="rc-out" class="note" style="margin-top:10px;white-space:pre-wrap"></div>
+  </div>
   <div class="grid">
     <div class="card c4"><h3>Recent Payments</h3><div class="sub">Transactions processed via Stripe</div>
       <div style="overflow-x:auto"><table id="r-pay"><thead><tr><th>User</th><th>Amount</th><th>Date</th></tr></thead><tbody></tbody></table></div></div>
@@ -1272,6 +1284,34 @@ function drawRevenue(){
      '<div class="note">No payment links configured — checkout runs in preview mode (plans activate locally, no money moves). '+
      'Paste your Stripe Payment Links in the AI Gateway to go live; the server-side webhook attaches with the backend.</div>';
   $('stripe-recheck').onclick=function(){drawRevenue();toast('Connection re-checked')};
+  /* ---- reconcile paid-but-uncredited payments (webhook-outage recovery) ---- */
+  function rcRun(apply){
+    var out=$('rc-out');if(!out)return;
+    var hours=Math.max(1,Math.min(1080,+($('rc-hours').value)||120));
+    var email=($('rc-email').value||'').trim().toLowerCase();
+    if(apply&&!confirm('Apply credits now? Every paid-but-uncredited customer found will be credited. This is idempotent — it can never double-credit.'))return;
+    out.textContent=apply?'Applying credits…':'Previewing (no changes)…';
+    if(!window.SYCloud||!cloudApi()){out.textContent='⚠ Backend not connected on this device.';return;}
+    SYCloud.token(SY.session.email).then(function(tk){
+      if(!tk){out.textContent='⚠ Not signed in to the cloud as admin.';return;}
+      return fetch(cloudApi()+'/stripeReconcile',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tk},
+        body:JSON.stringify({apply:!!apply,sinceHours:hours,email:email||undefined})})
+        .then(function(r){return r.json().then(function(j){return {s:r.status,j:j}})}).then(function(res){
+          var j=res.j;
+          if(!j||!j.ok){out.textContent='⚠ '+((j&&j.error)||('HTTP '+res.s));return;}
+          var lines=[];
+          lines.push((apply?'✓ Applied':'Preview (nothing changed)')+' — scanned '+j.scanned+' sessions, '+j.paid+' paid.');
+          var would=(j.items||[]).filter(function(x){return x.status==='would credit'}).length;
+          lines.push(apply?('Credited '+j.credited+' customer(s) · '+j.creditedAcus+' ACUs granted.'):('Would credit '+would+' customer(s).'));
+          lines.push('Already credited: '+j.alreadyCredited+' · no account yet: '+j.skippedNoAccount+' · price mismatch: '+j.skippedPriceMismatch+' · gifts: '+j.skippedGift+'.');
+          (j.items||[]).slice(0,40).forEach(function(x){lines.push('• '+(x.email||x.sid||'')+(x.planId?(' · '+x.planId):'')+(x.acus?(' · '+x.acus+' ACU'):'')+' — '+x.status);});
+          out.textContent=lines.join('\n');
+          if(apply){toast('Reconcile applied — '+j.credited+' credited');}
+        });
+    }).catch(function(){out.textContent='⚠ Couldn’t reach the backend.';});
+  }
+  var _rp=$('rc-preview');if(_rp)_rp.onclick=function(){rcRun(false)};
+  var _ra=$('rc-apply');if(_ra)_ra.onclick=function(){rcRun(true)};
   /* payments + debits */
   var bill=allActivity().filter(function(a){return a.k==='billing'});
   var pays=bill.filter(function(a){return /purchas|subscrib|payment/i.test(a.t)&&/£\d/.test(a.t+a.d)}).slice(0,12);
