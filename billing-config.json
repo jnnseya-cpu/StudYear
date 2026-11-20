@@ -1,0 +1,11 @@
+{
+  "_comment": "PUBLIC billing config delivered to every device (like firebase-config.json). Stripe Payment Link URLs are public checkout URLs, safe to commit. To GO LIVE with real charging: create a Stripe Payment Link for each plan/top-up id below and paste its URL as the value. While 'links' is empty, checkout runs the page's preview activation (no charge). Each Payment Link must set client_reference_id passthrough enabled and point its webhook at the deployed stripeWebhook function so ACUs are credited on payment.",
+  "_ids": {
+    "student_plans": ["student_access", "student_premium", "student_premium_plus", "student_max"],
+    "parent_plans": ["parent_view", "parent_pro", "parent_pro_plus", "parent_elite"],
+    "school_plans": ["school_small", "school_medium", "school_large"],
+    "top_ups": ["mini_boost", "core_boost", "growth_boost", "exam_boost", "power_boost"]
+  },
+  "_example": { "links": { "student_premium": "https://buy.stripe.com/xxxxxxxx", "mini_boost": "https://buy.stripe.com/yyyyyyyy" } },
+  "links": {}
+}

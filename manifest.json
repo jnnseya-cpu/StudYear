@@ -1,0 +1,26 @@
+{
+  "id": "/StudYear/",
+  "name": "StudYear — The AI Academic Operating System",
+  "short_name": "StudYear",
+  "description": "Diagnostics, AI tutoring, adaptive study plans, assignment review and live progress for students, parents, teachers, schools and tutors.",
+  "start_url": "./app/",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#060B18",
+  "theme_color": "#060B18",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "My dashboard", "short_name": "Dashboard", "url": "./app/" },
+    { "name": "AI Tutor", "short_name": "Tutor", "url": "./study/#tutor" },
+    { "name": "Academic diagnostic", "short_name": "Diagnostic", "url": "./study/#diag" },
+    { "name": "Handwriting practice", "short_name": "Handwriting", "url": "./write/" }
+  ]
+}
